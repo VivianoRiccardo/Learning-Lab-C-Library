@@ -1135,18 +1135,16 @@ rl* copy_rl(rl* f){
  * 
  * Input:
  * 
- *             @ fcl** f:= the pointer to a fcl* f layer
+ *             @ fcl* f:= a fcl* f layer
  * 
  * */
-void reset_fcl(fcl** f){
-    if((*f) == NULL){
-        printf("Error: you passed a NULL pointer in reset_fcl\n");
-        exit(1);
-    }
-    
-    fcl* temp = copy_fcl((*f));
-    free_fully_connected((*f));
-    (*f) = temp;
+fcl* reset_fcl(fcl* f){
+    if(f == NULL)
+        return NULL;
+    fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold);
+    copy_array(f->weights,copy->weights,f->output*f->input);
+    copy_array(f->biases,copy->biases,f->output);
+    return copy;
 }
 
 
@@ -1155,18 +1153,22 @@ void reset_fcl(fcl** f){
  * 
  * Input:
  * 
- *             @ cl** f:= the pointer to a cl* f layer
+ *             @ cl* f:= a cl* f layer
  * 
  * */
-void reset_cl(cl** f){
-    if((*f) == NULL){
-        printf("Error: you passed a NULL pointer in reset_cl\n");
-        exit(1);
+cl* reset_cl(cl* f){
+    if(f == NULL)
+        return NULL;
+    cl* copy = convolutional(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->layer);
+    
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
     }
     
-    cl* temp = copy_cl((*f));
-    free_convolutional((*f));
-    (*f) = temp;
+    copy_array(f->biases,copy->biases,f->n_kernels);
+    
+    return copy;
 }
 
 
@@ -1175,16 +1177,20 @@ void reset_cl(cl** f){
  * 
  * Input:
  * 
- *             @ rl** f:= the pointer to a rl* f layer
+ *             @ rl* f:= a rl* f layer
  * 
  * */
-void reset_rl(rl** f){
-    if((*f) == NULL){
-        printf("Error: you passed a NULL pointer in reset_rl\n");
-        exit(1);
+rl* reset_rl(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    cl** cls = (cl**)malloc(sizeof(cl*)*f->n_cl);
+    for(i = 0; i < f->n_cl; i++){
+        cls[i] = reset_cl(f->cls[i]);
     }
     
-    rl* temp = copy_rl((*f));
-    free_residual((*f));
-    (*f) = temp;
+    rl* copy = residual(f->channels, f->input_rows, f->input_cols, f->n_cl, cls);
+    return copy;
 }
+
