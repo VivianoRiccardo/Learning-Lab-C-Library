@@ -1143,6 +1143,10 @@ fcl* reset_fcl(fcl* f){
         return NULL;
     fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold);
     copy_array(f->weights,copy->weights,f->output*f->input);
+    copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
+    copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
+    copy_array(f->d1_biases,copy->d1_biases,f->output);
+    copy_array(f->d2_biases,copy->d2_biases,f->output);
     copy_array(f->biases,copy->biases,f->output);
     return copy;
 }
@@ -1163,9 +1167,13 @@ cl* reset_cl(cl* f){
     
     int i;
     for(i = 0; i < f->n_kernels; i++){
+        copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
     }
     
+    copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
+    copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
     copy_array(f->biases,copy->biases,f->n_kernels);
     
     return copy;
