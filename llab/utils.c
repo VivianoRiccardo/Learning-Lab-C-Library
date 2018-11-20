@@ -413,6 +413,33 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
         }
     }
 }
+
+/* This function sum the partial derivatives of the residual layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        printf("Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+            }
+            
+            sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
+
+        }
+    }
+}
 /* Given a model, this function update the params of the convolutional layers of the model with the nesterov momentum
  * 
  * Input:
@@ -438,6 +465,33 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
         }
     }
 }
+
+
+/* This function sum the partial derivatives of the convolutional layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        printf("Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        for(k = 0; k < m->cls[j]->n_kernels; k++){
+            sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+        }
+        
+        sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
+
+    }
+
+}
 /* Given a model, this function update the params of the fully-connected layers of the model with the nesterov momentum
  * 
  * Input:
@@ -450,13 +504,38 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
 void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-            for(j = 0; j < m->fcls[i]->output; j++){
-                for(k = 0; k < m->fcls[i]->input; k++){
-                    nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
-                }
-                nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
+        for(j = 0; j < m->fcls[i]->output; j++){
+            for(k = 0; k < m->fcls[i]->input; k++){
+                nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
             }
+            nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
         }
+    }
+}
+
+
+
+/* This function sum the partial derivatives of the fully-connected layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        printf("Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
+        sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);    
+    }
+    
+        
 }
 
 
