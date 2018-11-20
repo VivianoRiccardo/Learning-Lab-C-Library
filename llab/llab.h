@@ -179,9 +179,9 @@ rl* load_rl(FILE* fr);
 fcl* copy_fcl(fcl* f);
 cl* copy_cl(cl* f);
 rl* copy_rl(rl* f);
-void reset_fcl(fcl** f);
-void reset_cl(cl** f);
-void reset_rl(rl** f);
+fcl* reset_fcl(fcl* f);
+cl* reset_cl(cl* f);
+rl* reset_rl(rl* f);
 
 
 // Functions defined in model.c
@@ -200,7 +200,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error);
 float* bp_cl_fcl(cl* f1, fcl* f2, float* error);
 void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
 float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
-void reset_model(model** m);
+model* reset_model(model* m);
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag);
 void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 
