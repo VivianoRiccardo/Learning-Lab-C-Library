@@ -212,6 +212,8 @@ void free_convolutional(cl* c){
     for(i = 0; i < c->n_kernels; i++){
         free(c->kernels[i]);
         free(c->d_kernels[i]);
+        free(c->d1_kernels[i]);
+        free(c->d2_kernels[i]);
     }
     free(c->kernels);
     free(c->d_kernels);
