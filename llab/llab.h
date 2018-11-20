@@ -156,6 +156,9 @@ void mul_value(float* input, float value, float* output, int dimension);//can be
 void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
 void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
 void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
+void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
+void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
+void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
 
 
 // Functions defined in layers.c
@@ -199,5 +202,6 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
 float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
 void reset_model(model** m);
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag);
+void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 
 #endif
