@@ -1601,8 +1601,8 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
  *             @ int tensor_i:= the number of rows of the tensor
  *             @ int tensor_j:= the number of columns of the tensor
  *             @ float* input:= your input array
- * 			   @ float* error:= the error of the last layer of the last function computed
- * 			   @ int error_dimension:= the dimension of the float* error vector
+ *                @ float* error:= the error of the last layer of the last function computed
+ *                @ int error_dimension:= the dimension of the float* error vector
  * 
  * */
 float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension){
@@ -1866,7 +1866,6 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag){
     if(m == NULL)
         return;
-    int i,j,k,z,w,u;
     if(gradient_descent_flag == NESTEROV){    
         update_residual_layer_nesterov(m,lr,momentum,mini_batch_size);
         update_convolutional_layer_nesterov(m,lr,momentum,mini_batch_size);
@@ -1877,4 +1876,23 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
     
     
 
+}
+
+/* This function sum the partial derivatives in model m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ model* m:= first input model
+ *             @ model* m2:= second input model
+ *             @ model* m3:= output model
+ * 
+ * */
+void sum_model_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        printf("Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_fully_connected_layers_partial_derivatives(m,m2,m3);
+    sum_convolutional_layers_partial_derivatives(m,m2,m3);
+    sum_residual_layers_partial_derivatives(m,m2,m3);
 }
