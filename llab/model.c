@@ -238,15 +238,34 @@ model* copy_model(model* m){
 }
 
 /* This function resets a model using the copy model function
+ * returns a model equal to the one as input but with all resetted except for weights and biases
  * */
-void reset_model(model** m){
-    if(m == NULL){
-        printf("Error: you passed a NULL pointer in reset_model\n");
-        exit(1);
+model* reset_model(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    
+    fcl** fcls = NULL;
+    if(m->fcls!=NULL)
+        fcls = (fcl**)malloc(sizeof(fcl*)*m->n_fcl);
+    cl** cls = NULL;
+    if(m->cls!=NULL)
+        cls = (cl**)malloc(sizeof(cl*)*m->n_cl);
+        
+    rl** rls = NULL;
+    if(m->rls!=NULL)
+        rls = (rl**)malloc(sizeof(rl*)*m->n_rl);
+    for(i = 0; i < m->n_fcl; i++){
+        fcls[i] = reset_fcl(m->fcls[i]);
     }
-    model* copy = copy_model((*m));
-    free_model((*m));
-    (*m) = copy;
+    for(i = 0; i < m->n_cl; i++){
+        cls[i] = reset_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        rls[i] = reset_rl(m->rls[i]);
+    }
+    model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
+    return copy;
 }
 
 
