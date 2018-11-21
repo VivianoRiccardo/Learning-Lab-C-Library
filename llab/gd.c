@@ -13,7 +13,7 @@
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta){
      float temp = (*delta);
      (*delta) = m*(*delta)-lr*(float)(dp/mini_batch_size);
-     (*p) += -m*temp+(1+m)*(*delta);
+     (*p) += m*m*temp - (1+m)*lr*(float)(dp/mini_batch_size);
 }
 
 /* This function update a parameter p using the adam optimization algorithm
