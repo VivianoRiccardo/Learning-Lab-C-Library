@@ -59,6 +59,6 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - OpenCl and Cuda implementation
 - ...
 
-# Example:
+# Examples:
 
 - https://github.com/VivianoRiccardo/Image-Recognition-LLAB-Library
