@@ -393,9 +393,23 @@ model* load_model(char* file){
         exit(1);
     }
     
-    rl** rls = (rl**)malloc(sizeof(rl*)*n_rl);
-    cl** cls = (cl**)malloc(sizeof(cl*)*n_cl);
-    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
+
+    rl** rls;
+    cl** cls;
+    fcl** fcls;
+    
+    if(!n_rl)
+        rls = NULL;
+    else
+        rls = (rl**)malloc(sizeof(rl*)*n_rl);
+    if(!n_cl)
+        cls = NULL;
+    else
+        cls = (cl**)malloc(sizeof(cl*)*n_cl);
+    if(!n_fcl)
+        fcls = NULL;
+    else
+        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
     
     for(i = 0; i < n_rl; i++){
         rls[i] = load_rl(fr);
