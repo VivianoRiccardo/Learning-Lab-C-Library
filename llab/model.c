@@ -936,7 +936,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            copy_array(temp3,temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -957,7 +957,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            copy_array(temp3,temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1300,7 +1300,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            copy_array(temp3,temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1321,7 +1321,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            copy_array(temp3,temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
