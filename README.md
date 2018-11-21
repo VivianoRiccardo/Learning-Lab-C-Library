@@ -58,3 +58,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Random forest
 - OpenCl and Cuda implementation
 - ...
+
+# Example:
+
+- https://github.com/VivianoRiccardo/Image-Recognition-LLAB-Library
