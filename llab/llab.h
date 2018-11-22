@@ -5,13 +5,6 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <math.h>
-#include <string.h>#ifndef __LLAB_H__
-#define __LLAB_H__
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <math.h>
 #include <string.h>
 
 #define N_NORMALIZATION 5
