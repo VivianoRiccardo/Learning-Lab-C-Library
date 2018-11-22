@@ -1888,7 +1888,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
  *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
  * 
  * */
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag){
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2){
     if(m == NULL)
         return;
     if(gradient_descent_flag == NESTEROV){    
@@ -1897,8 +1897,13 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         update_fully_connected_layer_nesterov(m,lr,momentum,mini_batch_size);
     }
     
-    /* we must adding else if gradient_descent_flag == ADAM*/
-    
+    else if(gradient_descent_flag == ADAM){
+        update_residual_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
+        update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
+        update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
+        (*b1)*=BETA1_ADAM;
+        (*b2)*=BETA2_ADAM;
+    }    
     
 
 }
