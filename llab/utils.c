@@ -414,6 +414,35 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
     }
 }
 
+/* Given a model, this function update the params of the residual layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2){
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                            adam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                        }
+                    }
+                }
+                adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            }
+        }
+    }
+}
+
 /* This function sum the partial derivatives of the residual layers of a model m and a second model m2 in a third model m3
  * 
  * Input:
@@ -466,6 +495,34 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
     }
 }
 
+/* Given a model, this function update the params of the convolutional layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        for(k = 0; k < m->cls[j]->n_kernels; k++){
+            for(u = 0; u < m->cls[j]->channels; u++){
+                for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                        adam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                    }
+                        
+                }
+            }
+            adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+        }
+    }
+}
+
 
 /* This function sum the partial derivatives of the convolutional layers of a model m and a second model m2 in a third model m3
  * 
@@ -509,6 +566,30 @@ void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, i
                 nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
             }
             nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
+        }
+    }
+}
+
+
+/* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2){
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        for(j = 0; j < m->fcls[i]->output; j++){
+            for(k = 0; k < m->fcls[i]->input; k++){
+                adam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            }
+            adam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
         }
     }
 }
