@@ -73,6 +73,7 @@ typedef struct cl { //convolutional-layers
 typedef struct rl { //residual-layers
     int channels, input_rows, input_cols, n_cl;
     float* input;
+    cl* cl_output;
     cl** cls;
 } rl;
 
