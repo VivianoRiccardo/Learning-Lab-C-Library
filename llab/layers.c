@@ -1231,8 +1231,8 @@ rl* reset_rl(rl* f){
  * */
 int size_of_fcls(fcl* f){
     int sum = 0;
-    sum += (f->input*f->output)*4;
-    sum += (f->output*7);
+    sum += (f->input*f->output*4*sizeof(float));
+    sum += (f->output*7*sizeof(float));
     return sum;
 }
 
@@ -1246,10 +1246,10 @@ int size_of_fcls(fcl* f){
  * */
 int size_of_cls(cl* f){
     int sum = 0;
-    sum += (f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4);
-    sum += (f->n_kernels*4);
-    sum += (f->n_kernels*f->rows1*f->cols1*3);
-    sum += (f->n_kernels*f->rows2*f->cols2);
+    sum += (f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4*sizeof(float));
+    sum += (f->n_kernels*4*sizeof(float));
+    sum += (f->n_kernels*f->rows1*f->cols1*3*sizeof(float));
+    sum += (f->n_kernels*f->rows2*f->cols2*sizeof(float));
     return sum;
 }
 
@@ -1267,7 +1267,7 @@ int size_of_rls(rl* f){
         sum+= size_of_cls(f->cls[i]);
     }
     
-    sum+= (f->channels*f->input_cols*f->input_rows);
+    sum+= (f->channels*f->input_cols*f->input_rows*sizeof(float));
     sum+= size_of_cls(f->cl_output);
     return sum;
     
