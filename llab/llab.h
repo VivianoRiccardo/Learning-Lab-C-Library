@@ -190,9 +190,9 @@ rl* copy_rl(rl* f);
 fcl* reset_fcl(fcl* f);
 cl* reset_cl(cl* f);
 rl* reset_rl(rl* f);
-long long unsigned int size_of_fcls(fcl* f);
-long long unsigned int size_of_cls(cl* f);
-long long unsigned int size_of_rls(rl* f);
+unsigned long long int size_of_fcls(fcl* f);
+unsigned long long int size_of_cls(cl* f);
+unsigned long long int size_of_rls(rl* f);
 
 
 // Functions defined in model.c
@@ -214,6 +214,6 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
 model* reset_model(model* m);
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2);
 void sum_model_partial_derivatives(model* m, model* m2, model* m3);
-long long unsigned int size_of_model(model* m);
+unsigned long long int size_of_model(model* m);
 
 #endif
