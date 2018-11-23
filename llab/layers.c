@@ -1229,10 +1229,10 @@ rl* reset_rl(rl* f){
  *             fcl* f:= the fully-connected layer f
  * 
  * */
-long long unsigned int size_of_fcls(fcl* f){
-    long long unsigned int sum = 0;
-    sum += ((long long unsigned int)(f->input*f->output*4*sizeof(float)));
-    sum += ((long long unsigned int)(f->output*7*sizeof(float)));
+unsigned long long int size_of_fcls(fcl* f){
+    unsigned long long int sum = 0;
+    sum += ((unsigned long long int)(f->input*f->output*4*sizeof(float)));
+    sum += ((unsigned long long int)(f->output*7*sizeof(float)));
     return sum;
 }
 
@@ -1244,12 +1244,12 @@ long long unsigned int size_of_fcls(fcl* f){
  *             cl* f:= the convolutional layer f
  * 
  * */
-long long unsigned int size_of_cls(cl* f){
-    long long unsigned int sum = 0;
-    sum += ((long long unsigned int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4*sizeof(float)));
-    sum += ((long long unsigned int)(f->n_kernels*4*sizeof(float)));
-    sum += ((long long unsigned int)(f->n_kernels*f->rows1*f->cols1*3*sizeof(float)));
-    sum += ((long long unsigned int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
+unsigned long long int size_of_cls(cl* f){
+    unsigned long long int sum = 0;
+    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*4*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*3*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
     return sum;
 }
 
@@ -1261,13 +1261,13 @@ long long unsigned int size_of_cls(cl* f){
  *             rl* f:= the residual layer f
  * 
  * */
-long long unsigned int size_of_rls(rl* f){
-    long long unsigned int i,sum = 0;
+unsigned long long int size_of_rls(rl* f){
+    unsigned long long int i,sum = 0;
     for(i = 0; i < f->n_cl; i++){
         sum+= size_of_cls(f->cls[i]);
     }
     
-    sum+= ((long long unsigned int)(f->channels*f->input_cols*f->input_rows*sizeof(float)));
+    sum+= ((unsigned long long int)(f->channels*f->input_cols*f->input_rows*sizeof(float)));
     sum+= size_of_cls(f->cl_output);
     return sum;
     
