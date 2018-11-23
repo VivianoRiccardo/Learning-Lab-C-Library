@@ -264,9 +264,9 @@ model* reset_model(model* m){
  *             model* m:= the structure model
  * 
  * */
-long long unsigned int size_of_model(model* m){
+unsigned long long int size_of_model(model* m){
     int i;
-    long long unsigned int sum = 0;
+    unsigned long long int sum = 0;
     for(i = 0; i < m->n_fcl; i++){
         sum+= size_of_fcls(m->fcls[i]);
     }
@@ -281,7 +281,7 @@ long long unsigned int size_of_model(model* m){
         sum+= size_of_rls(m->rls[i]);
     }
     
-    sum+= ((long long unsigned int)(m->layers*m->layers*sizeof(int)));
+    sum+= (( unsigned long long int)(m->layers*m->layers*sizeof(int)));
     return sum;
 }
 
