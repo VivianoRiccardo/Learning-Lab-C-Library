@@ -281,7 +281,7 @@ int size_of_model(model* m){
         sum+= size_of_rls(m->rls[i]);
     }
     
-    sum+= (m->layers*m->layers);
+    sum+= (m->layers*m->layers*sizeof(int));
     return sum;
 }
 
