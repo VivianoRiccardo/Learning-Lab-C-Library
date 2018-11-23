@@ -244,28 +244,45 @@ model* reset_model(model* m){
     if(m == NULL)
         return NULL;
     int i;
-    
-    fcl** fcls = NULL;
-    if(m->fcls!=NULL)
-        fcls = (fcl**)malloc(sizeof(fcl*)*m->n_fcl);
-    cl** cls = NULL;
-    if(m->cls!=NULL)
-        cls = (cl**)malloc(sizeof(cl*)*m->n_cl);
-        
-    rl** rls = NULL;
-    if(m->rls!=NULL)
-        rls = (rl**)malloc(sizeof(rl*)*m->n_rl);
     for(i = 0; i < m->n_fcl; i++){
-        fcls[i] = reset_fcl(m->fcls[i]);
+        reset_fcl(m->fcls[i]);
     }
     for(i = 0; i < m->n_cl; i++){
-        cls[i] = reset_cl(m->cls[i]);
+        reset_cl(m->cls[i]);
     }
     for(i = 0; i < m->n_rl; i++){
-        rls[i] = reset_rl(m->rls[i]);
+        reset_rl(m->rls[i]);
     }
-    model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
-    return copy;
+    return m;
+}
+
+
+/* this function compute the space allocated by the arrays of m
+ * 
+ * Input:
+ * 
+ *             model* m:= the structure model
+ * 
+ * */
+int size_of_model(model* m){
+    int i;
+    int sum = 0;
+    for(i = 0; i < m->n_fcl; i++){
+        sum+= size_of_fcls(m->fcls[i]);
+    }
+    
+    
+    for(i = 0; i < m->n_cl; i++){
+        sum+= size_of_cls(m->cls[i]);
+    }
+    
+    
+    for(i = 0; i < m->n_rl; i++){
+        sum+= size_of_rls(m->rls[i]);
+    }
+    
+    sum+= (m->layers*m->layers);
+    return sum;
 }
 
 
