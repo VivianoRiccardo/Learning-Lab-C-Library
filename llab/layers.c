@@ -1145,14 +1145,17 @@ rl* copy_rl(rl* f){
 fcl* reset_fcl(fcl* f){
     if(f == NULL)
         return NULL;
-    fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold);
-    copy_array(f->weights,copy->weights,f->output*f->input);
-    copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
-    copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
-    copy_array(f->d1_biases,copy->d1_biases,f->output);
-    copy_array(f->d2_biases,copy->d2_biases,f->output);
-    copy_array(f->biases,copy->biases,f->output);
-    return copy;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            f->pre_activation[i] = 0;
+            f->post_activation[i] = 0;
+            f->d_biases[i] = 0;
+            f->dropout_mask[i] = 1;
+        }
+        f->d_weights[i] = 0;
+    }
+    return f;
 }
 
 
@@ -1169,18 +1172,26 @@ cl* reset_cl(cl* f){
         return NULL;
     cl* copy = convolutional(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->layer);
     
-    int i;
+    int i,j;
     for(i = 0; i < f->n_kernels; i++){
-        copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
+            f->d_kernels[i][j] = 0;
+        }
+        
+        f->d_biases[i] = 0;
     }
     
-    copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
-    copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
-    copy_array(f->biases,copy->biases,f->n_kernels);
+    for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+        f->pre_activation[i] = 0;
+        f->post_activation[i] = 0;
+        f->post_normalization[i] = 0;
+    }
     
-    return copy;
+    for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+        f->post_pooling[i] = 0;
+    }
+    
+    return f;
 }
 
 
@@ -1199,10 +1210,66 @@ rl* reset_rl(rl* f){
     int i;
     cl** cls = (cl**)malloc(sizeof(cl*)*f->n_cl);
     for(i = 0; i < f->n_cl; i++){
-        cls[i] = reset_cl(f->cls[i]);
+        reset_cl(f->cls[i]);
     }
     
-    rl* copy = residual(f->channels, f->input_rows, f->input_cols, f->n_cl, cls);
-    return copy;
+    reset_cl(f->cl_output);
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->input[i] = 0;
+    }
+    
+    return f;
+}
+
+/* this function compute the space allocated by the arrays of f
+ * 
+ * Input:
+ * 
+ *             fcl* f:= the fully-connected layer f
+ * 
+ * */
+int size_of_fcls(fcl* f){
+    int sum = 0;
+    sum += (f->input*f->output)*4;
+    sum += (f->output*7);
+    return sum;
+}
+
+
+/* this function compute the space allocated by the arrays of f
+ * 
+ * Input:
+ * 
+ *             cl* f:= the convolutional layer f
+ * 
+ * */
+int size_of_cls(cl* f){
+    int sum = 0;
+    sum += (f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4);
+    sum += (f->n_kernels*4);
+    sum += (f->n_kernels*f->rows1*f->cols1*3);
+    sum += (f->n_kernels*f->rows2*f->cols2);
+    return sum;
+}
+
+
+/* this function compute the space allocated by the arrays of f
+ * 
+ * Input:
+ * 
+ *             rl* f:= the residual layer f
+ * 
+ * */
+int size_of_rls(rl* f){
+    int i,sum = 0;
+    for(i = 0; i < f->n_cl; i++){
+        sum+= size_of_cls(f->cls[i]);
+    }
+    
+    sum+= (f->channels*f->input_cols*f->input_rows);
+    sum+= size_of_cls(f->cl_output);
+    return sum;
+    
 }
 
