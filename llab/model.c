@@ -477,7 +477,6 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         exit(1);
     }
     
-    float* temp = NULL;
     int i;
     
     /* computing the pre-activation array for f2 from f1*/
@@ -489,15 +488,13 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                temp = (float*)malloc(sizeof(float)*f2->input);
-                get_dropout_array(f2->input,f1->dropout_mask,f1->pre_activation,temp);
-                fully_connected_feed_forward(temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                get_dropout_array(f2->input,f1->dropout_mask,f1->pre_activation,f1->dropout_temp);
+                fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
-                temp = (float*)malloc(sizeof(float)*f2->input);
-                mul_value(f2->pre_activation,f1->dropout_threshold,temp,f2->input);
-                fully_connected_feed_forward(temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                mul_value(f2->pre_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
+                fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
         }
     }
@@ -509,15 +506,13 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                temp = (float*)malloc(sizeof(float)*f2->input);
-                get_dropout_array(f2->input,f1->dropout_mask,f1->post_activation,temp);
-                fully_connected_feed_forward(temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                get_dropout_array(f2->input,f1->dropout_mask,f1->post_activation,f1->dropout_temp);
+                fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
-                temp = (float*)malloc(sizeof(float)*f2->input);
-                mul_value(f2->post_activation,f1->dropout_threshold,temp,f2->input);
-                fully_connected_feed_forward(temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                mul_value(f2->post_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
+                fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
         }
     }
@@ -535,8 +530,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     /* setting the dropout mask, if dropout flag is != 0*/
     if(f2->dropout_flag)
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
-    
-    free(temp);
+
 }
 
 
@@ -562,7 +556,6 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         exit(1);
     }
 
-    float* temp = NULL;
     int i,j,k,z;
     
     /* f2 pre activation with no activation for f1*/
@@ -574,18 +567,16 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                get_dropout_array(f1->output,f1->dropout_mask,f1->pre_activation,temp);
+                get_dropout_array(f1->output,f1->dropout_mask,f1->pre_activation,f1->dropout_temp);
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
                 }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                mul_value(f1->pre_activation,f1->dropout_threshold,temp,f1->output);
+                mul_value(f1->pre_activation,f1->dropout_threshold,f1->dropout_temp,f1->output);
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
                 }
             }
         }
@@ -600,18 +591,16 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                get_dropout_array(f1->output,f1->dropout_mask,f1->post_activation,temp);
+                get_dropout_array(f1->output,f1->dropout_mask,f1->post_activation,f1->dropout_temp);
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
                 }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                mul_value(f1->post_activation,f1->dropout_threshold,temp,f1->output);
+                mul_value(f1->post_activation,f1->dropout_threshold,f1->dropout_temp,f1->output);
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
                 }
             }
         }
@@ -705,7 +694,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         }
     }
     
-    free(temp);
+
     
 }
 
@@ -934,86 +923,78 @@ void ff_cl_cl(cl* f1, cl* f2){
  * */
 float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     int i;
-    float* temp = (float*)calloc(f2->output,sizeof(float));
-    float* temp3 = (float*)calloc(f2->output,sizeof(float));
-    float* temp2 = (float*)calloc(f2->input,sizeof(float));
-    float* error2 = (float*)calloc(f2->input,sizeof(float));
     
     /*computing the backpropagation for f2*/
     if(f2->dropout_flag){
-        dot1D(error,f2->dropout_mask,temp,f2->output);
+        dot1D(error,f2->dropout_mask,f2->temp,f2->output);
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         else if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            copy_array(temp3,temp,f2->output);
+            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
     }
     
     else{
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         else if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            copy_array(temp3,temp,f2->output);
+            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
         else{
-            copy_array(error,temp,f2->output);
+            copy_array(error,f2->temp,f2->output);
         }
     }
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
     if(f1->dropout_flag){
         if(f1->activation_flag){
-            dot1D(f1->post_activation,f1->dropout_mask,temp2,f2->input);
-            fully_connected_back_prop(temp2, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f2->input);
+            fully_connected_back_prop(f2->temp2, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
         }
         
         else{
-            dot1D(f1->pre_activation,f1->dropout_mask,temp2,f2->input);
-            fully_connected_back_prop(temp2, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f2->input);
+            fully_connected_back_prop(f2->temp2, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
         }
     }
     
     else{
         if(f1->activation_flag){
-            fully_connected_back_prop(f1->post_activation, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
         }
         
         else{
-            fully_connected_back_prop(f1->pre_activation, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
         }
     }
     
-    free(temp);
-    free(temp2);
-    free(temp3);
-    
-    return error2;
+    return f2->error2;
     
 }
 
@@ -1034,34 +1015,29 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
  * */ 
 float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     int i,j,k;
-    float* temp = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* temp2 = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* temp3 = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* error2 = (float*)calloc(f1->output,sizeof(float));
-    
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
             if(f2->normalization_flag){
-                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
             }
             else if(f2->activation_flag){
-                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
             }
             else{
-                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
             }
         }
     }
     
     else if(f2->pooling_flag == AVARAGE_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
-            avarage_pooling_back_prop(&temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+            avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
         }
     }
     
     else{
-        copy_array(error,temp,f2->n_kernels*f2->rows1*f2->cols1);
+        copy_array(error,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
     }
     
     
@@ -1070,31 +1046,31 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
             for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                 for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
                     if(f2->activation_flag)
-                        local_response_normalization_back_prop(f2->post_activation,temp2,temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
                     else
-                        local_response_normalization_back_prop(f2->pre_activation,temp2,temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
 
                 }
             }
         }
         
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == NO_ACTIVATION){
-            copy_array(temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         
@@ -1102,18 +1078,18 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     
     else{
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
     }
     
@@ -1121,18 +1097,18 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     if(f1->dropout_flag){
         if(f1->activation_flag){
             
-            dot1D(f1->post_activation,f1->dropout_mask,temp2,f1->output);
+            dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f1->output);
             for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
             }
 
         }
         
         else{
-            dot1D(f1->pre_activation,f1->dropout_mask,temp2,f1->output);
+            dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
             
             for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
             }
         }
     }
@@ -1140,22 +1116,19 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     else{
         if(f1->activation_flag){
             for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
             }
         }
         
         else{
             for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
             }
         }
     }
     
-    free(temp);
-    free(temp2);
-    free(temp3);
     
-    return error2;
+    return f2->error2;
     
 }
 
@@ -1176,31 +1149,28 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
  * */
 float* bp_cl_cl(cl* f1, cl* f2, float* error){
     int i,j,k;
-    float* temp = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* temp2 = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* temp3 = (float*)calloc(f2->n_kernels*f2->rows1*f2->cols1,sizeof(float));
-    float* error2 = (float*)calloc(f2->channels*f2->input_rows*f2->input_cols,sizeof(float));
+
     
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
             if(f2->normalization_flag)
-                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
             else if(f2->activation_flag)
-                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
             else
-                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &temp[i*f2->rows1*f2->cols1]);
+                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
         }
     }
     
     else if(f2->pooling_flag == AVARAGE_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
-            avarage_pooling_back_prop(&temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+            avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
         }
     }
     
     else{
-        copy_array(error,temp,f2->n_kernels*f2->rows1*f2->cols1);
+        copy_array(error,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
     }
     
     if(f2->normalization_flag){
@@ -1208,31 +1178,31 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                 for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
                     if(f2->activation_flag)
-                        local_response_normalization_back_prop(f2->post_activation,temp2,temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
                     else
-                        local_response_normalization_back_prop(f2->pre_activation,temp2,temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
 
                 }
             }
         }
         
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == NO_ACTIVATION){
-            copy_array(temp2,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         
@@ -1240,18 +1210,18 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     
     else{
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
         
         if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(temp3,temp,temp,f2->n_kernels*f2->rows1*f2->cols1);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
         }
     }
     
@@ -1259,21 +1229,17 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     
     for(i = 0; i < f2->n_kernels; i++){
         if(f1->pooling_flag)
-            convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
         else if(f1->normalization_flag)
-            convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
         else if(f1->activation_flag)
-            convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
         else
-            convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&temp[i*f2->rows1*f2->cols1],error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
     }
     
     
-    free(temp);
-    free(temp2);
-    free(temp3);
-    
-    return error2;
+    return f2->error2;
     
 }
 
@@ -1298,74 +1264,66 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
  * */
 float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     int i;
-    float* temp = (float*)calloc(f2->output,sizeof(float));
-    float* temp2 = (float*)calloc(f2->input,sizeof(float));
-    float* temp3 = (float*)calloc(f2->output,sizeof(float));
-    float* error2 = (float*)calloc(f2->input,sizeof(float));
     
     /*computing the backpropagation for f2*/
     if(f2->dropout_flag){
-        dot1D(error,f2->dropout_mask,temp,f2->output);
+        dot1D(error,f2->dropout_mask,f2->temp,f2->output);
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         else if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            copy_array(temp3,temp,f2->output);
+            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,temp,temp,f2->output);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
     }
     
     else{
         if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         else if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,temp3, f2->output);
-            copy_array(temp3,temp,f2->output);
+            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,temp3,f2->output);
-            dot1D(temp3,error,temp,f2->output);
+            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
         else{
-            copy_array(error,temp,f2->output);
+            copy_array(error,f2->temp,f2->output);
         }
     }
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
         if(f1->pooling_flag)
-            fully_connected_back_prop(f1->post_pooling, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            fully_connected_back_prop(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
         else if(f1->normalization_flag)
-            fully_connected_back_prop(f1->post_normalization, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
         else if(f1->activation_flag)
-            fully_connected_back_prop(f1->post_activation, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
         else
-            fully_connected_back_prop(f1->pre_activation, temp, f2->weights,error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
     
     
-    free(temp);
-    free(temp2);
-    free(temp3);
-    
-    return error2;
+    return f2->error2;
     
 }
 
@@ -1672,6 +1630,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     copy_array(error,error1,error_dimension);
         
     float* error2 = NULL;    
+    float* error3 = NULL;    
     float* error_residual = NULL;    
     /* apply the backpropagation to the model*/
     for(i = m->layers-1; i >= 0; i--){
@@ -1687,7 +1646,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     }
                     
                     error2 = bp_cl_fcl(temp,m->fcls[k1],error1);
-                    
+                    error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
+                    copy_array(error2,error3,m->fcls[k1]->input);
+                    error2 = error3;
                 }
                 
                 else if(m->sla[i][j] == CLS){
@@ -1698,6 +1659,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     }
                     
                     error2 = bp_cl_cl(temp,m->cls[k2],error1);
+                    error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                    copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                    error2 = error3;
                     
                     
                 }
@@ -1726,7 +1690,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     
                     error2 = bp_cl_cl(temp,m->rls[z]->cls[k3-count],error1);
-                    
+                    error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                    copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                    error2 = error3;
                     
                     
                     if(k3-count == 0)
@@ -1749,12 +1715,18 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     if(m->sla[i-1][0] == FCLS){
                         error2 = bp_fcl_fcl(m->fcls[k1-1],m->fcls[k1],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
+                        copy_array(error2,error3,m->fcls[k1]->input);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
                     
                     else if(m->sla[i-1][0] == CLS){
                         error2 = bp_cl_fcl(m->cls[k2-1],m->fcls[k1], error1);
+                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
+                        copy_array(error2,error3,m->fcls[k1]->input);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
@@ -1769,6 +1741,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error2 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
+                        copy_array(error2,error3,m->fcls[k1]->input);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
@@ -1785,12 +1760,18 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     if(m->sla[i-1][0] == FCLS){
                         error2 = bp_fcl_cl(m->fcls[k1-1],m->cls[k2],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
                     
                     else if(m->sla[i-1][0] == CLS){
                         error2 = bp_cl_cl(m->cls[k2-1],m->cls[k2],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
@@ -1806,6 +1787,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error2 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }
@@ -1841,6 +1825,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         
                     
                         error2 = bp_fcl_cl(m->fcls[k1-1],m->rls[z]->cls[k3-count],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                         
@@ -1849,6 +1836,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     else if(m->sla[i-1][0] == CLS){
                         error2 = bp_cl_cl(m->cls[k2-1],m->rls[z]->cls[k3-count],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                         
@@ -1864,6 +1854,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         count2-=m->rls[z2]->n_cl;
                         
                         error2 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
+                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
+                        error2 = error3;
                         free(error1);
                         error1 = error2;
                     }

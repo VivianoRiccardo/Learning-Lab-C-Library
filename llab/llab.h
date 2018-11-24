@@ -48,6 +48,11 @@ typedef struct fcl { //fully-connected-layers
     float* pre_activation; //output
     float* post_activation; //output
     float* dropout_mask;//output
+    float* dropout_temp;//output
+    float* temp;//output
+    float* temp3;//output
+    float* temp2;//input
+    float* error2;//input
     float dropout_threshold;
 } fcl;
 
@@ -72,6 +77,10 @@ typedef struct cl { //convolutional-layers
     float* post_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)
     float* post_normalization;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)
     float* post_pooling;//n_kernels*((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)*((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)
+    float* temp;//n_kernels*rows1*cols1
+    float* temp2;//n_kernels*rows1*cols1
+    float* temp3;//n_kernels*rows1*cols1
+    float* error2;//channels*input_rows*input_cols
 } cl;
 
 typedef struct rl { //residual-layers

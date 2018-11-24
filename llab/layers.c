@@ -39,6 +39,11 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->d1_biases = (float*)calloc(output,sizeof(float));
     f->d2_biases = (float*)calloc(output,sizeof(float));
     f->pre_activation = (float*)calloc(output,sizeof(float));
+    f->dropout_temp = (float*)calloc(output,sizeof(float));
+    f->temp = (float*)calloc(output,sizeof(float));
+    f->temp3 = (float*)calloc(output,sizeof(float));
+    f->temp2 = (float*)calloc(input,sizeof(float));
+    f->error2 = (float*)calloc(input,sizeof(float));
     if(activation_flag)
         f->post_activation = (float*)calloc(output,sizeof(float));
     else
@@ -77,6 +82,11 @@ void free_fully_connected(fcl* f){
     free(f->pre_activation);
     free(f->post_activation);
     free(f->dropout_mask);
+    free(f->dropout_temp);
+    free(f->temp);
+    free(f->temp2);
+    free(f->temp3);
+    free(f->error2);
     free(f);    
 }
 
@@ -170,7 +180,10 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->cols2 = ((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
         
     
-    
+    c->temp = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    c->temp2 = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    c->temp3 = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    c->error2 = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
     
     
     c->pre_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
@@ -227,6 +240,10 @@ void free_convolutional(cl* c){
     free(c->post_activation);
     free(c->post_normalization);
     free(c->post_pooling);
+    free(c->temp);
+    free(c->temp2);
+    free(c->temp3);
+    free(c->error2);
     free(c);
 }
 
@@ -1151,7 +1168,16 @@ fcl* reset_fcl(fcl* f){
             f->pre_activation[i] = 0;
             f->post_activation[i] = 0;
             f->d_biases[i] = 0;
-            f->dropout_mask[i] = 1;
+            if(f->dropout_flag)
+				f->dropout_mask[i] = 1;
+            f->dropout_temp[i] = 0;
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
         }
         f->d_weights[i] = 0;
     }
@@ -1170,7 +1196,6 @@ fcl* reset_fcl(fcl* f){
 cl* reset_cl(cl* f){
     if(f == NULL)
         return NULL;
-    cl* copy = convolutional(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->layer);
     
     int i,j;
     for(i = 0; i < f->n_kernels; i++){
@@ -1185,10 +1210,17 @@ cl* reset_cl(cl* f){
         f->pre_activation[i] = 0;
         f->post_activation[i] = 0;
         f->post_normalization[i] = 0;
+        f->temp[i] = 0;
+        f->temp2[i] = 0;
+        f->temp3[i] = 0;
     }
     
     for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
         f->post_pooling[i] = 0;
+    }
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
     }
     
     return f;
@@ -1208,7 +1240,6 @@ rl* reset_rl(rl* f){
         return NULL;
     
     int i;
-    cl** cls = (cl**)malloc(sizeof(cl*)*f->n_cl);
     for(i = 0; i < f->n_cl; i++){
         reset_cl(f->cls[i]);
     }
@@ -1232,7 +1263,8 @@ rl* reset_rl(rl* f){
 unsigned long long int size_of_fcls(fcl* f){
     unsigned long long int sum = 0;
     sum += ((unsigned long long int)(f->input*f->output*4*sizeof(float)));
-    sum += ((unsigned long long int)(f->output*7*sizeof(float)));
+    sum += ((unsigned long long int)(f->output*10*sizeof(float)));
+    sum += ((unsigned long long int)(f->input*2*sizeof(float)));
     return sum;
 }
 
@@ -1248,8 +1280,9 @@ unsigned long long int size_of_cls(cl* f){
     unsigned long long int sum = 0;
     sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*4*sizeof(float)));
-    sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*3*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
+    sum += ((unsigned long long int)(f->channels*f->input_rows*f->input_cols*sizeof(float)));
     return sum;
 }
 
