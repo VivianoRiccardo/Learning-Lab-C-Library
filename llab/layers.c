@@ -1076,7 +1076,11 @@ rl* load_rl(FILE* fr){
 
 
 /* This function returns a fcl* layer that is the same copy of the input f
- * except for the activation arrays and the dropout mask array
+ * except for the activation arrays and the dropout mask array.
+ * You have a fcl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms
  * 
  * Input:
  * 
@@ -1100,6 +1104,10 @@ fcl* copy_fcl(fcl* f){
 
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
+ * You have a cl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms 
  * 
  * Input:
  * 
@@ -1130,6 +1138,10 @@ cl* copy_cl(cl* f){
 
 /* This function returns a rl* layer that is the same copy of the input f
  * except for the input array
+ * You have a rl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms
  * 
  * Input:
  * 
@@ -1153,6 +1165,10 @@ rl* copy_rl(rl* f){
 
 /* this function reset all the arrays of a fully-connected layer
  * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
  * 
  * Input:
  * 
@@ -1169,7 +1185,7 @@ fcl* reset_fcl(fcl* f){
             f->post_activation[i] = 0;
             f->d_biases[i] = 0;
             if(f->dropout_flag)
-				f->dropout_mask[i] = 1;
+                f->dropout_mask[i] = 1;
             f->dropout_temp[i] = 0;
             f->temp[i] = 0;
             f->temp3[i] = 0;
@@ -1187,6 +1203,9 @@ fcl* reset_fcl(fcl* f){
 
 /* this function reset all the arrays of a convolutional layer
  * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
  * 
  * Input:
  * 
@@ -1229,6 +1248,9 @@ cl* reset_cl(cl* f){
 
 /* this function reset all the arrays of a residual layer
  * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
  * 
  * Input:
  * 
@@ -1311,6 +1333,7 @@ unsigned long long int size_of_rls(rl* f){
 
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array
+ * This functions copies the weights and D and D1 and D2 into a another structure
  * 
  * Input:
  * 
@@ -1334,6 +1357,7 @@ void paste_fcl(fcl* f,fcl* copy){
 
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
+ * This functions copies the weights and D and D1 and D2 into a another structure
  * 
  * Input:
  * 
@@ -1364,6 +1388,7 @@ void paste_cl(cl* f, cl* copy){
 
 /* This function returns a rl* layer that is the same copy of the input f
  * except for the input array
+ * This functions copies the weights and D and D1 and D2 into a another structure
  * 
  * Input:
  * 
