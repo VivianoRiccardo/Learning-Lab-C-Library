@@ -1654,11 +1654,8 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     temp->cols1 = tensor_j;
     copy_array(input,temp->post_activation,tensor_depth*tensor_i*tensor_j);
     
-    float* error1 = (float*)malloc(sizeof(float)*error_dimension);
-    copy_array(error,error1,error_dimension);
-        
-    float* error2 = NULL;    
-    float* error3 = NULL;    
+    float* error1 = error;
+         
     float* error_residual = NULL;    
     /* apply the backpropagation to the model*/
     for(i = m->layers-1; i >= 0; i--){
@@ -1673,10 +1670,8 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         exit(1);
                     }
                     
-                    error2 = bp_cl_fcl(temp,m->fcls[k1],error1);
-                    error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
-                    copy_array(error2,error3,m->fcls[k1]->input);
-                    error2 = error3;
+                    error1 = bp_cl_fcl(temp,m->fcls[k1],error1);
+                    
                 }
                 
                 else if(m->sla[i][j] == CLS){
@@ -1686,10 +1681,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         exit(1);
                     }
                     
-                    error2 = bp_cl_cl(temp,m->cls[k2],error1);
-                    error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                    copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                    error2 = error3;
+                    error1 = bp_cl_cl(temp,m->cls[k2],error1);
                     
                     
                 }
@@ -1705,9 +1697,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     count-=m->rls[z]->n_cl;
                     
                     if(k3-count == m->rls[z]->n_cl-1){
-                        free(error_residual);
-                        error_residual = (float*)calloc(m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols,sizeof(float));
-                        copy_array(error1,error_residual,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);   
+                        error_residual = error1;  
                     }
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
@@ -1717,14 +1707,11 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     
                     
-                    error2 = bp_cl_cl(temp,m->rls[z]->cls[k3-count],error1);
-                    error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                    copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                    error2 = error3;
+                    error1 = bp_cl_cl(temp,m->rls[z]->cls[k3-count],error1);
                     
                     
                     if(k3-count == 0)
-                        sum1D(error2,error_residual,error2,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                        sum1D(error1,error_residual,error1,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
                     
                     
                     
@@ -1742,22 +1729,12 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     }
                     
                     if(m->sla[i-1][0] == FCLS){
-                        error2 = bp_fcl_fcl(m->fcls[k1-1],m->fcls[k1],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
-                        copy_array(error2,error3,m->fcls[k1]->input);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
-                    }
+                        error1 = bp_fcl_fcl(m->fcls[k1-1],m->fcls[k1],error1);
+                        }
                     
                     else if(m->sla[i-1][0] == CLS){
-                        error2 = bp_cl_fcl(m->cls[k2-1],m->fcls[k1], error1);
-                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
-                        copy_array(error2,error3,m->fcls[k1]->input);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
-                    }
+                        error1 = bp_cl_fcl(m->cls[k2-1],m->fcls[k1], error1);
+                        }
                     
                     if(m->sla[i-1][0] == RLS){
                         count2 = 0;
@@ -1768,12 +1745,8 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         count2-=m->rls[z2]->n_cl;
                     
                         
-                        error2 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->fcls[k1]->input);
-                        copy_array(error2,error3,m->fcls[k1]->input);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
+                        
                     }
                     
                     
@@ -1787,21 +1760,13 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     }
                     
                     if(m->sla[i-1][0] == FCLS){
-                        error2 = bp_fcl_cl(m->fcls[k1-1],m->cls[k2],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_fcl_cl(m->fcls[k1-1],m->cls[k2],error1);
+                        
                     }
                     
                     else if(m->sla[i-1][0] == CLS){
-                        error2 = bp_cl_cl(m->cls[k2-1],m->cls[k2],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_cl_cl(m->cls[k2-1],m->cls[k2],error1);
+                        
                     }
                     
                     if(m->sla[i-1][0] == RLS){
@@ -1814,13 +1779,8 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         count2-=m->rls[z2]->n_cl;
                     
                         
-                        error2 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        copy_array(error2,error3,m->cls[k2]->channels*m->cls[k2]->input_rows*m->cls[k2]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
-                    }
+                        error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
+                        }
                     
                 }
                 
@@ -1837,9 +1797,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                     if(k3-count == m->rls[z]->n_cl-1){
                         
-                        free(error_residual);
-                        error_residual = (float*)calloc(m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols,sizeof(float));
-                        copy_array(error1,error_residual,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);                     
+                        error_residual = error1;                    
                         
                     }
                     
@@ -1852,23 +1810,15 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     if(m->sla[i-1][0] == FCLS){
                         
                     
-                        error2 = bp_fcl_cl(m->fcls[k1-1],m->rls[z]->cls[k3-count],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_fcl_cl(m->fcls[k1-1],m->rls[z]->cls[k3-count],error1);
+                       
                         
                         
                     }
                     
                     else if(m->sla[i-1][0] == CLS){
-                        error2 = bp_cl_cl(m->cls[k2-1],m->rls[z]->cls[k3-count],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_cl_cl(m->cls[k2-1],m->rls[z]->cls[k3-count],error1);
+                       
                         
                     }
                     
@@ -1881,18 +1831,14 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         z2--;
                         count2-=m->rls[z2]->n_cl;
                         
-                        error2 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
-                        error3 = (float*)malloc(sizeof(float)*m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        copy_array(error2,error3,m->rls[z]->cls[k3-count]->channels*m->rls[z]->cls[k3-count]->input_rows*m->rls[z]->cls[k3-count]->input_cols);
-                        error2 = error3;
-                        free(error1);
-                        error1 = error2;
+                        error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
+                     
                     }
                     
                     
                     
                     if(k3-count == 0)
-                        sum1D(error2,error_residual,error2,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                        sum1D(error1,error_residual,error1,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
                     
                     
                     
@@ -1903,16 +1849,14 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
             
         }
     }
-    
-    free(error_residual);
-    free(error1);
+
     free(temp->post_activation);
     free(temp);
-    if(!bool_is_real(error2[0])){
+    if(!bool_is_real(error1[0])){
         printf("Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");
         exit(1);
     }
-    return error2;
+    return error1;
 }
 
 /* This function can update the model of the network using the adam algorithm or the nesterov momentum
