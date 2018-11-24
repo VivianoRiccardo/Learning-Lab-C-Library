@@ -196,6 +196,9 @@ rl* load_rl(FILE* fr);
 fcl* copy_fcl(fcl* f);
 cl* copy_cl(cl* f);
 rl* copy_rl(rl* f);
+void paste_fcl(fcl* f, fcl* copy);
+void paste_cl(cl* f, cl* copy);
+void paste_rl(rl* f, rl* copy);
 fcl* reset_fcl(fcl* f);
 cl* reset_cl(cl* f);
 rl* reset_rl(rl* f);
@@ -224,5 +227,6 @@ model* reset_model(model* m);
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2);
 void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
+void paste_model(model* m, model* copy);
 
 #endif

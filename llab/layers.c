@@ -1306,3 +1306,80 @@ unsigned long long int size_of_rls(rl* f){
     
 }
 
+
+
+
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ *             @ fcl* copy:= the fully-connected layer where f is copied
+ * 
+ * */
+void paste_fcl(fcl* f,fcl* copy){
+    if(f == NULL)
+        return;
+    copy_array(f->weights,copy->weights,f->output*f->input);
+    copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+    copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
+    copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
+    copy_array(f->biases,copy->biases,f->output);
+    copy_array(f->d_biases,copy->d_biases,f->output);
+    copy_array(f->d1_biases,copy->d1_biases,f->output);
+    copy_array(f->d2_biases,copy->d2_biases,f->output);
+    return;
+}
+
+/* This function returns a cl* layer that is the same copy of the input f
+ * except for the activation arrays , the post normalization and post polling arrays
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ *             @ cl* copy:= the convolutional layer where f is copied
+ * 
+ * */
+void paste_cl(cl* f, cl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d_kernels[i],copy->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+    }
+    
+    copy_array(f->biases,copy->biases,f->n_kernels);
+    copy_array(f->d_biases,copy->d_biases,f->n_kernels);
+    copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
+    copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+    
+    return;
+}
+
+
+/* This function returns a rl* layer that is the same copy of the input f
+ * except for the input array
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the residual layer that must be copied
+ *             @ rl* copy:= the residual layer where f is copied
+ * 
+ * */
+void paste_rl(rl* f, rl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        paste_cl(f->cls[i],copy->cls[i]);
+    }
+    
+    return;
+}
+

@@ -237,6 +237,34 @@ model* copy_model(model* m){
     return copy;
 }
 
+
+
+/* This function copies a model using the copy function for the layers
+ * see layers.c file
+ * 
+ * Input:
+ *         
+ *             @ model* m:= the model that must be copied
+ *             @ model* copy:= the model where m is copied
+ * 
+ * */
+void paste_model(model* m, model* copy){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_fcl; i++){
+        paste_fcl(m->fcls[i],copy->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        paste_cl(m->cls[i],copy->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        paste_rl(m->rls[i],copy->rls[i]);
+    }
+    return;
+}
+
 /* This function resets a model using the copy model function
  * returns a model equal to the one as input but with all resetted except for weights and biases
  * */
