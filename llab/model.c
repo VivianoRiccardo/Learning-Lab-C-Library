@@ -18,7 +18,7 @@
  * */
 model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fcl** fcls){
     if(!layers || (!n_rl && !n_cl && !n_fcl) || (!n_rl && rls != NULL) || (!n_cl && cls!= NULL) || (!n_fcl && fcls != NULL)){
-        printf("Error: layers must be > 0 and at least one between n_rl, n_cl, n_fcl must be > 0\n");
+        fprintf(stderr,"Error: layers must be > 0 and at least one between n_rl, n_cl, n_fcl must be > 0\n");
         exit(1); 
     }
     
@@ -29,14 +29,14 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     for(i = 0; i < n_rl; i++){
         if(rls[i]->cls[rls[i]->n_cl-1]->post_pooling){
             if(rls[i]->cls[rls[i]->n_cl-1]->n_kernels*rls[i]->cls[rls[i]->n_cl-1]->rows2*rls[i]->cls[rls[i]->n_cl-1]->cols2 != rls[i]->channels*rls[i]->input_rows*rls[i]->input_cols){
-                printf("Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
+                fprintf(stderr,"Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
                 exit(1);
             }
         }
         
         else{
             if(rls[i]->cls[rls[i]->n_cl-1]->n_kernels*rls[i]->cls[rls[i]->n_cl-1]->rows1*rls[i]->cls[rls[i]->n_cl-1]->cols1 != rls[i]->channels*rls[i]->input_rows*rls[i]->input_cols){
-                printf("Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
+                fprintf(stderr,"Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
                 exit(1);
             }
         }
@@ -71,7 +71,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
         /* checking if the convolutional layers of residual layers are sequential*/
         for(count = 1; count < rls[i]->n_cl; count++){
             if(rls[i]->cls[count]->layer - rls[i]->cls[count-1]->layer >= 2){
-                printf("Error: you have a residual layer with no sequential sub-convolutional-layers\n");
+                fprintf(stderr,"Error: you have a residual layer with no sequential sub-convolutional-layers\n");
                 exit(1);
             }
         }
@@ -152,7 +152,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
         
         position += k;
         if(!k && position != layers){
-            printf("Error: your layers are not sequential, missing the layer with index: %d\n",i);
+            fprintf(stderr,"Error: your layers are not sequential, missing the layer with index: %d\n",i);
             exit(1);
         }
     }
@@ -338,41 +338,41 @@ void save_model(model* m, int n){
     fw = fopen(s,"a");
     
     if(fw == NULL){
-        printf("Error: error during the opening of the file %s\n",s);
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
     
     i = fwrite(&m->layers,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
     
     i = fwrite(&m->n_rl,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
     
     i = fwrite(&m->n_cl,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
     
     i = fwrite(&m->n_fcl,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
     
     i = fclose(fw);
     if(i!=0){
-        printf("Error: an error occurred closing the file %s\n",s);
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
         exit(1);
     }
     
@@ -405,7 +405,7 @@ model* load_model(char* file){
     FILE* fr = fopen(file,"r");
     
     if(fr == NULL){
-        printf("Error: error during the opening of the file %s\n",file);
+        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
         exit(1);
     }
     
@@ -413,28 +413,28 @@ model* load_model(char* file){
     
     i = fread(&layers,sizeof(int),1,fr);
     if(i != 1){
-        printf("Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_rl,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_fcl,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
@@ -470,7 +470,7 @@ model* load_model(char* file){
     
     i = fclose(fr);
     if(i!=0){
-        printf("Error: an error occurred closing the file %s\n",file);
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
         exit(1);
     }
     
@@ -501,7 +501,7 @@ model* load_model(char* file){
 void ff_fcl_fcl(fcl* f1, fcl* f2){
     
     if(f1->output != f2->input){
-        printf("Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
     
@@ -580,7 +580,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
  * */
 void ff_fcl_cl(fcl* f1, cl* f2){
     if(f1->output != f2->channels*f2->input_rows*f2->input_cols){
-        printf("Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
 
@@ -743,12 +743,12 @@ void ff_fcl_cl(fcl* f1, cl* f2){
  * */
 void ff_cl_fcl(cl* f1, fcl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->input){
-        printf("Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->input){
-        printf("Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
     
@@ -801,12 +801,12 @@ void ff_cl_fcl(cl* f1, fcl* f2){
  * */
 void ff_cl_cl(cl* f1, cl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->channels*f2->input_rows*f2->input_cols){
-        printf("Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->channels*f2->input_rows*f2->input_cols){
-        printf("Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
     }
 
@@ -966,7 +966,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            copy_array(f2->temp3,f2->temp,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1307,7 +1307,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == SOFTMAX){
             derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            copy_array(f2->temp3,f2->temp,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1394,7 +1394,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
             if(!i){
                 if(m->sla[i][j] == FCLS){
                     if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1404,7 +1404,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                 
                 else if(m->sla[i][j] == CLS){
                     if(m->cls[k2]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1423,7 +1423,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                 
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1457,7 +1457,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                 
                 if(m->sla[i][j] == FCLS){
                     if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1486,7 +1486,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                 
                 else if(m->sla[i][j] == CLS){
                     if(m->cls[k2]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1525,7 +1525,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                 
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1584,8 +1584,13 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         if(k3-count == 0){
                             copy_array(m->rls[z2]->cl_output->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
                         }
-                        
-                        ff_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count]);
+                        if(z2!=z){
+                            ff_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count]);
+
+                        }
+                        else{
+                            ff_cl_cl(m->rls[z2]->cls[k3-1-count2],m->rls[z]->cls[k3-count]);
+                        }
                     }
                     
                     if(k3-count == m->rls[z]->n_cl-1){
@@ -1666,7 +1671,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                 if(m->sla[i][j] == FCLS){
                     k1--;
                     if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1677,7 +1682,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                 else if(m->sla[i][j] == CLS){
                     k2--;
                     if(m->cls[k2]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1697,11 +1702,11 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     count-=m->rls[z]->n_cl;
                     
                     if(k3-count == m->rls[z]->n_cl-1){
-                        error_residual = error1;  
+                        error_residual = error1; 
                     }
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1724,7 +1729,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                 if(m->sla[i][j] == FCLS){
                     k1--;
                     if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1755,7 +1760,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                 else if(m->sla[i][j] == CLS){
                     k2--;
                     if(m->cls[k2]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1802,7 +1807,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     }
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
-                        printf("Error: the softmax can be applied only on the last fully-connected layers\n");
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
                         exit(1);
                     }
                     
@@ -1830,9 +1835,12 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         
                         z2--;
                         count2-=m->rls[z2]->n_cl;
+                        if(z2 == z)
+                            error1 = bp_cl_cl(m->rls[z2]->cls[k3-1-count2],m->rls[z]->cls[k3-count],error1);
+                        else
+                            error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
                         
-                        error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
-                     
+                        
                     }
                     
                     
@@ -1853,12 +1861,38 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     free(temp->post_activation);
     free(temp);
     if(!bool_is_real(error1[0])){
-        printf("Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");
         exit(1);
     }
     return error1;
 }
 
+/* This function returs the total number of weights in the model m
+ * 
+ * Input
+ * 
+ * 			@ model* m:= the model
+ * 
+ * */
+int count_weights(model* m){
+	int i,j;
+	int sum = 0;
+	for(i = 0; i < m->n_fcl; i++){
+		sum+=m->fcls[i]->input*m->fcls[i]->output;
+	}
+	
+	for(i = 0; i < m->n_cl; i++){
+		sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+	}
+	
+	for(i = 0; i < m->n_rl; i++){
+		for(j = 0; j < m->rls[i]->n_cl; j++){
+			sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
+		}
+	}
+	
+	return sum;
+}
 /* This function can update the model of the network using the adam algorithm or the nesterov momentum
  * 
  * Input:
@@ -1868,11 +1902,24 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
  *             @ float momentum:= the momentum
  *             @ int mini_batch_size:= the batch used
  *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
+ * 			   @ float* b1:= the hyper parameter b1 of adam algorithm
+ * 			   @ float* b2:= the hyper parameter b2 of adam algorithm
+ * 			   @ int regularization:= NO_REGULARIZATION or L2 (0,1)
+ * 			   @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
+ * 			   @ float lambda:= a float value for l2 regularization
  * 
  * */
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2){
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
     if(m == NULL)
         return;
+    
+    if(regularization == L2_REGULARIZATION){
+		add_l2_residual_layer(m,total_number_weights,lambda);
+		add_l2_convolutional_layer(m,total_number_weights,lambda);
+		add_l2_fully_connected_layer(m,total_number_weights,lambda);
+	}
+	
+	
     if(gradient_descent_flag == NESTEROV){    
         update_residual_layer_nesterov(m,lr,momentum,mini_batch_size);
         update_convolutional_layer_nesterov(m,lr,momentum,mini_batch_size);
@@ -1901,7 +1948,7 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
  * */
 void sum_model_partial_derivatives(model* m, model* m2, model* m3){
     if(m == NULL || m2 == NULL || m3 == NULL){
-        printf("Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
         exit(1);
     }
     sum_fully_connected_layers_partial_derivatives(m,m2,m3);

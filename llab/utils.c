@@ -92,7 +92,7 @@ int read_files(char** name, char* directory){
     {
       if((strcmp(dir->d_name, temp) && strcmp(dir->d_name, temp2))){
           strcpy(name[count],dir->d_name);
-          printf("%s\n", name[count]);
+          fprintf(stderr,"%s\n", name[count]);
           count++;
       }
     }
@@ -301,7 +301,7 @@ void read_file_in_char_vector(char** ksource, char* fname, int* size){
     
     
     if(kfile == NULL){
-        printf("Error opening file %s\n",fname);
+        fprintf(stderr,"Error opening file %s\n",fname);
         exit(1);
     }
     
@@ -454,7 +454,7 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
  * */
 void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
     if(m == NULL || m2 == NULL || m3 == NULL){
-        printf("Error: you passed a NULL pointer as argument\n");
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
         exit(1);
     }
     int i,j,k,u,z,w;
@@ -535,7 +535,7 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
  * */
 void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3){
     if(m == NULL || m2 == NULL || m3 == NULL){
-        printf("Error: you passed a NULL pointer as argument\n");
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
         exit(1);
     }
     int j,k,u,z,w;
@@ -607,7 +607,7 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
  * */
 void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3){
     if(m == NULL || m2 == NULL || m3 == NULL){
-        printf("Error: you passed a NULL pointer as argument\n");
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
         exit(1);
     }
     int i,j,k;
@@ -617,6 +617,86 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
     }
     
         
+}
+
+
+
+/* This function add the l2 regularization to the partial derivative of the weights for residual layers of m
+ * 
+ * 
+ * Input:
+ * 		
+ * 			@ model* m:= the model
+ * 			@ int toal_number_weights:= the number of total weights
+ * 			@ float lambda an hyper param
+ * 
+ * */
+void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
+	int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+							ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* This function add the l2 regularization to the partial derivative of the weights for convolutional layers of m
+ * 
+ * 
+ * Input:
+ * 		
+ * 			@ model* m:= the model
+ * 			@ int toal_number_weights:= the number of total weights
+ * 			@ float lambda an hyper param
+ * 
+ * */
+void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        for(k = 0; k < m->cls[j]->n_kernels; k++){
+            for(u = 0; u < m->cls[j]->channels; u++){
+                for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
+						ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
+
+                    }
+                        
+                }
+            }
+        }
+    }
+}
+
+
+/* This function add the l2 regularization to the partial derivative of the weights for fully-connected layers of m
+ * 
+ * 
+ * Input:
+ * 		
+ * 			@ model* m:= the model
+ * 			@ int toal_number_weights:= the number of total weights
+ * 			@ float lambda an hyper param
+ * 
+ * */
+void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda){
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        for(j = 0; j < m->fcls[i]->output; j++){
+            for(k = 0; k < m->fcls[i]->input; k++){
+				ridge_regression(&m->fcls[j]->d_weights[j*m->fcls[i]->input+k],m->fcls[j]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
+
+            }
+        }
+    }
 }
 
 

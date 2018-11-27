@@ -46,13 +46,12 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - fixed residual issues (22/11/2018)
 - adam algorithm added for update_params (22/11/2018)
 - size_of_model(model* m) function added (23/11/2018)
+- L2 Regularization added (27/11/2018)
 
 # Future implementations
+- At the moment, no batch normalization
 - BPTT
-- Batch normalization
-- Ridge regression (L2)
 - Augmentation
-- Recurrent layers
 - LSTM layers
 - DDQN easy implementation function
 - Graphic test

@@ -16,6 +16,7 @@
 #define FCLS 1
 #define CLS 2
 #define RLS 3
+#define BNS 4
 #define NO_ACTIVATION 0
 #define SIGMOID 1
 #define RELU 2
@@ -29,9 +30,13 @@
 #define DROPOUT_TEST 2
 #define NO_NORMALIZATION 0
 #define LOCAL_RESPONSE_NORMALIZATION 1
+#define BATCH_NORMALIZATION 2
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define EPSILON_ADAM 0.00000001
+#define EPSILON 0.00000001
+#define NO_REGULARIZATION 0
+#define L2_REGULARIZATION 1
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -90,6 +95,28 @@ typedef struct rl { //residual-layers
     cl** cls;
 } rl;
 
+
+typedef struct bn{//batch_normalization layer
+    int batch_size, vector_dim, layer;
+    float epsilon;
+    float** input_vectors;//batch_size*vector_dim
+    float** temp_vectors;//batch_size*vector_dim
+    float* gamma;//vector_dim
+    float* d_gamma;//vector_dim
+    float* d1_gamma;//vector_dim
+    float* d2_gamma;//vector_dim
+    float* beta;//vector_dim
+    float* d_beta;//vector_dim
+    float* d1_beta;//vector_dim
+    float* d2_beta;//vector_dim
+    float* mean;//vector_dim
+    float* var;//vector_dim
+    float** outputs;//batch_size*vector_dim
+    float** error2;//batch_size*vector_dim
+    float** temp1;//batch_size*vector_dim
+    float* temp2;//vector_dim
+}bn;
+
 typedef struct model {
     int layers, n_rl, n_cl, n_fcl;
     rl** rls;//rls = residual-layers
@@ -97,6 +124,15 @@ typedef struct model {
     fcl** fcls; // fcls = fully-connected-layers
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, sla = sequential layers array
 } model;
+
+typedef struct bmodel {
+    int layers, n_rl, n_cl, n_fcl, n_bn;
+    rl** rls;//rls = residual-layers
+    cl** cls;//cls = convolutional-layers
+    fcl** fcls; // fcls = fully-connected-layers
+    bn** bns; // bn = bacth-normalization layer
+    int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, 4 = batch normalization sla = sequential layers array
+} bmodel;
 
 // Functions defined in math.c
 void softmax(float* input, float* output, int size);
@@ -137,9 +173,8 @@ void avarage_pooling_back_prop(float* input_error, float* output_error, int inpu
 // Functions defined in normalization.c
 void local_response_normalization_feed_forward(float* tensor,float* output, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k);//can be transposed in opencl
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k);//can be transposed in opencl
-//batch normalization must be added...
-
-
+void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon);
+void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
 void adam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size);
@@ -176,6 +211,9 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
 void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
 void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
 void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
+void add_l2_residual_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 
 
 // Functions defined in layers.c
@@ -205,6 +243,14 @@ rl* reset_rl(rl* f);
 unsigned long long int size_of_fcls(fcl* f);
 unsigned long long int size_of_cls(cl* f);
 unsigned long long int size_of_rls(rl* f);
+bn* batch_normalization(int batch_size, int vector_input_dimension, int layer);
+void free_batch_normalization(bn* b);
+void save_bn(bn* b, int n);
+bn* load_bn(FILE* fr);
+bn* copy_bn(bn* b);
+bn* reset_bn(bn* b);
+unsigned long long int size_of_bn(bn* b);
+void paste_bn(bn* b1, bn* b2);
 
 
 // Functions defined in model.c
@@ -224,9 +270,10 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error);
 void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
 float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
 model* reset_model(model* m);
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2);
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
+int count_weights(model* m);
 
 #endif

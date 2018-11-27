@@ -13,12 +13,12 @@
  * */
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold){
     if(!input || !output || layer < 0){
-        printf("Error: input, output params must be > 0 and layer > -1\n");
+        fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
         exit(1);
     }
     
     if(!activation_flag){
-        printf("Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
+        fprintf(stderr,"Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
         exit(1);
     }
     int i,j;
@@ -118,19 +118,24 @@ void free_fully_connected(fcl* f){
  
 cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer){
     if(!channels || !input_rows || !input_cols || !kernel_rows || !kernel_cols || !n_kernels || !stride1_rows || !stride1_cols || (pooling_flag && (!stride2_rows || !stride2_cols))){
-        printf("Error: channles, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride2_rows stride2_cols, stride2_rows, stride2_cols params must be > 0\n");
+        fprintf(stderr,"Error: channles, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride2_rows stride2_cols, stride2_rows, stride2_cols params must be > 0\n");
         exit(1);
     }
     
     if(padding1_rows!=padding1_cols || padding2_rows != padding2_cols || stride1_cols!= stride1_rows || stride2_cols!= stride2_rows){
-        printf("Error: stride1_rows must be equal to stride1_cols, padding1_rows must be equal to padding1_cols and stride2_rows must be equal to stride2_cols, padding2_rows must be equal to padding2_cols\n");
+        fprintf(stderr,"Error: stride1_rows must be equal to stride1_cols, padding1_rows must be equal to padding1_cols and stride2_rows must be equal to stride2_cols, padding2_rows must be equal to padding2_cols\n");
         exit(1);
     }
     
     if(!activation_flag){
-        printf("Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
+        fprintf(stderr,"Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
         exit(1);
     }
+    
+    if(padding1_rows && normalization_flag == BATCH_NORMALIZATION){
+		fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
+        exit(1);
+	}
     
     int i,j;
     cl* c = (cl*)malloc(sizeof(cl));
@@ -187,21 +192,18 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     
     
     c->pre_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
-    if(activation_flag)
-        c->post_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
-    else
-        c->post_activation = NULL;
-        
-    if(normalization_flag)
-        c->post_normalization = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
-    else
-        c->post_normalization = NULL;
     
-    if(pooling_flag)
-        c->post_pooling = (float*)calloc(n_kernels*c->rows2*c->cols2,sizeof(float));
-    else
-        c->post_pooling = NULL;
-        
+    c->post_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+
+    
+
+    c->post_normalization = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+
+
+
+    c->post_pooling = (float*)calloc(n_kernels*c->rows2*c->cols2,sizeof(float));
+
+    
     
     for(i = 0; i < n_kernels; i++){
         c->kernels[i] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
@@ -260,7 +262,7 @@ void free_convolutional(cl* c){
  * */
 rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     if(!channels || !input_rows || !input_cols || (!n_cl) || (!n_cl && cls != NULL)){
-        printf("Error: channels, input rows, input cols params must be > 0 and or n_cl or n_fcl must be > 0\n");
+        fprintf(stderr,"Error: channels, input rows, input cols params must be > 0 and or n_cl or n_fcl must be > 0\n");
         exit(1);
     }
     rl* r = (rl*)malloc(sizeof(rl));
@@ -288,6 +290,229 @@ void free_residual(rl* r){
     free(r);
 }
 
+
+/* this functions build a batch normalization layer
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the batch size used
+ *             @ int vector_input_dimension:= the dimension of the input of this layer, or the output dimension of the previous layer
+ * 
+ * */
+bn* batch_normalization(int batch_size, int vector_input_dimension, int layer){
+    if(batch_size <= 1 || vector_input_dimension < 1){
+        fprintf(stderr,"Error: remember if you are useing online learning (batch_size = 1) batch normalization is useless, and remember also thta vector input dimension must be >= 1\n");
+        exit(1);
+    }
+    int i;
+    bn* b = (bn*)malloc(sizeof(bn));
+    b->layer = layer;
+    b->batch_size = batch_size; 
+    b->vector_dim = vector_input_dimension;
+    
+    b->input_vectors = (float**)malloc(sizeof(float*)*batch_size); 
+    b->temp_vectors = (float**)malloc(sizeof(float*)*batch_size); 
+    b->error2 = (float**)malloc(sizeof(float*)*batch_size); 
+    b->temp1 = (float**)malloc(sizeof(float*)*batch_size); 
+    b->outputs = (float**)malloc(sizeof(float*)*batch_size);
+    
+    b->gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d1_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d2_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d_beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d1_beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d2_beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->mean = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->var = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->temp2 = (float*)calloc(vector_input_dimension,sizeof(float));
+    
+    for(i = 0; i < batch_size; i++){
+        b->input_vectors[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->temp_vectors[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->error2[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->temp1[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->outputs[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+    }
+    
+    for(i = 0; i < vector_input_dimension; i++){
+        b->gamma[i] = 1;
+    }
+    
+    return b;
+}
+
+/* This functions deallocates the space allocated by a bn structure
+ * 
+ * Input:
+ * 
+ *             @ bn* b:= the structure
+ * 
+ * */
+void free_batch_normalization(bn* b){
+    if(b == NULL)
+        return;
+    int i;
+    for(i = 0; i < b->batch_size; i++){
+        free(b->input_vectors[i]);
+        free(b->temp_vectors[i]);
+        free(b->error2[i]);
+        free(b->temp1[i]);
+        free(b->outputs[i]);
+    }
+    free(b->input_vectors);
+    free(b->temp_vectors);
+    free(b->error2);
+    free(b->temp1);
+    free(b->outputs);
+    
+    free(b->gamma);
+    free(b->d_gamma);
+    free(b->d1_gamma);
+    free(b->d2_gamma);
+    free(b->beta);
+    free(b->d_beta);
+    free(b->d1_beta);
+    free(b->d2_beta);
+    free(b->temp2);
+    free(b->mean);
+    free(b->var);
+    free(b);
+}
+
+/* This function saves a batch normalized layer on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ bn* b:= the actual layer that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void save_bn(bn* b, int n){
+    if(b == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"a+");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&b->layer,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&b->batch_size,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&b->vector_dim,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(b->gamma,sizeof(float)*(b->vector_dim),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
+    
+    i = fwrite(b->beta,sizeof(float)*(b->vector_dim),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    
+    if(i != 0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    free(s);
+    
+    
+}
+
+bn* load_bn(FILE* fr){
+    if(fr == NULL)
+        return NULL;
+    int i;
+    
+    int batch_size = 0,vector_dim = 0, layer = 0;
+    float* gamma;
+    float* beta;
+    
+    i = fread(&layer,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    i = fread(&batch_size,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    i = fread(&vector_dim,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    gamma = (float*)malloc(sizeof(float)*vector_dim);
+    beta = (float*)malloc(sizeof(float)*vector_dim);
+    
+    i = fread(&gamma,sizeof(float)*vector_dim,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    
+    i = fread(&beta,sizeof(float)*vector_dim,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    bn* b = batch_normalization(batch_size,vector_dim, layer);
+    
+    copy_array(gamma,b->gamma,vector_dim);
+    copy_array(beta,b->beta,vector_dim);
+    
+    free(gamma);
+    free(beta);
+    
+    return b;
+    
+}
 /* This function saves a fully-connected layer on a .bin file with name n.bin
  * 
  * Input:
@@ -310,70 +535,70 @@ void save_fcl(fcl* f, int n){
     fw = fopen(s,"a+");
     
     if(fw == NULL){
-        printf("Error: error during the opening of the file %s\n",s);
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
     
     i = fwrite(&f->input,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->output,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->layer,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->dropout_flag,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->activation_flag,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->dropout_threshold,sizeof(float),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(f->weights,sizeof(float)*(f->input)*(f->output),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fwrite(f->biases,sizeof(float)*(f->output),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     i = fclose(fw);
     
     if(i != 0){
-        printf("Error: an error occurred closing the file %s\n",s);
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
         exit(1);
     }
     free(s);
@@ -420,42 +645,42 @@ fcl* load_fcl(FILE* fr){
     i = fread(&input,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&output,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&layer,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&dropout_flag,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&activation_flag,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&dropout_threshold,sizeof(float),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
@@ -465,14 +690,14 @@ fcl* load_fcl(FILE* fr){
     i = fread(weights,sizeof(float)*(input)*(output),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(biases,sizeof(float)*(output),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a fcl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
@@ -506,175 +731,175 @@ void save_cl(cl* f, int n){
     fw = fopen(s,"a+");
     
     if(fw == NULL){
-        printf("Error: error during the opening of the file %s\n",s);
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
     
     i = fwrite(&f->channels,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->input_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->input_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->layer,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->kernel_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->kernel_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->n_kernels,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->stride1_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->stride1_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->padding1_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->padding1_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->stride2_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->stride2_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->padding2_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->padding2_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->pooling_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->pooling_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->normalization_flag,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->activation_flag,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->pooling_flag,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->rows1,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->cols1,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->rows2,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->cols2,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
@@ -683,7 +908,7 @@ void save_cl(cl* f, int n){
 
     
         if(i != 1){
-            printf("Error: an error occurred saving a cl layer\n");
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
             exit(1);
         }
     }
@@ -691,14 +916,14 @@ void save_cl(cl* f, int n){
     i = fwrite(f->biases,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fclose(fw);
     
     if(i!=0){
-        printf("Error: an error occurred closing the file %s\n",s);
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
         exit(1);
     }
     free(s);
@@ -757,168 +982,168 @@ cl* load_cl(FILE* fr){
     i = fread(&channels,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&input_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&input_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&layer,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&kernel_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&kernel_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&n_kernels,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride1_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride1_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding1_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding1_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride2_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride2_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding2_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding2_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&normalization_flag,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&activation_flag,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_flag,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&rows1,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&cols1,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&rows2,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&cols2,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
@@ -930,7 +1155,7 @@ cl* load_cl(FILE* fr){
         i = fread(kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
     
         if(i != 1){
-            printf("Error: an error occurred loading a cl layer\n");
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
             exit(1);
         }
     }
@@ -938,7 +1163,7 @@ cl* load_cl(FILE* fr){
     i = fread(biases,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a cl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
@@ -976,41 +1201,41 @@ void save_rl(rl* f, int n){
     fw = fopen(s,"a+");
     
     if(fw == NULL){
-        printf("Error: error during the opening of the file %s\n",s);
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
     
     i = fwrite(&f->channels,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->input_rows,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->input_cols,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fwrite(&f->n_cl,sizeof(int),1,fw);
     
     if(i != 1){
-        printf("Error: an error occurred saving a cl layer\n");
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
     i = fclose(fw);
     if(i!=0){
-        printf("Error: an error occurred closing the file %s\n",s);
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
         exit(1);
     }
     
@@ -1040,28 +1265,28 @@ rl* load_rl(FILE* fr){
     i = fread(&channels,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a rl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&input_rows,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a rl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&input_cols,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a rl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
     
     if(i != 1){
-        printf("Error: an error occurred loading a rl layer\n");
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
@@ -1074,6 +1299,31 @@ rl* load_rl(FILE* fr){
     return f;
 }
 
+
+
+/* This function returns a bn* layer that is the same copy of the input f
+ * arrays used during the feed forward and backpropagation
+ * 
+ * Input:
+ * 
+ *             @ bn* f:= the batch normalized layer that must be copied
+ * 
+ * */ 
+bn* copy_bn(bn* b){
+    if(b == NULL)
+        return NULL;
+    bn* copy = batch_normalization(b->batch_size,b->vector_dim, b->layer);
+    copy_array(b->gamma,copy->gamma,b->vector_dim);
+    copy_array(b->d_gamma,copy->d_gamma,b->vector_dim);
+    copy_array(b->d1_gamma,copy->d1_gamma,b->vector_dim);
+    copy_array(b->d2_gamma,copy->d2_gamma,b->vector_dim);
+    copy_array(b->beta,copy->beta,b->vector_dim);
+    copy_array(b->d_beta,copy->d_beta,b->vector_dim);
+    copy_array(b->d1_beta,copy->d1_beta,b->vector_dim);
+    copy_array(b->d2_beta,copy->d2_beta,b->vector_dim);
+    
+    return copy;
+}
 
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array.
@@ -1160,6 +1410,36 @@ rl* copy_rl(rl* f){
     
     rl* copy = residual(f->channels, f->input_rows, f->input_cols, f->n_cl, cls);
     return copy;
+}
+
+
+/* this function reset all the arrays of a batch normalized layer
+ * 
+ * 
+ * Input:
+ * 
+ *             @ bn* b:= a bn* f layer
+ * 
+ * */
+bn* reset_bn(bn* b){
+    if(b == NULL)
+        return NULL;
+    int i,j;
+    for(i = 0; i < b->vector_dim; i++){
+        for(j = 0; j < b->batch_size; j++){
+            b->input_vectors[j][i] = 0;
+            b->temp_vectors[j][i] = 0;
+            b->outputs[j][i] = 0;
+            b->error2[j][i] = 0;
+            b->temp1[j][i] = 0;
+        }
+        
+        b->d_gamma[i] = 0; 
+        b->d_beta[i] = 0; 
+        b->temp2[i] = 0; 
+        b->mean[i] = 0; 
+        b->var[i] = 0; 
+    } 
 }
 
 
@@ -1329,6 +1609,19 @@ unsigned long long int size_of_rls(rl* f){
 }
 
 
+/* this function compute the space allocated by the arrays of f
+ * 
+ * Input:
+ * 
+ *             bn* b:= the batch normalized layer b
+ * 
+ * */
+unsigned long long int size_of_bn(bn* b){
+    unsigned long long int sum = 0;
+    sum+= (b->batch_size*b->vector_dim*5);
+    sum+= (b->vector_dim*11);
+    return sum;
+}
 
 
 /* This function returns a fcl* layer that is the same copy of the input f
@@ -1381,6 +1674,31 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+    
+    return;
+}
+
+
+/* This function returns a bn* layer that is the same copy of the input b1
+ * except for temp arrays used for feed forward anc backprop 
+ * Input:
+ * 
+ *             @ bn* b1:= the batch normalized layer that must be copied
+ *             @ bn* b2:= the batch normalized layer where b1 is copied
+ * 
+ * */
+void paste_bn(bn* b1, bn* b2){
+    if(b1 == NULL || b2 == NULL)
+        return;
+    
+    copy_array(b1->gamma,b2->gamma,b1->vector_dim);
+    copy_array(b1->d_gamma,b2->d_gamma,b1->vector_dim);
+    copy_array(b1->d1_gamma,b2->d1_gamma,b1->vector_dim);
+    copy_array(b1->d2_gamma,b2->d2_gamma,b1->vector_dim);
+    copy_array(b1->beta,b2->beta,b1->vector_dim);
+    copy_array(b1->d_beta,b2->d_beta,b1->vector_dim);
+    copy_array(b1->d1_beta,b2->d1_beta,b1->vector_dim);
+    copy_array(b1->d2_beta,b2->d2_beta,b1->vector_dim);
     
     return;
 }

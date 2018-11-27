@@ -95,3 +95,104 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
             tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += (-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
     }
 }
+
+
+/* This computes the batch normalization across batches
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs:= where we store the outputs coming from this normalization
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon){
+    int i,j;
+    float temp;
+    /*mean*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            mean[j] += input_vectors[i][j];
+            if(i == batch_size-1)
+                mean[j]/=batch_size;
+        }
+    }
+    
+    /*variance*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            temp = input_vectors[i][j]-mean[j];
+            temp = temp*temp;
+            var[j] += temp;
+            if(i == batch_size-1)
+                var[j]/=batch_size;
+        }
+    }
+    
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            temp_vectors[i][j] = (input_vectors[i][j]-mean[j])/(sqrtf(var[j]+epsilon));
+            outputs[i][j] = temp_vectors[i][j]*gamma[j] + beta[j];
+        }
+    }
+
+}
+
+/* This computes the error from a batch normalization
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs_error:= where are stored the output errors coming from the next layer
+ *             @ float* gamma_error:= where we store the partial derivatives of gamma
+ *             @ float* beta_error:= where we store the partial derivatives of beta
+ *             @ float** input_error:= where we store the input error
+ *             @ float** temp_vectors_error:= useful for the computation
+ *             @ float* temp_array:= useful for the computation
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon){
+    int i,j,z;
+
+    
+    /* gamma and beta error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            gamma_error[j] += outputs_error[i][j]*temp_vectors[i][j];
+            beta_error[j] += outputs_error[i][j];
+            temp_vectors_error[i][j] = outputs_error[i][j]*gamma[j];
+            temp_array[j] += input_vectors[i][j] - mean[j];
+        }
+    }
+    
+    /* input_error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < batch_size; j++){
+            for(z = 0; z < size_vectors; z++){
+                if(i == j)
+                    input_error[j][z] += (1-1/batch_size)/sqrtf(var[z]+epsilon)-((input_vectors[j][z]-mean[z])*2*(1-1/batch_size)*(input_vectors[j][z]-mean[z])-(2/batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/((2*batch_size)*(pow((double)var[z]+epsilon,3/2)));
+                else
+                    input_error[j][z] += -(sqrtf(var[z]+epsilon)/batch_size)-((input_vectors[i][z]-mean[z])*2*(1-1/batch_size)*(input_vectors[j][z]-mean[z])-(2/batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/((2*batch_size)*(pow((double)var[z]+epsilon,3/2)));
+                
+            }
+        }
+    }
+    
+    
+
+}
