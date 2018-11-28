@@ -133,9 +133,9 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     }
     
     if(padding1_rows && normalization_flag == BATCH_NORMALIZATION){
-		fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
+        fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
         exit(1);
-	}
+    }
     
     int i,j;
     cl* c = (cl*)malloc(sizeof(cl));
@@ -272,7 +272,7 @@ rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     r->n_cl = n_cl;
     r->cls =cls;
     r->input = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
-    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,1,0,cls[n_cl-1]->layer);
+    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,cls[n_cl-1]->layer);
     return r;
     
 }

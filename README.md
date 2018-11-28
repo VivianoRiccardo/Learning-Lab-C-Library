@@ -44,16 +44,17 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - residual layers backpropagation (20/11/2018)
 - model structure with fully-connected,convolutional,residual layers (20/11/2018)
 - fixed residual issues (22/11/2018)
-- adam algorithm added for update_params (22/11/2018)
-- size_of_model(model* m) function added (23/11/2018)
-- L2 Regularization added (27/11/2018)
+- adam algorithm for model_update (22/11/2018)
+- size_of_model(model* m) function (23/11/2018)
+- L2 Regularization (27/11/2018)
+- Manual Batch normalization feed forward and backpropagation (27/11/2018)
+- fixed residual issues2 (28/11/2018)
+- Manual Xavier Initialization (28/11/2018)
 
 # Future implementations
-- At the moment, no batch normalization
 - BPTT
 - Augmentation
 - LSTM layers
-- DDQN easy implementation function
 - Graphic test
 - Support Vector Machine algorithms
 - Decision tree

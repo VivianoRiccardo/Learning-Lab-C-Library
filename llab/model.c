@@ -1434,16 +1434,19 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                     
                     if(k3-count == m->rls[z]->n_cl-1){
                         if(m->rls[z]->cls[k3-count]->pooling_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_pooling,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_pooling,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
                         
                         else if(m->rls[z]->cls[k3-count]->normalization_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         
                         else if(m->rls[z]->cls[k3-count]->activation_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         
                         else
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        
+                        relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+
                         
                     }
                     
@@ -1595,13 +1598,15 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                     
                     if(k3-count == m->rls[z]->n_cl-1){
                         if(m->rls[z]->cls[k3-count]->pooling_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_pooling,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_pooling,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
                         else if(m->rls[z]->cls[k3-count]->normalization_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         else if(m->rls[z]->cls[k3-count]->activation_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         else
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->post_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+    
                     }
                     
                     k3++;
@@ -1751,6 +1756,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
+                        derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        error1 = m->rls[z2]->cl_output->temp;
                         
                     }
                     
@@ -1785,6 +1793,9 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
+                        derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        error1 = m->rls[z2]->cl_output->temp;
                         }
                     
                 }
@@ -1837,8 +1848,12 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         count2-=m->rls[z2]->n_cl;
                         if(z2 == z)
                             error1 = bp_cl_cl(m->rls[z2]->cls[k3-1-count2],m->rls[z]->cls[k3-count],error1);
-                        else
+                        else{
                             error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
+                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            error1 = m->rls[z2]->cl_output->temp;
+                        }
                         
                         
                     }
@@ -1871,27 +1886,27 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
  * 
  * Input
  * 
- * 			@ model* m:= the model
+ *             @ model* m:= the model
  * 
  * */
 int count_weights(model* m){
-	int i,j;
-	int sum = 0;
-	for(i = 0; i < m->n_fcl; i++){
-		sum+=m->fcls[i]->input*m->fcls[i]->output;
-	}
-	
-	for(i = 0; i < m->n_cl; i++){
-		sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
-	}
-	
-	for(i = 0; i < m->n_rl; i++){
-		for(j = 0; j < m->rls[i]->n_cl; j++){
-			sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
-		}
-	}
-	
-	return sum;
+    int i,j;
+    int sum = 0;
+    for(i = 0; i < m->n_fcl; i++){
+        sum+=m->fcls[i]->input*m->fcls[i]->output;
+    }
+    
+    for(i = 0; i < m->n_cl; i++){
+        sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+    }
+    
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
+        }
+    }
+    
+    return sum;
 }
 /* This function can update the model of the network using the adam algorithm or the nesterov momentum
  * 
@@ -1902,11 +1917,11 @@ int count_weights(model* m){
  *             @ float momentum:= the momentum
  *             @ int mini_batch_size:= the batch used
  *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
- * 			   @ float* b1:= the hyper parameter b1 of adam algorithm
- * 			   @ float* b2:= the hyper parameter b2 of adam algorithm
- * 			   @ int regularization:= NO_REGULARIZATION or L2 (0,1)
- * 			   @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
- * 			   @ float lambda:= a float value for l2 regularization
+ *                @ float* b1:= the hyper parameter b1 of adam algorithm
+ *                @ float* b2:= the hyper parameter b2 of adam algorithm
+ *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
+ *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
+ *                @ float lambda:= a float value for l2 regularization
  * 
  * */
 void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
@@ -1914,12 +1929,12 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         return;
     
     if(regularization == L2_REGULARIZATION){
-		add_l2_residual_layer(m,total_number_weights,lambda);
-		add_l2_convolutional_layer(m,total_number_weights,lambda);
-		add_l2_fully_connected_layer(m,total_number_weights,lambda);
-	}
-	
-	
+        add_l2_residual_layer(m,total_number_weights,lambda);
+        add_l2_convolutional_layer(m,total_number_weights,lambda);
+        add_l2_fully_connected_layer(m,total_number_weights,lambda);
+    }
+    
+    
     if(gradient_descent_flag == NESTEROV){    
         update_residual_layer_nesterov(m,lr,momentum,mini_batch_size);
         update_convolutional_layer_nesterov(m,lr,momentum,mini_batch_size);

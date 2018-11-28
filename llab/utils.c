@@ -14,10 +14,18 @@ float random_normal (){
   return sqrtf(-2 * log (drand ())) * cos (2 * M_PI * drand ());
   }
 
-/* a random number from a gaussian distribution with mean 0 and std = sqrtf(2/n)*/
+/* a random number from a gaussian distribution with mean 0 and std = sqrtf(2/n)
+ * where n is the number of neuron of layer l-1*/
 float random_general_gaussian(float mean, float n){
     return mean + sqrtf(2/(n))*random_normal();
-    
+}
+
+
+
+/* a random number from a gaussian distribution with mean 0 and std = sqrtf(1/n)
+ * where n is the number of neuron of layer l-1*/
+float random_general_gaussian_xavier_init(float mean, float n){
+    return mean + sqrtf(1/(n))*random_normal();
 }
 
 /* This function set the output from a given mask already set
@@ -625,21 +633,21 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
  * 
  * 
  * Input:
- * 		
- * 			@ model* m:= the model
- * 			@ int toal_number_weights:= the number of total weights
- * 			@ float lambda an hyper param
+ *         
+ *             @ model* m:= the model
+ *             @ int toal_number_weights:= the number of total weights
+ *             @ float lambda an hyper param
  * 
  * */
 void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
-	int i,j,k,u,z,w;
+    int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                 for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                     for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
                         for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-							ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+                            ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
                         }
                     }
                 }
@@ -653,10 +661,10 @@ void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
  * 
  * 
  * Input:
- * 		
- * 			@ model* m:= the model
- * 			@ int toal_number_weights:= the number of total weights
- * 			@ float lambda an hyper param
+ *         
+ *             @ model* m:= the model
+ *             @ int toal_number_weights:= the number of total weights
+ *             @ float lambda an hyper param
  * 
  * */
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
@@ -666,7 +674,7 @@ void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
             for(u = 0; u < m->cls[j]->channels; u++){
                 for(z = 0; z < m->cls[j]->kernel_rows; z++){
                     for(w = 0; w < m->cls[j]->kernel_cols; w++){
-						ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
+                        ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
 
                     }
                         
@@ -681,10 +689,10 @@ void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
  * 
  * 
  * Input:
- * 		
- * 			@ model* m:= the model
- * 			@ int toal_number_weights:= the number of total weights
- * 			@ float lambda an hyper param
+ *         
+ *             @ model* m:= the model
+ *             @ int toal_number_weights:= the number of total weights
+ *             @ float lambda an hyper param
  * 
  * */
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda){
@@ -692,7 +700,7 @@ void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda
     for(i = 0; i < m->n_fcl; i++){
         for(j = 0; j < m->fcls[i]->output; j++){
             for(k = 0; k < m->fcls[i]->input; k++){
-				ridge_regression(&m->fcls[j]->d_weights[j*m->fcls[i]->input+k],m->fcls[j]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
+                ridge_regression(&m->fcls[j]->d_weights[j*m->fcls[i]->input+k],m->fcls[j]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
 
             }
         }

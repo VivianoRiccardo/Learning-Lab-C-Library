@@ -185,6 +185,7 @@ float r2();
 float drand ();
 float random_normal ();
 float random_general_gaussian(float mean, float n);
+random_general_gaussian_xavier_init(float mean, float n);
 void get_dropout_array(int size, float* mask, float* input, float* output); //can be transposed in opencl
 void set_dropout_mask(int size, float* mask, float threshold); //can be transposed in opencl
 void ridge_regression(float *dw, float w, float lambda, int n);
