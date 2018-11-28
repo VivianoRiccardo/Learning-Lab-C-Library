@@ -127,11 +127,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         exit(1);
     }
     
-    if(!activation_flag){
-        fprintf(stderr,"Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
-        exit(1);
-    }
-    
     if(padding1_rows && normalization_flag == BATCH_NORMALIZATION){
         fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
         exit(1);
