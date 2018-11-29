@@ -700,7 +700,7 @@ void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda
     for(i = 0; i < m->n_fcl; i++){
         for(j = 0; j < m->fcls[i]->output; j++){
             for(k = 0; k < m->fcls[i]->input; k++){
-                ridge_regression(&m->fcls[j]->d_weights[j*m->fcls[i]->input+k],m->fcls[j]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
+                ridge_regression(&m->fcls[i]->d_weights[j*m->fcls[i]->input+k],m->fcls[i]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
 
             }
         }
