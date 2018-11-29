@@ -1930,11 +1930,8 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
     
     if(regularization == L2_REGULARIZATION){
         add_l2_residual_layer(m,total_number_weights,lambda);
-        printf("qua\n");
         add_l2_convolutional_layer(m,total_number_weights,lambda);
-        printf("qua\n");
         add_l2_fully_connected_layer(m,total_number_weights,lambda);
-		printf("qua\n");
     }
     
     
