@@ -304,6 +304,7 @@ int compiler_source_is_available(cl_device_id device_id);
 cl_command_queue* get_queue_from_gpus(cl_context ctx, cl_device_id* device_ids, cl_uint num_devices);
 cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devices);
 cl_kernel get_kernel(cl_program program);
+gpu_model* put_model_on_gpu(model* m,cl_device_id device_id, cl_context ctx);
 
 // Functions defined in gpu_model.c
 gpu_model* init_gpu_model(model* m, cl_context ctx );

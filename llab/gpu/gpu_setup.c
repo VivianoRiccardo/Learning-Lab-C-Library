@@ -250,7 +250,7 @@ cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devi
     char options[] = "-cl-unsafe-math-optimizations -cl-mad-enable";
     cl_program prog;
     int err,temp;
-    char *fname = "/home/convolutional_feed_forward.cl";
+    char *fname = "/home/llab_cl_files/convolutional_feed_forward.cl";
     size_t kfilesize;
     char *ksource;
     
