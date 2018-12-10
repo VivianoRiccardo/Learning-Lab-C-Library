@@ -50,6 +50,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Manual Batch normalization feed forward and backpropagation (27/11/2018)
 - fixed residual issues2 (28/11/2018)
 - Manual Xavier Initialization (28/11/2018)
+- OpenCL initialization (10/12/2018)
 
 # Future implementations
 - BPTT
