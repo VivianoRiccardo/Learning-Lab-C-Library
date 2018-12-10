@@ -7,6 +7,12 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 #define N_NORMALIZATION 5
 #define BETA_NORMALIZATION 0.75
 #define ALPHA_NORMALIZATION 0.0001
@@ -90,7 +96,7 @@ typedef struct cl { //convolutional-layers
 
 typedef struct rl { //residual-layers
     int channels, input_rows, input_cols, n_cl;
-    float* input;
+    float* input;//channels*input_rows*input_cols
     cl* cl_output;
     cl** cls;
 } rl;
@@ -133,6 +139,14 @@ typedef struct bmodel {
     bn** bns; // bn = bacth-normalization layer
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, 4 = batch normalization sla = sequential layers array
 } bmodel;
+
+
+typedef struct gpu_model{
+	model* m;
+	cl_mem** rls;
+	cl_mem** cls;
+	cl_mem** fcls;
+}gpu_model;
 
 // Functions defined in math.c
 void softmax(float* input, float* output, int size);
@@ -276,5 +290,25 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
 int count_weights(model* m);
+
+// Functions defined in gpu_setup.c
+cl_platform_id* get_platform_ids(cl_uint* n_platforms);
+cl_device_id* get_device_ids(cl_platform_id platform_id, cl_uint* n_devices);
+cl_context get_contex(cl_device_id* device_id, cl_uint n_devices);
+cl_ulong get_gpu_global_mem_size(cl_device_id device_id);
+cl_uint get_gpu_max_clock_frequency(cl_device_id device_id);
+cl_uint get_gpu_work_items(cl_device_id device_id);
+size_t get_gpu_work_items_per_work_group(cl_device_id device_id);
+cl_uint* get_gpu_work_items_per_dimension(cl_device_id device_id);
+int compiler_source_is_available(cl_device_id device_id);
+cl_command_queue* get_queue_from_gpus(cl_context ctx, cl_device_id* device_ids, cl_uint num_devices);
+cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devices);
+cl_kernel get_kernel(cl_program program);
+
+// Functions defined in gpu_model.c
+gpu_model* init_gpu_model(model* m, cl_context ctx );
+int load_on_gpu_cl_layer(cl_mem** cls, cl* c,cl_context ctx);
+int load_on_gpu_rl_layer(cl_mem** rls, rl* r, cl_context ctx);
+int load_on_gpu_fcl_layer(cl_mem** fcls, fcl* f, cl_context ctx);
 
 #endif
