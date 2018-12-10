@@ -7,8 +7,8 @@
  * Input:
  * 
  * 
- * 			@ model* m:= the model that must be copied on gpu
- * 			@ cl_context ctx:= the context where the gpu_model is allocated
+ *             @ model* m:= the model that must be copied on gpu
+ *             @ cl_context ctx:= the context where the gpu_model is allocated
  * 
  * */
 gpu_model* init_gpu_model(model* m, cl_context ctx ){
@@ -43,21 +43,21 @@ gpu_model* init_gpu_model(model* m, cl_context ctx ){
     }
     
     for(i = 0; i < m->n_cl; i++){
-		cls[i] = (cl_mem*)malloc(sizeof(cl_mem)*(12+m->cls[i]->n_kernels*4));
-		load_on_gpu_cl_layer(&cls[i],m->cls[i],ctx);
-	}
-	
-	for(i = 0; i < m->n_fcl; i++){
-		fcls[i] = (cl_mem*)malloc(sizeof(cl_mem)*16);
-		load_on_gpu_fcl_layer(&fcls[i],m->fcls[i],ctx);
-	}
-	
-	gm->m = copy_model(m);
-	gm->rls = rls;
-	gm->cls = cls;
-	gm->fcls = fcls;
-	
-	return gm;
+        cls[i] = (cl_mem*)malloc(sizeof(cl_mem)*(12+m->cls[i]->n_kernels*4));
+        load_on_gpu_cl_layer(&cls[i],m->cls[i],ctx);
+    }
+    
+    for(i = 0; i < m->n_fcl; i++){
+        fcls[i] = (cl_mem*)malloc(sizeof(cl_mem)*16);
+        load_on_gpu_fcl_layer(&fcls[i],m->fcls[i],ctx);
+    }
+    
+    gm->m = copy_model(m);
+    gm->rls = rls;
+    gm->cls = cls;
+    gm->fcls = fcls;
+    
+    return gm;
 }
 
 

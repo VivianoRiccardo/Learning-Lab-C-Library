@@ -142,10 +142,10 @@ typedef struct bmodel {
 
 
 typedef struct gpu_model{
-	model* m;
-	cl_mem** rls;
-	cl_mem** cls;
-	cl_mem** fcls;
+    model* m;
+    cl_mem** rls;
+    cl_mem** cls;
+    cl_mem** fcls;
 }gpu_model;
 
 // Functions defined in math.c
