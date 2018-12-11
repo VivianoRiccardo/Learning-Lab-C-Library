@@ -178,6 +178,7 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k);//can be transposed in opencl
 void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon);
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
+
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
 void adam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size);
@@ -218,6 +219,8 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
 void add_l2_residual_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
+void copy_char_array(char* input, char* output, int size);
 
 
 // Functions defined in layers.c

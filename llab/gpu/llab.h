@@ -229,6 +229,8 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
 void add_l2_residual_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
+void copy_char_array(char* input, char* output, int size);
 
 
 // Functions defined in layers.c
