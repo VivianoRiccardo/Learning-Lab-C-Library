@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://i.ibb.co/bvbW4YL/photo2.jpg" alt="logo">
+</p>
+
 # Learning-Lab-C-Library:
 
 Creating the library:
