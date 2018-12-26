@@ -258,7 +258,9 @@ bn* copy_bn(bn* b);
 bn* reset_bn(bn* b);
 unsigned long long int size_of_bn(bn* b);
 void paste_bn(bn* b1, bn* b2);
-
+void slow_paste_fcl(fcl* f,fcl* copy, float tau);
+void slow_paste_cl(cl* f, cl* copy,float tau);
+void slow_paste_rl(rl* f, rl* copy,float tau);
 
 // Functions defined in model.c
 model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fcl** fcls);
@@ -282,5 +284,6 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
 int count_weights(model* m);
+void slow_paste_model(model* m, model* copy, float tau);
 
 #endif

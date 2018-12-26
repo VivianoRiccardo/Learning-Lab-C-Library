@@ -1643,6 +1643,27 @@ void paste_fcl(fcl* f,fcl* copy){
     return;
 }
 
+/* This function returns a fcl* layer that is the same copy for the weights and biases
+ * of the layer f with the rule teta_i = tau*teta_j + (1-tau)*teta_i
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ *             @ fcl* copy:= the fully-connected layer where f is copied
+ * 			   @ float tau:= the tau param
+ * */
+void slow_paste_fcl(fcl* f,fcl* copy, float tau){
+    if(f == NULL)
+        return;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+		if(i < f->output)
+			copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+		copy->weights[i] = tau*f->weights[i] + (1-tau)*copy->weights[i];
+	}
+    return;
+}
+
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
  * This functions copies the weights and D and D1 and D2 into a another structure
@@ -1669,6 +1690,31 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+    
+    return;
+}
+
+/* This function returns a cl* layer that is the same copy for the weights and biases
+ * of the layer f with the rule teta_i = tau*teta_j + (1-tau)*teta_i
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ *             @ cl* copy:= the convolutional layer where f is copied
+ * 			   @ float tau:= the tau param
+ * */
+void slow_paste_cl(cl* f, cl* copy,float tau){
+    if(f == NULL)
+        return;
+    
+    int i,j;
+    for(i = 0; i < f->n_kernels; i++){
+		for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
+			copy->kernels[i][j] = tau*f->kernels[i][j] + (1-tau)*copy->kernels[i][j];
+		}
+		
+		copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+    }
     
     return;
 }
@@ -1716,6 +1762,28 @@ void paste_rl(rl* f, rl* copy){
     int i;
     for(i = 0; i < f->n_cl; i++){
         paste_cl(f->cls[i],copy->cls[i]);
+    }
+    
+    return;
+}
+
+
+/* This function returns a rl* layer that is the same copy for the weights and biases
+ * of the layer f with the rule teta_i = tau*teta_j + (1-tau)*teta_i
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the residual layer that must be copied
+ *             @ rl* copy:= the residual layer where f is copied
+ * 			   @ float tau:= the tau param
+ * */
+void slow_paste_rl(rl* f, rl* copy,float tau){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        slow_paste_cl(f->cls[i],copy->cls[i],tau);
     }
     
     return;
