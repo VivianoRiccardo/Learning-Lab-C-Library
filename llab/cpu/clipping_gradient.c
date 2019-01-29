@@ -5,23 +5,23 @@
  * 
  * Input:
  * 
- * 			@ model* m:= the model
- * 			@ float threshold:= the threshold
+ *             @ model* m:= the model
+ *             @ float threshold:= the threshold
  * 
  * */
  
 void clipping_gradient(model* m, float threshold) {
-	 float sum = 0;
-	 sum += sum_all_quadratic_derivative_weights_fcls(m->fcls, m->n_fcl);
-	 sum += sum_all_quadratic_derivative_weights_cls(m->cls, m->n_cl);
-	 sum += sum_all_quadratic_derivative_weights_rls(m->rls, m->n_rl);
-	 
-	 sum = sqrtf(sum);
-	 if(sum >= threshold){
-		 clip_fcls(m->fcls, m->n_fcl, threshold, sum);
-		 clip_cls(m->cls, m->n_cl, threshold, sum);
-		 clip_rls(m->rls, m->n_rl, threshold, sum);
-	 }
+     float sum = 0;
+     sum += sum_all_quadratic_derivative_weights_fcls(m->fcls, m->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(m->cls, m->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(m->rls, m->n_rl);
+     
+     sum = sqrtf(sum);
+     if(sum >= threshold){
+         clip_fcls(m->fcls, m->n_fcl, threshold, sum);
+         clip_cls(m->cls, m->n_cl, threshold, sum);
+         clip_rls(m->rls, m->n_rl, threshold, sum);
+     }
 }
  
 /* This functions clips the derivative weights according to the clipping_gradient formula
@@ -29,17 +29,17 @@ void clipping_gradient(model* m, float threshold) {
   * 
   * Input:
   * 
-  * 			@ rl* rls:= residual layers
-  * 			@ int n:= the number of residual layers
-  * 			@ float threshold:= the threshold of the clipping gradient formula
-  * 			@ float norm:= the ||DL/Dw|| of the entire network
+  *             @ rl* rls:= residual layers
+  *             @ int n:= the number of residual layers
+  *             @ float threshold:= the threshold of the clipping gradient formula
+  *             @ float norm:= the ||DL/Dw|| of the entire network
   * 
   * */
 void clip_rls(rl** rls, int n, float threshold,float norm){
-	int i;
-	for(i = 0; i < n; i++){
-		clip_cls(rls[i]->cls, rls[i]->n_cl, threshold, norm);
-	}
+    int i;
+    for(i = 0; i < n; i++){
+        clip_cls(rls[i]->cls, rls[i]->n_cl, threshold, norm);
+    }
 }
  
  
@@ -48,22 +48,22 @@ void clip_rls(rl** rls, int n, float threshold,float norm){
   * 
   * Input:
   * 
-  * 			@ cl* cls:= convolutional layers
-  * 			@ int n:= the number of convolutional layers
-  * 			@ float threshold:= the threshold of the clipping gradient formula
-  * 			@ float norm:= the ||DL/Dw|| of the entire network
+  *             @ cl* cls:= convolutional layers
+  *             @ int n:= the number of convolutional layers
+  *             @ float threshold:= the threshold of the clipping gradient formula
+  *             @ float norm:= the ||DL/Dw|| of the entire network
   * 
   * */
 void clip_cls(cl** cls, int n, float threshold, float norm){
-	int j,k,z;
-	for(j = 0; j < n; j++){
-		for(k = 0; k < cls[j]->n_kernels; k++){
-			for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
-			    cls[j]->d_kernels[k][z]*=(threshold)/(norm);
-			}
-		}
-	}
-	
+    int j,k,z;
+    for(j = 0; j < n; j++){
+        for(k = 0; k < cls[j]->n_kernels; k++){
+            for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
+                cls[j]->d_kernels[k][z]*=(threshold)/(norm);
+            }
+        }
+    }
+    
 }
 
 
@@ -72,20 +72,20 @@ void clip_cls(cl** cls, int n, float threshold, float norm){
   * 
   * Input:
   * 
-  * 			@ fcl* fcls:= fully-connected layers
-  * 			@ int n:= the number of fully-connected layers
-  * 			@ float threshold:= the threshold of the clipping gradient formula
-  * 			@ float norm:= the ||DL/Dw|| of the entire network
+  *             @ fcl* fcls:= fully-connected layers
+  *             @ int n:= the number of fully-connected layers
+  *             @ float threshold:= the threshold of the clipping gradient formula
+  *             @ float norm:= the ||DL/Dw|| of the entire network
   * 
   * */
 void clip_fcls(fcl** fcls, int n, float threshold, float norm){
-	int i,j;
-	for(i = 0; i < n; i++){
-		for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
-			fcls[i]->d_weights[j]*=(threshold)/(norm);
-		}
-	}
-	
+    int i,j;
+    for(i = 0; i < n; i++){
+        for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
+            fcls[i]->d_weights[j]*=(threshold)/(norm);
+        }
+    }
+    
 }
 
 /* This functions returns the derivative of the weights of the residual layers in quadratic form
@@ -93,17 +93,17 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm){
   * 
   * Input:
   * 
-  * 			@ rl** rls:= residual layers
-  * 			@ int n:= the number of residual layers
+  *             @ rl** rls:= residual layers
+  *             @ int n:= the number of residual layers
   * 
   * */
 float sum_all_quadratic_derivative_weights_rls(rl** rls, int n){
-	int i;
-	float sum = 0;
-	for(i = 0; i < n; i++){
-		sum+= sum_all_quadratic_derivative_weights_cls(rls[i]->cls, rls[i]->n_cl);
-	}
-	return sum;
+    int i;
+    float sum = 0;
+    for(i = 0; i < n; i++){
+        sum+= sum_all_quadratic_derivative_weights_cls(rls[i]->cls, rls[i]->n_cl);
+    }
+    return sum;
 }
 
 /* This functions returns the derivative of the weights of the convolutional layers in quadratic form
@@ -111,22 +111,22 @@ float sum_all_quadratic_derivative_weights_rls(rl** rls, int n){
   * 
   * Input:
   * 
-  * 			@ cl** cls:= convolutional layers
-  * 			@ int n:= the number of convolutional layers
+  *             @ cl** cls:= convolutional layers
+  *             @ int n:= the number of convolutional layers
   * 
   * */
 float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
-	int j,k,z;
-	float sum = 0,temp;
-	for(j = 0; j < n; j++){
-		for(k = 0; k < cls[j]->n_kernels; k++){
-			for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
-				temp = cls[j]->d_kernels[k][z];
-				sum += temp*temp;
-			}
-		}
-	}
-	return sum;
+    int j,k,z;
+    float sum = 0,temp;
+    for(j = 0; j < n; j++){
+        for(k = 0; k < cls[j]->n_kernels; k++){
+            for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
+                temp = cls[j]->d_kernels[k][z];
+                sum += temp*temp;
+            }
+        }
+    }
+    return sum;
 }
 
 
@@ -135,19 +135,19 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
   * 
   * Input:
   * 
-  * 			@ fcl** fcls:= fully-connected layers
-  * 			@ int n:= the number of fully-connected layers
+  *             @ fcl** fcls:= fully-connected layers
+  *             @ int n:= the number of fully-connected layers
   * 
   * */
 float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n){
-	int i,j;
-	float sum = 0,temp;
-	for(i = 0; i < n; i++){
-		for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
-			temp = fcls[i]->d_weights[j];
-			sum += temp*temp;
-		}
-	}
-	
-	return sum;
+    int i,j;
+    float sum = 0,temp;
+    for(i = 0; i < n; i++){
+        for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
+            temp = fcls[i]->d_weights[j];
+            sum += temp*temp;
+        }
+    }
+    
+    return sum;
 }
