@@ -14,4 +14,4 @@ all:
 	gcc -c gpu_model.c -o gpu_model.o -O3 -mavx -lOpenCL -w
 	ar r libllab.a *.o
 	rm *.o
-	sudo mv llab_cl_files /home
+	sudo mv llab_cl_files /usr/lib

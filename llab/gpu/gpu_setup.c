@@ -250,7 +250,7 @@ cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devi
     char options[] = "-cl-unsafe-math-optimizations -cl-mad-enable";
     cl_program prog;
     int err,temp;
-    char *fname = "/home/llab_cl_files/convolutional_feed_forward.cl";
+    char *fname = "/usr/lib/llab_cl_files/convolutional.cl";
     size_t kfilesize;
     char *ksource;
     
@@ -281,6 +281,11 @@ cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devi
         exit(1);
     }
     
+    if(err!= CL_SUCCESS){
+        fprintf(stderr,"Error: clBuildProgram returned an err\n");
+        exit(1);
+    }
+    
     return prog;
 }
 
@@ -296,7 +301,7 @@ cl_program get_program(cl_context ctx, cl_device_id* device_id, cl_uint num_devi
 cl_kernel get_kernel(cl_program program){
     cl_kernel kernel;
     int err;
-    kernel = clCreateKernel(program, "convolutional_feed_forward", &err);
+    kernel = clCreateKernel(program, "convolutional_back_propagation", &err);
     
     if(err!=CL_SUCCESS){
         fprintf(stderr,"Error: clCreateKernel returned an err\n");

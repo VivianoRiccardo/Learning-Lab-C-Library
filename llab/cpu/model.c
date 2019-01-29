@@ -1953,6 +1953,8 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
     if(m == NULL)
         return;
     
+    lambda*=mini_batch_size;
+    
     if(regularization == L2_REGULARIZATION){
         add_l2_residual_layer(m,total_number_weights,lambda);
         add_l2_convolutional_layer(m,total_number_weights,lambda);
