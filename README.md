@@ -55,6 +55,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - fixed residual issues2 (28/11/2018)
 - Manual Xavier Initialization (28/11/2018)
 - OpenCL initialization (10/12/2018)
+- Clipping gradient (29/1/2019)
 
 # Future implementations
 - BPTT

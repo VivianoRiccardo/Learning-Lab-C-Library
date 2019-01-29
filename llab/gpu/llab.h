@@ -231,6 +231,7 @@ void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
 int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
 void copy_char_array(char* input, char* output, int size);
+int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
 
 
 // Functions defined in layers.c
@@ -268,6 +269,9 @@ bn* copy_bn(bn* b);
 bn* reset_bn(bn* b);
 unsigned long long int size_of_bn(bn* b);
 void paste_bn(bn* b1, bn* b2);
+void slow_paste_fcl(fcl* f,fcl* copy, float tau);
+void slow_paste_cl(cl* f, cl* copy,float tau);
+void slow_paste_rl(rl* f, rl* copy,float tau);
 
 
 // Functions defined in model.c
@@ -292,6 +296,16 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
 int count_weights(model* m);
+void slow_paste_model(model* m, model* copy, float tau);
+
+// Functions defined in clipping_gradient.c
+void clipping_gradient(model* m, float threshold);
+void clip_rls(rl** rls, int n, float threshold,float norm);
+void clip_cls(cl** cls, int n, float threshold, float norm);
+void clip_fcls(fcl** fcls, int n, float threshold, float norm);
+float sum_all_quadratic_derivative_weights_rls(rl** rls, int n);
+float sum_all_quadratic_derivative_weights_cls(cl** cls, int n);
+float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n);
 
 // Functions defined in gpu_setup.c
 cl_platform_id* get_platform_ids(cl_uint* n_platforms);

@@ -265,6 +265,33 @@ void paste_model(model* m, model* copy){
     return;
 }
 
+
+/* This function copies a model with the rule: teta_i:= teta_j*tau +(1-tau)*teta_i
+ * 
+ * Input:
+ *         
+ *             @ model* m:= the model that must be copied
+ *             @ model* copy:= the model where m is copied
+ *                @ float tau:= the tau param
+ * 
+ * */
+void slow_paste_model(model* m, model* copy, float tau){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_fcl; i++){
+        slow_paste_fcl(m->fcls[i],copy->fcls[i],tau);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        slow_paste_cl(m->cls[i],copy->cls[i],tau);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        slow_paste_rl(m->rls[i],copy->rls[i],tau);
+    }
+    return;
+}
+
 /* This function resets a model using the copy model function
  * returns a model equal to the one as input but with all resetted except for weights and biases
  * */

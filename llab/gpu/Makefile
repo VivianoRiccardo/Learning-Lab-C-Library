@@ -9,6 +9,7 @@ all:
 	gcc -c model.c -o model.o -O3 -mavx -lm -w
 	gcc -c normalization.c -o normalization.o -O3 -mavx -lm -w
 	gcc -c utils.c -o utils.o -O3 -mavx -lm -w
+	gcc -c clipping_gradient.c -o clipping_gradient.o -O3 -mavx -lm
 	gcc -c gpu_setup.c -o gpu_setup.o -O3 -mavx -lOpenCL -w
 	gcc -c gpu_model.c -o gpu_model.o -O3 -mavx -lOpenCL -w
 	ar r libllab.a *.o

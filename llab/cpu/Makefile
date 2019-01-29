@@ -9,5 +9,6 @@ all:
 	gcc -c model.c -o model.o -O3 -mavx -lm
 	gcc -c normalization.c -o normalization.o -O3 -mavx -lm
 	gcc -c utils.c -o utils.o -O3 -mavx -lm
+	gcc -c clipping_gradient.c -o clipping_gradient.o -O3 -mavx -lm
 	ar r libllab.a convolutional.o gd.o fully_connected.o layers.o math_functions.o model.o normalization.o utils.o
 	rm *.o

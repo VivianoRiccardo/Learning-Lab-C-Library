@@ -287,4 +287,13 @@ void paste_model(model* m, model* copy);
 int count_weights(model* m);
 void slow_paste_model(model* m, model* copy, float tau);
 
+// Functions defined in clipping_gradient.c
+void clipping_gradient(model* m, float threshold);
+void clip_rls(rl** rls, int n, float threshold,float norm);
+void clip_cls(cl** cls, int n, float threshold, float norm);
+void clip_fcls(fcl** fcls, int n, float threshold, float norm);
+float sum_all_quadratic_derivative_weights_rls(rl** rls, int n);
+float sum_all_quadratic_derivative_weights_cls(cl** cls, int n);
+float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n);
+
 #endif
