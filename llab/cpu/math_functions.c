@@ -62,6 +62,34 @@ void derivative_relu_array(float* input, float* output, int size){
     }
 }
 
+float leaky_relu(float x){
+    if(x > 0)
+        return x;
+    else
+        return x*0.01;
+}
+
+void leaky_relu_array(float* input, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = leaky_relu(input[i]);
+    }
+}
+
+float derivative_leaky_relu(float x){
+    if(x > 0)
+        return 1;
+    else
+        return 0.01;
+}
+
+void derivative_leaky_relu_array(float* input, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_leaky_relu(input[i]);
+    }
+}
+
 float tanhh(float x){
     float y = exp(2*x);
     return (y-1)/(y+1);

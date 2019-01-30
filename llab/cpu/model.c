@@ -579,6 +579,8 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         softmax(f2->pre_activation,f2->post_activation,f2->output);
     else if(f2->activation_flag == TANH)
         tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
+    else if(f2->activation_flag == LEAKY_RELU)
+        leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
     
     /* setting the dropout mask, if dropout flag is != 0*/
     if(f2->dropout_flag)
@@ -744,6 +746,20 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
 
         }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        leaky_relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                leaky_relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
         /* normalization for f2, if there is any normalization*/
         if(f2->normalization_flag){
             for(i = 0; i < f2->n_kernels; i++){
@@ -861,6 +877,8 @@ void ff_cl_fcl(cl* f1, fcl* f2){
         softmax(f2->pre_activation,f2->post_activation,f2->output);
     else if(f2->activation_flag == TANH)
         tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
+    else if(f2->activation_flag == LEAKY_RELU)
+        leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
     
 
     
@@ -990,6 +1008,20 @@ void ff_cl_cl(cl* f1, cl* f2){
                 tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
 
         }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        leaky_relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                leaky_relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
         /* normalization for f2, if there is any normalization*/
         if(f2->normalization_flag){
             for(i = 0; i < f2->n_kernels; i++){
@@ -1094,6 +1126,11 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
             derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
+        }
     }
     
     else{
@@ -1113,6 +1150,11 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == TANH){
             derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
+        }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
@@ -1218,6 +1260,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
             
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
             if(f2->activation_flag == NO_ACTIVATION){
                 copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
@@ -1238,6 +1285,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
             
             if(f2->activation_flag == TANH){
                 derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
                 dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
         }
@@ -1357,6 +1409,11 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                 dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
             
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
             if(f2->activation_flag == NO_ACTIVATION){
                 copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
@@ -1377,6 +1434,11 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             
             if(f2->activation_flag == TANH){
                 derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
                 dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
         }
@@ -1446,6 +1508,11 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
             derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
+        }
     }
     
     else{
@@ -1465,6 +1532,11 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         
         else if(f2->activation_flag == TANH){
             derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->output);
+            dot1D(f2->temp3,error,f2->temp,f2->output);
+        }
+        
+        else if(f2->activation_flag == LEAKY_RELU){
+            derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,error,f2->temp,f2->output);
         }
         
@@ -1577,7 +1649,10 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         else
                             sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         
-                        relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
 
                         
                     }
@@ -1737,8 +1812,13 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                             sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         else
                             sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-    
+                        
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)    
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+
+
                     }
                     
                     k3++;
@@ -1888,7 +1968,10 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
-                        derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                         dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                         error1 = m->rls[z2]->cl_output->temp;
                         
@@ -1925,7 +2008,10 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     
                         
                         error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
-                        derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                         dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                         error1 = m->rls[z2]->cl_output->temp;
                         }
@@ -1982,7 +2068,10 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                             error1 = bp_cl_cl(m->rls[z2]->cls[k3-1-count2],m->rls[z]->cls[k3-count],error1);
                         else{
                             error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
-                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                                derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else
+                                derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                             dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                             error1 = m->rls[z2]->cl_output->temp;
                         }

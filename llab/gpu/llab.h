@@ -28,6 +28,7 @@
 #define RELU 2
 #define SOFTMAX 3
 #define TANH 4
+#define LEAKY_RELU 5
 #define NO_POOLING 0
 #define MAX_POOLING 1
 #define AVARAGE_POOLING 2
@@ -160,6 +161,10 @@ float relu(float x);
 void relu_array(float* input, float* output, int size);//can be transposed in opencl
 float derivative_relu(float x);
 void derivative_relu_array(float* input, float* output, int size);//can be transposed in opencl
+float leaky_relu(float x);
+void leaky_relu_array(float* input, float* output, int size);//can be transposed in opencl
+float derivative_leaky_relu(float x);
+void derivative_leaky_relu_array(float* input, float* output, int size);//can be transposed in opencl
 float tanhh(float x);
 void tanhh_array(float* input, float* output, int size);//can be transposed in opencl
 float derivative_tanhh(float x);
