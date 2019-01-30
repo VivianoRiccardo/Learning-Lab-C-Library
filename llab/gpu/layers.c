@@ -112,7 +112,7 @@ void free_fully_connected(fcl* f){
  * 
  * */
  
-cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer){
+cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer, int convolutional_flag){
     if(!channels || !input_rows || !input_cols || !kernel_rows || !kernel_cols || !n_kernels || !stride1_rows || !stride1_cols || (pooling_flag && (!stride2_rows || !stride2_cols))){
         fprintf(stderr,"Error: channles, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride2_rows stride2_cols, stride2_rows, stride2_cols params must be > 0\n");
         exit(1);
@@ -127,6 +127,18 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
         exit(1);
     }
+    
+    if(convolutional_flag == NO_CONVOLUTION && pooling_flag == NO_POOLING){
+        fprintf(stderr,"Error: you don't apply convolution neither pooling\n");
+        exit(1);
+    }
+    
+    if(convolutional_flag == NO_CONVOLUTION && n_kernels != channels){
+        fprintf(stderr,"Error: if you don't apply convolution, your n_kernels param should be equal to channels, 'cause n_kernels indicates the channel of the current_layer\n");
+        exit(1);
+    }
+    
+    
     
     int i,j;
     cl* c = (cl*)malloc(sizeof(cl));
@@ -158,23 +170,39 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->d_biases = (float*)calloc(n_kernels,sizeof(float));
     c->d1_biases = (float*)calloc(n_kernels,sizeof(float));
     c->d2_biases = (float*)calloc(n_kernels,sizeof(float));
+    c->convolutional_flag = convolutional_flag;
     if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
         c->rows1 = 0;
     else
         c->rows1 = ((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows);
-    if(!bool_is_real((float)((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)))
-        c->rows2 = 0;
-    else
-        c->rows2 = ((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows);
+    if(convolutional_flag == CONVOLUTION){
+        if(!bool_is_real((float)((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)))
+            c->rows2 = 0;
+        else
+            c->rows2 = ((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows);
+        }
+    else{
+        if(!bool_is_real((float)((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows)))
+            c->rows2 = 0;
+        else
+            c->rows2 = ((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows);
+    }
     if(!bool_is_real((float)((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)))
         c->cols1 = 0;
     else
         c->cols1 = ((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols);
-    if(!bool_is_real((float)((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)))
-        c->cols2 = 0;
-    else
-        c->cols2 = ((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
-        
+    if(convolutional_flag == CONVOLUTION){
+        if(!bool_is_real((float)((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)))
+            c->cols2 = 0;
+        else
+            c->cols2 = ((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
+        }
+    else{
+        if(!bool_is_real((float)((input_cols-pooling_cols)/stride2_cols +1 + 2*padding2_cols)))
+            c->cols2 = 0;
+        else
+            c->cols2 = ((input_cols-pooling_cols)/stride2_cols +1 + 2*padding2_cols);
+    }
     
     c->temp = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
     c->temp2 = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
@@ -263,7 +291,7 @@ rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     r->n_cl = n_cl;
     r->cls =cls;
     r->input = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
-    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,cls[n_cl-1]->layer);
+    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,cls[n_cl-1]->layer,CONVOLUTION);
     return r;
     
 }
@@ -726,6 +754,13 @@ void save_cl(cl* f, int n){
         exit(1);
     }
     
+    i = fwrite(&f->convolutional_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
     i = fwrite(&f->channels,sizeof(int),1,fw);
     
     if(i != 1){
@@ -958,7 +993,7 @@ cl* load_cl(FILE* fr){
         return NULL;
     int i,k;
     
-    int channels = 0, input_rows = 0, input_cols = 0,layer = 0;
+    int channels = 0, input_rows = 0, input_cols = 0,layer = 0, convolutional_flag;
     int kernel_rows = 0, kernel_cols = 0, n_kernels = 0;
     int stride1_rows = 0, stride1_cols = 0, padding1_rows = 0, padding1_cols = 0;
     int stride2_rows = 0, stride2_cols = 0, padding2_rows = 0, padding2_cols = 0;
@@ -968,7 +1003,12 @@ cl* load_cl(FILE* fr){
     float** kernels;
     float* biases;
     
+    i = fread(&convolutional_flag,sizeof(int),1,fr);
     
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
     
     i = fread(&channels,sizeof(int),1,fr);
     
@@ -1158,7 +1198,7 @@ cl* load_cl(FILE* fr){
         exit(1);
     }
     
-    cl* f = convolutional(channels, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride1_rows, stride1_cols, padding1_rows, padding1_cols, stride2_rows, stride2_cols, padding2_rows, padding2_cols, pooling_rows, pooling_cols, normalization_flag, activation_flag, pooling_flag, layer);
+    cl* f = convolutional(channels, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride1_rows, stride1_cols, padding1_rows, padding1_cols, stride2_rows, stride2_cols, padding2_rows, padding2_cols, pooling_rows, pooling_cols, normalization_flag, activation_flag, pooling_flag, layer, convolutional_flag);
     copy_cl_params(f,kernels,biases);
     
     for(i= 0; i < n_kernels; i++){
@@ -1358,7 +1398,7 @@ fcl* copy_fcl(fcl* f){
 cl* copy_cl(cl* f){
     if(f == NULL)
         return NULL;
-    cl* copy = convolutional(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->layer);
+    cl* copy = convolutional(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->layer, f->convolutional_flag);
     
     int i;
     for(i = 0; i < f->n_kernels; i++){

@@ -271,7 +271,7 @@ void paste_model(model* m, model* copy){
  *         
  *             @ model* m:= the model that must be copied
  *             @ model* copy:= the model where m is copied
- * 			   @ float tau:= the tau param
+ *                @ float tau:= the tau param
  * 
  * */
 void slow_paste_model(model* m, model* copy, float tau){
@@ -610,27 +610,49 @@ void ff_fcl_cl(fcl* f1, cl* f2){
     }
 
     int i,j,k,z;
-    
+    float* temp = NULL;
     /* f2 pre activation with no activation for f1*/
      if(f1->activation_flag == NO_ACTIVATION){
         if(f1->dropout_flag == NO_DROPOUT){
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            if(f2->convolutional_flag == CONVOLUTION){
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
+            }
+            
+            else{
+                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                copy_array(f1->pre_activation,temp,f2->channels*f2->input_rows*f2->input_cols);
             }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 get_dropout_array(f1->output,f1->dropout_mask,f1->pre_activation,f1->dropout_temp);
-                for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                if(f2->convolutional_flag == CONVOLUTION){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
+                }
+                
+                else{
+                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
                 }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f1->pre_activation,f1->dropout_threshold,f1->dropout_temp,f1->output);
-                for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                if(f2->convolutional_flag == CONVOLUTION){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
                 }
+                
+                else{
+                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                }
+                
             }
         }
     }
@@ -638,87 +660,118 @@ void ff_fcl_cl(fcl* f1, cl* f2){
     /* f2 pre activation with activation for f1*/
     else{
         if(f1->dropout_flag == NO_DROPOUT){
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            if(f2->convolutional_flag == CONVOLUTION){
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
             }
+            
+            else{
+                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                copy_array(f1->post_activation,temp,f2->channels*f2->input_rows*f2->input_cols);
+            }
+            
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 get_dropout_array(f1->output,f1->dropout_mask,f1->post_activation,f1->dropout_temp);
-                for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                if(f2->convolutional_flag == CONVOLUTION){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
+                }
+                else{
+                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
                 }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f1->post_activation,f1->dropout_threshold,f1->dropout_temp,f1->output);
+                if(f2->convolutional_flag == CONVOLUTION){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
+                }
+                else{
+                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                }
+            }
+        }
+    }
+    
+    if(f2->convolutional_flag == CONVOLUTION){
+        /* activation for f2, if there is any activation*/
+        if(f2->activation_flag == SIGMOID){
+            if(f2->padding1_rows){
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        sigmoid_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
                 }
             }
+            
+            else
+                sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
         }
-    }
-    
-    /* activation for f2, if there is any activation*/
-    if(f2->activation_flag == SIGMOID){
-        if(f2->padding1_rows){
+            
+        
+        else if(f2->activation_flag == RELU){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
+        else if(f2->activation_flag == TANH){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        tanhh_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
+        /* normalization for f2, if there is any normalization*/
+        if(f2->normalization_flag){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    sigmoid_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
+                        if(f2->activation_flag != NO_ACTIVATION)
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                    }
                 }
-            }
+            }    
         }
-        
-        else
-            sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-        
-    
-    else if(f2->activation_flag == RELU){
-        if(f2->padding1_rows){
-            for(i = 0; i < f2->n_kernels; i++){
-                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
-                }
-            }
-        }
-        
-        else
-            relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-    else if(f2->activation_flag == TANH){
-        if(f2->padding1_rows){
-            for(i = 0; i < f2->n_kernels; i++){
-                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    tanhh_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
-                }
-            }
-        }
-        
-        else
-            tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-    /* normalization for f2, if there is any normalization*/
-    if(f2->normalization_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
-                    if(f2->activation_flag != NO_ACTIVATION)
-                        local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                    else
-                        local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                }
-            }
-        }    
     }
     
     /* pooling for f2, if there is any pooling*/
     if(f2->pooling_flag != NO_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
-            if(f2->normalization_flag != NO_NORMALIZATION){
+            if(f2->convolutional_flag == NO_CONVOLUTION){
+                if(f2->pooling_flag == MAX_POOLING){
+                    max_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                }
+                else{
+                    avarage_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                }
+            }
+               
+            else if(f2->normalization_flag != NO_NORMALIZATION){
                 if(f2->pooling_flag == MAX_POOLING){
                     max_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
@@ -746,6 +799,8 @@ void ff_fcl_cl(fcl* f1, cl* f2){
             }
         }
     }
+    
+    free(temp);
     
 
     
@@ -836,93 +891,132 @@ void ff_cl_cl(cl* f1, cl* f2){
     }
 
     int i,j,k,z;
-    
+    float* temp = NULL;
     /* pooling for f1*/
     if(f1->pooling_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            convolutional_feed_forward(f1->post_pooling, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                convolutional_feed_forward(f1->post_pooling, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            }
+        }
+        
+        else{
+            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_pooling,temp,f2->input_rows*f2->input_cols*f2->channels);
         }    
     }
             
     /* no pooling for f1, but normalization*/
     else if(f1->normalization_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            convolutional_feed_forward(f1->post_normalization, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
-        }    
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                convolutional_feed_forward(f1->post_normalization, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            }
+        }
+        
+        else{
+            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_normalization,temp,f2->input_rows*f2->input_cols*f2->channels);
+        }   
     }
     /* no pooling, no normalization for f1, but activation*/
     else if(f1->activation_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
-        }    
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            }
+        }
+        
+        else{
+            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_activation,temp,f2->input_rows*f2->input_cols*f2->channels);
+        }
     }
     /* no pooling, no normalization, no activation for f1*/
     else{
-        for(i = 0; i < f2->n_kernels; i++){
-            convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
-        }    
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+            }  
+        } 
+        
+        else{
+            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->pre_activation,temp,f2->input_rows*f2->input_cols*f2->channels);
+        }
     }
     
-    /* activation for f2, if there is any activation*/
-    if(f2->activation_flag == SIGMOID){
-        if(f2->padding1_rows){
-            for(i = 0; i < f2->n_kernels; i++){
-                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    sigmoid_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
-                }
-            }
-        }
-        
-        else
-            sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-        
     
-    else if(f2->activation_flag == RELU){
-        if(f2->padding1_rows){
+    if(f2->convolutional_flag == CONVOLUTION){
+        /* activation for f2, if there is any activation*/
+        if(f2->activation_flag == SIGMOID){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        sigmoid_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
+            
+        
+        else if(f2->activation_flag == RELU){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
+        else if(f2->activation_flag == TANH){
+            if(f2->padding1_rows){
+                for(i = 0; i < f2->n_kernels; i++){
+                    for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                        tanhh_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    }
+                }
+            }
+            
+            else
+                tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        }
+        /* normalization for f2, if there is any normalization*/
+        if(f2->normalization_flag){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                    for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
+                        if(f2->activation_flag)
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                    }
                 }
-            }
+            }    
         }
-        
-        else
-            relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-    else if(f2->activation_flag == TANH){
-        if(f2->padding1_rows){
-            for(i = 0; i < f2->n_kernels; i++){
-                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                    tanhh_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
-                }
-            }
-        }
-        
-        else
-            tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
-    }
-    /* normalization for f2, if there is any normalization*/
-    if(f2->normalization_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
-                    if(f2->activation_flag)
-                        local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                    else
-                        local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                }
-            }
-        }    
     }
     
     /* pooling for f2, if there is any pooling*/
     if(f2->pooling_flag){
         for(i = 0; i < f2->n_kernels; i++){
-            if(f2->normalization_flag){
+            if(f2->convolutional_flag == NO_CONVOLUTION){
+                if(f2->pooling_flag == MAX_POOLING){
+                    max_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                }
+                else{
+                    avarage_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                }
+            }
+            else if(f2->normalization_flag){
                 if(f2->pooling_flag == MAX_POOLING){
                     max_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
@@ -950,6 +1044,8 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
         }
     }
+    
+    free(temp);
     
     
 }
@@ -1093,95 +1189,101 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
         copy_array(error,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
     }
     
-    
-    if(f2->normalization_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
-                    if(f2->activation_flag)
-                        local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                    else
-                        local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+    if(f2->convolutional_flag == CONVOLUTION){
+        if(f2->normalization_flag){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                    for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
+                        if(f2->activation_flag)
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
 
+                    }
+                }
+            }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else{
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+        }
+        
+        /* computing the weight and bias derivatives for f2 applied to f1 output*/
+        if(f1->dropout_flag){
+            if(f1->activation_flag){
+                
+                dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f1->output);
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                }
+
+            }
+            
+            else{
+                dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
+                
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
                 }
             }
         }
         
-        if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == NO_ACTIVATION){
-            copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        
-    }
-    
-    else{
-        if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-    }
-    
-    /* computing the weight and bias derivatives for f2 applied to f1 output*/
-    if(f1->dropout_flag){
-        if(f1->activation_flag){
-            
-            dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f1->output);
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-            }
-
-        }
-        
         else{
-            dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
-            
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            if(f1->activation_flag){
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                }
             }
-        }
-    }
-    
-    else{
-        if(f1->activation_flag){
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            
+            else{
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                }
             }
         }
         
-        else{
-            for(i = 0; i < f2->n_kernels; i++){
-                convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-            }
-        }
+        return f2->error2;
     }
     
+    else
+        return f2->temp;
     
-    return f2->error2;
+    
+    
     
 }
 
@@ -1226,73 +1328,78 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         copy_array(error,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
     }
     
-    if(f2->normalization_flag){
-        for(i = 0; i < f2->n_kernels; i++){
-            for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
-                    if(f2->activation_flag)
-                        local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
-                    else
-                        local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+    if(f2->convolutional_flag == CONVOLUTION){
+        if(f2->normalization_flag){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
+                    for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
+                        if(f2->activation_flag)
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
 
+                    }
                 }
+            }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else{
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
         }
         
-        if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
+        /* computing the weight and bias derivatives for f2 applied to f1 output*/
         
-        if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == NO_ACTIVATION){
-            copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+        for(i = 0; i < f2->n_kernels; i++){
+            if(f1->pooling_flag)
+                convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            else if(f1->normalization_flag)
+                convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            else if(f1->activation_flag)
+                convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            else
+                convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
         }
         
         
+        return f2->error2;
     }
     
-    else{
-        if(f2->activation_flag == SIGMOID){
-            derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == RELU){
-            derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-        
-        if(f2->activation_flag == TANH){
-            derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
-        }
-    }
-    
-    /* computing the weight and bias derivatives for f2 applied to f1 output*/
-    
-    for(i = 0; i < f2->n_kernels; i++){
-        if(f1->pooling_flag)
-            convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-        else if(f1->normalization_flag)
-            convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-        else if(f1->activation_flag)
-            convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-        else
-            convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-    }
-    
-    
-    return f2->error2;
+    else
+        return f2->temp;
     
 }
 

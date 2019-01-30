@@ -43,6 +43,8 @@
 #define EPSILON 0.00000001
 #define NO_REGULARIZATION 0
 #define L2_REGULARIZATION 1
+#define NO_CONVOLUTION 1
+#define CONVOLUTION 2
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -69,7 +71,7 @@ typedef struct fcl { //fully-connected-layers
 
 /* PADDING_ROWS MUST BE = PADDING_COLS AND ALSO STRIDE_ROWS = STRIDE_COLS*/
 typedef struct cl { //convolutional-layers
-    int channels, input_rows, input_cols,layer;
+    int channels, input_rows, input_cols,layer,convolutional_flag;;
     int kernel_rows, kernel_cols, n_kernels;
     int stride1_rows, stride1_cols, padding1_rows, padding1_cols;
     int stride2_rows, stride2_cols, padding2_rows, padding2_cols;
@@ -237,7 +239,7 @@ int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int
 // Functions defined in layers.c
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
 void free_fully_connected(fcl* f);
-cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer);
+cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer, int convolutional_flag);
 void free_convolutional(cl* c);
 rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls);
 void free_residual(rl* r);

@@ -56,6 +56,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Manual Xavier Initialization (28/11/2018)
 - OpenCL initialization (10/12/2018)
 - Clipping gradient (29/1/2019)
+- Convolutional Layers with only pooling function (30/1/2019)
 
 # Future implementations
 - BPTT
