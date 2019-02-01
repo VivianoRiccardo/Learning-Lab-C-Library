@@ -192,7 +192,52 @@ void batch_normalization_back_prop(int batch_size, float** input_vectors,float**
             }
         }
     }
-    
-    
 
+}
+
+/* This function computes the final mean and variance for a bn layer once the training is ended, according to the 
+ * second part of the pseudocode that you can find here: https://standardfrancis.wordpress.com/2015/04/16/batch-normalization/
+ * 
+ * Input:
+ *     
+ *             @ float** input_vectors:= the input that comes just before of this bn* layer, coming from all the instances of the training,
+ *                                       dimensions: n_vectors x vector_size
+ *            @ int n_vectors:= the first dimension of input_vectors
+ *             @ int vector_size:= the second dimension of ninput_vectors
+ *             @ int mini_batch_size:= the batch size used during the training
+ *             @ bn* bn_layer:= the batch normalized layer where the final mean and final variance will be set up
+ * 
+ * */
+void batch_normalization_final_mean_variance(float** input_vectors, int n_vectors, int vector_size, int mini_batch_size, bn* bn_layer){
+    int i,j;
+    float* mean = (float*)calloc(vector_size,sizeof(float));
+    float* var = (float*)calloc(vector_size,sizeof(float));
+    srand(time(NULL));
+    shuffle_float_matrix(input_vectors, n_vectors);
+    
+    if(n_vectors%mini_batch_size != 0){
+        fprintf(stderr,"Error: you batch_size doesn't divide your n_vectors perfectly\n");
+        exit(1);
+    }
+    for(i = 0; i < n_vectors; i+=mini_batch_size){
+        reset_bn(bn_layer);
+        for(j = 0; j < mini_batch_size; j++){
+            batch_normalization_feed_forward(mini_batch_size,input_vectors,bn_layer->temp_vectors,vector_size,bn_layer->gamma,bn_layer->beta,bn_layer->mean,bn_layer->var, bn_layer->outputs,EPSILON);
+            sum1D(bn_layer->mean,mean,mean,vector_size);
+            sum1D(bn_layer->var,var,var,vector_size);
+        }
+    }
+    
+    for(i = 0; i < vector_size; i++){
+        mean[i] /= (float)(n_vectors/mini_batch_size);
+        var[i] = (float)((float)mini_batch_size/(float)(mini_batch_size-1))*var[i]/(float)(n_vectors/mini_batch_size);
+    }
+    
+    copy_array(mean,bn_layer->final_mean,vector_size);
+    copy_array(var,bn_layer->final_var,vector_size);
+    
+    free(mean);
+    free(var);
+    
+    return;
 }

@@ -58,6 +58,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Clipping gradient (29/1/2019)
 - Convolutional Layers with only pooling function (30/1/2019)
 - Leaky Relu Activation function (30/1/2019)
+- Batch Normalization final mean and variance for feed forward output (1/2/2019)
 
 # Future implementations
 - BPTT

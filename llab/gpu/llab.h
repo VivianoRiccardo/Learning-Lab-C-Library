@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -46,6 +47,8 @@
 #define L2_REGULARIZATION 1
 #define NO_CONVOLUTION 1
 #define CONVOLUTION 2
+#define BATCH_NORMALIZATION_TRAINING_MODE 1
+#define BATCH_NORMALIZATION_FINAL_MODE 2
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -106,7 +109,7 @@ typedef struct rl { //residual-layers
 
 
 typedef struct bn{//batch_normalization layer
-    int batch_size, vector_dim, layer;
+    int batch_size, vector_dim, layer, activation_flag, mode_flag;
     float epsilon;
     float** input_vectors;//batch_size*vector_dim
     float** temp_vectors;//batch_size*vector_dim
@@ -124,6 +127,9 @@ typedef struct bn{//batch_normalization layer
     float** error2;//batch_size*vector_dim
     float** temp1;//batch_size*vector_dim
     float* temp2;//vector_dim
+    float** post_activation;//batch_size*vector_dim
+    float* final_mean;//vector_dim
+    float* final_var;//vector_dim
 }bn;
 
 typedef struct model {
@@ -196,6 +202,8 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k);//can be transposed in opencl
 void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon);
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
+void batch_normalization_final_mean_variance(float** input_vectors, int n_vectors, int vector_size, int mini_batch_size, bn* bn_layer);
+
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
 void adam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size);
@@ -268,7 +276,7 @@ rl* reset_rl(rl* f);
 unsigned long long int size_of_fcls(fcl* f);
 unsigned long long int size_of_cls(cl* f);
 unsigned long long int size_of_rls(rl* f);
-bn* batch_normalization(int batch_size, int vector_input_dimension, int layer);
+bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag);
 void free_batch_normalization(bn* b);
 void save_bn(bn* b, int n);
 bn* load_bn(FILE* fr);

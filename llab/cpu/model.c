@@ -1651,10 +1651,12 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         
                         if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
                             leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        else
+                        else if(m->rls[z]->cl_output->activation_flag == RELU)
                             relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-
-                        
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
                     }
                     
                     k3++;
@@ -1813,11 +1815,14 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         else
                             sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
                         
-                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)    
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
                             leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        else
+                        else if(m->rls[z]->cl_output->activation_flag == RELU)
                             relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
 
                     }
                     
@@ -1970,9 +1975,18 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
                         if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
                             derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else
+                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
                             derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        
+                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            
                         error1 = m->rls[z2]->cl_output->temp;
                         
                     }
@@ -2010,9 +2024,16 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
                         if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
                             derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else
+                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
                             derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                         error1 = m->rls[z2]->cl_output->temp;
                         }
                     
@@ -2069,10 +2090,17 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         else{
                             error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count],error1);
                             if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
-                                derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                            else
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == RELU)
                                 derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                             error1 = m->rls[z2]->cl_output->temp;
                         }
                         

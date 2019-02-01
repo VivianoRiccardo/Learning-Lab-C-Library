@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 
 #define N_NORMALIZATION 5
@@ -41,6 +42,8 @@
 #define L2_REGULARIZATION 1
 #define NO_CONVOLUTION 1
 #define CONVOLUTION 2
+#define BATCH_NORMALIZATION_TRAINING_MODE 1
+#define BATCH_NORMALIZATION_FINAL_MODE 2
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -101,7 +104,7 @@ typedef struct rl { //residual-layers
 
 
 typedef struct bn{//batch_normalization layer
-    int batch_size, vector_dim, layer;
+    int batch_size, vector_dim, layer, activation_flag, mode_flag;
     float epsilon;
     float** input_vectors;//batch_size*vector_dim
     float** temp_vectors;//batch_size*vector_dim
@@ -119,6 +122,9 @@ typedef struct bn{//batch_normalization layer
     float** error2;//batch_size*vector_dim
     float** temp1;//batch_size*vector_dim
     float* temp2;//vector_dim
+    float** post_activation;//batch_size*vector_dim
+    float* final_mean;//vector_dim
+    float* final_var;//vector_dim
 }bn;
 
 typedef struct model {
@@ -183,6 +189,7 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k);//can be transposed in opencl
 void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon);
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
+void batch_normalization_final_mean_variance(float** input_vectors, int n_vectors, int vector_size, int mini_batch_size, bn* bn_layer);
 
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
@@ -256,7 +263,7 @@ rl* reset_rl(rl* f);
 unsigned long long int size_of_fcls(fcl* f);
 unsigned long long int size_of_cls(cl* f);
 unsigned long long int size_of_rls(rl* f);
-bn* batch_normalization(int batch_size, int vector_input_dimension, int layer);
+bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag);
 void free_batch_normalization(bn* b);
 void save_bn(bn* b, int n);
 bn* load_bn(FILE* fr);
@@ -267,6 +274,7 @@ void paste_bn(bn* b1, bn* b2);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
 void slow_paste_cl(cl* f, cl* copy,float tau);
 void slow_paste_rl(rl* f, rl* copy,float tau);
+void slow_paste_bn(bn* f, bn* copy,float tau);
 
 // Functions defined in model.c
 model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fcl** fcls);
@@ -300,5 +308,16 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm);
 float sum_all_quadratic_derivative_weights_rls(rl** rls, int n);
 float sum_all_quadratic_derivative_weights_cls(cl** cls, int n);
 float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n);
+
+// Functions defined in bmodel.c
+bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl** rls, cl** cls, fcl** fcls, bn** bnls);
+void free_bmodel(bmodel* m);
+bmodel* copy_bmodel(bmodel* m);
+void paste_bmodel(bmodel* m, bmodel* copy);
+void slow_paste_bmodel(bmodel* m, bmodel* copy, float tau);
+bmodel* reset_bmodel(bmodel* m);
+unsigned long long int size_of_bmodel(bmodel* m);
+void save_bmodel(bmodel* m, int n);
+bmodel* load_bmodel(char* file);
 
 #endif
