@@ -233,20 +233,34 @@ void copy_array(float* input, float* output, int size);//can be transposed in op
 void sum1D(float* input1, float* input2, float* output, int size);//can be transposed in opencl
 void mul_value(float* input, float value, float* output, int dimension);//can be transposed in opencl
 void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
+void update_residual_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
 void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
+void update_convolutional_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
 void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
+void update_fully_connected_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size);//can be transposed in opencl
 void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
+void sum_residual_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);//can be transoposed in opencl
 void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
+void sum_convolutional_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);//can be transoposed in opencl
 void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3);//can be transoposed in opencl
+void sum_fully_connected_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);//can be transoposed in opencl
 void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
+void update_residual_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
 void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
+void update_convolutional_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
 void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
+void update_fully_connected_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2);//can be transoposed in opencl
 void add_l2_residual_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+void add_l2_residual_layer_bmodel(bmodel* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+void add_l2_convolutional_layer_bmodel(bmodel* m,int total_number_weights,float lambda);//can be transoposed in opencl
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);//can be transoposed in opencl
+void add_l2_fully_connected_layer_bmodel(bmodel* m,int total_number_weights,float lambda);//can be transoposed in opencl
 int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
 void copy_char_array(char* input, char* output, int size);
 int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
+void update_batch_normalized_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size);
+void update_batch_normalized_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2);
 
 
 // Functions defined in layers.c
@@ -342,5 +356,19 @@ gpu_model* init_gpu_model(model* m, cl_context ctx );
 int load_on_gpu_cl_layer(cl_mem** cls, cl* c,cl_context ctx);
 int load_on_gpu_rl_layer(cl_mem** rls, rl* r, cl_context ctx);
 int load_on_gpu_fcl_layer(cl_mem** fcls, fcl* f, cl_context ctx);
+
+// Functions defined in bmodel.c
+bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl** rls, cl** cls, fcl** fcls, bn** bnls);
+void free_bmodel(bmodel* m);
+bmodel* copy_bmodel(bmodel* m);
+void paste_bmodel(bmodel* m, bmodel* copy);
+void slow_paste_bmodel(bmodel* m, bmodel* copy, float tau);
+bmodel* reset_bmodel(bmodel* m);
+unsigned long long int size_of_bmodel(bmodel* m);
+void save_bmodel(bmodel* m, int n);
+bmodel* load_bmodel(char* file);
+int count_bmodel_weights(bmodel* m);
+void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);
 
 #endif

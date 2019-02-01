@@ -579,3 +579,101 @@ bmodel* load_bmodel(char* file){
     return m;
     
 }
+
+
+/* This function returs the total number of weights in the bmodel m
+ * 
+ * Input
+ * 
+ *             @ bmodel* m:= the bmodel
+ * 
+ * */
+int count_bmodel_weights(bmodel* m){
+    int i,j;
+    int sum = 0;
+    for(i = 0; i < m->n_fcl; i++){
+        sum+=m->fcls[i]->input*m->fcls[i]->output;
+    }
+    
+    for(i = 0; i < m->n_cl; i++){
+        sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+    }
+    
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
+        }
+    }
+    
+    return sum;
+}
+
+
+/* This function can update the model of the network using the adam algorithm or the nesterov momentum
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the model that must be update
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *             @ int mini_batch_size:= the batch used
+ *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
+ *                @ float* b1:= the hyper parameter b1 of adam algorithm
+ *                @ float* b2:= the hyper parameter b2 of adam algorithm
+ *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
+ *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
+ *                @ float lambda:= a float value for l2 regularization
+ * 
+ * */
+void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
+    if(m == NULL)
+        return;
+    
+    lambda*=mini_batch_size;
+    
+    if(regularization == L2_REGULARIZATION){
+        add_l2_residual_layer_bmodel(m,total_number_weights,lambda);
+        add_l2_convolutional_layer_bmodel(m,total_number_weights,lambda);
+        add_l2_fully_connected_layer_bmodel(m,total_number_weights,lambda);
+    }
+    
+    
+    if(gradient_descent_flag == NESTEROV){    
+        update_residual_layer_nesterov_bmodel(m,lr,momentum,mini_batch_size);
+        update_convolutional_layer_nesterov_bmodel(m,lr,momentum,mini_batch_size);
+        update_fully_connected_layer_nesterov_bmodel(m,lr,momentum,mini_batch_size);
+        update_batch_normalized_layer_nesterov_bmodel(m,lr,momentum,mini_batch_size);
+    }
+    
+    else if(gradient_descent_flag == ADAM){
+        update_residual_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
+        update_convolutional_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
+        update_fully_connected_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
+        update_batch_normalized_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
+        (*b1)*=BETA1_ADAM;
+        (*b2)*=BETA2_ADAM;
+    }    
+    
+
+}
+
+
+/* This function sum the partial derivatives in model m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ bmodel* m:= first input model
+ *             @ bmodel* m2:= second input model
+ *             @ bmodel* m3:= output model
+ * 
+ * */
+void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_fully_connected_layers_partial_derivatives_bmodel(m,m2,m3);
+    sum_convolutional_layers_partial_derivatives_bmodel(m,m2,m3);
+    sum_residual_layers_partial_derivatives_bmodel(m,m2,m3);
+}
+
