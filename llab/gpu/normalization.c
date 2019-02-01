@@ -216,16 +216,15 @@ void batch_normalization_final_mean_variance(float** input_vectors, int n_vector
     shuffle_float_matrix(input_vectors, n_vectors);
     
     if(n_vectors%mini_batch_size != 0){
-        fprintf(stderr,"Error: you batch_size doesn't divide your n_vectors perfectly\n");
+        fprintf(stderr,"Error: your batch_size doesn't divide your n_vectors perfectly\n");
         exit(1);
     }
     for(i = 0; i < n_vectors; i+=mini_batch_size){
         reset_bn(bn_layer);
-        for(j = 0; j < mini_batch_size; j++){
-            batch_normalization_feed_forward(mini_batch_size,input_vectors,bn_layer->temp_vectors,vector_size,bn_layer->gamma,bn_layer->beta,bn_layer->mean,bn_layer->var, bn_layer->outputs,EPSILON);
-            sum1D(bn_layer->mean,mean,mean,vector_size);
-            sum1D(bn_layer->var,var,var,vector_size);
-        }
+        batch_normalization_feed_forward(mini_batch_size,input_vectors,bn_layer->temp_vectors,vector_size,bn_layer->gamma,bn_layer->beta,bn_layer->mean,bn_layer->var, bn_layer->outputs,EPSILON);
+        sum1D(bn_layer->mean,mean,mean,vector_size);
+        sum1D(bn_layer->var,var,var,vector_size);
+        
     }
     
     for(i = 0; i < vector_size; i++){
