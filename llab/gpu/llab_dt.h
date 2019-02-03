@@ -34,9 +34,9 @@ typedef struct decision_tree {
     float impurity;
     float conditional_threshold;
     char* conditional_string;
-    char** unwanted_conditional_list//unwanted_char_size*char_second_dimension_max_size
-    int* unwanted_conditional_list//unwanted_int_size
-    float* unwanted_conditional_list//unwanted_float_size
+    char** unwanted_conditional_char_list//unwanted_char_size*char_second_dimension_max_size
+    int* unwanted_conditional_int_list//unwanted_int_size
+    float* unwanted_conditional_float_list//unwanted_float_size
     decision_tree** sons;
 } decision_tree;
 
