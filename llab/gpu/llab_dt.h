@@ -27,7 +27,7 @@ typedef struct decision_tree {
     int char_second_dimension_max_size;
     char** char_features;//(number_instances*different_features)*char_second_dimension_max_size
     int* int_features;//number_instances*different_features
-    float* float_labels;//number_instances*different_features
+    float* float_features;//number_instances*different_features
     char** char_labels;//(number_instances*different_labels)*char_second_dimension_max_size
     int* int_labels;//(number_instances*different_labels)
     float* float_labels;//(number_instances*different_labels)
