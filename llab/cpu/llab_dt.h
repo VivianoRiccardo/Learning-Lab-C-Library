@@ -21,6 +21,9 @@ typedef struct decision_tree {
     int char_condition_flag;//if the son is created with a char condition on char features (indicates on which char feature it's the condition)
     int int_condition_flag;//if the son is created with a float condition on float features (indicates on which char feature it's the condition)
     int float_condition_flag;//if the son is created with an int condition on int features (indicates on which int feature it's the condition)
+    int unwanted_char_size;
+    int unwanted_float_size;
+    int unwanted_int_size;
     int char_second_dimension_max_size;
     char** char_features;//(number_instances*different_features)*char_second_dimension_max_size
     int* int_features;//number_instances*different_features
@@ -31,6 +34,9 @@ typedef struct decision_tree {
     float impurity;
     float conditional_threshold;
     char* conditional_string;
+    char** unwanted_conditional_list//unwanted_char_size*char_second_dimension_max_size
+    int* unwanted_conditional_list//unwanted_int_size
+    float* unwanted_conditional_list//unwanted_float_size
     decision_tree** sons;
 } decision_tree;
 
