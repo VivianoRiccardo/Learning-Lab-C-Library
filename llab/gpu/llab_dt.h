@@ -10,7 +10,7 @@
 #define CONDITION_C(x,y) (x == y)
 #define CONDITION_D(x,y) (x <= y)
 #define CONDITION_E(x,y) (x < y)
-#define CONDITION_f(x,y) (!strcmp(x,y))
+#define CONDITION_F(x,y) (!strcmp(x,y))
 
 
 typedef struct decision_tree {
