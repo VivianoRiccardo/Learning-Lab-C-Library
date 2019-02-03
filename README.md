@@ -13,6 +13,7 @@ make
 # Run a file.c file using llab:
 
 Link in your file.c the header "/directory-path/llab.h"
+Link in your file.c the header "/directory-path/llab_dt.h"
 
 and then
 
@@ -59,6 +60,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Convolutional Layers with only pooling function (30/1/2019)
 - Leaky Relu Activation function (30/1/2019)
 - Batch Normalization final mean and variance for feed forward output (1/2/2019)
+- Decision Tree structure (3/2/2019)
 
 # Future implementations
 - BPTT
