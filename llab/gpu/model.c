@@ -29,14 +29,14 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     for(i = 0; i < n_rl; i++){
         if(rls[i]->cls[rls[i]->n_cl-1]->pooling_flag){
             if(rls[i]->cls[rls[i]->n_cl-1]->n_kernels*rls[i]->cls[rls[i]->n_cl-1]->rows2*rls[i]->cls[rls[i]->n_cl-1]->cols2 != rls[i]->channels*rls[i]->input_rows*rls[i]->input_cols){
-                fprintf(stderr,"Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
+                fprintf(stderr,"Error: you have a residual layer (%d layer) where the input size doesn't correspond to the last convolutional layer size of the residual layer\n",rls[i]->cls[rls[i]->n_cl-1]->layer);
                 exit(1);
             }
         }
         
         else{
             if(rls[i]->cls[rls[i]->n_cl-1]->n_kernels*rls[i]->cls[rls[i]->n_cl-1]->rows1*rls[i]->cls[rls[i]->n_cl-1]->cols1 != rls[i]->channels*rls[i]->input_rows*rls[i]->input_cols){
-                fprintf(stderr,"Error: you have a residual layer where the input size doesn't correspond to the last convolutional layer size of the residual layer\n");
+                fprintf(stderr,"Error: you have a residual layer (%d layer) where the input size doesn't correspond to the last convolutional layer size of the residual layer\n",rls[i]->cls[rls[i]->n_cl-1]->layer);
                 exit(1);
             }
         }
