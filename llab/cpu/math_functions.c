@@ -66,7 +66,7 @@ float leaky_relu(float x){
     if(x > 0)
         return x;
     else
-        return x*0.01;
+        return x*0.1;
 }
 
 void leaky_relu_array(float* input, float* output, int size){
@@ -80,7 +80,7 @@ float derivative_leaky_relu(float x){
     if(x > 0)
         return 1;
     else
-        return 0.01;
+        return 0.1;
 }
 
 void derivative_leaky_relu_array(float* input, float* output, int size){
