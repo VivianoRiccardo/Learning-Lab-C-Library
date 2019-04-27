@@ -320,7 +320,7 @@ void free_residual(rl* r){
  * */
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag){
     if(batch_size <= 1 || vector_input_dimension < 1){
-        fprintf(stderr,"Error: remember if you are useing online learning (batch_size = 1) batch normalization is useless, and remember also thta vector input dimension must be >= 1\n");
+        fprintf(stderr,"Error: remember if you are using online learning (batch_size = 1) batch normalization is useless, and remember also that vector input dimension must be >= 1\n");
         exit(1);
     }
     int i;
@@ -363,6 +363,8 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     for(i = 0; i < vector_input_dimension; i++){
         b->gamma[i] = 1;
     }
+    
+    b->epsilon = EPSILON;
     
     return b;
 }
