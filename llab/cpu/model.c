@@ -1794,7 +1794,10 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         count2-=m->rls[z2]->n_cl;
                         
                         if(k3-count == 0){
-                            copy_array(m->rls[z2]->cl_output->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                            if(m->rls[z2]->cl_output->activation_flag)
+                                copy_array(m->rls[z2]->cl_output->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                            else
+                                copy_array(m->rls[z2]->cl_output->pre_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
                         }
                         if(z2!=z){
                             ff_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count]);
