@@ -130,7 +130,7 @@ typedef struct bn{//batch_normalization layer
     float* final_var;//vector_dim
 }bn;
 
-typedef struct lstm { //fully-connected-layers
+typedef struct lstm { //long short term memory layers
     int size,layer,dropout_flag_up, dropout_flag_right, window;//dropout flag = 1 if dropout must be applied
     float** w;// 4 x size*size
     float** u;// 4 x size*size
