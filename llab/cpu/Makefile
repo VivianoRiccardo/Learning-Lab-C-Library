@@ -11,5 +11,8 @@ all:
 	gcc -c normalization.c -o normalization.o -O3 -mavx -lm
 	gcc -c utils.c -o utils.o -O3 -mavx -lm
 	gcc -c clipping_gradient.c -o clipping_gradient.o -O3 -mavx -lm
+	gcc -c recurrent.c -o recurrent.o -O3 -mavx -lm
+	gcc -c recurrent_layers.c -o recurrent_layers.o -O3 -mavx -lm
+	gcc -c rmodel.c -o rmodel.o -O3 -mavx -lm
 	ar r libllab.a *.o
 	rm *.o

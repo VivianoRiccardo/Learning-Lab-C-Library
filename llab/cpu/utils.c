@@ -1143,4 +1143,91 @@ void add_l2_fully_connected_layer_bmodel(bmodel* m,int total_number_weights,floa
     }
 }
 
+/* This function add the l2 regularization to the partial derivative of the weights for lstm layers of m
+ * 
+ * 
+ * Input:
+ *         
+ *             @ rmodel* m:= the model
+ *             @ int toal_number_weights:= the number of total weights
+ *             @ float lambda an hyper param
+ * 
+ * */
+void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_lstm; j++){
+        for(k = 0; k < 4; k++){
+            for(u = 0; u < m->lstms[j]->size*m->lstms[j]->size; u++){
+                ridge_regression(&m->lstms[j]->d_w[k][u],m->lstms[j]->w[k][u],lambda,total_number_weights);
+                ridge_regression(&m->lstms[j]->d_u[k][u],m->lstms[j]->u[k][u],lambda,total_number_weights);
+            }
+        }
+    }
+}
 
+
+/* Given a rmodel, this function update the params of the lstm layers of the model with the nesterov momentum
+ * 
+ * Input:
+ *             
+ *             @ rmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *                @ int mini_batch_size:= the mini batch dimensions
+ * 
+ * */
+void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_batch_size){
+    int i,j,k;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+                nesterov_momentum(&m->lstms[i]->w[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_w[j][k],&m->lstms[i]->d1_w[j][k]);
+                nesterov_momentum(&m->lstms[i]->u[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_u[j][k],&m->lstms[i]->d1_u[j][k]);
+                if(k < m->lstms[i]->size)
+                    nesterov_momentum(&m->lstms[i]->biases[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_biases[j][k],&m->lstms[i]->d1_biases[j][k]);
+            }
+        }
+    }
+}
+
+/* Given a rmodel, this function update the params of the lstm layers of the model with the adam algorithm
+ * 
+ * Input:
+ *             
+ *             @ rmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *                @ int mini_batch_size:= the mini batch dimensions
+ * 
+ * */
+void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2){
+    int i,j,k;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+                adam_algorithm(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                adam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                if(k < m->lstms[i]->size)
+                    adam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            }
+        }
+    }
+}
+
+/* This function frees a space allocated by a matrix
+ * 
+ * Input:
+ * 
+ *             @ float** m:= the matrix m
+ *             @ int n:= number of rows of m
+ * 
+ * */
+void free_matrix(float** m, int n){
+    int i;
+    for(i = 0; i < n; i++){
+        if(m[i] != NULL)
+            free(m[i]);
+    }
+    
+    free(m);
+}

@@ -55,12 +55,15 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Manual Batch normalization feed forward and backpropagation (27/11/2018)
 - fixed residual issues2 (28/11/2018)
 - Manual Xavier Initialization (28/11/2018)
-- OpenCL initialization (10/12/2018)
 - Clipping gradient (29/1/2019)
 - Convolutional Layers with only pooling function (30/1/2019)
 - Leaky Relu Activation function (30/1/2019)
 - Batch Normalization final mean and variance for feed forward output (1/2/2019)
 - Decision Tree structure (3/2/2019)
+- LSTM feed forward (13/5/2019)
+- LSTM back propagation (13/5/2019)
+- Recurrent Network (rmodel) with LSTM (13/5/2019)
+- Recurrent Network update with nesterov and adam algorithm (13/5/2019)
 
 # Future implementations
 - BPTT

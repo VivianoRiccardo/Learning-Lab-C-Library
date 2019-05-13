@@ -19,6 +19,7 @@
 #define CLS 2
 #define RLS 3
 #define BNS 4
+#define LSTMS 1
 #define NO_ACTIVATION 0
 #define SIGMOID 1
 #define RELU 2
@@ -44,6 +45,8 @@
 #define CONVOLUTION 2
 #define BATCH_NORMALIZATION_TRAINING_MODE 1
 #define BATCH_NORMALIZATION_FINAL_MODE 2
+#define STATEFUL 1
+#define STATELESS 2
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -127,6 +130,29 @@ typedef struct bn{//batch_normalization layer
     float* final_var;//vector_dim
 }bn;
 
+typedef struct lstm { //fully-connected-layers
+    int size,layer,dropout_flag_up, dropout_flag_right, window;//dropout flag = 1 if dropout must be applied
+    float** w;// 4 x size*size
+    float** u;// 4 x size*size
+    float** d_w;// 4 x size*size
+    float** d1_w;// 4 x size*size
+    float** d2_w;// 4 x size*size
+    float** d_u;// 4 x size*size
+    float** d1_u;// 4 x size*size
+    float** d2_u;// 4 x size*size
+    float** biases; //4 x size
+    float** d_biases; //4 x size
+    float** d1_biases; //4 x size
+    float** d2_biases; //4 x size
+    float*** lstm_z; //window x 4 x size
+    float** lstm_hidden; //window x size
+    float** lstm_cell; //window x size
+    float* dropout_mask_up;//size
+    float* dropout_mask_right;//size
+    float dropout_threshold_up;
+    float dropout_threshold_right;
+} lstm;
+
 typedef struct model {
     int layers, n_rl, n_cl, n_fcl;
     rl** rls;//rls = residual-layers
@@ -140,9 +166,15 @@ typedef struct bmodel {
     rl** rls;//rls = residual-layers
     cl** cls;//cls = convolutional-layers
     fcl** fcls; // fcls = fully-connected-layers
-    bn** bns; // bn = bacth-normalization layer
+    bn** bns; // bn = batch-normalization layer
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, 4 = batch normalization sla = sequential layers array
 } bmodel;
+
+typedef struct rmodel {
+    int layers, n_lstm, window, hidden_state_mode;
+    lstm** lstms;
+    int** sla;
+} rmodel;
 
 // Functions defined in math.c
 void softmax(float* input, float* output, int size);
@@ -248,7 +280,10 @@ void copy_char_array(char* input, char* output, int size);
 int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
 void update_batch_normalized_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size);
 void update_batch_normalized_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2);
-
+void free_matrix(float** m, int n);
+void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
+void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_batch_size);
+void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2);
 
 // Functions defined in layers.c
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
@@ -337,4 +372,32 @@ int count_bmodel_weights(bmodel* m);
 void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);
 
+// Functions defined in recurrent.c
+void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int size);
+float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus);
+
+
+// Functions defined in recurrent_layers.c
+lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window);
+void free_recurrent_lstm(lstm* rlstm);
+void save_lstm(lstm* rlstm, int n);
+lstm* load_lstm(FILE* fr);
+lstm* copy_lstm(lstm* l);
+void paste_lstm(lstm* l,lstm* copy);
+void slow_paste_lstm(lstm* l,lstm* copy, float tau);
+lstm* reset_lstm(lstm* f);
+
+// Functions defined in rmodel.c
+rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int hidden_state_mode);
+void free_rmodel(rmodel* m);
+rmodel* copy_rmodel(rmodel* m);
+void paste_rmodel(rmodel* m, rmodel* copy);
+void slow_paste_rmodel(rmodel* m, rmodel* copy, float tau);
+rmodel* reset_rmodel(rmodel* m);
+void save_rmodel(rmodel* m, int n);
+rmodel* load_rmodel(char* file);
+void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, rmodel* m);
+float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m);
+int count_weights_rmodel(rmodel* m);
+void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 #endif
