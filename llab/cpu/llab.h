@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 
 #define N_NORMALIZATION 5
@@ -175,6 +176,22 @@ typedef struct rmodel {
     lstm** lstms;
     int** sla;
 } rmodel;
+
+
+typedef struct thread_args_model {
+    model* m;
+    int rows,cols,channels,error_dimension;
+    float* input;
+    float* error;
+} thread_args_model;
+
+typedef struct thread_args_rmodel {
+    rmodel* m;
+    float** hidden_states;
+    float** cell_states;
+    float** input_model;
+    float** error_model;
+} thread_args_rmodel;
 
 // Functions defined in math.c
 void softmax(float* input, float* output, int size);
@@ -402,4 +419,16 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
 int count_weights_rmodel(rmodel* m);
 void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
+
+// Functions defined in multi_core_model.c
+void* model_thread_ff(void* _args);
+void* model_thread_bp(void* _args);
+void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads);
+void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension);
+
+// Functions defined in multi_core_rmodel.c
+void* rmodel_thread_ff(void* _args);
+void* rmodel_thread_bp(void* _args);
+void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads);
+void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads);
 #endif
