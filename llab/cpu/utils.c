@@ -108,7 +108,7 @@ int read_files(char** name, char* directory){
     closedir(d);
   }
 
-  return(0);
+  return(count);
 }
 
 
