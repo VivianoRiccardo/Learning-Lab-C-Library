@@ -284,6 +284,7 @@ void free_matrix(float** m, int n);
 void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
 void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_batch_size);
 void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2);
+void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 
 // Functions defined in layers.c
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
@@ -400,4 +401,5 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
 float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m);
 int count_weights_rmodel(rmodel* m);
 void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 #endif

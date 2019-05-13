@@ -621,3 +621,21 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
 
 }
 
+
+/* This function sum the partial derivatives in rmodel m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ rmodel* m:= first input rmodel
+ *             @ rmodel* m2:= second input rmodel
+ *             @ rmodel* m3:= output rmodel
+ * 
+ * */
+void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_lstm_layers_partial_derivatives(m,m2,m3);
+}
+

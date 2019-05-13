@@ -1214,6 +1214,34 @@ void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, flo
     }
 }
 
+
+/* This function sum the partial derivatives of the lstm layers of a rmodel m and a second rmodel m2 in a third rmodel m3
+ * 
+ * Input:
+ * 
+ *             @ rmodel* m:= the input rmodel
+ *             @ rmodel* m2:= another input rmodel
+ *             @ rmodel* m3:= the output rmodel
+ * 
+ * */
+void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->size*m->lstms[i]->size);
+            sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->size*m->lstms[i]->size);
+            sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
+        }
+    
+    }
+
+}
+
+
 /* This function frees a space allocated by a matrix
  * 
  * Input:
