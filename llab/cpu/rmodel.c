@@ -334,7 +334,7 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
     
     int i,j;
     
-    
+    float temp_drp_value;
     /*feed_forward_passage*/
     
     for(i = 0; i < m->window; i++){
@@ -346,13 +346,38 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                     //in this case the h-1 and c-1 come from the last mini_batch
                     if(m->lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,m->lstms[j]->dropout_threshold_right);
-                    
+                   
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT){
+                        temp_drp_value = m->lstms[j]->dropout_threshold_right;
+                        m->lstms[j]->dropout_threshold_right = 0;
+                    }
                     get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
+                    
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT)
+                        m->lstms[j]->dropout_threshold_right = temp_drp_value;
+                    
+                    
+                    if(m->lstms[j]->dropout_flag_right == DROPOUT_TEST)
+                        mul_value(dropout_output2,m->lstms[j]->dropout_threshold_right,dropout_output2,m->lstms[j]->size);
+                    
                     lstm_ff(input_model[i], dropout_output2, cell_states[j], m->lstms[j]->lstm_cell[i], m->lstms[j]->lstm_hidden[i], m->lstms[j]->w, m->lstms[j]->u, m->lstms[j]->biases, m->lstms[j]->lstm_z[i], m->lstms[j]->size);
                 }
 
                 else{
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT){
+                        temp_drp_value = m->lstms[j]->dropout_threshold_right;
+                        m->lstms[j]->dropout_threshold_right = 0;
+                    }
+                    
                     get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,m->lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
+                    
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT)
+                        m->lstms[j]->dropout_threshold_right = temp_drp_value;
+                    
+                    
+                    if(m->lstms[j]->dropout_flag_right == DROPOUT_TEST)
+                        mul_value(dropout_output2,m->lstms[j]->dropout_threshold_right,dropout_output2,m->lstms[j]->size);
+                        
                     lstm_ff(input_model[i], dropout_output2, m->lstms[j]->lstm_cell[i-1], m->lstms[j]->lstm_cell[i], m->lstms[j]->lstm_hidden[i], m->lstms[j]->w, m->lstms[j]->u, m->lstms[j]->biases, m->lstms[j]->lstm_z[i], m->lstms[j]->size);
                 }
             }
@@ -362,14 +387,38 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(m->lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,m->lstms[j]->dropout_threshold_right);
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT){
+                        temp_drp_value = m->lstms[j]->dropout_threshold_right;
+                        m->lstms[j]->dropout_threshold_right = 0;
+                    }
+                    
                     get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT)
+                        m->lstms[j]->dropout_threshold_right = temp_drp_value;
+                    
+                    
+                    if(m->lstms[j]->dropout_flag_right == DROPOUT_TEST)
+                        mul_value(dropout_output2,m->lstms[j]->dropout_threshold_right,dropout_output2,m->lstms[j]->size);
+                        
                     lstm_ff(dropout_output, dropout_output2, cell_states[j], m->lstms[j]->lstm_cell[i], m->lstms[j]->lstm_hidden[i], m->lstms[j]->w, m->lstms[j]->u, m->lstms[j]->biases, m->lstms[j]->lstm_z[i], m->lstms[j]->size);
                     
                 }    
                 else{
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT){
+                        temp_drp_value = m->lstms[j]->dropout_threshold_right;
+                        m->lstms[j]->dropout_threshold_right = 0;
+                    }
+                    
                     get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,m->lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
                     
+                    if(m->lstms[j]->dropout_flag_right != DROPOUT)
+                        m->lstms[j]->dropout_threshold_right = temp_drp_value;
+                    
+                    
+                    if(m->lstms[j]->dropout_flag_right == DROPOUT_TEST)
+                        mul_value(dropout_output2,m->lstms[j]->dropout_threshold_right,dropout_output2,m->lstms[j]->size);
+                        
                     lstm_ff(dropout_output, dropout_output2, cell_states[j], m->lstms[j]->lstm_cell[i], m->lstms[j]->lstm_hidden[i], m->lstms[j]->w, m->lstms[j]->u, m->lstms[j]->biases, m->lstms[j]->lstm_z[i], m->lstms[j]->size);
                 }
             }
@@ -378,8 +427,20 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
             if(i == 0)
                 set_dropout_mask(m->lstms[j]->size,m->lstms[j]->dropout_mask_up,m->lstms[j]->dropout_threshold_up);
             
+            if(m->lstms[j]->dropout_flag_right != DROPOUT){
+                temp_drp_value = m->lstms[j]->dropout_threshold_up;
+                m->lstms[j]->dropout_threshold_up = 0;
+            }
+            
             get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_up,m->lstms[j]->lstm_hidden[i],dropout_output);
             
+            if(m->lstms[j]->dropout_flag_right != DROPOUT)
+                m->lstms[j]->dropout_threshold_up = temp_drp_value;
+            
+            
+            if(m->lstms[j]->dropout_flag_right == DROPOUT_TEST)
+                mul_value(dropout_output,m->lstms[j]->dropout_threshold_up,dropout_output,m->lstms[j]->size);
+    
                 
         }
     }
