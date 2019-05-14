@@ -13,7 +13,7 @@ void* rmodel_thread_bp(void* _args) {
     
     // depacking args
     thread_args_rmodel* args = (thread_args_rmodel*) _args;
-    bp_rmodel_lstm(args->hidden_states,args->cell_states,args->input_model,args->error_model,args->m);
+    args->returning_error[0] = bp_rmodel_lstm(args->hidden_states,args->cell_states,args->input_model,args->error_model,args->m);
 }
 
 void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads){
@@ -25,10 +25,10 @@ void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
     for(i = 0; i < mini_batch_size; i+=threads){
         for(j = 0; j < threads && j+i < mini_batch_size; j++){
             args[j] = (thread_args_rmodel*)malloc(sizeof(thread_args_rmodel));
-            args[j]->m = m[j];
-            args[j]->hidden_states = hidden_states[j];
-            args[j]->cell_states = cell_states[j];
-            args[j]->input_model = input_model[j];
+            args[j]->m = m[i+j];
+            args[j]->hidden_states = hidden_states[i+j];
+            args[j]->cell_states = cell_states[i+j];
+            args[j]->input_model = input_model[i+j];
             pthread_create(thread+j, NULL, rmodel_thread_ff, args[j]);
             
             }
@@ -41,7 +41,7 @@ void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
 
 }
 
-void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads){
+void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error){
     pthread_t thread[threads];
     thread_args_rmodel* args[threads];
     
@@ -50,11 +50,12 @@ void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
     for(i = 0; i < mini_batch_size; i+=threads){
         for(j = 0; j < threads && j+i < mini_batch_size; j++){
             args[j] = (thread_args_rmodel*)malloc(sizeof(thread_args_rmodel));
-            args[j]->m = m[j];
-            args[j]->hidden_states = hidden_states[j];
-            args[j]->cell_states = cell_states[j];
-            args[j]->input_model = input_model[j];
-            args[j]->error_model = error_model[j];
+            args[j]->m = m[i+j];
+            args[j]->hidden_states = hidden_states[i+j];
+            args[j]->cell_states = cell_states[i+j];
+            args[j]->input_model = input_model[i+j];
+            args[j]->error_model = error_model[i+j];
+            args[j]->returning_error = &returning_error[i+j];
             pthread_create(thread+j, NULL, rmodel_thread_bp, args[j]);
             
             }

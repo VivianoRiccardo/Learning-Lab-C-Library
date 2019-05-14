@@ -183,6 +183,7 @@ typedef struct thread_args_model {
     int rows,cols,channels,error_dimension;
     float* input;
     float* error;
+    float** returning_error;
 } thread_args_model;
 
 typedef struct thread_args_rmodel {
@@ -191,6 +192,7 @@ typedef struct thread_args_rmodel {
     float** cell_states;
     float** input_model;
     float** error_model;
+    float**** returning_error;
 } thread_args_rmodel;
 
 // Functions defined in math.c
@@ -424,11 +426,12 @@ void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 void* model_thread_ff(void* _args);
 void* model_thread_bp(void* _args);
 void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads);
-void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension);
+void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension, float** returning_error);
 
 // Functions defined in multi_core_rmodel.c
 void* rmodel_thread_ff(void* _args);
 void* rmodel_thread_bp(void* _args);
 void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads);
-void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads);
+void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error);
+
 #endif
