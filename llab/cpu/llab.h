@@ -377,6 +377,12 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm);
 float sum_all_quadratic_derivative_weights_rls(rl** rls, int n);
 float sum_all_quadratic_derivative_weights_cls(cl** cls, int n);
 float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n);
+void clip_lstms(lstm** lstms, int n, float threshold, float norm);
+float sum_all_quadratic_derivative_weights_lstms(lstm** lstms, int n);
+void clipping_gradient_rmodel(rmodel* m, float threshold);
+float sum_all_quadratic_derivative_weights_bns(bn** bns, int n);
+void clip_bns(bn** bns, int n, float threshold, float norm);
+void clipping_gradient_bmodel(bmodel* m, float threshold);
 
 // Functions defined in bmodel.c
 bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl** rls, cl** cls, fcl** fcls, bn** bnls);
