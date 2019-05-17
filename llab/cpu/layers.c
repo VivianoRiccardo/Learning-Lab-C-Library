@@ -332,6 +332,7 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     b->layer = layer;
     b->batch_size = batch_size; 
     b->vector_dim = vector_input_dimension;
+    b->activation_flag = activation_flag;
     
     b->input_vectors = (float**)malloc(sizeof(float*)*batch_size); 
     b->temp_vectors = (float**)malloc(sizeof(float*)*batch_size); 
