@@ -612,7 +612,8 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             else
                 temp = lstm_bp(lstm_bp_flag,m->lstms[j]->size, m->lstms[j]->d_w,m->lstms[j]->d_u, m->lstms[j]->d_biases, m->lstms[j]->w, m->lstms[j]->u, m->lstms[j]->lstm_z[i], dx,input_model[i],m->lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, m->lstms[j]->lstm_z[i+1],matrix[j],NULL,m->lstms[j]->dropout_mask_up,m->lstms[j]->dropout_mask_right);
             
-            
+            if(matrix[j] != NULL)
+                free_matrix(matrix[j],4);
             matrix[j] = temp;
             
         }
@@ -624,7 +625,8 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             
 
             temp = lstm_bp(lstm_bp_flag,m->lstms[j]->size, m->lstms[j]->d_w,m->lstms[j]->d_u,m->lstms[j]->d_biases,m->lstms[j]->w,m->lstms[j]->u,m->lstms[j]->lstm_z[i], dx, dropout_output,m->lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], m->lstms[j+1]->lstm_z[i], matrix[j+1], m->lstms[j]->lstm_z[i+1],matrix[j],m->lstms[j+1]->w,m->lstms[j]->dropout_mask_up,m->lstms[j]->dropout_mask_right);
-            
+            if(matrix[j] != NULL)
+                free_matrix(matrix[j],4);
             matrix[j] = temp;
         }
         
@@ -633,7 +635,8 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             get_dropout_array(m->lstms[j]->size,m->lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             
             temp = lstm_bp(lstm_bp_flag,m->lstms[j]->size, m->lstms[j]->d_w,m->lstms[j]->d_u,m->lstms[j]->d_biases,m->lstms[j]->w,m->lstms[j]->d_u,m->lstms[j]->lstm_z[i], dx, input_model[i],m->lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], m->lstms[j+1]->lstm_z[i], matrix[j+1], m->lstms[j]->lstm_z[i+1],matrix[j],m->lstms[j+1]->w,m->lstms[j]->dropout_mask_up,m->lstms[j]->dropout_mask_right);
-            
+            if(matrix[j] != NULL)
+                free_matrix(matrix[j],4);
             matrix[j] = temp;
             
         }

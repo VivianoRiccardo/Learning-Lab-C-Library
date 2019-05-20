@@ -38,10 +38,10 @@ void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
     for(i = 0; i < mini_batch_size; i+=threads){
         for(j = 0; j < threads && j+i < mini_batch_size; j++){
             args[j] = (thread_args_rmodel*)malloc(sizeof(thread_args_rmodel));
-            args[j]->m = m[i*threads+j];
-            args[j]->hidden_states = hidden_states[i*threads+j];
-            args[j]->cell_states = cell_states[i*threads+j];
-            args[j]->input_model = input_model[i*threads+j];
+            args[j]->m = m[i+j];
+            args[j]->hidden_states = hidden_states[i+j];
+            args[j]->cell_states = cell_states[i+j];
+            args[j]->input_model = input_model[i+j];
             pthread_create(thread+j, NULL, rmodel_thread_ff, args[j]);
             
             }
@@ -79,13 +79,13 @@ void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
     for(i = 0; i < mini_batch_size; i+=threads){
         for(j = 0; j < threads && j+i < mini_batch_size; j++){
             args[j] = (thread_args_rmodel*)malloc(sizeof(thread_args_rmodel));
-            args[j]->m = m[i*threads+j];
-            args[j]->hidden_states = hidden_states[i*threads+j];
-            args[j]->cell_states = cell_states[i*threads+j];
-            args[j]->input_model = input_model[i*threads+j];
-            args[j]->error_model = error_model[i*threads+j];
-            args[j]->returning_error = &returning_error[i*threads+j];
-            args[j]->ret_input_error = &returning_input_error[i*threads+j];
+            args[j]->m = m[i+j];
+            args[j]->hidden_states = hidden_states[i+j];
+            args[j]->cell_states = cell_states[i+j];
+            args[j]->input_model = input_model[i+j];
+            args[j]->error_model = error_model[i+j];
+            args[j]->returning_error = &returning_error[i+j];
+            args[j]->ret_input_error = &returning_input_error[i+j];
             pthread_create(thread+j, NULL, rmodel_thread_bp, args[j]);
             
             }
