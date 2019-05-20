@@ -571,6 +571,10 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             
 
             free(dx);
+            
+            if(!j && input_error != NULL)
+                input_error[i] = lstm_dinput(i,m->lstms[j]->size,matrix[j],m->lstms[j]);
+            
         }
         
     }
@@ -634,6 +638,9 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             
         }
         free(dx);
+        
+        if(!j && input_error != NULL)
+                input_error[i] = lstm_dinput(i,m->lstms[j]->size,matrix[j],m->lstms[j]);
     }
     
     free(dropout_output);
@@ -712,5 +719,153 @@ void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
         exit(1);
     }
     sum_lstm_layers_partial_derivatives(m,m2,m3);
+}
+
+
+float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
+    
+    int k,k2;
+    
+    float* ret_err;
+    
+    float* temp = (float*)malloc(sizeof(float)*output);
+    float* temp2 = (float*)malloc(sizeof(float)*output);
+    float* temp3 = (float*)calloc(output,sizeof(float));
+        
+    ret_err = (float*)calloc(output,sizeof(float));
+    
+    
+    sigmoid_array(lstms->lstm_z[index][1],temp,output);//obtaining i
+    dot1D(temp,returning_error[3],temp,output);//computing dc*i
+    derivative_tanhh_array(lstms->lstm_z[index][3],temp2,output);//dzc
+    dot1D(temp,temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->w[3][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][2],temp2,output);//dzo
+    dot1D(returning_error[2],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->w[2][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][1],temp2,output);//dzi
+    dot1D(returning_error[1],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->w[1][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][0],temp2,output);//dzf
+    dot1D(returning_error[0],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->w[0][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    dot1D(ret_err,lstms->dropout_mask_up,ret_err,output);
+    
+    free(temp);
+    free(temp2);
+    free(temp3);
+    
+    return ret_err;
+}
+
+
+float* lstm_dh(int index, int output, float** returning_error, lstm* lstms){
+    
+    int k,k2;
+    
+    float* ret_err;
+    
+    float* temp = (float*)malloc(sizeof(float)*output);
+    float* temp2 = (float*)malloc(sizeof(float)*output);
+    float* temp3 = (float*)calloc(output,sizeof(float));
+        
+    ret_err = (float*)calloc(output,sizeof(float));
+    
+    
+    sigmoid_array(lstms->lstm_z[index][1],temp,output);//obtaining i
+    dot1D(temp,returning_error[3],temp,output);//computing dc*i
+    derivative_tanhh_array(lstms->lstm_z[index][3],temp2,output);//dzc
+    dot1D(temp,temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->u[3][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][2],temp2,output);//dzo
+    dot1D(returning_error[2],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->u[2][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][1],temp2,output);//dzi
+    dot1D(returning_error[1],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->u[1][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    free(temp3);
+    temp3 = (float*)calloc(output,sizeof(float));
+    
+    derivative_sigmoid_array(lstms->lstm_z[index][0],temp2,output);//dzf
+    dot1D(returning_error[0],temp2,temp,output);
+    for(k = 0; k < output; k++){
+        for(k2 = 0; k2 < output; k2++){
+            temp3[k2] = lstms->u[0][k*output+k2]*temp[k];
+        }
+    }
+    
+    sum1D(ret_err,temp3,ret_err,output);
+    
+    dot1D(ret_err,lstms->dropout_mask_right,ret_err,output);
+    
+    free(temp);
+    free(temp2);
+    free(temp3);
+    
+    return ret_err;
 }
 
