@@ -785,9 +785,7 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     }
     
     sum1D(ret_err,temp3,ret_err,output);
-    
-    dot1D(ret_err,lstms->dropout_mask_up,ret_err,output);
-    
+        
     free(temp);
     free(temp2);
     free(temp3);
