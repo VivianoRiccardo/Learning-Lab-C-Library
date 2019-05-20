@@ -451,7 +451,21 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
 }
 
 
-float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m){
+/* this function returns the error dfioc and set the error of input_error through a back propagation passage
+ * the dfioc returning error has this dimensions: m->layers*4*m->size
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ float** hidden_states:= the hidden sates passed to each first orizontal cell, dimensions:m->layer*m->size
+ *             @ float** cell_states:= the cell sates passed to each first orizontal cell, dimensions:m->layer*m->size
+ *             @ float** input_model:= the input passed to the model, dimensions: m->window*m->size
+ *             @ float** error_model:= the error of the model, dimensions: m->window*m->size
+ *             @ rmodel* m:= the recurrent model
+ *             @ float** input_error:= the error of the inputs of this model, dimensions: m->window*m->size, must be initialized only with m->window
+ * 
+ * */
+float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error){
 
    /* backpropagation passage*/
 

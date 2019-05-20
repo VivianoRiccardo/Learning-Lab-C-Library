@@ -193,6 +193,7 @@ typedef struct thread_args_rmodel {
     float** input_model;
     float** error_model;
     float**** returning_error;
+    float*** ret_input_error;
 } thread_args_rmodel;
 
 // Functions defined in math.c
@@ -423,7 +424,7 @@ rmodel* reset_rmodel(rmodel* m);
 void save_rmodel(rmodel* m, int n);
 rmodel* load_rmodel(char* file);
 void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, rmodel* m);
-float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m);
+float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error);
 int count_weights_rmodel(rmodel* m);
 void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
@@ -438,6 +439,6 @@ void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, f
 void* rmodel_thread_ff(void* _args);
 void* rmodel_thread_bp(void* _args);
 void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads);
-void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error);
+void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error, float*** returning_input_error);
 
 #endif

@@ -21,15 +21,15 @@ void* model_thread_bp(void* _args) {
  * 
  * Inputs:
  * 
- * 			
- * 			@ model** m:= the models of the batch, dimensions: mini_batch_size*1
- * 			@ int depth:= the depth of the input tensor
- * 			@ int rows:= the number of rows of the input tensor
- * 			@ int cols:= the number of columns of the input tensor
- * 			@ float** inputs:= the inputs of the batch, dimensions: mini_batch_size*(depth*rows*cols)
- * 			@ int mini_batch_size:= the size of the batch
- * 			@ int threads:= the number of threads you want to use
- * 			
+ *             
+ *             @ model** m:= the models of the batch, dimensions: mini_batch_size*1
+ *             @ int depth:= the depth of the input tensor
+ *             @ int rows:= the number of rows of the input tensor
+ *             @ int cols:= the number of columns of the input tensor
+ *             @ float** inputs:= the inputs of the batch, dimensions: mini_batch_size*(depth*rows*cols)
+ *             @ int mini_batch_size:= the size of the batch
+ *             @ int threads:= the number of threads you want to use
+ *             
  * 
  * */
 void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads){
@@ -62,18 +62,18 @@ void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, f
  * 
  * Inputs:
  * 
- * 			
- * 			@ model** m:= the models of the batch, dimensions: mini_batch_size*1
- * 			@ int depth:= the depth of the input tensor
- * 			@ int rows:= the number of rows of the input tensor
- * 			@ int cols:= the number of columns of the input tensor
- * 			@ float** inputs:= the inputs of the batch, dimensions: mini_batch_size*(depth*rows*cols)
- * 			@ int mini_batch_size:= the size of the batch
- * 			@ int threads:= the number of threads you want to use
- * 			@ float** errors:= the errors of the batch, dimensions: mini_batch_size*error_dimension
- * 			@ int error_dimension:= the dimension of each error
- * 			@ float** returning_error:= where is stored the error of these models, dimensions: mini_batch_size*(depth*rows*cols)
- * 			
+ *             
+ *             @ model** m:= the models of the batch, dimensions: mini_batch_size*1
+ *             @ int depth:= the depth of the input tensor
+ *             @ int rows:= the number of rows of the input tensor
+ *             @ int cols:= the number of columns of the input tensor
+ *             @ float** inputs:= the inputs of the batch, dimensions: mini_batch_size*(depth*rows*cols)
+ *             @ int mini_batch_size:= the size of the batch
+ *             @ int threads:= the number of threads you want to use
+ *             @ float** errors:= the errors of the batch, dimensions: mini_batch_size*error_dimension
+ *             @ int error_dimension:= the dimension of each error
+ *             @ float** returning_error:= where is stored the error of these models, dimensions: mini_batch_size*(depth*rows*cols)
+ *             
  * 
  * */
 void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension, float** returning_error){
