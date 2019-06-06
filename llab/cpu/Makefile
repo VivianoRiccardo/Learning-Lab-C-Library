@@ -4,7 +4,10 @@ all:
 	gcc -c convolutional.c -o convolutional.o -O3 -mavx -lm -lpthread
 	gcc -c gd.c -o gd.o -O3 -mavx -lm -lpthread
 	gcc -c fully_connected.c -o fully_connected.o -O3 -mavx -lm -lpthread
-	gcc -c layers.c -o layers.o -O3 -mavx -lm -lpthread
+	gcc -c fully_connected_layers.c -o fully_connected_layers.o -O3 -mavx -lm -lpthread
+	gcc -c convolutional_layers.c -o convolutional_layers.o -O3 -mavx -lm -lpthread
+	gcc -c residual_layers.c -o residual_layers.o -O3 -mavx -lm -lpthread
+	gcc -c batch_norm_layers.c -o batch_norm_layers.o -O3 -mavx -lm -lpthread
 	gcc -c math_functions.c -o math_functions.o -O3 -mavx -lm -lpthread
 	gcc -c model.c -o model.o -O3 -mavx -lm -lpthread
 	gcc -c bmodel.c -o bmodel.o -O3 -mavx -lm -lpthread

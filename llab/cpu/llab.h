@@ -306,33 +306,42 @@ void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_ba
 void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2);
 void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 
-// Functions defined in layers.c
+// Functions defined in fully_connected_layers.c
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
 void free_fully_connected(fcl* f);
-cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer, int convolutional_flag);
-void free_convolutional(cl* c);
-rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls);
-void free_residual(rl* r);
 void save_fcl(fcl* f, int n);
 void copy_fcl_params(fcl* f, float* weights, float* biases);
 fcl* load_fcl(FILE* fr);
+fcl* copy_fcl(fcl* f);
+void paste_fcl(fcl* f, fcl* copy);
+fcl* reset_fcl(fcl* f);
+unsigned long long int size_of_fcls(fcl* f);
+void slow_paste_fcl(fcl* f,fcl* copy, float tau);
+
+// Functions defined in convolutional_layers.c
+cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer, int convolutional_flag);
+void free_convolutional(cl* c);
 void save_cl(cl* f, int n);
 void copy_cl_params(cl* f, float** kernels, float* biases);
 cl* load_cl(FILE* fr);
+cl* copy_cl(cl* f);
+void paste_cl(cl* f, cl* copy);
+cl* reset_cl(cl* f);
+unsigned long long int size_of_cls(cl* f);
+void slow_paste_cl(cl* f, cl* copy,float tau);
+
+// Functions defined in residual_layers.c
+rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls);
+void free_residual(rl* r);
 void save_rl(rl* f, int n);
 rl* load_rl(FILE* fr);
-fcl* copy_fcl(fcl* f);
-cl* copy_cl(cl* f);
 rl* copy_rl(rl* f);
-void paste_fcl(fcl* f, fcl* copy);
-void paste_cl(cl* f, cl* copy);
 void paste_rl(rl* f, rl* copy);
-fcl* reset_fcl(fcl* f);
-cl* reset_cl(cl* f);
 rl* reset_rl(rl* f);
-unsigned long long int size_of_fcls(fcl* f);
-unsigned long long int size_of_cls(cl* f);
 unsigned long long int size_of_rls(rl* f);
+void slow_paste_rl(rl* f, rl* copy,float tau);
+
+// Functions defined in batch_norm_layers.c
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag);
 void free_batch_normalization(bn* b);
 void save_bn(bn* b, int n);
@@ -341,9 +350,6 @@ bn* copy_bn(bn* b);
 bn* reset_bn(bn* b);
 unsigned long long int size_of_bn(bn* b);
 void paste_bn(bn* b1, bn* b2);
-void slow_paste_fcl(fcl* f,fcl* copy, float tau);
-void slow_paste_cl(cl* f, cl* copy,float tau);
-void slow_paste_rl(rl* f, rl* copy,float tau);
 void slow_paste_bn(bn* f, bn* copy,float tau);
 
 // Functions defined in model.c

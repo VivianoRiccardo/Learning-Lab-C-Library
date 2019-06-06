@@ -189,7 +189,7 @@ bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl**
     return m;
 }
 
-/* This function frees the space allocated by a model structure
+/* This function frees the space allocated by a bmodel structure
  * 
  * Input:
  *             @ bmodel* m:= the structure
@@ -230,7 +230,7 @@ void free_bmodel(bmodel* m){
  * 
  * Input:
  *         
- *             @ bmodel* m:= the model that must be copied
+ *             @ bmodel* m:= the bmodel that must be copied
  * 
  * */
 bmodel* copy_bmodel(bmodel* m){
@@ -330,7 +330,7 @@ void slow_paste_bmodel(bmodel* m, bmodel* copy, float tau){
     }
     return;
 }
-/* This function resets a model using the copy bmodel function
+/* This function resets a bmodel using the copy bmodel function
  * returns a bmodel equal to the one as input but with all resetted except for weights and biases
  * */
 bmodel* reset_bmodel(bmodel* m){
@@ -418,35 +418,35 @@ void save_bmodel(bmodel* m, int n){
     i = fwrite(&m->layers,sizeof(int),1,fw);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the bmodel\n");
         exit(1);
     }
     
     i = fwrite(&m->n_rl,sizeof(int),1,fw);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the bmodel\n");
         exit(1);
     }
     
     i = fwrite(&m->n_cl,sizeof(int),1,fw);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the bmodel\n");
         exit(1);
     }
     
     i = fwrite(&m->n_fcl,sizeof(int),1,fw);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the bmodel\n");
         exit(1);
     }
     
     i = fwrite(&m->n_bn,sizeof(int),1,fw);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
+        fprintf(stderr,"Error: an error occurred saving the bmodel\n");
         exit(1);
     }
     
@@ -497,35 +497,35 @@ bmodel* load_bmodel(char* file){
     
     i = fread(&layers,sizeof(int),1,fr);
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the bmodel\n");
         exit(1);
     }
     
     i = fread(&n_rl,sizeof(int),1,fr);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the bmodel\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the bmodel\n");
         exit(1);
     }
     
     i = fread(&n_fcl,sizeof(int),1,fr);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the bmodel\n");
         exit(1);
     }
     
     i = fread(&n_bn,sizeof(int),1,fr);
     
     if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
+        fprintf(stderr,"Error: an error occurred loading the bmodel\n");
         exit(1);
     }
     
@@ -605,11 +605,15 @@ int count_bmodel_weights(bmodel* m){
         }
     }
     
+    for(i = 0; i < m->n_bn; i++){
+        sum+=m->bns[i]->vector_dim;
+    }
+    
     return sum;
 }
 
 
-/* This function can update the model of the network using the adam algorithm or the nesterov momentum
+/* This function can update the bmodel of the network using the adam algorithm or the nesterov momentum
  * 
  * Input:
  * 
@@ -658,7 +662,7 @@ void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int
 }
 
 
-/* This function sum the partial derivatives in model m1 and m2 in m3
+/* This function sum the partial derivatives in bmodel m1 and m2 in m3
  * 
  * Input:
  *     
@@ -676,4 +680,6 @@ void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3){
     sum_convolutional_layers_partial_derivatives_bmodel(m,m2,m3);
     sum_residual_layers_partial_derivatives_bmodel(m,m2,m3);
 }
+
+
 
