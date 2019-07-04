@@ -7,8 +7,8 @@
  *             @ int layers:= number of total layers
  *             @ int n_lstm:= same as layer, but only for long short term memory layers
  *             @ lstm** lstms:= your long short term memory layers
- *                @ int window:= is the number of unrolled orizontal recurrent cells are provided
- *                @ int hidden_state_mode:= cna be stateful and stateless (flag STATEFUL, flag STATELESS)
+ *             @ int window:= is the number of unrolled orizontal recurrent cells are provided
+ *             @ int hidden_state_mode:= cna be stateful and stateless (flag STATEFUL, flag STATELESS)
  * 
  * */
 rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int hidden_state_mode){
@@ -150,7 +150,7 @@ void paste_rmodel(rmodel* m, rmodel* copy){
  *         
  *             @ rmodel* m:= the rmodel that must be copied
  *             @ rmodel* copy:= the model where m is copied
- *                @ float tau:= the tau param
+ *             @ float tau:= the tau param
  * 
  * */
 void slow_paste_rmodel(rmodel* m, rmodel* copy, float tau){

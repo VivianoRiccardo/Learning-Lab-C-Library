@@ -168,28 +168,24 @@ void batch_normalization_feed_forward(int batch_size, float** input_vectors,floa
  * */
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon){
     int i,j,z;
-
     
+    for(i = 0; i < size_vectors; i++){
+        mean[i] = 0;
+    }
     /* gamma and beta error*/
     for(i = 0; i < batch_size; i++){
         for(j = 0; j < size_vectors; j++){
             gamma_error[j] += outputs_error[i][j]*temp_vectors[i][j];
             beta_error[j] += outputs_error[i][j];
             temp_vectors_error[i][j] = outputs_error[i][j]*gamma[j];
-            temp_array[j] += input_vectors[i][j] - mean[j];
+            temp_array[j] += temp_vectors_error[i][j];
+            mean[j] += temp_vectors_error[i][j]*temp_vectors[i][j];
         }
     }
     
-    /* input_error*/
-    for(i = 0; i < batch_size; i++){
-        for(j = 0; j < batch_size; j++){
-            for(z = 0; z < size_vectors; z++){
-                if(i == j)
-                    input_error[j][z] += ((float)1-(float)1/(float)batch_size)/sqrtf(var[z]+epsilon)-((input_vectors[j][z]-mean[z])*2*((float)1-(float)1/(float)batch_size)*(input_vectors[j][z]-mean[z])-((float)2/(float)batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/((float)(2*batch_size)*(pow((double)var[z]+epsilon,(double)3/2)));
-                else
-                    input_error[j][z] += -(sqrtf(var[z]+epsilon)/(float)batch_size)-((input_vectors[i][z]-mean[z])*2*((float)1-(float)1/(float)batch_size)*(input_vectors[j][z]-mean[z])-((float)2/(float)batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/((float)(2*batch_size)*(pow((double)var[z]+epsilon,(double)3/2)));
-                
-            }
+    for(j = 0; j < batch_size; j++){
+        for(z = 0; z < size_vectors; z++){
+            input_error[j][z] += (batch_size*temp_vectors_error[j][z] - temp_array[j] - temp_vectors[j][z]*mean[j])/(batch_size*sqrtf(var[j]+epsilon));
         }
     }
 
@@ -242,3 +238,112 @@ void batch_normalization_final_mean_variance(float** input_vectors, int n_vector
     return;
 }
 
+/* This function computes the group normalization feed forward for a convolutional layer
+ * 
+ * Inputs:
+ * 
+ *                 @ float* tensor:= the input of the convolutional layer
+ *                 @ int tensor_c:= the number of channels of the tensor
+ *                 @ int tensor_i:= the number of rows of the tensor
+ *                 @ int tensor_j:= the number of columns of the tensor
+ *                 @ int n_channels:= the grouped channels for the group normalization
+ *                 @ int stride:= the stride between channels for the group normalization
+ *                 @ bn** bns:= the bns layer where is gonne be computed the group normalization
+ *                 @ int pad_i:= the padding for the rows of the tensor
+ *                 @ int pad_j:= tha padding for the columns of the tensor
+ *                 @ float* post_normalization:= where the post normalization output is stored, size = tensor_c*tensor_i*tensor_j
+ * 
+ * */
+void group_normalization_feed_forward(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, int pad_i, int pad_j, float* post_normalization){
+    int n_bns = (tensor_c-n_channels)/stride+1;
+    int i,j,k,rows,cols;
+    
+    float** input_vector = (float**)malloc(sizeof(float*)*n_channels);
+    for(i = 0; i < n_channels; i++){
+        input_vector[i] = (float*)calloc(tensor_i*tensor_j - 2*pad_i - 2*pad_j,sizeof(float));
+    }
+    
+    for(i = 0, j = 0; j < n_bns; i+=stride,j++){
+        for(k = i; k < i+stride; k++){
+            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
+                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
+                    input_vector[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = tensor[k*tensor_i*tensor_j+rows*tensor_j+cols];
+                }
+            }
+        }
+        batch_normalization_feed_forward(n_channels,input_vector,bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var, bns[j]->outputs,bns[j]->epsilon);
+        for(k = i; k < i+stride; k++){
+            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
+                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
+                    post_normalization[k*tensor_i*tensor_j+rows*tensor_j+cols] = bns[j]->outputs[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j];
+                }
+            }
+        }
+    }
+    
+    for(i = 0; i < n_channels; i++){
+        free(input_vector[i]);
+    }
+    
+    free(input_vector);
+} 
+
+
+/* This function computes the group normalization back propagation for a convolutional layer
+ * 
+ * Inputs:
+ * 
+ *                 @ float* tensor:= the input of the convolutional layer
+ *                 @ int tensor_c:= the number of channels of the tensor
+ *                 @ int tensor_i:= the number of rows of the tensor
+ *                 @ int tensor_j:= the number of columns of the tensor
+ *                 @ int n_channels:= the grouped channels for the group normalization
+ *                 @ int stride:= the stride between channels for the group normalization
+ *                 @ bn** bns:= the bns layer where is gonne be computed the group normalization
+ *                 @ float* error:= tensor_c*tensor_i*tensor_j
+ *                 @ int pad_i:= the padding for the rows of the tensor
+ *                 @ int pad_j:= tha padding for the columns of the tensor
+ *                 @ float* input_error:= where is stored the error of the input, size = tensor_c*tensor_i*tensor_j
+ * 
+ * */
+void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, float* ret_error,int pad_i, int pad_j, float* input_error){
+    int n_bns = (tensor_c-n_channels)/stride+1;
+    int i,j,k,rows,cols;
+    
+    float** error = (float**)malloc(sizeof(float*)*n_channels);
+    float** input_vector = (float**)malloc(sizeof(float*)*n_channels);
+    
+    for(i = 0; i < n_channels; i++){
+        error[i] = (float*)calloc(tensor_i*tensor_j-2*pad_i-2*pad_j,sizeof(float));
+        input_vector[i] = (float*)calloc(tensor_i*tensor_j-2*pad_i-2*pad_j,sizeof(float));
+    }
+    
+    
+    for(i = 0, j = 0; j < n_bns; i+=stride,j++){
+        for(k = i; k < i+stride; k++){
+            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
+                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
+                    input_vector[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = tensor[k*tensor_i*tensor_j+rows*tensor_j+cols];
+                    error[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = ret_error[k*tensor_i*tensor_j+rows*tensor_j+cols];
+                }
+            }
+        }
+        batch_normalization_back_prop(n_channels,input_vector,bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var,error,bns[j]->d_gamma, bns[j]->d_beta,bns[j]->error2, bns[j]->temp1,bns[j]->temp2, bns[j]->epsilon);
+        for(k = i; k < i+stride; k++){
+            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
+                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
+                    input_error[k*tensor_i*tensor_j+rows*tensor_j+cols] = bns[j]->error2[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j];
+                }
+            }
+        }
+    
+    }
+    
+    for(i = 0; i < n_channels; i++){
+        free(input_vector[i]);
+        free(error[i]);
+    }
+    
+    free(input_vector);
+    free(error);
+}

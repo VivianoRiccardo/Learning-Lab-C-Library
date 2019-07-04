@@ -10,7 +10,8 @@
  *             @ float dropout_threshold1:= the dropout_threshold for the y output
  *             @ int dropout_flag2:= the dropout flag for the hidden output to the next cell
  *             @ float dropout_threshold2:= the dropout threshold for the hidden state of the cell
- *             @ th vertical layer of the lstm cell
+ *             @ int layer:= the vertical layer of the lstm cell
+ *                @ int window:= the number of unrolled cell in orizontal
  * 
  * */
 lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window){

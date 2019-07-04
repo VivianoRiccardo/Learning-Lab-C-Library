@@ -7,13 +7,15 @@
  *             @ int layers:= number of total layers, this means that if you have 2 layers with the same layer id 
  *                            then layers = 2. For example if you have 2 fully-connected layers with same layer id = 0
  *                            then layers param must be set to 2. if you have 3 layers, 2 with same layer id and 1 with another
- *                            layer id, then layers = 3
+ *                            layer id, then layers = 3 and so on
  *             @ int n_rl:= same as layers but only for residual layers
  *             @ int n_cl:= same as layer but only for convolutional layers. (the convolutional layers inside residual layer must not be count)
  *             @ int n_fcl:= same as layer, but only for fully-connected layers
+ *             @ int n_bnl:= same as layer, but only for batch normalized layers
  *             @ rl** rls:= your residual layers
  *             @ cl** cls:= your convolutional layers
  *             @ fcl** fcls:= your fully-connected layers
+ *             @ bn** bns:= your batch normalized layers
  * 
  * */
 bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl** rls, cl** cls, fcl** fcls, bn** bnls){
@@ -226,7 +228,7 @@ void free_bmodel(bmodel* m){
 
 
 /* This function copies a model using the copy function for the layers
- * see layers.c file
+ * see layers.c files
  * 
  * Input:
  *         
@@ -273,7 +275,7 @@ bmodel* copy_bmodel(bmodel* m){
 
 
 /* This function copies a bmodel using the paste function for the layers
- * see layers.c file
+ * see layers.c files
  * 
  * Input:
  *         
@@ -358,7 +360,7 @@ bmodel* reset_bmodel(bmodel* m){
  * 
  * Input:
  * 
- *             bmodel* m:= the structure model
+ *             bmodel* m:= the structure bmodel
  * 
  * */
 unsigned long long int size_of_bmodel(bmodel* m){
@@ -581,7 +583,7 @@ bmodel* load_bmodel(char* file){
 }
 
 
-/* This function returs the total number of weights in the bmodel m
+/* This function returns the total number of weights in the bmodel m
  * 
  * Input
  * 
@@ -617,7 +619,7 @@ int count_bmodel_weights(bmodel* m){
  * 
  * Input:
  * 
- *             @ model* m:= the model that must be update
+ *             @ bmodel* m:= the bmodel that must be update
  *             @ float lr:= the learning rate
  *             @ float momentum:= the momentum
  *             @ int mini_batch_size:= the batch used

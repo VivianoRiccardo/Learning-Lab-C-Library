@@ -6,6 +6,8 @@
  * 
  *             @ int batch_size:= the batch size used
  *             @ int vector_input_dimension:= the dimension of the input of this layer, or the output dimension of the previous layer
+ * 			   @ int layer:= the layer
+ * 			   @ int activation_flag:= for the moment is useless
  * 
  * */
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag){
@@ -196,6 +198,14 @@ void save_bn(bn* b, int n){
     
 }
 
+
+/* This function load a batch_normalized layer from a file
+ * 
+ * Inputs:
+ * 
+ * 				@ FILE* fr:= the file where the batch normalized layer must been loaded
+ * 
+ * */
 bn* load_bn(FILE* fr){
     if(fr == NULL)
         return NULL;
@@ -240,7 +250,7 @@ bn* load_bn(FILE* fr){
     final_mean = (float*)malloc(sizeof(float)*vector_dim);
     final_var = (float*)malloc(sizeof(float)*vector_dim);
     
-    i = fread(&gamma,sizeof(float)*vector_dim,1,fr);
+    i = fread(gamma,sizeof(float)*vector_dim,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
@@ -248,14 +258,14 @@ bn* load_bn(FILE* fr){
     }
     
     
-    i = fread(&beta,sizeof(float)*vector_dim,1,fr);
+    i = fread(beta,sizeof(float)*vector_dim,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
     }
     
-    i = fread(&final_mean,sizeof(float)*vector_dim,1,fr);
+    i = fread(final_mean,sizeof(float)*vector_dim,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
@@ -263,7 +273,7 @@ bn* load_bn(FILE* fr){
     }
     
     
-    i = fread(&final_var,sizeof(float)*vector_dim,1,fr);
+    i = fread(final_var,sizeof(float)*vector_dim,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
@@ -344,7 +354,7 @@ bn* reset_bn(bn* b){
     } 
 }
 
-/* this function compute the space allocated by the arrays of f
+/* this function computes the size of the space allocated by the arrays of a batch normalized layer
  * 
  * Input:
  * 

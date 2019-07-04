@@ -23,7 +23,7 @@ rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     r->n_cl = n_cl;
     r->cls =cls;
     r->input = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
-    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,cls[n_cl-1]->layer,CONVOLUTION);
+    r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,0,CONVOLUTION,cls[n_cl-1]->layer);
     return r;
     
 }

@@ -78,7 +78,11 @@ void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_stat
  *             @ float** u:= the weights u
  *             @ float** z:= the pre activeted outputs computed during the training
  *             @ float* dy:= the error coming from above
- *             @ float* x_t
+ *             @ float* x_t:= the input
+ *                @ float* c_t:= the current cell state
+ *                @ float* h_minus:= the previous hidden state
+ *                @ float* c_minus:= the previous cell state
+ *                @ float** z_up:= the z coming from up
  * */
  
  /* dparams should be initialized with all 0s*/

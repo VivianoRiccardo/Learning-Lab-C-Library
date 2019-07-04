@@ -761,7 +761,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
 
         }
         /* normalization for f2, if there is any normalization*/
-        if(f2->normalization_flag){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
@@ -772,6 +772,13 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                     }
                 }
             }    
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            if(f2->activation_flag != NO_ACTIVATION)
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+            else
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
         }
     }
     
@@ -1023,7 +1030,7 @@ void ff_cl_cl(cl* f1, cl* f2){
 
         }
         /* normalization for f2, if there is any normalization*/
-        if(f2->normalization_flag){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
@@ -1034,6 +1041,13 @@ void ff_cl_cl(cl* f1, cl* f2){
                     }
                 }
             }    
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            if(f2->activation_flag != NO_ACTIVATION)
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+            else
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
         }
     }
     
@@ -1232,7 +1246,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     }
     
     if(f2->convolutional_flag == CONVOLUTION){
-        if(f2->normalization_flag){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
@@ -1244,6 +1258,41 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                     }
                 }
             }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            
+            if(f2->activation_flag)
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+            else
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+
             
             if(f2->activation_flag == SIGMOID){
                 derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
@@ -1381,7 +1430,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     }
     
     if(f2->convolutional_flag == CONVOLUTION){
-        if(f2->normalization_flag){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
             for(i = 0; i < f2->n_kernels; i++){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
@@ -1393,6 +1442,41 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                     }
                 }
             }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            
+            if(f2->activation_flag)
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+            else
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+
             
             if(f2->activation_flag == SIGMOID){
                 derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);

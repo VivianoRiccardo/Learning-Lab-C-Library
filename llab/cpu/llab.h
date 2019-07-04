@@ -36,6 +36,7 @@
 #define NO_NORMALIZATION 0
 #define LOCAL_RESPONSE_NORMALIZATION 1
 #define BATCH_NORMALIZATION 2
+#define GROUP_NORMALIZATION 3
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define EPSILON_ADAM 0.00000001
@@ -48,6 +49,32 @@
 #define BATCH_NORMALIZATION_FINAL_MODE 2
 #define STATEFUL 1
 #define STATELESS 2
+#define LEAKY_RELU_THRESHOLD 0.1
+
+typedef struct bn{//batch_normalization layer
+    int batch_size, vector_dim, layer, activation_flag, mode_flag;
+    float epsilon;
+    float** input_vectors;//batch_size*vector_dim
+    float** temp_vectors;//batch_size*vector_dim
+    float* gamma;//vector_dim
+    float* d_gamma;//vector_dim
+    float* d1_gamma;//vector_dim
+    float* d2_gamma;//vector_dim
+    float* beta;//vector_dim
+    float* d_beta;//vector_dim
+    float* d1_beta;//vector_dim
+    float* d2_beta;//vector_dim
+    float* mean;//vector_dim
+    float* var;//vector_dim
+    float** outputs;//batch_size*vector_dim
+    float** error2;//batch_size*vector_dim
+    float** temp1;//batch_size*vector_dim
+    float* temp2;//vector_dim
+    float** post_activation;//batch_size*vector_dim
+    float* final_mean;//vector_dim
+    float* final_var;//vector_dim
+}bn;
+
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
@@ -81,6 +108,7 @@ typedef struct cl { //convolutional-layers
     int pooling_rows, pooling_cols;
     int normalization_flag, activation_flag, pooling_flag; // activation flag = 0, no activation, = 1 sigmoid, = 2 relu, pooling flag = 1 max-pooling, = 2 avarage-pooling
     int rows1, cols1, rows2,cols2;
+    int group_norm_channels;
     float** kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d1_kernels; //n_kernels - channels*kernel_rows*kernel_cols
@@ -97,6 +125,7 @@ typedef struct cl { //convolutional-layers
     float* temp2;//n_kernels*rows1*cols1
     float* temp3;//n_kernels*rows1*cols1
     float* error2;//channels*input_rows*input_cols
+    bn** group_norm;//n_kernels/group_norm_channels
 } cl;
 
 typedef struct rl { //residual-layers
@@ -105,31 +134,6 @@ typedef struct rl { //residual-layers
     cl* cl_output;
     cl** cls;
 } rl;
-
-
-typedef struct bn{//batch_normalization layer
-    int batch_size, vector_dim, layer, activation_flag, mode_flag;
-    float epsilon;
-    float** input_vectors;//batch_size*vector_dim
-    float** temp_vectors;//batch_size*vector_dim
-    float* gamma;//vector_dim
-    float* d_gamma;//vector_dim
-    float* d1_gamma;//vector_dim
-    float* d2_gamma;//vector_dim
-    float* beta;//vector_dim
-    float* d_beta;//vector_dim
-    float* d1_beta;//vector_dim
-    float* d2_beta;//vector_dim
-    float* mean;//vector_dim
-    float* var;//vector_dim
-    float** outputs;//batch_size*vector_dim
-    float** error2;//batch_size*vector_dim
-    float** temp1;//batch_size*vector_dim
-    float* temp2;//vector_dim
-    float** post_activation;//batch_size*vector_dim
-    float* final_mean;//vector_dim
-    float* final_var;//vector_dim
-}bn;
 
 typedef struct lstm { //long short term memory layers
     int size,layer,dropout_flag_up, dropout_flag_right, window;//dropout flag = 1 if dropout must be applied
@@ -242,6 +246,8 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
 void batch_normalization_feed_forward(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon);
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
 void batch_normalization_final_mean_variance(float** input_vectors, int n_vectors, int vector_size, int mini_batch_size, bn* bn_layer);
+void group_normalization_feed_forward(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, int pad_i, int pad_j, float* post_normalization);
+void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, float* ret_error,int pad_i, int pad_j, float* input_error);
 
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
@@ -319,7 +325,7 @@ unsigned long long int size_of_fcls(fcl* f);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
 
 // Functions defined in convolutional_layers.c
-cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int layer, int convolutional_flag);
+cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int group_norm_channels, int convolutional_flag,int layer);
 void free_convolutional(cl* c);
 void save_cl(cl* f, int n);
 void copy_cl_params(cl* f, float** kernels, float* biases);

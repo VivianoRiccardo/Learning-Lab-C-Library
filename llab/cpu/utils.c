@@ -507,6 +507,13 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
                     }
                 }
                 nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                    bm->bns = m->rls[i]->cls[j]->group_norm;
+                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                    free(bm);
+                }
             }
         }
     }
@@ -534,10 +541,19 @@ void update_residual_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, 
                     }
                 }
                 nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                    bm->bns = m->rls[i]->cls[j]->group_norm;
+                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                    free(bm);
+                }
             }
         }
     }
 }
+
+
 
 /* Given a model, this function update the params of the residual layers of the model with the adam optimization algorithm
  * 
@@ -563,6 +579,13 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
                     }
                 }
                 adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                    bm->bns = m->rls[i]->cls[j]->group_norm;
+                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                    free(bm);
+                }
             }
         }
     }
@@ -592,6 +615,13 @@ void update_residual_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size,
                     }
                 }
                 adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                    bm->bns = m->rls[i]->cls[j]->group_norm;
+                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                    free(bm);
+                }
             }
         }
     }
@@ -620,6 +650,12 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
             
             sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
 
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                }
+            }
         }
     }
 }
@@ -647,6 +683,12 @@ void sum_residual_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmode
             
             sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
 
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                }
+            }
         }
     }
 }
@@ -672,7 +714,15 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
                 }
             }
             nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                bm->bns = m->cls[j]->group_norm;
+                update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                free(bm);
+            }
         }
+        
     }
 }
 
@@ -698,6 +748,13 @@ void update_convolutional_layer_nesterov_bmodel(bmodel* m, float lr, float momen
                 }
             }
             nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                bm->bns = m->cls[j]->group_norm;
+                update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                free(bm);
+            }
         }
     }
 }
@@ -726,6 +783,13 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
                 }
             }
             adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                bm->bns = m->cls[j]->group_norm;
+                update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                free(bm);
+            }
         }
     }
 }
@@ -754,6 +818,13 @@ void update_convolutional_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_
                 }
             }
             adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                bm->bns = m->cls[j]->group_norm;
+                update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                free(bm);
+            }
         }
     }
 }
@@ -781,6 +852,12 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
         
         sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
 
+        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+            }
+        }
     }
 
 }
@@ -807,6 +884,12 @@ void sum_convolutional_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, 
         
         sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
 
+        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+            }
+        }
     }
 
 }
