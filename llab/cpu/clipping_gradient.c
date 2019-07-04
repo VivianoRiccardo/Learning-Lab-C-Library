@@ -109,6 +109,14 @@ void clip_cls(cl** cls, int n, float threshold, float norm){
                 cls[j]->d_kernels[k][z]*=(threshold)/(norm);
             }
         }
+        
+        if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
+                for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
+                    cls[j]->group_norm[k]->d_gamma[z]*=(threshold)/(norm);
+                }
+            }
+        }
     }
     
 }
@@ -219,6 +227,15 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
             for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
                 temp = cls[j]->d_kernels[k][z];
                 sum += temp*temp;
+            }
+        }
+        
+        if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
+                for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
+                    temp = cls[j]->group_norm[k]->d_gamma[z];
+                    sum += temp*temp;
+                }
             }
         }
     }

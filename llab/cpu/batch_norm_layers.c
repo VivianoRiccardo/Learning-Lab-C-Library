@@ -6,8 +6,8 @@
  * 
  *             @ int batch_size:= the batch size used
  *             @ int vector_input_dimension:= the dimension of the input of this layer, or the output dimension of the previous layer
- * 			   @ int layer:= the layer
- * 			   @ int activation_flag:= for the moment is useless
+ *                @ int layer:= the layer
+ *                @ int activation_flag:= for the moment is useless
  * 
  * */
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag){
@@ -203,7 +203,7 @@ void save_bn(bn* b, int n){
  * 
  * Inputs:
  * 
- * 				@ FILE* fr:= the file where the batch normalized layer must been loaded
+ *                 @ FILE* fr:= the file where the batch normalized layer must been loaded
  * 
  * */
 bn* load_bn(FILE* fr){

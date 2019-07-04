@@ -23,9 +23,9 @@
  *             @ int normalization_flag:= is set to 1 if you wan't to apply local response normalization, 0 for no normalization 3 for group normalization
  *             @ int activation_flag:= is set to 1 if you want to apply activation function
  *             @ int pooling_flag:= is set to 1 if you want to apply pooling
- * 			   @ int group_norm_channels:= the number of the grouped channels during the group normalization if there is anyone
- * 			   @ int convolutional_flag:= NO_CONVOLUTION to apply only pooling otherwise CONVOLUTION
- * 			   @ int layer:= the layer index
+ *                @ int group_norm_channels:= the number of the grouped channels during the group normalization if there is anyone
+ *                @ int convolutional_flag:= NO_CONVOLUTION to apply only pooling otherwise CONVOLUTION
+ *                @ int layer:= the layer index
  * 
  * */
  
@@ -56,16 +56,16 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     }
     
     if(convolutional_flag == CONVOLUTION && normalization_flag == GROUP_NORMALIZATION){
-		if(n_kernels%group_norm_channels){
-			fprintf(stderr,"Error: your normalization channels doesn't divide perfectly the number of kernels of this layer\n");
-			exit(1);
-		}
-	}
-	
-	if(convolutional_flag == NO_CONVOLUTION && normalization_flag){
-		fprintf(stderr,"Error: you cannot use the convolutional layer only for normalization and pooling, you can use it for only pooling, or only convolution plus activation-normalization-pooling\n");
-		exit(1);
-	}
+        if(n_kernels%group_norm_channels){
+            fprintf(stderr,"Error: your normalization channels doesn't divide perfectly the number of kernels of this layer\n");
+            exit(1);
+        }
+    }
+    
+    if(convolutional_flag == NO_CONVOLUTION && normalization_flag){
+        fprintf(stderr,"Error: you cannot use the convolutional layer only for normalization and pooling, you can use it for only pooling, or only convolution plus activation-normalization-pooling\n");
+        exit(1);
+    }
     
     
     
@@ -166,16 +166,16 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     }
     
     if(normalization_flag != GROUP_NORMALIZATION){
-		c->group_norm = NULL;
-		c->group_norm_channels = 0;
-	}
-	
-	else{
-		c->group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
-		for(i = 0; i < n_kernels/group_norm_channels; i++){
-			c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1,i,NO_ACTIVATION);
-		}
-	}
+        c->group_norm = NULL;
+        c->group_norm_channels = 0;
+    }
+    
+    else{
+        c->group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
+        for(i = 0; i < n_kernels/group_norm_channels; i++){
+            c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1,i,NO_ACTIVATION);
+        }
+    }
     return c;
 }
 
@@ -209,11 +209,11 @@ void free_convolutional(cl* c){
     free(c->temp3);
     free(c->error2);
     if(c->normalization_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
-			free_batch_normalization(c->group_norm[i]);
-		}
-		free(c->group_norm);
-	}
+        for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
+            free_batch_normalization(c->group_norm[i]);
+        }
+        free(c->group_norm);
+    }
     free(c);
 }
 
@@ -451,11 +451,11 @@ void save_cl(cl* f, int n){
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
-		for(k = 0; k < f->n_kernels/f->group_norm_channels; k++){
-			save_bn(f->group_norm[k],n);
-		}
-	}
-	
+        for(k = 0; k < f->n_kernels/f->group_norm_channels; k++){
+            save_bn(f->group_norm[k],n);
+        }
+    }
+    
     free(s);
     
 }
@@ -712,22 +712,22 @@ cl* load_cl(FILE* fr){
     }
     
     if(normalization_flag == GROUP_NORMALIZATION){
-		group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
-		for(k = 0; k < n_kernels/group_norm_channels; k++){
-			group_norm[k] = load_bn(fr);
-		}
-	}
+        group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
+        for(k = 0; k < n_kernels/group_norm_channels; k++){
+            group_norm[k] = load_bn(fr);
+        }
+    }
     
     cl* f = convolutional(channels, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride1_rows, stride1_cols, padding1_rows, padding1_cols, stride2_rows, stride2_cols, padding2_rows, padding2_cols, pooling_rows, pooling_cols, normalization_flag, activation_flag, pooling_flag, group_norm_channels, convolutional_flag,layer);
     copy_cl_params(f,kernels,biases);
     
     if(normalization_flag == GROUP_NORMALIZATION){
-		for(k = 0; k < n_kernels/group_norm_channels; k++){
-			free_batch_normalization(f->group_norm[k]);
-		}
-		free(f->group_norm);
-		f->group_norm = group_norm;
-	}
+        for(k = 0; k < n_kernels/group_norm_channels; k++){
+            free_batch_normalization(f->group_norm[k]);
+        }
+        free(f->group_norm);
+        f->group_norm = group_norm;
+    }
     
     for(i= 0; i < n_kernels; i++){
         free(kernels[i]);
@@ -762,11 +762,11 @@ cl* copy_cl(cl* f){
         copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
     }
     if(f->normalization_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-			free_batch_normalization(copy->group_norm[i]);
-			copy->group_norm[i] = copy_bn(f->group_norm[i]);
-		}
-	}
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            free_batch_normalization(copy->group_norm[i]);
+            copy->group_norm[i] = copy_bn(f->group_norm[i]);
+        }
+    }
     
     copy_array(f->biases,copy->biases,f->n_kernels);
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
@@ -818,10 +818,10 @@ cl* reset_cl(cl* f){
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-			reset_bn(f->group_norm[i]);
-		}
-	}
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
     
     return f;
 }
@@ -841,8 +841,8 @@ unsigned long long int size_of_cls(cl* f){
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
     sum += ((unsigned long long int)(f->channels*f->input_rows*f->input_cols*sizeof(float)));
     if(f->normalization_flag == GROUP_NORMALIZATION)
-		sum+=size_of_bn(f->group_norm[0])*f->n_kernels/f->group_norm_channels;
-	
+        sum+=size_of_bn(f->group_norm[0])*f->n_kernels/f->group_norm_channels;
+    
     return sum;
 }
 
@@ -869,10 +869,10 @@ void paste_cl(cl* f, cl* copy){
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-			paste_bn(f->group_norm[i],copy->group_norm[i]);
-		}
-	}
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            paste_bn(f->group_norm[i],copy->group_norm[i]);
+        }
+    }
     copy_array(f->biases,copy->biases,f->n_kernels);
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
@@ -904,10 +904,10 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-			slow_paste_bn(f->group_norm[i],copy->group_norm[i],tau);
-		}
-	}
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            slow_paste_bn(f->group_norm[i],copy->group_norm[i],tau);
+        }
+    }
     
     return;
 }
