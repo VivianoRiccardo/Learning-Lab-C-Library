@@ -64,17 +64,10 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - LSTM back propagation (13/5/2019)
 - Recurrent Network (rmodel) with LSTM (13/5/2019)
 - Recurrent Network update with nesterov and adam algorithm (13/5/2019)
+- Group Normalization for convolutional layers
 
 # Future implementations
-- BPTT
-- Augmentation
-- LSTM layers
-- Graphic test
-- Support Vector Machine algorithms
-- Decision tree
-- Random forest
-- OpenCl and Cuda implementation
-- ...
+- Residual LSTM coming soon...
 
 # Examples:
 
