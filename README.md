@@ -18,7 +18,7 @@ Link in your file.c the header "/directory-path/llab_dt.h"
 and then
 
 ```
-gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -lllab -lm
+gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -lllab -lm -lpthread
 ```
 
 # Current Roadmap:
