@@ -1095,6 +1095,13 @@ void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
                     }
                 }
             }
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
+                        ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma),m->rls[i]->cls[j]->group_norm[k]->gamma,lambda,total_number_weights);
+                    }
+                }
+            }
         }
     }
 }
@@ -1119,6 +1126,13 @@ void add_l2_residual_layer_bmodel(bmodel* m,int total_number_weights,float lambd
                         for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
                             ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
                         }
+                    }
+                }
+            }
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
+                        ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma),m->rls[i]->cls[j]->group_norm[k]->gamma,lambda,total_number_weights);
                     }
                 }
             }
@@ -1151,6 +1165,13 @@ void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
                 }
             }
         }
+        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
+                    ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma),m->cls[j]->group_norm[k]->gamma,lambda,total_number_weights);
+                }
+            }
+        }
     }
 }
 
@@ -1175,6 +1196,13 @@ void add_l2_convolutional_layer_bmodel(bmodel* m,int total_number_weights,float 
 
                     }
                         
+                }
+            }
+        }
+        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
+                    ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma),m->cls[j]->group_norm[k]->gamma,lambda,total_number_weights);
                 }
             }
         }

@@ -173,7 +173,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     else{
         c->group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
         for(i = 0; i < n_kernels/group_norm_channels; i++){
-            c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1,i,NO_ACTIVATION);
+            c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1-2*padding1_rows-2*padding1_cols,i,NO_ACTIVATION);
         }
     }
     return c;

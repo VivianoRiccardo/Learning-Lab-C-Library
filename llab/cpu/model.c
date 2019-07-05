@@ -2234,11 +2234,17 @@ int count_weights(model* m){
     
     for(i = 0; i < m->n_cl; i++){
         sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+        if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
+            sum+=m->cls[i]->n_kernels/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
+        }
     }
     
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                sum+=m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels*m->rls[i]->cls[j]->group_norm[0]->vector_dim;
+            }
         }
     }
     

@@ -185,6 +185,7 @@ void batch_normalization_back_prop(int batch_size, float** input_vectors,float**
     
     for(j = 0; j < batch_size; j++){
         for(z = 0; z < size_vectors; z++){
+            
             input_error[j][z] += (batch_size*temp_vectors_error[j][z] - temp_array[j] - temp_vectors[j][z]*mean[j])/(batch_size*sqrtf(var[j]+epsilon));
         }
     }
