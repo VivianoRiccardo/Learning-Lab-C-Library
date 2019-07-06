@@ -89,9 +89,7 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
     
     for(c = lower_bound; c <= upper_bound; c++){
         if(c == index_ac)
-            //tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += ((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
-            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
-        
+            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);        
         else
             tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*(-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
     }
