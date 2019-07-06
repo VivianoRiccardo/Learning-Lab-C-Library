@@ -89,10 +89,11 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
     
     for(c = lower_bound; c <= upper_bound; c++){
         if(c == index_ac)
-            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += ((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
+            //tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += ((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
+            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
         
         else
-            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += (-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
+            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*(-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
     }
 }
 
@@ -185,7 +186,6 @@ void batch_normalization_back_prop(int batch_size, float** input_vectors,float**
     
     for(j = 0; j < batch_size; j++){
         for(z = 0; z < size_vectors; z++){
-            
             input_error[j][z] += (batch_size*temp_vectors_error[j][z] - temp_array[j] - temp_vectors[j][z]*mean[j])/(batch_size*sqrtf(var[j]+epsilon));
         }
     }
