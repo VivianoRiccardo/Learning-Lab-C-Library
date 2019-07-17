@@ -89,7 +89,9 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
     
     for(c = lower_bound; c <= upper_bound; c++){
         if(c == index_ac)
-            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);        
+            //tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += ((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
+            tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*((float)(1/sum)-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
+        
         else
             tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*(-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
     }
@@ -167,24 +169,28 @@ void batch_normalization_feed_forward(int batch_size, float** input_vectors,floa
  * */
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon){
     int i,j,z;
-    
-    for(i = 0; i < size_vectors; i++){
-        mean[i] = 0;
-    }
+
+
     /* gamma and beta error*/
     for(i = 0; i < batch_size; i++){
         for(j = 0; j < size_vectors; j++){
             gamma_error[j] += outputs_error[i][j]*temp_vectors[i][j];
             beta_error[j] += outputs_error[i][j];
             temp_vectors_error[i][j] = outputs_error[i][j]*gamma[j];
-            temp_array[j] += temp_vectors_error[i][j];
-            mean[j] += temp_vectors_error[i][j]*temp_vectors[i][j];
+            temp_array[j] += input_vectors[i][j] - mean[j];
         }
     }
-    
-    for(j = 0; j < batch_size; j++){
-        for(z = 0; z < size_vectors; z++){
-            input_error[j][z] += (batch_size*temp_vectors_error[j][z] - temp_array[j] - temp_vectors[j][z]*mean[j])/(batch_size*sqrtf(var[j]+epsilon));
+
+    /* input_error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < batch_size; j++){
+            for(z = 0; z < size_vectors; z++){
+                if(i == j)
+                    input_error[j][z] += temp_vectors_error[j][z]*((float)(1-(float)1/batch_size)/(float)sqrtf(var[z]+epsilon)-(float)((input_vectors[j][z]-mean[z])*2*(float)(1-(float)1/batch_size)*(input_vectors[j][z]-mean[z])-(float)(2/batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
+                else
+                    input_error[j][z] += temp_vectors_error[j][z]*(-(float)(sqrtf((float)var[z]+epsilon)/(float)batch_size)-(float)((input_vectors[i][z]-mean[z])*2*(float)(1-(float)1/(float)batch_size)*(float)(input_vectors[j][z]-mean[z])-((float)2/(float)batch_size)*(float)(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
+
+            }
         }
     }
 
@@ -237,6 +243,82 @@ void batch_normalization_final_mean_variance(float** input_vectors, int n_vector
     return;
 }
 
+/* same of batch normalization feed forward but with 1d arrays and padding rows*/
+void channel_normalization_feed_forward(int batch_size, float* input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float* outputs,float epsilon, int rows_pad, int cols_pad, int rows, int cols){
+    int i,j,k;
+    float temp;
+    /*mean*/
+    for(i = 0; i < batch_size; i++){
+        for(j = rows_pad; j < rows-rows_pad; j++){
+            for(k = cols_pad; k < cols-cols_pad; k++){
+                mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += input_vectors[i*rows*cols+j*cols+k];
+                if(i == batch_size-1)
+                    mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad]/=(float)batch_size;    
+            }
+            
+        }
+    }
+    
+    /*variance*/
+    for(i = 0; i < batch_size; i++){
+        for(j = rows_pad; j < rows-rows_pad; j++){
+            for(k = cols_pad; k < cols-cols_pad; k++){
+                temp = input_vectors[i*rows*cols+j*cols+k]-mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
+                temp = temp*temp;
+                var[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += temp;
+                if(i == batch_size-1)
+                    var[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad]/=(float)batch_size;
+            }
+        }
+    }
+    
+    for(i = 0; i < batch_size; i++){
+        for(j = rows_pad; j < rows-rows_pad; j++){
+            for(k = cols_pad; k < cols-cols_pad; k++){
+                temp_vectors[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] = (input_vectors[i*rows*cols+j*cols+k]-mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad])/(sqrtf(var[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon));
+                outputs[i*rows*cols+j*cols+k] = temp_vectors[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad]*gamma[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] + beta[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
+            }
+        }
+    }
+
+}
+
+/* same of batch norm back prop with arrays and padding*/
+void channel_normalization_back_prop(int batch_size, float* input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float* outputs_error, float* gamma_error, float* beta_error, float* input_error, float** temp_vectors_error,float* temp_array, float epsilon, int rows_pad, int cols_pad, int rows, int cols){
+    int i,j,k,z;
+
+
+    /* gamma and beta error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = rows_pad; j < rows-rows_pad; j++){
+            for(k = cols_pad; k < cols-cols_pad; k++){
+                gamma_error[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += outputs_error[i*rows*cols+j*cols+k]*temp_vectors[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
+                beta_error[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += outputs_error[i*rows*cols+j*cols+k];
+                temp_vectors_error[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] = outputs_error[i*rows*cols+j*cols+k]*gamma[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
+                temp_array[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += input_vectors[i*rows*cols+j*cols+k] - mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
+            }
+        }
+    }
+
+    /* input_error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < batch_size; j++){
+            for(z = rows_pad; z < rows-rows_pad; z++){
+                for(k = cols_pad; k < cols-cols_pad; k++){
+                if(i == j)
+                    input_error[j*rows*cols+z*cols+k] += temp_vectors_error[j][(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]*(float)((float)(1-(float)1/batch_size)/sqrtf(var[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon)-(float)((input_vectors[j*rows*cols+z*cols+k]-mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad])*2*(float)(1-(float)1/batch_size)*(input_vectors[j*rows*cols+z*cols+k]-mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad])-(float)(2/batch_size)*(temp_array[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]-input_vectors[j*rows*cols+z*cols+k]+mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]))/(float)((2*batch_size)*(pow((double)var[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon,3/2))));
+                else
+                    input_error[j*rows*cols+z*cols+k] += temp_vectors_error[j][(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]*(float)(-(float)(sqrtf((float)var[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon)/batch_size)-(float)((input_vectors[j*rows*cols+z*cols+k]-mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad])*2*(float)(1-(float)1/batch_size)*(input_vectors[j*rows*cols+z*cols+k]-mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad])-(float)(2/batch_size)*(temp_array[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]-input_vectors[j*rows*cols+z*cols+k]+mean[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]))/(float)((2*batch_size)*(pow((double)var[(z-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon,3/2))));
+                }
+            }
+        }
+    }
+
+}
+
+
+
+
 /* This function computes the group normalization feed forward for a convolutional layer
  * 
  * Inputs:
@@ -256,35 +338,11 @@ void batch_normalization_final_mean_variance(float** input_vectors, int n_vector
 void group_normalization_feed_forward(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, int pad_i, int pad_j, float* post_normalization){
     int n_bns = (tensor_c-n_channels)/stride+1;
     int i,j,k,rows,cols;
-    
-    float** input_vector = (float**)malloc(sizeof(float*)*n_channels);
-    for(i = 0; i < n_channels; i++){
-        input_vector[i] = (float*)calloc(tensor_i*tensor_j - 2*pad_i - 2*pad_j,sizeof(float));
-    }
-    
+
     for(i = 0, j = 0; j < n_bns; i+=stride,j++){
-        for(k = i; k < i+stride; k++){
-            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
-                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
-                    input_vector[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = tensor[k*tensor_i*tensor_j+rows*tensor_j+cols];
-                }
-            }
-        }
-        batch_normalization_feed_forward(n_channels,input_vector,bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var, bns[j]->outputs,bns[j]->epsilon);
-        for(k = i; k < i+stride; k++){
-            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
-                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
-                    post_normalization[k*tensor_i*tensor_j+rows*tensor_j+cols] = bns[j]->outputs[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j];
-                }
-            }
-        }
+        channel_normalization_feed_forward(n_channels,&tensor[i],bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var, &post_normalization[i],bns[j]->epsilon,pad_i,pad_j,tensor_i,tensor_j);
     }
     
-    for(i = 0; i < n_channels; i++){
-        free(input_vector[i]);
-    }
-    
-    free(input_vector);
 } 
 
 
@@ -309,40 +367,7 @@ void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor
     int n_bns = (tensor_c-n_channels)/stride+1;
     int i,j,k,rows,cols;
     
-    float** error = (float**)malloc(sizeof(float*)*n_channels);
-    float** input_vector = (float**)malloc(sizeof(float*)*n_channels);
-    
-    for(i = 0; i < n_channels; i++){
-        error[i] = (float*)calloc(tensor_i*tensor_j-2*pad_i-2*pad_j,sizeof(float));
-        input_vector[i] = (float*)calloc(tensor_i*tensor_j-2*pad_i-2*pad_j,sizeof(float));
-    }
-    
-    
     for(i = 0, j = 0; j < n_bns; i+=stride,j++){
-        for(k = i; k < i+stride; k++){
-            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
-                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
-                    input_vector[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = tensor[k*tensor_i*tensor_j+rows*tensor_j+cols];
-                    error[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j] = ret_error[k*tensor_i*tensor_j+rows*tensor_j+cols];
-                }
-            }
-        }
-        batch_normalization_back_prop(n_channels,input_vector,bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var,error,bns[j]->d_gamma, bns[j]->d_beta,bns[j]->error2, bns[j]->temp1,bns[j]->temp2, bns[j]->epsilon);
-        for(k = i; k < i+stride; k++){
-            for(rows = pad_i; rows < tensor_i-pad_i; rows++){
-                for(cols = pad_j; cols < tensor_j-pad_j; cols++){
-                    input_error[k*tensor_i*tensor_j+rows*tensor_j+cols] = bns[j]->error2[k-i][(rows-pad_i)*(tensor_j-2*pad_j)+cols-pad_j];
-                }
-            }
-        }
-    
+        channel_normalization_back_prop(n_channels,&tensor[i],bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var,&ret_error[i],bns[j]->d_gamma, bns[j]->d_beta,&input_error[i], bns[j]->temp1,bns[j]->temp2, bns[j]->epsilon,pad_i,pad_j,tensor_i,tensor_j);
     }
-    
-    for(i = 0; i < n_channels; i++){
-        free(input_vector[i]);
-        free(error[i]);
-    }
-    
-    free(input_vector);
-    free(error);
 }
