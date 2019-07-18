@@ -50,6 +50,8 @@
 #define STATEFUL 1
 #define STATELESS 2
 #define LEAKY_RELU_THRESHOLD 0.1
+#define LSTM_RESIDUAL  1
+#define LSTM_NO_RESIDUAL 0
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
@@ -136,7 +138,7 @@ typedef struct rl { //residual-layers
 } rl;
 
 typedef struct lstm { //long short term memory layers
-    int size,layer,dropout_flag_up, dropout_flag_right, window;//dropout flag = 1 if dropout must be applied
+    int size,layer,dropout_flag_up, dropout_flag_right, window, residual_flag, norm_flag, n_grouped_cell;//dropout flag = 1 if dropout must be applied
     float** w;// 4 x size*size
     float** u;// 4 x size*size
     float** d_w;// 4 x size*size
@@ -154,8 +156,13 @@ typedef struct lstm { //long short term memory layers
     float** lstm_cell; //window x size
     float* dropout_mask_up;//size
     float* dropout_mask_right;//size
+    float** out_up;//window x size
     float dropout_threshold_up;
     float dropout_threshold_right;
+    bn** bns;
+    
+    
+    
 } lstm;
 
 typedef struct model {
@@ -419,7 +426,7 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
 
 
 // Functions defined in recurrent_layers.c
-lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window);
+lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell);
 void free_recurrent_lstm(lstm* rlstm);
 void save_lstm(lstm* rlstm, int n);
 lstm* load_lstm(FILE* fr);
