@@ -14,7 +14,7 @@
  *                @ int window:= the number of unrolled cell in orizontal
  * 
  * */
-lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window){
+lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell){
     if(layer < 0 || size <= 0){
         fprintf(stderr,"Error: the layer flag must be >= 0 and size param should be > 0\n");
         exit(1);
@@ -25,6 +25,13 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
         exit(1);
     }
     
+    if(norm_flag == GROUP_NORMALIZATION){
+        if(n_grouped_cell > window || window%n_grouped_cell){
+            fprintf(stderr,"Error: you assumed the group normalization, but the number of grouped cells doesn't divide perfectly the number of unrolled cell during feed forward\n");
+            exit(1);
+        }
+    }
+    int i,j;
     lstm* lstml = (lstm*)malloc(sizeof(lstm));
     lstml->layer = layer;
     lstml->size = size;
@@ -44,21 +51,37 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
     lstml->d2_biases = (float**)malloc(sizeof(float*)*4);
     lstml->lstm_z = (float***)malloc(sizeof(float**)*window);
     lstml->lstm_hidden = (float**)malloc(sizeof(float*)*window);
+    lstml->out_up = (float**)malloc(sizeof(float*)*window);
     lstml->lstm_cell = (float**)malloc(sizeof(float*)*window);
     lstml->dropout_mask_up = (float*)malloc(sizeof(float)*size);
     lstml->dropout_mask_right = (float*)malloc(sizeof(float)*size);
     lstml->dropout_threshold_up = dropout_threshold1;
     lstml->dropout_threshold_right = dropout_threshold2;
+    lstml->residual_flag = residual_flag;
+    lstml->norm_flag = norm_flag;
+    lstml->n_grouped_cell = n_grouped_cell;
+    if(norm_flag == GROUP_NORMALIZATION){
+        lstml->bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
+        for(i = 0; i < window/n_grouped_cell; i++){
+            lstml->bns[i] = batch_normalization(n_grouped_cell,size,layer,NO_ACTIVATION);
+        }
+    }
+    
+    else{
+        lstml->bns = NULL;
+    }
+    
     if(lstml->dropout_flag_up == NO_DROPOUT)
         lstml->dropout_threshold_up = 0;
     if(lstml->dropout_flag_right == NO_DROPOUT)
         lstml->dropout_threshold_right = 0;
-    int i,j;
+    
     
     for(i = 0; i < window; i++){
         lstml->lstm_z[i] = (float**)malloc(sizeof(float*)*4);
         lstml->lstm_hidden[i] = (float*)calloc(size,sizeof(float));
         lstml->lstm_cell[i] = (float*)calloc(size,sizeof(float));
+        lstml->out_up[i] = (float*)calloc(size,sizeof(float));
         for(j = 0; j < 4; j++){
             lstml->lstm_z[i][j] = (float*)calloc(size,sizeof(float));
         }
@@ -121,6 +144,7 @@ void free_recurrent_lstm(lstm* rlstm){
         free(rlstm->lstm_z[i]);
         free(rlstm->lstm_hidden[i]);
         free(rlstm->lstm_cell[i]);
+        free(rlstm->out_up[i]);
     }
     
     for(i = 0; i < 4; i++){
@@ -139,6 +163,12 @@ void free_recurrent_lstm(lstm* rlstm){
         
     }
     
+    if(rlstm->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < rlstm->window/rlstm->n_grouped_cell; i++){
+            free_batch_normalization(rlstm->bns[i]);
+        }
+        free(rlstm->bns);
+    }
     free(rlstm->w);
     free(rlstm->u);
     free(rlstm->d_w);
@@ -154,6 +184,7 @@ void free_recurrent_lstm(lstm* rlstm){
     free(rlstm->lstm_z);
     free(rlstm->lstm_hidden);
     free(rlstm->lstm_cell);
+    free(rlstm->out_up);
     free(rlstm->dropout_mask_right);
     free(rlstm->dropout_mask_up);
     free(rlstm);
@@ -183,6 +214,27 @@ void save_lstm(lstm* rlstm, int n){
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&rlstm->residual_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&rlstm->norm_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&rlstm->n_grouped_cell,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
     
@@ -265,6 +317,12 @@ void save_lstm(lstm* rlstm, int n){
         fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
         exit(1);
     }
+    
+    if(rlstm->norm_flag == GROUP_NORMALIZATION){
+        for(j = 0; j < rlstm->window/rlstm->n_grouped_cell; j++){
+            save_bn(rlstm->bns[j],n);
+        }
+    }
     free(s);
     
 }
@@ -282,11 +340,32 @@ lstm* load_lstm(FILE* fr){
         return NULL;
     int i,j;
     
-    int size = 0,layer = 0,dropout_flag_up = 0,dropout_flag_right = 0, window = 0;
+    int size = 0,layer = 0,dropout_flag_up = 0,dropout_flag_right = 0, window = 0, residual_flag = 0, norm_flag = 0, n_grouped_cell = 0;
     float dropout_threshold_right = 0,dropout_threshold_up = 0;
     float** w = (float**)malloc(sizeof(float*)*4);
     float** u = (float**)malloc(sizeof(float*)*4);
     float** biases = (float**)malloc(sizeof(float*)*4);
+    
+    i = fread(&residual_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fread(&norm_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fread(&n_grouped_cell,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
+        exit(1);
+    }
     
     i = fread(&size,sizeof(int),1,fr);
     
@@ -364,9 +443,15 @@ lstm* load_lstm(FILE* fr){
         }
     }
     
+    bn** bns = NULL;
+    if(norm_flag == GROUP_NORMALIZATION){
+        bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
+        for(i = 0; i < window/n_grouped_cell; i++){
+            bns[i] = load_bn(fr);
+        }
+    }
     
-    
-    lstm* l = recurrent_lstm(size,dropout_flag_up,dropout_threshold_up,dropout_flag_right,dropout_threshold_right,layer, window);
+    lstm* l = recurrent_lstm(size,dropout_flag_up,dropout_threshold_up,dropout_flag_right,dropout_threshold_right,layer, window, residual_flag,norm_flag,n_grouped_cell);
     for(i = 0; i < 4; i++){
         copy_array(w[i],l->w[i],size*size);
         copy_array(u[i],l->u[i],size*size);
@@ -375,6 +460,13 @@ lstm* load_lstm(FILE* fr){
         free(u[i]);
         free(biases[i]);
     }
+    
+    for(i = 0; i < window/n_grouped_cell; i++){
+        free(l->bns[i]);
+    }
+    free(l->bns);
+    l->bns = bns;
+    
     
     
     free(w);
@@ -400,7 +492,14 @@ lstm* copy_lstm(lstm* l){
     if(l == NULL)
         return NULL;
     int i;
-    lstm* copy = recurrent_lstm(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window);
+    bn** bns = NULL;
+    if(l->norm_flag == GROUP_NORMALIZATION){
+        bns = (bn**)malloc(sizeof(bn*)*l->window/l->n_grouped_cell);
+        for(i = 0; i < l->window/l->n_grouped_cell; i++){
+            bns[i] = copy_bn(l->bns[i]);
+        }
+    }
+    lstm* copy = recurrent_lstm(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell);
     for(i = 0; i < 4; i++){
         copy_array(l->w[i],copy->w[i],l->size*l->size);
         copy_array(l->d_w[i],copy->w[i],l->size*l->size);
@@ -415,6 +514,16 @@ lstm* copy_lstm(lstm* l){
         copy_array(l->d1_biases[i],copy->biases[i],l->size);
         copy_array(l->d2_biases[i],copy->biases[i],l->size);
     }
+    
+    if(l->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < l->window/l->n_grouped_cell; i++){
+            free(copy->bns[i]);
+        }
+        free(copy->bns);
+        copy->bns = bns;
+    }
+    
+    
     
     return copy;
 }
@@ -449,6 +558,12 @@ void paste_lstm(lstm* l,lstm* copy){
         copy_array(l->d1_biases[i],copy->biases[i],l->size);
         copy_array(l->d2_biases[i],copy->biases[i],l->size);
     }
+    
+    if(l->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < l->window/l->n_grouped_cell; i++){
+            paste_bn(l->bns[i],copy->bns[i]);
+        }
+    }
     return;
 }
 
@@ -472,6 +587,12 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
             copy->u[i][j] = tau*l->u[i][j] + (1-tau)*copy->u[i][j];
             if(j < l->size)
                 copy->biases[i][j] = tau*l->biases[i][j] + (1-tau)*copy->biases[i][j];
+        }
+    }
+    
+    if(l->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < l->window/l->n_grouped_cell; i++){
+            slow_paste_bn(l->bns[i],copy->bns[i],tau);
         }
     }
     return;
@@ -512,7 +633,14 @@ lstm* reset_lstm(lstm* f){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
+                f->out_up[i][k] = 0;
             }
+        }
+    }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            reset_bn(f->bns[i]);
         }
     }
     return f;
