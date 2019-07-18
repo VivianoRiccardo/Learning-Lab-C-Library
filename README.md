@@ -65,11 +65,12 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Recurrent Network (rmodel) with LSTM (13/5/2019)
 - Recurrent Network update with nesterov and adam algorithm (13/5/2019)
 - Group Normalization for convolutional layers (4/7/2019)
+- Residual LSTM cell (18/7/2019)
 
 # Future implementations
-- Residual LSTM coming soon...
 - Group normalization for LSTM coming soon...
 - Huber Loss coming soon...
+- Variational auto encoder for model* coming soon...
 
 # Examples:
 
