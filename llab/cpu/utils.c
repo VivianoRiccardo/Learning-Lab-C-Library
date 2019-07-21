@@ -1348,7 +1348,14 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
             sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
         }
     
+        if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
+            for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
+                sum1D(m->lstms[i]->bns[j]->d_gamma,m2->lstms[i]->bns[j]->d_gamma,m3->lstms[i]->bns[j]->d_gamma,m->lstms[i]->bns[j]->vector_dim);
+                sum1D(m->lstms[i]->bns[j]->d_beta,m2->lstms[i]->bns[j]->d_beta,m3->lstms[i]->bns[j]->d_beta,m->lstms[i]->bns[j]->vector_dim);
+            }
+        }
     }
+    
 
 }
 

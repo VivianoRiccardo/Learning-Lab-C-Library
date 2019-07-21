@@ -36,11 +36,22 @@ void clipping_gradient(model* m, float threshold) {
  
 void clipping_gradient_rmodel(rmodel* m, float threshold) {
      float sum = 0;
+     int i,j;
      sum += sum_all_quadratic_derivative_weights_lstms(m->lstms,m->layers);
-     
+     for(i = 0; i < m->layers; i++){
+         if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
+            sum += sum_all_quadratic_derivative_weights_bns(m->lstms[i]->bns,m->lstms[i]->window/m->lstms[i]->n_grouped_cell); 
+         }
+     }
      sum = sqrtf(sum);
-     if(sum >= threshold)
+     if(sum >= threshold){
          clip_lstms(m->lstms,m->layers,threshold,sum);
+         for(i = 0; i < m->layers; i++){
+             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
+                clip_bns(m->lstms[i]->bns,m->lstms[i]->window/m->lstms[i]->n_grouped_cell,threshold,sum);
+             }
+         }
+     }
      
 }
 

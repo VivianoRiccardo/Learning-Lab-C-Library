@@ -444,13 +444,15 @@ void slow_paste_rmodel(rmodel* m, rmodel* copy, float tau);
 rmodel* reset_rmodel(rmodel* m);
 void save_rmodel(rmodel* m, int n);
 rmodel* load_rmodel(char* file);
-void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, rmodel* m);
-float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error);
+void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms);
+float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error);
 int count_weights_rmodel(rmodel* m);
 void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms);
 float* lstm_dh(int index, int output, float** returning_error, lstm* lstms);
+void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, rmodel* m);
+float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error);
 
 // Functions defined in multi_core_model.c
 void* model_thread_ff(void* _args);
