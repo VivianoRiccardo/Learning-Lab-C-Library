@@ -66,11 +66,12 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Recurrent Network update with nesterov and adam algorithm (13/5/2019)
 - Group Normalization for convolutional layers (4/7/2019)
 - Residual LSTM cell (18/7/2019)
+- Group Normalization for lstm layer (21/7/2019)
 
 # Future implementations
-- Group normalization for LSTM coming soon...
 - Huber Loss coming soon...
 - Variational auto encoder for model* coming soon...
+- ImageNet architecture coming soon...
 
 # Examples:
 
