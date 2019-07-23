@@ -113,7 +113,7 @@ void reset_vae_model(vaemodel* vm){
  * 
  * */
 unsigned long long int size_of_vae_model(vaemodel* vm){
-    return size_of_model(vm->encoder)+size_of_model(vm->decoder) + vm->latent_size*2;
+    return size_of_model(vm->encoder)+size_of_model(vm->decoder) + vm->latent_size*4;
 }
 
 /* this function save a variational auto encoder in a 2 .bin file
