@@ -398,7 +398,8 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
             
             /* the dropout is applied to each lstm_hidden to feed the deeper lstm cell in vertical, as input*/
             if(i == 0)
-                set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
+				if(lstms[j]->dropout_flag_up == DROPOUT)
+					set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
             
             get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
             
