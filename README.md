@@ -68,11 +68,13 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Residual LSTM cell (18/7/2019)
 - Group Normalization for lstm layer (21/7/2019)
 - Huber Loss (23/7/2019)
+- Variational Auto Encoder for model structures (23/7/2019)
+- VAE for m feedforward and back propagation (23/7/2019)
 
 # Future implementations
-- Variational auto encoder for model* structure coming soon...
 - Variational auto encoder for rmodel* structure coming soon...
 - ImageNet architecture coming soon...
+- Huber Loss for binary classification coming soon...
 
 # Examples:
 
