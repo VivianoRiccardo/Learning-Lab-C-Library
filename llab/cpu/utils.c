@@ -498,21 +498,23 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            nesterov_momentum(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                nesterov_momentum(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+                            }
                         }
                     }
-                }
-                nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
-                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
-                    bm->bns = m->rls[i]->cls[j]->group_norm;
-                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
-                    free(bm);
+                    nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                        free(bm);
+                    }
                 }
             }
         }
@@ -532,21 +534,23 @@ void update_residual_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, 
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            nesterov_momentum(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                nesterov_momentum(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+                            }
                         }
                     }
-                }
-                nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
-                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
-                    bm->bns = m->rls[i]->cls[j]->group_norm;
-                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
-                    free(bm);
+                    nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                        free(bm);
+                    }
                 }
             }
         }
@@ -570,21 +574,23 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            adam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                adam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                            }
                         }
                     }
-                }
-                adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
-                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
-                    bm->bns = m->rls[i]->cls[j]->group_norm;
-                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
-                    free(bm);
+                    adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                        free(bm);
+                    }
                 }
             }
         }
@@ -606,21 +612,23 @@ void update_residual_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size,
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            adam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                adam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                            }
                         }
                     }
-                }
-                adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
-                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                    bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
-                    bm->bns = m->rls[i]->cls[j]->group_norm;
-                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
-                    free(bm);
+                    adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                        free(bm);
+                    }
                 }
             }
         }
@@ -644,16 +652,18 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
-            }
-            
-            sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+                }
+                
+                sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
 
-            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
-                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
-                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    }
                 }
             }
         }
@@ -677,16 +687,18 @@ void sum_residual_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmode
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
-            }
-            
-            sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+                }
+                
+                sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
 
-            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
-                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
-                    sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    }
                 }
             }
         }
@@ -704,25 +716,26 @@ void sum_residual_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmode
 void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        nesterov_momentum(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            nesterov_momentum(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+                        }
+                            
                     }
-                        
+                }
+                nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                    free(bm);
                 }
             }
-            nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
-            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
-                bm->bns = m->cls[j]->group_norm;
-                update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
-                free(bm);
-            }
         }
-        
     }
 }
 
@@ -738,22 +751,24 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
 void update_convolutional_layer_nesterov_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        nesterov_momentum(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            nesterov_momentum(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+                        }
+                            
                     }
-                        
                 }
-            }
-            nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
-            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
-                bm->bns = m->cls[j]->group_norm;
-                update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
-                free(bm);
+                nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_nesterov_bmodel(bm,lr,momentum,mini_batch_size);
+                    free(bm);
+                }
             }
         }
     }
@@ -773,22 +788,24 @@ void update_convolutional_layer_nesterov_bmodel(bmodel* m, float lr, float momen
 void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        adam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            adam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                        }
+                            
                     }
-                        
                 }
-            }
-            adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
-            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
-                bm->bns = m->cls[j]->group_norm;
-                update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
-                free(bm);
+                adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                    free(bm);
+                }
             }
         }
     }
@@ -808,22 +825,24 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
 void update_convolutional_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        adam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            adam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                        }
+                            
                     }
-                        
                 }
-            }
-            adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
-            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
-                bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
-                bm->bns = m->cls[j]->group_norm;
-                update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
-                free(bm);
+                adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                    free(bm);
+                }
             }
         }
     }
@@ -846,16 +865,18 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
     }
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
-        }
-        
-        sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+            }
+            
+            sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
 
-        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
-                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
-                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                }
             }
         }
     }
@@ -878,16 +899,18 @@ void sum_convolutional_layers_partial_derivatives_bmodel(bmodel* m, bmodel* m2, 
     }
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
-        }
-        
-        sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+            }
+            
+            sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
 
-        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
-                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
-                sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                }
             }
         }
     }
@@ -1086,19 +1109,21 @@ void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+                            }
                         }
                     }
                 }
-            }
-            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
-                    for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
-                        ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma[u]),m->rls[i]->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                        for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
+                            ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma[u]),m->rls[i]->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                        }
                     }
                 }
             }
@@ -1120,19 +1145,21 @@ void add_l2_residual_layer_bmodel(bmodel* m,int total_number_weights,float lambd
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                    for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                        for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                            ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                ridge_regression(&m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lambda, total_number_weights);
+                            }
                         }
                     }
                 }
-            }
-            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
-                    for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
-                        ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma[u]),m->rls[i]->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                        for(u = 0; u < m->rls[i]->cls[j]->group_norm[k]->vector_dim; u++){
+                            ridge_regression(&(m->rls[i]->cls[j]->group_norm[k]->d_gamma[u]),m->rls[i]->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                        }
                     }
                 }
             }
@@ -1154,21 +1181,23 @@ void add_l2_residual_layer_bmodel(bmodel* m,int total_number_weights,float lambd
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
 
+                        }
+                            
                     }
-                        
                 }
             }
-        }
-        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
-                for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
-                    ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma[u]),m->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                    for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
+                        ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma[u]),m->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                    }
                 }
             }
         }
@@ -1188,21 +1217,23 @@ void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
 void add_l2_convolutional_layer_bmodel(bmodel* m,int total_number_weights,float lambda){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        for(k = 0; k < m->cls[j]->n_kernels; k++){
-            for(u = 0; u < m->cls[j]->channels; u++){
-                for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                    for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                        ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            ridge_regression(&m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lambda, total_number_weights);
 
+                        }
+                            
                     }
-                        
                 }
             }
-        }
-        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
-                for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
-                    ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma[u]),m->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                    for(u = 0; u < m->cls[j]->group_norm[k]->vector_dim; u++){
+                        ridge_regression(&(m->cls[j]->group_norm[k]->d_gamma[u]),m->cls[j]->group_norm[k]->gamma[u],lambda,total_number_weights);
+                    }
                 }
             }
         }
