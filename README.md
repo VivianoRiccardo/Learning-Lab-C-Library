@@ -69,7 +69,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Group Normalization for lstm layer (21/7/2019)
 - Huber Loss (23/7/2019)
 - Variational Auto Encoder for model structures (23/7/2019)
-- VAE for m feedforward and back propagation (23/7/2019)
+- VAE model feedforward and back propagation (23/7/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
