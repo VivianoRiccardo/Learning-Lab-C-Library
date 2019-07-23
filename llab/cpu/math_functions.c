@@ -167,6 +167,43 @@ void derivative_cross_entropy_reduced_form_with_softmax_array(float* y_hat, floa
     }
 }
 
+float huber_loss(float y_hat, float y, float threshold){
+    if(y_hat >= y){
+        if((y_hat - y) <= threshold)
+            return (y_hat-y)*(y_hat-y)/2;
+        else
+            return threshold*(y_hat-y)-threshold*threshold/2;
+    }
+    else{
+        if((y - y_hat) <= threshold)
+            return (y-y_hat)*(y-y_hat)/2;
+        else
+            return threshold*(y-y_hat)-threshold*threshold/2;    
+    }
+}
+
+float derivative_huber_loss(float y_hat, float y, float threshold){
+    if(y_hat >= y){
+        if((y_hat - y) <= threshold)
+            return (y_hat-y);
+        else
+            return threshold;
+    }
+    else{
+        if((y - y_hat) <= threshold)
+            return (y-y_hat);
+        else
+            return -threshold;    
+    }
+}
+
+void derivative_huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_huber_loss(y_hat[i],y[i],threshold);
+    }
+}
+
 
 
 

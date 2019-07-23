@@ -232,6 +232,9 @@ float derivative_cross_entropy(float y_hat, float y);
 float cross_entropy_reduced_form(float y_hat, float y);
 float derivative_cross_entropy_reduced_form_with_softmax(float y_hat, float y);
 void derivative_cross_entropy_reduced_form_with_softmax_array(float* y_hat, float* y,float* output, int size);//can be transposed in opencl
+float huber_loss(float y_hat, float y, float threshold);
+float derivative_huber_loss(float y_hat, float y, float threshold);
+void derivative_huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size);
 
 // Functions defined in fully_connected.c
 void fully_connected_feed_forward(float* input, float* output, float* weight,float* bias, int input_size, int output_size);//can be transposed in opencl
