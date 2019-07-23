@@ -81,6 +81,26 @@ void clipping_gradient_bmodel(bmodel* m, float threshold) {
      }
      
 }
+
+void clipping_gradient_vae_model(vaemodel* vm, float threshold) {
+     float sum = 0;
+     sum += sum_all_quadratic_derivative_weights_fcls(vm->encoder->fcls, vm->encoder->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(vm->encoder->cls, vm->encoder->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(vm->encoder->rls, vm->encoder->n_rl);
+     sum += sum_all_quadratic_derivative_weights_fcls(vm->decoder->fcls, vm->decoder->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(vm->decoder->cls, vm->decoder->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(vm->decoder->rls, vm->decoder->n_rl);
+     
+     sum = sqrtf(sum);
+     if(sum >= threshold){
+         clip_fcls(vm->encoder->fcls, vm->encoder->n_fcl, threshold, sum);
+         clip_cls(vm->encoder->cls, vm->encoder->n_cl, threshold, sum);
+         clip_rls(vm->encoder->rls, vm->encoder->n_rl, threshold, sum);
+         clip_fcls(vm->encoder->fcls, vm->decoder->n_fcl, threshold, sum);
+         clip_cls(vm->encoder->cls, vm->decoder->n_cl, threshold, sum);
+         clip_rls(vm->encoder->rls, vm->decoder->n_rl, threshold, sum);
+     }
+}
  
 /* This functions clips the derivative weights according to the clipping_gradient formula
   * of residual layers

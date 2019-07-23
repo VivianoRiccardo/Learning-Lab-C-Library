@@ -19,5 +19,7 @@ all:
 	gcc -c rmodel.c -o rmodel.o -O3 -mavx -lm -lpthread
 	gcc -c multi_core_model.c -o multi_core_model.o -O3 -mavx -lm -lpthread
 	gcc -c multi_core_rmodel.c -o multi_core_rmodel.o -O3 -mavx -lm -lpthread
+	gcc -c vae_model.c -o vae_model.o -O3 -mavx -lm -lpthread
+	gcc -c multi_core_vae_model.c -o multi_core_vae_model.o -O3 -mavx -lm -lpthread
 	ar r libllab.a *.o
 	rm *.o

@@ -188,6 +188,16 @@ typedef struct rmodel {
     int** sla;
 } rmodel;
 
+typedef struct vaemodel{
+    int latent_size;
+    float* z;
+    float* input;
+    float* dmean;
+    float* dstd;
+    model* encoder;
+    model* decoder;
+} vaemodel;
+
 
 typedef struct thread_args_model {
     model* m;
@@ -206,6 +216,14 @@ typedef struct thread_args_rmodel {
     float**** returning_error;
     float*** ret_input_error;
 } thread_args_rmodel;
+
+typedef struct thread_args_vae_model {
+    vaemodel* vm;
+    int rows,cols,channels,error_dimension;
+    float* input;
+    float* error;
+    float** returning_error;
+} thread_args_vae_model;
 
 // Functions defined in math.c
 void softmax(float* input, float* output, int size);
@@ -408,6 +426,8 @@ void clipping_gradient_rmodel(rmodel* m, float threshold);
 float sum_all_quadratic_derivative_weights_bns(bn** bns, int n);
 void clip_bns(bn** bns, int n, float threshold, float norm);
 void clipping_gradient_bmodel(bmodel* m, float threshold);
+void clipping_gradient_vae_model(vaemodel* m, float threshold);
+
 
 // Functions defined in bmodel.c
 bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl** rls, cl** cls, fcl** fcls, bn** bnls);
@@ -468,5 +488,27 @@ void* rmodel_thread_ff(void* _args);
 void* rmodel_thread_bp(void* _args);
 void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads);
 void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error, float*** returning_input_error);
+
+// Functions defined in vae_model.c
+vaemodel* variational_auto_encoder_model(model* encoder, model* decoder, int latent_size);
+void free_vae_model(vaemodel* vm);
+vaemodel* copy_vae_model(vaemodel* vm);
+void paste_vae_model(vaemodel* vm1, vaemodel* vm2);
+void slow_paste_vae_model(vaemodel* vm1, vaemodel* vm2, float tau);
+void reset_vae_model(vaemodel* vm);
+unsigned long long int size_of_vae_model(vaemodel* vm);
+void save_vae_model(vaemodel* vm, int n, int m);
+vaemodel* load_vae_model(char* file1, char* file2);
+void vae_model_tensor_input_ff(vaemodel* vm, int tensor_depth, int tensor_i, int tensor_j,float* input);
+float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
+int count_weights_vae_model(vaemodel* vm);
+void update_vae_model(vaemodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3);
+
+// Functions defined in multi_core_vae_model.c
+void* vae_model_thread_ff(void* _args);
+void* vae_model_thread_bp(void* _args);
+void vae_model_tensor_input_ff_multicore(vaemodel** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads);
+void vae_model_tensor_input_bp_multicore(vaemodel** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension, float** returning_error);
 
 #endif

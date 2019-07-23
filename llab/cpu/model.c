@@ -290,7 +290,7 @@ void slow_paste_model(model* m, model* copy, float tau){
     }
     return;
 }
-/* This function resets a model using the copy model function
+/* This function resets a model
  * returns a model equal to the one as input but with all resetted except for weights and biases
  * */
 model* reset_model(model* m){
@@ -2233,9 +2233,11 @@ int count_weights(model* m){
     }
     
     for(i = 0; i < m->n_cl; i++){
-        sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
-        if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
-            sum+=m->cls[i]->n_kernels/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
+        if(m->cls[i]->convolutional_flag == CONVOLUTION){
+            sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+            if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
+                sum+=m->cls[i]->n_kernels/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
+            }
         }
     }
     
