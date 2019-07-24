@@ -1222,15 +1222,44 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     int i,j,k;
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
-        for(i = 0; i < f2->n_kernels; i++){
-            if(f2->normalization_flag){
-                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->normalization_flag){
+                    max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }
+                else if(f2->activation_flag){
+                    max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }
+                else{
+                    max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }
             }
-            else if(f2->activation_flag){
-                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+        }
+        
+        else{
+            if(f1->dropout_flag){
+                if(f1->activation_flag)    
+                    dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f1->output);
+                else    
+                    dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
+                
+                for(i = 0; i < f2->n_kernels; i++){
+                    max_pooling_back_prop(&f2->temp2[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }            
             }
+            
             else{
-                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                if(f1->activation_flag){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        max_pooling_back_prop(&f1->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    }
+                }
+                
+                else{
+                    for(i = 0; i < f2->n_kernels; i++){
+                        max_pooling_back_prop(&f1->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    }
+                }
             }
         }
     }
@@ -1409,13 +1438,29 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
-        for(i = 0; i < f2->n_kernels; i++){
-            if(f2->normalization_flag)
-                max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-            else if(f2->activation_flag)
-                max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-            else
-                max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+        if(f2->convolutional_flag == CONVOLUTION){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->normalization_flag)
+                    max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                else if(f2->activation_flag)
+                    max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                else
+                    max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+            }
+        }
+        
+        else{
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f1->pooling_flag)
+                    max_pooling_back_prop(&f1->post_pooling[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                else if(f1->normalization_flag)
+                    max_pooling_back_prop(&f1->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                else if(f1->activation_flag)
+                    max_pooling_back_prop(&f1->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                else
+                    max_pooling_back_prop(&f1->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+            }
+            
         }
     }
     
