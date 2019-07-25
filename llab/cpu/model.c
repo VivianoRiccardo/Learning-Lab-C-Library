@@ -564,7 +564,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
-                mul_value(f2->post_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
+                mul_value(f1->post_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
         }
