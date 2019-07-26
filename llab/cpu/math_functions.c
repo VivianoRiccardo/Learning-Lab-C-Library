@@ -204,6 +204,38 @@ void derivative_huber_loss_array(float* y_hat, float* y,float* output, float thr
     }
 }
 
+/*used for a tanh*/
+float modified_huber_loss(float y_hat, float y, float threshold1, float threshold2){
+    if(y*y_hat>= -1){
+        if(threshold1-y_hat*y > 0)
+            return (threshold1-y_hat*y)*(threshold1-y_hat*y)
+        else
+            return 0;
+    }
+    
+    else{
+        return -threshold2*y_hat*y;
+    }
+}
 
+float derivative_modified_huber_loss(float y_hat, float y, float threshold1, float threshold2){
+    if(y*y_hat>= -1){
+        if(threshold1-y_hat*y > 0)
+            return -2*y*threshold1+2*y_hat*y*y
+        else
+            return 0;
+    }
+    
+    else{
+        return -threshold2*y;
+s    }
+}
+
+void derivative_modified_huber_loss_array(float y_hat, float y, float threshold1, float threshold2 int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_modified_huber_loss(y_hat[i],y[i],threshold1,threshold2);
+    }
+}
 
 
