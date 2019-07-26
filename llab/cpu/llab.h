@@ -279,7 +279,7 @@ float derivative_huber_loss(float y_hat, float y, float threshold);
 void derivative_huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size);
 float modified_huber_loss(float y_hat, float y, float threshold1, float threshold2);
 float derivative_modified_huber_loss(float y_hat, float y, float threshold1, float threshold2);
-void derivative_modified_huber_loss_array(float y_hat, float y, float threshold1, float threshold2 int size);
+void derivative_modified_huber_loss_array(float* y_hat, float* y, float threshold1, float* output, float threshold2, int size);
 
 // Functions defined in fully_connected.c
 void fully_connected_feed_forward(float* input, float* output, float* weight,float* bias, int input_size, int output_size);//can be transposed in opencl
