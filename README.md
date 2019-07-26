@@ -70,11 +70,12 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Huber Loss (23/7/2019)
 - Variational Auto Encoder for model structures (23/7/2019)
 - VAE model feedforward and back propagation (23/7/2019)
+- Modified Huber Loss (26/7/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
 - ImageNet architecture coming soon...
-- Huber Loss for binary classification coming soon...
+- GAN for model structure coming soon...
 
 # Examples:
 
