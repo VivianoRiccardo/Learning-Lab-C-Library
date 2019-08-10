@@ -198,7 +198,7 @@ void vae_model_tensor_input_ff(vaemodel* vm, int tensor_depth, int tensor_i, int
     }
     
     for(i = 0; i < vm->encoder->layers-1; i++){
-        if(vm->encoder->sla[0][0] == 0){
+        if(vm->encoder->sla[i][0] == 0){
             i--;
             break;
         }
@@ -214,47 +214,47 @@ void vae_model_tensor_input_ff(vaemodel* vm, int tensor_depth, int tensor_i, int
                 fprintf(stderr,"Error: cannot be computed with softmax function for the final layer of the encoder\n");
                 exit(1);
             }
-            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation,vm->z,vm->latent_size);
         }
         
         else{
-            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation,vm->z,vm->latent_size);
         }
     }
     
     else if(vm->encoder->sla[i][0] == CLS){
         if(vm->encoder->cls[vm->encoder->n_cl-1]->pooling_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling,vm->z,vm->latent_size);
         }
         
         else if(vm->encoder->cls[vm->encoder->n_cl-1]->normalization_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization,vm->z,vm->latent_size);
         }
         
         else if(vm->encoder->cls[vm->encoder->n_cl-1]->activation_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->cls[vm->encoder->n_cl-1]->post_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_activation,vm->z,vm->latent_size);
         }
         
         else {
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation,vm->z,vm->latent_size);
         }
     }
     
     else if(vm->encoder->sla[i][0] == RLS){
         if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag){
-            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation,vm->z,vm->latent_size);
         }
         
         else{
-            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation[vm->latent_size],vm->input,vm->latent_size);
-            sum1D(vm->input,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->input,vm->latent_size);
+            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation[vm->latent_size],vm->z,vm->latent_size);
+            sum1D(vm->z,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->z,vm->latent_size);
         }
     }
     
@@ -277,7 +277,7 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
     int i,j;
     
     for(i = 0; i < vm->encoder->layers-1; i++){
-        if(vm->encoder->sla[0][0] == 0){
+        if(vm->encoder->sla[i][0] == 0){
             i--;
             break;
         }
@@ -350,7 +350,7 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
                 derivative_relu_array(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->n_kernels*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->rows1*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->cols1);
             
             dot1D(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->dmean,vm->dmean,vm->latent_size);
-            dot1D(&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3[vm->latent_size],vm->dstd,vm->dmean,vm->latent_size);
+            dot1D(&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3[vm->latent_size],vm->dstd,vm->dstd,vm->latent_size);
         }
         
         else{
