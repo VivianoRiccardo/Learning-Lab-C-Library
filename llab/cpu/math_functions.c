@@ -263,3 +263,29 @@ void derivative_modified_huber_loss_array(float* y_hat, float* y, float threshol
 }
 
 
+float focal_loss(float y_hat, float y, float gamma){
+    float temp = cross_entropy(y_hat,y);
+    -log((double)temp)*pow((double)(1-temp),(double)gamma);
+}
+
+void focal_loss_array(float* y_hat, float* y,float* output, float gamma, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = focal_loss(y_hat[i],y[i],gamma);
+    }
+}
+
+float derivative_focal_loss(float y_hat, float y, float gamma){
+    float temp = cross_entropy(y_hat,y);
+    float temp2 = gamma*pow((double)(1-temp),(double)(gamma-1))*log((double)temp)-(pow((double)(1-temp),(double)gamma)/temp);
+    return derivative_cross_entropy(y_hat,y)*temp2;
+}
+
+void derivative_focal_loss_array(float* y_hat, float* y, float* output, float gamma, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_focal_loss(y_hat[i],y[i],gamma);
+    }
+}
+
+
