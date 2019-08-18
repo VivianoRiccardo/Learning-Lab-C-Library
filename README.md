@@ -71,6 +71,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Variational Auto Encoder for model structures (23/7/2019)
 - VAE model feedforward and back propagation (23/7/2019)
 - Modified Huber Loss (26/7/2019)
+- Focal Loss (28/8/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
