@@ -40,11 +40,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
         exit(1);
     }
-    
-    if(!activation_flag){
-        fprintf(stderr,"Error: there must be some activation in the layer otherwise the neural_network is not able to learn everything\n");
-        exit(1);
-    }
+ 
     int i,j;
     
     fcl* f = (fcl*)malloc(sizeof(fcl));
