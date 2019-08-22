@@ -64,15 +64,9 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->temp3 = (float*)calloc(output,sizeof(float));
     f->temp2 = (float*)calloc(input,sizeof(float));
     f->error2 = (float*)calloc(input,sizeof(float));
-    if(activation_flag)
-        f->post_activation = (float*)calloc(output,sizeof(float));
-    else
-        f->post_activation = NULL;
     
-    if(dropout_flag)
-        f->dropout_mask = (float*)calloc(output,sizeof(float));
-    else
-        f->dropout_mask = NULL;
+    f->post_activation = (float*)calloc(output,sizeof(float));
+    f->dropout_mask = (float*)calloc(output,sizeof(float));
     
     for(i = 0; i < output; i++){
         for(j = 0; j < input; j++){
