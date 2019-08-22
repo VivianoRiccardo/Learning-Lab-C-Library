@@ -422,8 +422,8 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
             
             /* the dropout is applied to each lstm_hidden to feed the deeper lstm cell in vertical, as input*/
             if(i == 0)
-				if(lstms[j]->dropout_flag_up == DROPOUT)
-					set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
+                if(lstms[j]->dropout_flag_up == DROPOUT)
+                    set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
             
             get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
             
@@ -687,9 +687,9 @@ int count_weights_rmodel(rmodel* m){
  *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
  *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
  *                @ float lambda:= a float value for l2 regularization
- * 
+ *                @ unsigned long long int* t:= the number of time radam has been used
  * */
-void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
+void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
     if(m == NULL)
         return;
     
@@ -743,7 +743,14 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
         update_lstm_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         (*b1)*=BETA1_ADAM;
         (*b2)*=BETA2_ADAM;
-    }    
+    }
+    
+    else if(gradient_descent_flag == RADAM){
+        update_lstm_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        (*b1)*=BETA1_ADAM;
+        (*b2)*=BETA2_ADAM;
+        (*t)++;
+    }     
     
 
 }

@@ -2335,9 +2335,9 @@ int count_weights(model* m){
  *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
  *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
  *                @ float lambda:= a float value for l2 regularization
- * 
+ *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
     if(m == NULL)
         return;
     
@@ -2362,7 +2362,16 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         (*b1)*=BETA1_ADAM;
         (*b2)*=BETA2_ADAM;
-    }    
+    }
+    
+    else if(gradient_descent_flag == RADAM){
+        update_residual_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_convolutional_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_fully_connected_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        (*b1)*=BETA1_ADAM;
+        (*b2)*=BETA2_ADAM;
+        (*t)++;
+    }     
     
 
 }

@@ -378,13 +378,19 @@ int count_weights_vae_model(vaemodel* vm){
     return count_weights(vm->encoder) + count_weights(vm->decoder);
 }
 
-void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
-    update_model(vm->encoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda);
+void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
+    update_model(vm->encoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
     if(gradient_descent_flag == ADAM){
         (*b1)/=BETA1_ADAM;
         (*b2)/=BETA2_ADAM;
     }
-    update_model(vm->decoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda);
+    
+    else if(gradient_descent_flag == RADAM){
+        (*b1)/=BETA1_ADAM;
+        (*b2)/=BETA2_ADAM;
+        (*t)--;
+    }
+    update_model(vm->decoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
 }
 
 

@@ -40,6 +40,7 @@ SOFTWARE.
 #define K_NORMALIZATION 2
 #define NESTEROV 1
 #define ADAM 2
+#define RADAM 3
 #define FCLS 1
 #define CLS 2
 #define RLS 3
@@ -65,6 +66,7 @@ SOFTWARE.
 #define BETA2_ADAM 0.999
 #define EPSILON_ADAM 0.00000001
 #define EPSILON 0.00000001
+#define RADAM_THRESHOLD 4
 #define NO_REGULARIZATION 0
 #define L2_REGULARIZATION 1
 #define NO_CONVOLUTION 1
@@ -313,7 +315,7 @@ void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor
 // Functions defined in gd.c
 void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float dp, float* delta);
 void adam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size);
-
+void radam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size, unsigned long long int t);
 
 // Functions defined in utils.c
 float r2();
@@ -372,6 +374,14 @@ void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
 void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_batch_size);
 void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2);
 void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
+void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long t);
+void update_residual_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
+void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
+void update_convolutional_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
+void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
+void update_fully_connected_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2,unsigned long long int t);
+void update_batch_normalized_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
+void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t);
 
 // Functions defined in fully_connected_layers.c
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
@@ -436,7 +446,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error);
 void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
 float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
 model* reset_model(model* m);
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_model_partial_derivatives(model* m, model* m2, model* m3);
 unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
@@ -501,7 +511,7 @@ rmodel* load_rmodel(char* file);
 void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms);
 float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error);
 int count_weights_rmodel(rmodel* m);
-void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms);
 float* lstm_dh(int index, int output, float** returning_error, lstm* lstms);
@@ -533,7 +543,7 @@ vaemodel* load_vae_model(char* file1, char* file2);
 void vae_model_tensor_input_ff(vaemodel* vm, int tensor_depth, int tensor_i, int tensor_j,float* input);
 float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
 int count_weights_vae_model(vaemodel* vm);
-void update_vae_model(vaemodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void update_vae_model(vaemodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3);
 
 // Functions defined in multi_core_vae_model.c
