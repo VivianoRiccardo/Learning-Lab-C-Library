@@ -625,6 +625,45 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
  * 
  * Input:
  *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                @ unsigned long long int t:= the number of time radam has been used
+ * 
+ * */
+void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long t){
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                radam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                            }
+                        }
+                    }
+                    radam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_radam_bmodel(bm,lr,mini_batch_size,b1,b2,t);
+                        free(bm);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* Given a model, this function update the params of the residual layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
  *             @ bmodel* m:= the model that must be updated
  *             @ float lr:= the learning rate
  *             @ int mini_batch_size:= the size of the mini_batch
@@ -651,6 +690,45 @@ void update_residual_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_size,
                         bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
                         bm->bns = m->rls[i]->cls[j]->group_norm;
                         update_batch_normalized_layer_adam_bmodel(bm,lr,mini_batch_size,b1,b2);
+                        free(bm);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* Given a model, this function update the params of the residual layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_residual_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t){
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                    for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                        for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                            for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                radam_algorithm(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                            }
+                        }
+                    }
+                    radam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                        bm->n_bn = m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels;
+                        bm->bns = m->rls[i]->cls[j]->group_norm;
+                        update_batch_normalized_layer_radam_bmodel(bm,lr,mini_batch_size,b1,b2,t);
                         free(bm);
                     }
                 }
@@ -839,6 +917,43 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
  * 
  * Input:
  *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                   @ unsigned long long int t:= the number of time radam has been used
+ * */
+void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            radam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                        }
+                            
+                    }
+                }
+                radam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_radam_bmodel(bm,lr,mini_batch_size,b1,b2,t);
+                    free(bm);
+                }
+            }
+        }
+    }
+}
+
+/* Given a model, this function update the params of the convolutional layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
  *             @ bmodel* m:= the model that must be updated
  *             @ float lr:= the learning rate
  *             @ int mini_batch_size:= the size of the mini_batch
@@ -872,6 +987,42 @@ void update_convolutional_layer_adam_bmodel(bmodel* m, float lr, int mini_batch_
     }
 }
 
+/* Given a model, this function update the params of the convolutional layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                   @ unsigned long long int t:= the number of time radam has been used
+ * * */
+void update_convolutional_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                for(u = 0; u < m->cls[j]->channels; u++){
+                    for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                        for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                            radam_algorithm(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                        }
+                            
+                    }
+                }
+                radam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    bmodel* bm = (bmodel*)malloc(sizeof(bmodel));
+                    bm->n_bn = m->cls[j]->n_kernels/m->cls[j]->group_norm_channels;
+                    bm->bns = m->cls[j]->group_norm;
+                    update_batch_normalized_layer_radam_bmodel(bm,lr,mini_batch_size,b1,b2,t);
+                    free(bm);
+                }
+            }
+        }
+    }
+}
 
 /* This function sum the partial derivatives of the convolutional layers of a model m and a second model m2 in a third model m3
  * 
@@ -1029,6 +1180,29 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
  * 
  * Input:
  *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                @ unsigned long long int t:= the number of time radam has been used
+ * */
+void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t){
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        for(j = 0; j < m->fcls[i]->output; j++){
+            for(k = 0; k < m->fcls[i]->input; k++){
+                radam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+            }
+            radam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+        }
+    }
+}
+
+/* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
  *             @ bmodel* m:= the model that must be updated
  *             @ float lr:= the learning rate
  *             @ int mini_batch_size:= the size of the mini_batch
@@ -1044,6 +1218,30 @@ void update_fully_connected_layer_adam_bmodel(bmodel* m, float lr, int mini_batc
                 adam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
             }
             adam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+        }
+    }
+}
+
+
+/* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                @ unsigned long long int t:= the number of time radam has been used
+ * */
+void update_fully_connected_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2,unsigned long long int t){
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        for(j = 0; j < m->fcls[i]->output; j++){
+            for(k = 0; k < m->fcls[i]->input; k++){
+                radam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+            }
+            radam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
         }
     }
 }
@@ -1065,6 +1263,27 @@ void update_batch_normalized_layer_adam_bmodel(bmodel* m, float lr, int mini_bat
         for(j = 0; j < m->bns[i]->vector_dim; j++){
             adam_algorithm(&m->bns[i]->gamma[j],&m->bns[i]->d1_gamma[j], &m->bns[i]->d2_gamma[j], m->bns[i]->d_gamma[j], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,1);
             adam_algorithm(&m->bns[i]->beta[j],&m->bns[i]->d1_beta[j], &m->bns[i]->d2_beta[j], m->bns[i]->d_beta[j], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,1);  
+        }
+    }
+}
+
+/* Given a bmodel, this function update the params of the batch-normalized layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ *                @ unsigned long long int t:= the number of time radam has been used
+ * */
+void update_batch_normalized_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t){
+    int i,j,k;
+    for(i = 0; i < m->n_bn; i++){
+        for(j = 0; j < m->bns[i]->vector_dim; j++){
+            radam_algorithm(&m->bns[i]->gamma[j],&m->bns[i]->d1_gamma[j], &m->bns[i]->d2_gamma[j], m->bns[i]->d_gamma[j], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+            radam_algorithm(&m->bns[i]->beta[j],&m->bns[i]->d1_beta[j], &m->bns[i]->d2_beta[j], m->bns[i]->d_beta[j], lr, BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);  
         }
     }
 }
@@ -1375,6 +1594,31 @@ void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, flo
                 adam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
                 if(k < m->lstms[i]->size)
                     adam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size);
+            }
+        }
+    }
+}
+
+
+/* Given a rmodel, this function update the params of the lstm layers of the model with the adam algorithm
+ * 
+ * Input:
+ *             
+ *             @ rmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *                @ int mini_batch_size:= the mini batch dimensions
+ *                @ unsigned long long int t:= the number of time radam has been used
+ * */
+void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t){
+    int i,j,k;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+                radam_algorithm(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                radam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                if(k < m->lstms[i]->size)
+                    radam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,BETA1_ADAM,BETA2_ADAM,b1,b2,EPSILON_ADAM,mini_batch_size,t);
             }
         }
     }
