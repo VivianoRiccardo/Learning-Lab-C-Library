@@ -73,6 +73,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - Modified Huber Loss (26/7/2019)
 - Focal Loss (18/8/2019)
 - Rectified Adam (22/8/2019)
+- Gan model (28/8/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...

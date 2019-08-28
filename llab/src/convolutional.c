@@ -158,7 +158,7 @@ void max_pooling_feed_forward(float* input, float* output, int input_i, int inpu
  *                                    dimensions: input_i*input_j
  * */
 void max_pooling_back_prop(float* input, float* output_error, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride, int padding, float* input_error){
-    int i,j,k1,k2, index1, index2;
+    int i,j,k1,k2, index1 = 0, index2 = 0;
     int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
     int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
     float max = -9999;
