@@ -4,21 +4,10 @@
 
 # Learning-Lab-C-Library:
 
-Creating the library:
+Creating the library for Linux users:
 
 ```
-make
-```
-
-# Run a file.c file using llab:
-
-Link in your file.c the header "/directory-path/llab.h"
-Link in your file.c the header "/directory-path/llab_dt.h"
-
-and then
-
-```
-gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -lllab -lm -lpthread
+sh create_library.sh
 ```
 
 # Current Roadmap:
@@ -26,7 +15,7 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 - fully-connected-layers feed forward (20/11/2018)
 - fully-connected-layers backpropagation (20/11/2018)
 - nesterov momentum (20/11/2018)
-- adam optimization algorithm (not implemented yet in model_update function) (20/11/2018)
+- adam optimization algorithm (20/11/2018)
 - fully-connected layers dropout (20/11/2018)
 - convolutional layers feed forward (20/11/2018)
 - convolutional layers backpropagation (20/11/2018)
@@ -78,9 +67,5 @@ gcc -o file  -L /path-to-the-llab.a-library-created-with-the-makefile/ file.c -l
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
 - ImageNet architecture coming soon...
-- GAN for model structure coming soon...
+- GAN for rmodel structure coming soon...
 
-# Examples:
-
-- https://github.com/VivianoRiccardo/Image-Recognition-LLAB-Library
-- https://github.com/VivianoRiccardo/Tetris-DQN-LlabLibrary

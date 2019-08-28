@@ -143,8 +143,22 @@ float mse(float y_hat, float y){
     return z*z/2;
 }
 
+void mse_array(float* y_hat, float* y, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = mse(y_hat[i],y[i]);
+    }
+}
+
 float derivative_mse(float y_hat, float y){
     return y_hat-y;
+}
+
+void derivative_mse_array(float* y_hat, float* y, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_mse(y_hat[i],y[i]);
+    }
 }
 
 float cross_entropy(float y_hat, float y){
@@ -162,11 +176,24 @@ float cross_entropy(float y_hat, float y){
     
 }
 
+void cross_entropy_array(float* y_hat, float* y, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = cross_entropy(y_hat[i],y[i]);
+    }
+}
+
 
 float derivative_cross_entropy(float y_hat, float y){
     return (y_hat-y)/((1-y_hat)*y_hat);
 }
 
+void derivative_cross_entropy_array(float* y_hat, float* y, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_cross_entropy(y_hat[i],y[i]);
+    }
+}
 
 float cross_entropy_reduced_form(float y_hat, float y){
     float log_one;
