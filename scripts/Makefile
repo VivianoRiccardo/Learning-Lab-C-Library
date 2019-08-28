@@ -4,7 +4,7 @@ PROGS = $(patsubst %.c,%,$(SRCS))
 
 CC:= gcc
 
-CFLAGS:= -O3 -mavx2 -g
+CFLAGS:= -O3 -mavx2 -g -pg
 LDLIBS:= -lm -lpthread
 
 
