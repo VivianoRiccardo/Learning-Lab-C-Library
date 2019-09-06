@@ -60,7 +60,7 @@ float focal_loss(float y_hat, float y, float gamma);
 void focal_loss_array(float* y_hat, float* y,float* output, float gamma, int size);
 float derivative_focal_loss(float y_hat, float y, float gamma);
 void derivative_focal_loss_array(float* y_hat, float* y, float* output, float gamma, int size);
-void mse_array(float* y_hat, float* y, float* output, int size):
+void mse_array(float* y_hat, float* y, float* output, int size);
 void derivative_mse_array(float* y_hat, float* y, float* output, int size);
 void cross_entropy_array(float* y_hat, float* y, float* output, int size);
 void derivative_cross_entropy_array(float* y_hat, float* y, float* output, int size);
