@@ -283,7 +283,6 @@ typedef struct thread_args_gan_model {
     float** ret_err;
 } thread_args_gan_model;
 
-// Functions defined in math.c
 
 #include "batch_norm_layers.h"
 #include "bmodel.h"
