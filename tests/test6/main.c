@@ -1,4 +1,5 @@
 #include <llab.h>
+#include <math.h>
 
 int main(){
     // 1 CONVOLUTIONAL LAYER:
@@ -74,7 +75,7 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    /*
+    
     printf("Training phase!\n");
     save_model(m,0);
     // Training
@@ -107,7 +108,7 @@ int main(){
         // Saving the model
         save_model(m,k+1);
     }
-    */
+    
     // Deallocating Training resources
     free(ksource[0]);
     free(ksource);
