@@ -314,7 +314,11 @@ float derivative_focal_loss(float y_hat, float y, float gamma){
         temp = (y_hat);
     else
         temp = (1-y_hat);
-    return gamma*pow((double)(1-temp),(double)gamma-1)*log(temp)-pow((double)(1-temp),(double)gamma)/temp;
+    float temp2 = gamma*pow((double)(1-temp),(double)gamma-1)*log(temp)-pow((double)(1-temp),(double)gamma)/temp;
+    if(y == 1)
+        return temp2;
+    else
+        return -temp2;
 }
 
 void derivative_focal_loss_array(float* y_hat, float* y, float* output, float gamma, int size){
