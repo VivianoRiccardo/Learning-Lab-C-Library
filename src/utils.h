@@ -42,7 +42,7 @@ int shuffle_int_matrix(int** m,int n);
 int shuffle_char_matrices(char** m,char** m1,int n);
 int shuffle_float_matrices(float** m,float** m1,int n);
 int shuffle_int_matrices(int** m,int** m1,int n);
-void read_file_in_char_vector(char** ksource, char* fname, int* size);
+int read_file_in_char_vector(char** ksource, char* fname, int* size);
 void dot1D(float* input1, float* input2, float* output, int size); 
 void copy_array(float* input, float* output, int size);
 void sum1D(float* input1, float* input2, float* output, int size);
@@ -89,5 +89,7 @@ void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size,
 void update_fully_connected_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2,unsigned long long int t);
 void update_batch_normalized_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
 void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t);
+long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
+int* accuracy_array(long long unsigned int** cm, int size);
 
 #endif

@@ -397,7 +397,7 @@ int bool_is_real(float d){
  *             @int* size:= the size of the file that will be filled
  * 
  * */
-void read_file_in_char_vector(char** ksource, char* fname, int* size){
+int read_file_in_char_vector(char** ksource, char* fname, int* size){
     int i;
     FILE *kfile;
     size_t kfilesize;
@@ -408,7 +408,7 @@ void read_file_in_char_vector(char** ksource, char* fname, int* size){
     
     if(kfile == NULL){
         fprintf(stderr,"Error opening file %s\n",fname);
-        exit(1);
+        return 1;
     }
     
     
@@ -422,6 +422,7 @@ void read_file_in_char_vector(char** ksource, char* fname, int* size){
     i = fread((*ksource), 1, kfilesize, kfile );
     fclose( kfile );
     (*size) = kfilesize;
+    return 0;
 }
 
 
@@ -1675,4 +1676,72 @@ void free_matrix(float** m, int n){
     }
     
     free(m);
+}
+
+/* This function returns a matrix that can be associated with the confusion matrix
+ * where the rows rapresent the model output*2 with real yes and no and the cols rapresent predicted model yes and predicted model no
+ * label i:
+ * 
+ *  label i:         true positive    true negative
+ * 
+ * 
+ * model positive    tp(correct)      fp(incorrect)
+ * 
+ * 
+ * model negative    fn(incorrect)    tn(correct)
+ * 
+ * Inputs:
+ * 
+ *                 @ float* model_output:= the output from the model
+ *                 @ float* real_output:= the real output from data
+ *                 @ long long unsigned int** cm:= a confusion matrix already computed for others output arrays, in this case
+ *                                                 the correct/incorrect responses will be summed with the previous computed, dimensions = size*2xsize*2
+ *                 @ int size:= the length of model_output and real output arrays
+ *                 @ float threshold:= the arbitrary threshold chosen to classify as output 1, for example:
+ *                                     if threshold = 0.5 and model_output[i] >= threshold then model_output[i] is classified as 1
+*/
+
+long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold){
+    long long unsigned int** conf_mat;
+    int i;
+    if(cm == NULL){
+        conf_mat = (long long unsigned int**)malloc(sizeof(long long unsigned int*)*size*2);
+        for(i = 0; i < size; i++){
+            conf_mat[i] = (long long unsigned int*)calloc(size*2,sizeof(long long unsigned int));
+        }
+    }
+    
+    else
+        conf_mat = cm;
+    
+    for(i = 0; i < size; i++){
+        if(real_output[i] >= threshold && model_output[i] >= threshold)
+            conf_mat[i*2][i*2]++;
+        else if(real_output[i] < threshold && model_output[i] < threshold)
+            conf_mat[i*2+1][i*2+1]++;
+        else if(real_output[i] >= threshold && model_output[i] < threshold)
+            conf_mat[i*2][i*2+1]++;
+        else if(real_output[i] < threshold && model_output[i] >= threshold)
+            conf_mat[i*2+1][i*2]++;
+    }
+    
+    return conf_mat;
+}
+
+/* this function returns an array with the precision positive rate and precision negative rate for each label i
+ * 
+ * Inputs:
+ * 
+ *                 @ long long unsigned int** cm:= a confusion matrix, dimensions = size*2xsize*2
+ *                 @ int size:= confusion materix dimensions
+ * */
+int* accuracy_array(long long unsigned int** cm, int size){
+    int* accuracy_arr = (int*)calloc(size*2,sizeof(int));
+    int i;
+    for(i = 0; i < size; i++){
+        accuracy_arr[i*2] = 100*cm[i*2][i*2]/(cm[i*2][i*2]+cm[i*2+1][i*2]);
+        accuracy_arr[i*2+1] = 100*cm[i*2+1][i*2+1]/(cm[i*2+1][i*2+1]+cm[i*2][i*2+1]);
+    }
+    
+    return accuracy_arr;
 }
