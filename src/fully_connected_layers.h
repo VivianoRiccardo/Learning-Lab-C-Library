@@ -35,4 +35,5 @@ void paste_fcl(fcl* f, fcl* copy);
 fcl* reset_fcl(fcl* f);
 unsigned long long int size_of_fcls(fcl* f);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
+fcl* fcl_merge(fcl* f1, fcl* f2);
 #endif

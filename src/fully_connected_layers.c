@@ -423,3 +423,30 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
     }
     return;
 }
+
+/* This function merges 2 fully connected layers in a single one
+ * the new fcl layers will be with input size and f1+f2 output size
+ * the activation flag is the one of the first fcl layer (f1) and is the same
+ * for dropout flag dropout threshold
+ * 
+ * Inputs:
+ * 
+ *                 @ fcl* f1:= the first fcl layer
+ *                 @ fcl* f2:= the second fcl layer
+ * */
+ 
+fcl* fcl_merge(fcl* f1, fcl* f2){
+    
+    if (f1->input != f2->input){
+        fprintf(stderr,"Error, you fully connected layers don't have same input size\n");
+        exit(1);
+    }
+    
+    fcl* f = fully_connected(f1->input,f1->output+f2->output,f1->layer,f1->dropout_flag,f1->activation_flag,f1->dropout_threshold);
+    copy_array(f1->weights,f->weights,f1->input*f1->output);
+    copy_array(f2->weights,&f->weights[f1->input*f1->output],f2->input*f2->output);
+    copy_array(f1->biases,f->biases,f1->output);
+    copy_array(f2->biases,&f->biases[f1->output],f2->output);
+    
+    return f;
+} 

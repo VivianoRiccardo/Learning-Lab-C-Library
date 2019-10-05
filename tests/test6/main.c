@@ -79,7 +79,8 @@ int main(){
     printf("Training phase!\n");
     save_model(m,0);
     // Training
-    for(k = 0; k < epochs; k++){
+    //for(k = 0; k < epochs; k++){
+    for(k = 0; k < 1; k++){
         if(k == 10)
             lr = 0.0001;
         else if(k == 15)
@@ -87,7 +88,8 @@ int main(){
         printf("Starting epoch %d/%d\n",k+1,epochs);
         // Shuffling before each epoch
         shuffle_float_matrices(inputs,outputs,training_instances);
-        for(i = 0; i < training_instances/batch_size; i++){
+        //for(i = 0; i < training_instances/batch_size; i++){
+        for(i = 0; i < 2; i++){
             //printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
             model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
@@ -152,7 +154,8 @@ int main(){
     printf("Testing phase!\n");
     double error = 0;
     // Testing
-    for(k = 0; k < epochs+1; k++){
+    //for(k = 0; k < epochs+1; k++){
+    for(k = 0; k < 1; k++){
         printf("Model N. %d/%d\n",k+1,epochs);
         // Loading the model
         char temp3[5];
@@ -164,7 +167,8 @@ int main(){
         itoa(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
-        for(i = 0; i < testing_instances; i++){
+        //for(i = 0; i < testing_instances; i++){
+        for(i = 0; i < 1; i++){
             // Feed forward
             model_tensor_input_ff(test_m,input_dimension,1,1,inputs_test[i]);
             for(j = 0; j < output_dimension; j++){
