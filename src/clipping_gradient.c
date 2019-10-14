@@ -120,9 +120,9 @@ void clipping_gradient_vae_model(vaemodel* vm, float threshold) {
          clip_fcls(vm->encoder->fcls, vm->encoder->n_fcl, threshold, sum);
          clip_cls(vm->encoder->cls, vm->encoder->n_cl, threshold, sum);
          clip_rls(vm->encoder->rls, vm->encoder->n_rl, threshold, sum);
-         clip_fcls(vm->encoder->fcls, vm->decoder->n_fcl, threshold, sum);
-         clip_cls(vm->encoder->cls, vm->decoder->n_cl, threshold, sum);
-         clip_rls(vm->encoder->rls, vm->decoder->n_rl, threshold, sum);
+         clip_fcls(vm->decoder->fcls, vm->decoder->n_fcl, threshold, sum);
+         clip_cls(vm->decoder->cls, vm->decoder->n_cl, threshold, sum);
+         clip_rls(vm->decoder->rls, vm->decoder->n_rl, threshold, sum);
      }
 }
  

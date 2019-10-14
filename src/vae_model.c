@@ -361,8 +361,9 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
         }
     }
     
-    copy_array(vm->dmean,temp2,vm->latent_size);
-    copy_array(vm->dstd,temp2+vm->latent_size,vm->latent_size);
+    sum1D(vm->dmean,temp,temp2,vm->latent_size);
+    dot1D(temp,vm->input,temp2+vm->latent_size,vm->latent_size);
+    sum1D(vm->dstd,temp2+vm->latent_size,temp2+vm->latent_size,vm->latent_size);
     
     temp3 = model_tensor_input_bp(vm->encoder,tensor_depth,tensor_i,tensor_j,input,temp2,vm->latent_size*2);
     
