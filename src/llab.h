@@ -220,7 +220,7 @@ typedef struct vaemodel{
     float* input;
     float* dmean;
     float* dstd;
-    model* encoder;
+    model* encoder;// last layer must be sizze = latent_space*2
     model* decoder;
 } vaemodel;
 
