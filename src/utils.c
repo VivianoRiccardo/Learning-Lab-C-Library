@@ -24,6 +24,13 @@ SOFTWARE.
 
 #include "llab.h"
 
+char* get_full_path(char* directory, char* filename){
+    char* temp = (char*)malloc(sizeof(char)*256);// temp = (256)
+    temp[0] = '\0';
+    strcat(temp,directory);
+    strcat(temp,filename);
+    return temp;
+}
 /*random number between 0 and 1*/
 float r2(){
     return (float)rand() / (float)RAND_MAX ;

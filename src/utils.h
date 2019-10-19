@@ -25,6 +25,7 @@ SOFTWARE.
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+char* get_full_path(char* directory, char* filename);
 float r2();
 float drand ();
 float random_normal ();

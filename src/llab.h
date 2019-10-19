@@ -300,6 +300,7 @@ typedef struct thread_args_gan_model {
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"
 #include "normalization.h"
+#include "parser.h"
 #include "recurrent.h"
 #include "recurrent_layers.h"
 #include "residual_layers.h"
