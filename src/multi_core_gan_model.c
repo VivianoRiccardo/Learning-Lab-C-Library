@@ -31,6 +31,7 @@ void* gan_model_thread_ff_disc(void* _args) {
     thread_args_gan_model* args = (thread_args_gan_model*) _args;
     discriminator_feed_forward(args->gm,args->real_input,args->noise_input,args->g_d_in,args->g_i_in,args->g_j_in,args->d_d_in,args->d_i_in,args->d_j_in);
     
+    return _args;
 }
 
 void* gan_model_thread_ff_gen(void* _args) {
@@ -38,7 +39,7 @@ void* gan_model_thread_ff_gen(void* _args) {
     // depacking args
     thread_args_gan_model* args = (thread_args_gan_model*) _args;
     generator_feed_forward(args->gm,args->noise_input,args->g_d_in,args->g_i_in,args->g_j_in,args->d_d_in,args->d_i_in,args->d_j_in);
-    
+    return _args;
 }
 
 
@@ -47,7 +48,7 @@ void* gan_model_thread_bp_disc(void* _args) {
     // depacking args
     thread_args_gan_model* args = (thread_args_gan_model*) _args;
     discriminator_back_propagation(args->gm,args->real_input,args->noise_input,args->g_d_in,args->g_i_in,args->g_j_in,args->d_d_in,args->d_i_in,args->d_j_in);
-    
+    return _args;
 }
 
 
@@ -56,7 +57,7 @@ void* gan_model_thread_bp_gen(void* _args) {
     // depacking args
     thread_args_gan_model* args = (thread_args_gan_model*) _args;
     args->ret_err[0] = generator_back_propagation(args->gm,args->noise_input,args->g_d_in,args->g_i_in,args->g_j_in,args->d_d_in,args->d_i_in,args->d_j_in,args->output_size);
-    
+    return _args;
 }
 
 void discriminator_tensor_input_ff_multicore(ganmodel** m,float** real_input, float** noise_input, int tensor_input_g_depth, int tensor_input_g_i, int tensor_input_g_j,int tensor_input_d_depth, int tensor_input_d_i, int tensor_input_d_j, int mini_batch_size, int threads){
@@ -122,7 +123,7 @@ void generator_tensor_input_ff_multicore(ganmodel** m, float** noise_input, int 
 }
 
 void discriminator_tensor_input_bp_multicore(ganmodel** m,float** real_input, float** noise_input, int tensor_input_g_depth, int tensor_input_g_i, int tensor_input_g_j,int tensor_input_d_depth, int tensor_input_d_i, int tensor_input_d_j, int mini_batch_size, int threads){
-	pthread_t thread[threads];
+    pthread_t thread[threads];
     thread_args_gan_model* args[threads];
     
     int i,j;
@@ -153,7 +154,7 @@ void discriminator_tensor_input_bp_multicore(ganmodel** m,float** real_input, fl
 }
 
 void generator_tensor_input_bp_multicore(ganmodel** m, float** noise_input, int tensor_input_g_depth, int tensor_input_g_i, int tensor_input_g_j,int tensor_input_d_depth, int tensor_input_d_i, int tensor_input_d_j, int mini_batch_size, int threads, float** returning_error){
-	pthread_t thread[threads];
+    pthread_t thread[threads];
     thread_args_gan_model* args[threads];
     
     int i,j;

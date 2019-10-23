@@ -30,7 +30,7 @@ void* vae_model_thread_ff(void* _args) {
     // depacking args
     thread_args_vae_model* args = (thread_args_vae_model*) _args;
     vae_model_tensor_input_ff(args->vm,args->channels,args->rows,args->cols,args->input);
-    
+    return _args;
 }
 
 void* vae_model_thread_bp(void* _args) {
@@ -38,6 +38,7 @@ void* vae_model_thread_bp(void* _args) {
     // depacking args
     thread_args_vae_model* args = (thread_args_vae_model*) _args;
     args->returning_error[0] = vae_model_tensor_input_bp(args->vm,args->channels,args->rows,args->cols,args->input,args->error,args->error_dimension);
+    return _args;
 }
 
 

@@ -30,7 +30,7 @@ void* rmodel_thread_ff(void* _args) {
     // depacking args
     thread_args_rmodel* args = (thread_args_rmodel*) _args;
     ff_rmodel(args->hidden_states,args->cell_states,args->input_model,args->m);
-    
+    return _args;
 }
 
 void* rmodel_thread_bp(void* _args) {
@@ -38,6 +38,7 @@ void* rmodel_thread_bp(void* _args) {
     // depacking args
     thread_args_rmodel* args = (thread_args_rmodel*) _args;
     args->returning_error[0] = bp_rmodel(args->hidden_states,args->cell_states,args->input_model,args->error_model,args->m,args->ret_input_error[0]);
+    return _args;
 }
 
 /* This functions computes the feed forward of a rmodel for a batch of instances of the dataset

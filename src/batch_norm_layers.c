@@ -376,6 +376,8 @@ bn* reset_bn(bn* b){
         b->mean[i] = 0; 
         b->var[i] = 0; 
     } 
+    
+    return b;
 }
 
 /* this function computes the size of the space allocated by the arrays of a batch normalized layer

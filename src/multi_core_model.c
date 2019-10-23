@@ -30,7 +30,7 @@ void* model_thread_ff(void* _args) {
     // depacking args
     thread_args_model* args = (thread_args_model*) _args;
     model_tensor_input_ff(args->m,args->channels,args->rows,args->cols,args->input);
-    
+    return _args;
 }
 
 void* model_thread_bp(void* _args) {
@@ -38,6 +38,7 @@ void* model_thread_bp(void* _args) {
     // depacking args
     thread_args_model* args = (thread_args_model*) _args;
     args->returning_error[0] = model_tensor_input_bp(args->m,args->channels,args->rows,args->cols,args->input,args->error,args->error_dimension);
+    return _args;
 }
 
 
