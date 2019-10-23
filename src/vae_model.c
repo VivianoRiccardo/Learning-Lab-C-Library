@@ -27,7 +27,7 @@ SOFTWARE.
 
 /* This function creates a variational auto encoder filled with amodel encoder and a decoder model
  * pay attention: the vaemodel store in encoder and decoder the copies of encoder and decoder param
- * /* the final array of encoder is considered the first half as the mean and the second half as the std
+ * the final array of encoder is considered the first half as the mean and the second half as the std
  * Inputs:
  * 
  *     
