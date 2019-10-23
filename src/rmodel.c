@@ -1009,7 +1009,7 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
     int i,j,ret_count = m->layers,z;
     float** temp = (float**)malloc(sizeof(float*)*m->window);// inputs of lstms
     for(i = 0; i < m->window; i++){
-        error2_model[i] = (float*)calloc(m->lstms[0]->size,sizeof(float));error_model[i];
+        error2_model[i] = (float*)calloc(m->lstms[0]->size,sizeof(float));
         copy_array(error_model[i],error2_model[i],m->lstms[0]->size);
     }
     i = m->layers-1;
