@@ -159,7 +159,7 @@ int main(){
         input = (float**)malloc(sizeof(float*)*mini_batch_size);
         ret_err = (float**)malloc(sizeof(float*)*mini_batch_size);
         for(i = 0; i < mini_batch_size; i++){
-            output[i] = (float*)malloc(sizeof(float)*n_neurons3);
+            output[i] = (float*)malloc(sizeof(float)*m->fcls[m->n_fcl-1]->output);
             input[i] = (float*)malloc(sizeof(float)*size);
         }
         
