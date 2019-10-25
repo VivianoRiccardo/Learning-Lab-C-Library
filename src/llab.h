@@ -225,28 +225,28 @@ typedef struct vaemodel{
 } vaemodel;
 
 typedef struct ganmodel{
-	model* generator;
-	model* discriminator;
-	model* discriminator2;
-	int mini_batch_size;
-	int generator_gradient_descent_flag;
-	int discriminator_gradient_descent_flag;
-	int generator_regularization;
-	int discriminator_regularization;
-	int generator_total_number_weights;
-	int discriminator_total_number_weights;
-	float generator_lr;
-	float discriminator_lr;
-	float generator_momentum;
-	float discriminator_momentum;
-	float generator_b1;
-	float discriminator_b1;
-	float generator_b2;
-	float discriminator_b2;
-	float generator_lambda;
-	float discriminator_lambda;
-	unsigned long long int generator_t;
-	unsigned long long int discriminator_t;
+    model* generator;
+    model* discriminator;
+    model* discriminator2;
+    int mini_batch_size;
+    int generator_gradient_descent_flag;
+    int discriminator_gradient_descent_flag;
+    int generator_regularization;
+    int discriminator_regularization;
+    int generator_total_number_weights;
+    int discriminator_total_number_weights;
+    float generator_lr;
+    float discriminator_lr;
+    float generator_momentum;
+    float discriminator_momentum;
+    float generator_b1;
+    float discriminator_b1;
+    float generator_b2;
+    float discriminator_b2;
+    float generator_lambda;
+    float discriminator_lambda;
+    unsigned long long int generator_t;
+    unsigned long long int discriminator_t;
 } ganmodel;
 
 typedef struct thread_args_model {

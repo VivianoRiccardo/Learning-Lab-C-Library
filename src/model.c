@@ -1156,8 +1156,8 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
+            derivative_softmax_array(f2->pre_activation,f2->temp3,f2->post_activation,f2->temp,f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1182,8 +1182,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            copy_array(f2->temp3,f2->temp,f2->output);
+            derivative_softmax_array(f2->pre_activation,f2->temp,f2->post_activation,error,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1653,8 +1652,8 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
+            derivative_softmax_array(f2->pre_activation,f2->temp3,f2->post_activation,f2->temp,f2->output);
+            copy_array(f2->temp3,f2->temp,f2->output);
         }
         
         else if(f2->activation_flag == TANH){
@@ -1679,8 +1678,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
-            derivative_cross_entropy_reduced_form_with_softmax_array(f2->post_activation,  error,f2->temp3, f2->output);
-            copy_array(f2->temp3,f2->temp,f2->output);
+            derivative_softmax_array(f2->pre_activation,f2->temp,f2->post_activation,error,f2->output);
         }
         
         else if(f2->activation_flag == TANH){

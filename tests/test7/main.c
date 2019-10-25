@@ -1,8 +1,8 @@
 #include <llab.h>
 
 int main(){
-	// Variational autoencoder 
-	// encoder:
+    // Variational autoencoder 
+    // encoder:
     // 1 CONVOLUTIONAL LAYER:
     /* input 1° cl = 1*32*32, activation = RELU, PADDING = 1, MAX POOLING
      */
@@ -106,9 +106,9 @@ int main(){
     float** errors = (float**)malloc(sizeof(float*)*mini_batch_size);
     
     for(i = 0; i < mini_batch_size; i++){
-		errors[i] = (float*)malloc(sizeof(float)*input_dimension);
-	}
-	
+        errors[i] = (float*)malloc(sizeof(float)*input_dimension);
+    }
+    
     printf("Training phase!\n");
     // Training
     save_model(vae->decoder,0);
@@ -128,8 +128,8 @@ int main(){
             
             
             for(j = 0; j < mini_batch_size; j++){
-				derivative_mse_array(batch_m[j]->decoder->fcls[2]->post_activation,inputs[i*batch_size],errors[j],input_dimension);
-			}
+                derivative_mse_array(batch_m[j]->decoder->fcls[2]->post_activation,inputs[i*batch_size],errors[j],input_dimension);
+            }
             
             vae_model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,input_dimension,ret_err);
             // sum the partial derivatives in m obtained from backpropagation
@@ -216,17 +216,17 @@ int main(){
         for(i = 0; i < 3; i++){
             // Feed forward
             for(j = 0; j < output_dimension; j++){
-				normal_vector[j] = random_normal();
-			}
+                normal_vector[j] = random_normal();
+            }
             model_tensor_input_ff(test_m,input_dimension,1,1,normal_vector);
             for(j = 0; j < 28; j++){
                 for(z = 0; z < 28; z++){
-					if(test_m->fcls[2]->post_activation[j*28+z] >= 0.5)
-						printf("1");
-					else
-						printf("0");
-				}
-				printf("\n");
+                    if(test_m->fcls[2]->post_activation[j*28+z] >= 0.5)
+                        printf("1");
+                    else
+                        printf("0");
+                }
+                printf("\n");
             }
             printf("\n");
             reset_model(test_m);  

@@ -27,6 +27,7 @@ SOFTWARE.
 
 
 void softmax(float* input, float* output, int size);
+void derivative_softmax_array(float* input, float* output,float* softmax_arr,float* error, int size);
 float sigmoid(float x);
 void sigmoid_array(float* input, float* output, int size);
 float derivative_sigmoid(float x);
@@ -64,5 +65,11 @@ void mse_array(float* y_hat, float* y, float* output, int size);
 void derivative_mse_array(float* y_hat, float* y, float* output, int size);
 void cross_entropy_array(float* y_hat, float* y, float* output, int size);
 void derivative_cross_entropy_array(float* y_hat, float* y, float* output, int size);
+void kl_divergence(float* input1, float* input2, float* output, int size);
+void derivative_kl_divergence(float* y_hat, float* y, float* output, int size);
+float entropy(float y_hat);
+void entropy_array(float* y_hat, float* output, int size);
+float derivative_entropy(float y_hat);
+void derivative_entropy_array(float* y_hat, float* output, int size);
 
 #endif

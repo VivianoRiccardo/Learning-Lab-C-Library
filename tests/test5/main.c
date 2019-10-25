@@ -26,6 +26,11 @@ int main(){
     int size = 0;
     char temp[2];
     temp[1] = '\0';
+    float** errors = (float**)malloc(sizeof(float*)*batch_size);
+    
+    for(i = 0; i < batch_size; i++){
+        errors[i] = (float*)calloc(output_dimension,sizeof(float));
+    }
     // Model Architecture
     cl** cls = (cl**)malloc(sizeof(cl*));
     cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,LOCAL_RESPONSE_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,1);
@@ -72,6 +77,9 @@ int main(){
             //printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
             model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
+            for(j = 0; j < batch_size; j++){
+                derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
+            }
             model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,&outputs[i*batch_size],output_dimension,ret_err);
             // sum the partial derivatives in m obtained from backpropagation
             for(j = 0; j < batch_size; j++){
@@ -96,7 +104,9 @@ int main(){
     free_model(m);
     for(i = 0; i < batch_size; i++){
         free_model(batch_m[i]);
+        free(errors[i]);
     }
+    free(errors);
     free(batch_m);
     free(ret_err);
     for(i = 0; i < training_instances; i++){

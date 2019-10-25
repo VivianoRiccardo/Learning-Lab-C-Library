@@ -64,6 +64,7 @@ sh create_library.sh
 - Rectified Adam (22/8/2019)
 - Gan model (28/8/2019)
 - Confusion matrix and accuracy array (30/9/2019)
+- KL Divergence (25/10/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...

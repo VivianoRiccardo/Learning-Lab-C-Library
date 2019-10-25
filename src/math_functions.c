@@ -35,6 +35,22 @@ void softmax(float* input, float* output, int size){
         output[i] = exp(input[i])/sum;
     }
 }
+
+void derivative_softmax_array(float* input, float* output,float* softmax_arr,float* error, int size){
+    int i,j;
+    
+    for(j = 0; j < size; j++){
+        for(i = 0; i < size; i++){
+            if (i == j)
+                output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
+            else
+                output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
+        }
+        
+    }
+}
+
+
 float sigmoid(float x){
     return 1/(1+exp(-x));
 }
@@ -325,6 +341,42 @@ void derivative_focal_loss_array(float* y_hat, float* y, float* output, float ga
     int i;
     for(i = 0; i < size; i++){
         output[i] = derivative_focal_loss(y_hat[i],y[i],gamma);
+    }
+}
+
+void kl_divergence(float* input1, float* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input1[i]*log((double)(input1[i]/input2[i]));
+    }
+}
+
+void derivative_kl_divergence(float* y_hat, float* y, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = log((double)(y_hat[i]/y[i]))+1;
+    }
+}
+
+float entropy(float y_hat){
+    return -y_hat*log((double)y_hat);
+}
+
+void entropy_array(float* y_hat, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = entropy(y_hat[i]);
+    }
+}
+
+float derivative_entropy(float y_hat){
+    return -1-log((double)y_hat);
+}
+
+void derivative_entropy_array(float* y_hat, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_entropy(y_hat[i]);
     }
 }
 

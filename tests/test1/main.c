@@ -15,13 +15,18 @@ int main(){
     int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100;
     int n_layers = 2;
     int batch_size = 10,threads = 4;
-    int epochs = 20;
+    int epochs = 5;
     unsigned long long int t = 1;
     char** ksource = (char**)malloc(sizeof(char*));
     char* filename = "../data/train.bin";
     int size = 0;
     char temp[2];
     temp[1] = '\0';
+    float** errors = (float**)malloc(sizeof(float*)*batch_size);
+    
+    for(i = 0; i < batch_size; i++){
+        errors[i] = (float*)calloc(output_dimension,sizeof(float));
+    }
     // Model Architecture
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
     fcls[0] = fully_connected(input_dimension,middle_neurons,0,NO_DROPOUT,SIGMOID,0);
@@ -66,7 +71,10 @@ int main(){
             //printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
             model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
-            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,&outputs[i*batch_size],output_dimension,ret_err);
+            for(j = 0; j < batch_size; j++){
+                derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
+            }
+            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,output_dimension,ret_err);
             // sum the partial derivatives in m obtained from backpropagation
             for(j = 0; j < batch_size; j++){
                 sum_model_partial_derivatives(batch_m[j],m,m);
@@ -90,7 +98,9 @@ int main(){
     free_model(m);
     for(i = 0; i < batch_size; i++){
         free_model(batch_m[i]);
+        free(errors[i]);
     }
+    free(errors);
     free(batch_m);
     free(ret_err);
     for(i = 0; i < training_instances; i++){
