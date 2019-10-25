@@ -258,6 +258,41 @@ int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,
  * Input:
  *             @char** m:= a matrix
  *                         dimensions: n*k
+ *                @char** m1:= a matrix
+ *                         dimensions: n*k
+ *               @float* f:= the float vector
+ *                @int* v:= the int vector
+ *             @int n:= number of pointers char* of m
+ * */
+int shuffle_float_matrices_float_int_vectors(float** m,float** m1,float* f, int* v,int n){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          float* t = m[j];
+          float* t1 = m1[j];
+          float t2 = f[j];
+          int t3 = v[j];
+          m[j] = m[i];
+          m[i] = t;
+          m1[j] = m1[i];
+          m1[i] = t1;
+          f[j] = f[i];
+          f[i] = t2;
+          v[i] = v[i];
+          v[i] = t3;
+        }
+    
+    }
+    return 0;
+}
+
+/* Function used to shuffle randomly the pointers of the 2 matrices m and m1 and 2 vectors, float and int
+ * 
+ * Input:
+ *             @char** m:= a matrix
+ *                         dimensions: n*k
  *             @char** m1:= a matrix
  *                         dimensions: n*k
  *             @float* f:= the float vector
@@ -273,6 +308,45 @@ int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int
           size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
           char* t = m[j];
           char* t1 = m1[j];
+          float t2 = f[j];
+          int t3 = v[j];
+          int t4 = v2[j];
+          m[j] = m[i];
+          m[i] = t;
+          m1[j] = m1[i];
+          m1[i] = t1;
+          f[j] = f[i];
+          f[i] = t2;
+          v[i] = v[i];
+          v[i] = t3;
+          v2[i] = v2[i];
+          v2[i] = t4;
+        }
+    
+    }
+    return 0;
+}
+
+/* Function used to shuffle randomly the pointers of the 2 matrices m and m1 and 2 vectors, float and int
+ * 
+ * Input:
+ *             @float** m:= a matrix
+ *                         dimensions: n*k
+ *             @float** m1:= a matrix
+ *                         dimensions: n*k
+ *             @float* f:= the float vector
+ *             @int* v:= the int vector
+ *             @int* v2:= the int vector
+ *             @int n:= number of pointers char* of m
+ * */
+int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          float* t = m[j];
+          float* t1 = m1[j];
           float t2 = f[j];
           int t3 = v[j];
           int t4 = v2[j];

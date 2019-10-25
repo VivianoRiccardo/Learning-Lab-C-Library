@@ -92,5 +92,7 @@ void update_batch_normalized_layer_radam_bmodel(bmodel* m, float lr, int mini_ba
 void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t);
 long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
 int* accuracy_array(long long unsigned int** cm, int size);
+int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n);
+int shuffle_float_matrices_float_int_vectors(float** m,float** m1,float* f, int* v,int n);
 
 #endif
