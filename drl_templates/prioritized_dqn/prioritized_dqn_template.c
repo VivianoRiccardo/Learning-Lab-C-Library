@@ -337,7 +337,7 @@ int main(){
                             
                             // If rewards[i] != -1 it means that the game was not ended and we must perform the best action value with the model m
                             else{
-                                
+                                max = -2;
                                 // Performing the feed forward and selecting the max value given in output by the feed forward
                                 model_tensor_input_ff(m,channels,input_rows,input_cols,input[i]);
                                 for(j = 0; i < m->fcls[m->n_fcl-1]->output; i++){
@@ -368,7 +368,7 @@ int main(){
                             
                             // If rewards[i] != -1 it means that the game was not ended and we must perform the best action value with the model m
                             else{
-                   
+                                max = -2;
                                 // Performing the feed forward and selecting the max value given in output by the feed forward
                                 model_tensor_input_ff(m,channels,input_rows,input_cols,input[i]);
                                 for(j = 0; i < m->fcls[m->n_fcl-1]->output; i++){
@@ -423,7 +423,7 @@ int main(){
                     }
                     
                     // Gradient descent (with L2 Regularization)
-                    update_model(sum_m,lr,momentum,mini_batch_size,RADAM,&b1,&b2,L2_REGULARIZATION,n_weights,l2_value*mini_batch_size,&t);
+                    update_model(sum_m,lr,momentum,mini_batch_size,RADAM,&b1,&b2,L2_REGULARIZATION,n_weights,l2_value,&t);
                     paste_model(sum_m,actual_m);
                     reset_model(actual_m);
                     reset_model(sum_m);
