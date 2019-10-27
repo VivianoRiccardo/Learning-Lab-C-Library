@@ -449,4 +449,69 @@ fcl* fcl_merge(fcl* f1, fcl* f2){
     copy_array(f2->biases,&f->biases[f1->output],f2->output);
     
     return f;
-} 
+}
+
+/* this function gives the number of float params for biases and weights in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+int get_array_size_params(fcl* f){
+    return f->input*f->output+f->output;
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params(fcl* f, float* vector){
+    memcpy(f->weights,vector,f->input*f->output*sizeof(float));
+    memcpy(f->biases,&vector[f->input*f->output],f->output*sizeof(float));
+}
+
+
+/* this function paste the vector in the weights and biases of the fcl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector(fcl* f, float* vector){
+    memcpy(vector,f->weights,f->input*f->output*sizeof(float));
+    memcpy(&vector[f->input*f->output],f->biases,f->output*sizeof(float));
+}
+
+/* this function paste the dweights and dbiases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_derivative_params(fcl* f, float* vector){
+    memcpy(f->d_weights,vector,f->input*f->output*sizeof(float));
+    memcpy(f->d_biases,&vector[f->input*f->output],f->output*sizeof(float));
+}
+
+
+/* this function paste the vector in the dweights and dbiases of the fcl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_derivative_params_to_vector(fcl* f, float* vector){
+    memcpy(vector,f->d_weights,f->input*f->output*sizeof(float));
+    memcpy(&vector[f->input*f->output],f->d_biases,f->output*sizeof(float));
+}

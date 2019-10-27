@@ -47,4 +47,10 @@ unsigned long long int size_of_model(model* m);
 void paste_model(model* m, model* copy);
 int count_weights(model* m);
 void slow_paste_model(model* m, model* copy, float tau);
+int get_array_size_params_model(model* f);
+void memcopy_vector_to_params_model(model* f, float* vector);
+void memcopy_params_to_vector_model(model* f, float* vector);
+void memcopy_vector_to_derivative_params_model(model* f, float* vector);
+void memcopy_derivative_params_to_vector_model(model* f, float* vector);
+
 #endif

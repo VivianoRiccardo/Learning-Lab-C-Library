@@ -669,3 +669,145 @@ lstm* reset_lstm(lstm* f){
     }
     return f;
 }
+
+
+/* this function gives the number of float params for biases and weights in a lstm
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ lstm* f:= the lstm layer
+ * */
+int get_array_size_params_lstm(lstm* f){
+    
+    int sum = 0;
+    int i;
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            sum+=f->bns[i]->vector_dim*2;
+        }
+    }
+    return sum+8*f->size*f->size+4*f->size;
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ lstm* f:= the lstm layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params_lstm(lstm* f, float* vector){
+    int i;
+    for(i = 0; i < 4; i++){
+        memcpy(f->w[i],&vector[(i*2)*f->size*f->size],f->size*f->size*sizeof(float));    
+        memcpy(f->u[i],&vector[(i*2+1)*f->size*f->size],f->size*f->size*sizeof(float));    
+    }
+    
+    for(i = 0; i < 4; i++){
+        memcpy(f->biases[i],&vector[8*f->size*f->size+(i)*f->size],f->size*sizeof(float));        
+    }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(f->bns[i]->gamma,&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(f->bns[i]->beta,&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+
+/* this function paste the vector in the weights and biases of the lstm
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ lstm* f:= the lstm layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_lstm(lstm* f, float* vector){
+    int i;
+    for(i = 0; i < 4; i++){
+        memcpy(&vector[(i*2)*f->size*f->size],f->w[i],f->size*f->size*sizeof(float));    
+        memcpy(&vector[(i*2+1)*f->size*f->size],f->u[i],f->size*f->size*sizeof(float));    
+    }
+    
+    for(i = 0; i < 4; i++){
+        memcpy(&vector[8*f->size*f->size+(i)*f->size],f->biases[i],f->size*sizeof(float));        
+    }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+/* this function paste the dweights and dbiases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ lstm* f:= the lstm layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_derivative_params_lstm(lstm* f, float* vector){
+    int i;
+    for(i = 0; i < 4; i++){
+        memcpy(f->d_w[i],&vector[(i*2)*f->size*f->size],f->size*f->size*sizeof(float));    
+        memcpy(f->d_u[i],&vector[(i*2+1)*f->size*f->size],f->size*f->size*sizeof(float));    
+    }
+    
+    for(i = 0; i < 4; i++){
+        memcpy(f->d_biases[i],&vector[8*f->size*f->size+(i)*f->size],f->size*sizeof(float));        
+    }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(f->bns[i]->d_gamma,&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(f->bns[i]->d_beta,&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+
+/* this function paste the vector in the dweights and dbiases of the lstm
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ lstm* f:= the lstm layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_derivative_params_to_vector_lstm(lstm* f, float* vector){
+    int i;
+    for(i = 0; i < 4; i++){
+        memcpy(&vector[(i*2)*f->size*f->size],f->d_w[i],f->size*f->size*sizeof(float));    
+        memcpy(&vector[(i*2+1)*f->size*f->size],f->d_u[i],f->size*f->size*sizeof(float));    
+    }
+    
+    for(i = 0; i < 4; i++){
+        memcpy(&vector[8*f->size*f->size+(i)*f->size],f->d_biases[i],f->size*sizeof(float));        
+    }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->d_gamma,f->bns[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            memcpy(&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->d_beta,f->bns[i]->vector_dim*sizeof(float));
+        }
+    }
+}

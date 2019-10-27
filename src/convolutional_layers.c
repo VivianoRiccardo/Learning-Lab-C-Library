@@ -935,3 +935,133 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
     
     return;
 }
+
+
+/* this function gives the number of float params for biases and weights in a cl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ * */
+int get_array_size_params_cl(cl* f){
+    
+    int sum = 0;
+    int i;
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            sum+=f->group_norm[i]->vector_dim*2;
+        }
+    }
+    return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels;
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(f->kernels[i],&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    memcpy(f->biases,&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->n_kernels*sizeof(float));
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->gamma,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->beta,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+
+/* this function paste the vector in the weights and biases of the cl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->kernels[i],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->biases,f->n_kernels*sizeof(float));
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->gamma,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->beta,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+/* this function paste the dweights and dbiases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_derivative_params_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(f->d_kernels[i],&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    memcpy(f->d_biases,&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->n_kernels*sizeof(float));
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->d_gamma,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->d_beta,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+
+/* this function paste the vector in the dweights and dbiases of the cl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_derivative_params_to_vector_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->d_biases,f->n_kernels*sizeof(float));
+
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->d_gamma,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->d_beta,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}

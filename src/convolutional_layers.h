@@ -35,4 +35,10 @@ void paste_cl(cl* f, cl* copy);
 cl* reset_cl(cl* f);
 unsigned long long int size_of_cls(cl* f);
 void slow_paste_cl(cl* f, cl* copy,float tau);
+int get_array_size_params_cl(cl* f);
+void memcopy_params_to_vector_cl(cl* f, float* vector);
+void memcopy_vector_to_params_cl(cl* f, float* vector);
+void memcopy_derivative_params_to_vector_cl(cl* f, float* vector);
+void memcopy_vector_to_derivative_params_cl(cl* f, float* vector);
+
 #endif

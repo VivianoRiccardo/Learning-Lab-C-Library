@@ -321,3 +321,86 @@ void slow_paste_rl(rl* f, rl* copy,float tau){
 }
 
 
+
+/* this function gives the number of float params for biases and weights in a rl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+int get_array_size_params_rl(rl* f){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_params_cl(f->cls[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_params_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+}
+
+
+/* this function paste the vector in the weights and biases of the rl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_params_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+}
+
+/* this function paste the dweights and dbiases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_derivative_params_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_derivative_params_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+}
+
+
+/* this function paste the vector in the dweights and dbiases of the rl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_derivative_params_to_vector_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_derivative_params_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+}
+
+
+

@@ -32,6 +32,11 @@ SOFTWARE.
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <sys/socket.h> 
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
 
 
 #define N_NORMALIZATION 5
@@ -185,7 +190,7 @@ typedef struct lstm { //long short term memory layers
     float** out_up;//window x size
     float dropout_threshold_up;
     float dropout_threshold_right;
-    bn** bns;
+    bn** bns;//window/n_grouped_cell
     
     
     
@@ -283,6 +288,11 @@ typedef struct thread_args_gan_model {
     float** ret_err;
 } thread_args_gan_model;
 
+typedef struct thread_args_server {
+    int idx,client_desc, reading_pipe, writing_pipe,buffer_size;
+    struct sockaddr_in* client_addr;
+} thread_args_server;
+
 
 #include "batch_norm_layers.h"
 #include "bmodel.h"
@@ -305,6 +315,7 @@ typedef struct thread_args_gan_model {
 #include "recurrent_layers.h"
 #include "residual_layers.h"
 #include "rmodel.h"
+#include "server.h"
 #include "utils.h"
 #include "vae_model.h"
 

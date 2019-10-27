@@ -2392,3 +2392,126 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3){
     sum_convolutional_layers_partial_derivatives(m,m2,m3);
     sum_residual_layers_partial_derivatives(m,m2,m3);
 }
+
+
+/* this function gives the number of float params for biases and weights in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+int get_array_size_params_model(model* f){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        sum+=get_array_size_params(f->fcls[i]);
+    }
+    
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_params_cl(f->cls[i]);
+    }
+    
+    for(i = 0; i < f->n_rl; i++){
+        sum+=get_array_size_params_rl(f->rls[i]);
+    }
+    
+    return sum;
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_params(f->fcls[i],&vector[sum]);
+        sum += get_array_size_params(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_params_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_params_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_params_rl(f->rls[i]);
+    }
+}
+
+
+/* this function paste the vector in the weights and biases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_params_to_vector(f->fcls[i],&vector[sum]);
+        sum += get_array_size_params(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_params_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_params_to_vector_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_params_rl(f->rls[i]);
+	}
+}
+
+/* this function paste the dweights and dbiases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_derivative_params_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_derivative_params(f->fcls[i],&vector[sum]);
+        sum += get_array_size_params(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_derivative_params_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_derivative_params_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_params_rl(f->rls[i]);
+	}
+}
+
+
+/* this function paste the vector in the dweights and dbiases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_derivative_params_to_vector_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_derivative_params_to_vector(f->fcls[i],&vector[sum]);
+        sum += get_array_size_params(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_derivative_params_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_params_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_derivative_params_to_vector_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_params_rl(f->rls[i]);
+	}
+}

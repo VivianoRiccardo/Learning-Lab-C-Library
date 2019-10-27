@@ -36,4 +36,10 @@ fcl* reset_fcl(fcl* f);
 unsigned long long int size_of_fcls(fcl* f);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
 fcl* fcl_merge(fcl* f1, fcl* f2);
+int get_array_size_params(fcl* f);
+void memcopy_params_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_params(fcl* f, float* vector);
+void memcopy_derivative_params_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_derivative_params(fcl* f, float* vector);
+
 #endif

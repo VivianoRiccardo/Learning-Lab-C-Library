@@ -22,21 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __RECURRENT_LAYERS_H__
-#define __RECURRENT_LAYERS_H__
+#ifndef __CLIENT_H__
+#define __CLIENT_H__
 
-lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell);
-void free_recurrent_lstm(lstm* rlstm);
-void save_lstm(lstm* rlstm, int n);
-lstm* load_lstm(FILE* fr);
-lstm* copy_lstm(lstm* l);
-void paste_lstm(lstm* l,lstm* copy);
-void slow_paste_lstm(lstm* l,lstm* copy, float tau);
-lstm* reset_lstm(lstm* f);
-int get_array_size_params_lstm(lstm* f);
-void memcopy_vector_to_params_lstm(lstm* f, float* vector);
-void memcopy_params_to_vector_lstm(lstm* f, float* vector);
-void memcopy_vector_to_derivative_params_lstm(lstm* f, float* vector);
-void memcopy_derivative_params_to_vector_lstm(lstm* f, float* vector);
+#include "llab.h"
+
+int run_client(int port, char* server_address, int buffer_size, int reading_pipe, int writing_pipe);
+void contact_server(int sockfd, int buffer_size, int reading_pipe, int writing_pipe);
 
 #endif

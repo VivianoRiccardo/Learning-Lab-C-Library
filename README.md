@@ -65,6 +65,7 @@ sh create_library.sh
 - Gan model (28/8/2019)
 - Confusion matrix and accuracy array (30/9/2019)
 - KL Divergence (25/10/2019)
+- Client-Server for distributed systems implementation (27/10/2019)
 
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
