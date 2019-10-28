@@ -28,13 +28,13 @@ void* server_thread(void* _args) {
     
     // depacking args
     thread_args_server* args = (thread_args_server*) _args;
-    float* buff = (float*)malloc(sizeof(float)*args->buffer_size);
+    float* buff = (float*)calloc(args->buffer_size,sizeof(float));
     int ret;
     while(1){
-        while(read(args->client_desc, buff, sizeof(float)*args->buffer_size) == 0);// waiting for client
-        ret = write(args->writing_pipe,buff, sizeof(float)*args->buffer_size);// writing to parent process
         while(read(args->reading_pipe, buff, sizeof(float)*args->buffer_size) == 0);// waiting for parent process
         ret = write(args->client_desc,buff, sizeof(float)*args->buffer_size);// writing to client
+        while(read(args->client_desc, buff, sizeof(float)*args->buffer_size) == 0);// waiting for client
+        ret = write(args->writing_pipe,buff, sizeof(float)*args->buffer_size);// writing to parent process
     }
     
     free(buff);
@@ -76,14 +76,12 @@ int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipe
         fprintf(stderr,"Error: can't create socket\n");
         exit(1);
     }
-    
     // Which connection can accept
     
     server_addr.sin_addr.s_addr = INADDR_ANY;
     
     // Ip family
     server_addr.sin_family = AF_INET;
-    
     // Port
     
     server_addr.sin_port = htons(port);
@@ -96,13 +94,20 @@ int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipe
         exit(1);
     }
     
+    // Binding newly created socket to given IP and verification 
+    if ((bind(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr))) != 0) { 
+        printf("socket bind failed...\n"); 
+        exit(0); 
+    } 
+    else
+        printf("Socket successfully binded..\n"); 
+    
     // listen on tot number of connections
     ret = listen(socket_desc,max_num_conn);
     if(ret == -1){
         fprintf(stderr,"Error, listen failed\n");
         exit(1);
     }
-    
     int i = 0;
     while(1){
         client_addr = calloc(1,sizeof(struct sockaddr_in));

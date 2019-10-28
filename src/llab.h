@@ -296,6 +296,7 @@ typedef struct thread_args_server {
 
 #include "batch_norm_layers.h"
 #include "bmodel.h"
+#include "client.h"
 #include "clipping_gradient.h"
 #include "convolutional.h"
 #include "convolutional_layers.h"

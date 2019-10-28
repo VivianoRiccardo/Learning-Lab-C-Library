@@ -26,13 +26,13 @@ SOFTWARE.
 #include "llab.h"
 
 void contact_server(int sockfd, int buffer_size, int reading_pipe, int writing_pipe) { 
-    float* buff = (float*)malloc(sizeof(float)*buffer_size);
+    float* buff = (float*)calloc(buffer_size,sizeof(float));
     int ret;
     while(1){   
-        while(read(reading_pipe, buff, sizeof(float)*buffer_size) == 0);// waiting for parent process
-        ret = write(sockfd,buff, sizeof(float)*buffer_size);// writing to server
         while(read(sockfd, buff, sizeof(float)*buffer_size) == 0);// waiting for server
         ret = write(writing_pipe,buff, sizeof(float)*buffer_size);// writing to parent process
+        while(read(reading_pipe, buff, sizeof(float)*buffer_size) == 0);// waiting for parent process
+        ret = write(sockfd,buff, sizeof(float)*buffer_size);// writing to server
         
     }
     free(buff);
@@ -53,7 +53,8 @@ void contact_server(int sockfd, int buffer_size, int reading_pipe, int writing_p
 int run_client(int port, char* server_address, int buffer_size, int reading_pipe, int writing_pipe){
     
     int sockfd, connfd; 
-    struct sockaddr_in servaddr, cli; 
+    struct sockaddr_in servaddr, cli;
+    int sockaddr_len = sizeof(struct sockaddr_in);
   
     // socket create and varification 
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -72,12 +73,12 @@ int run_client(int port, char* server_address, int buffer_size, int reading_pipe
     servaddr.sin_port = htons(port); 
   
     // connect the client socket to server socket 
-    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) { 
-        fprintf(stderr,"Error: connection with the server failed...\n"); 
-        exit(1); 
+    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) { 
+        printf("connection with the server failed...\n"); 
+        exit(0); 
     } 
     else
-        printf("connected to the server..\n"); 
+        printf("connected to the server..\n");  
   
     // function for chat 
     contact_server(sockfd,buffer_size,reading_pipe,writing_pipe); 

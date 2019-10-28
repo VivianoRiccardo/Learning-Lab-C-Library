@@ -2464,7 +2464,7 @@ void memcopy_params_to_vector_model(model* f, float* vector){
     for(i = 0; i < f->n_rl; i++){
         memcopy_params_to_vector_rl(f->rls[i],&vector[sum]);
         sum += get_array_size_params_rl(f->rls[i]);
-	}
+    }
 }
 
 /* this function paste the dweights and dbiases in a single vector
@@ -2488,7 +2488,7 @@ void memcopy_vector_to_derivative_params_model(model* f, float* vector){
     for(i = 0; i < f->n_rl; i++){
         memcopy_vector_to_derivative_params_rl(f->rls[i],&vector[sum]);
         sum += get_array_size_params_rl(f->rls[i]);
-	}
+    }
 }
 
 
@@ -2513,5 +2513,5 @@ void memcopy_derivative_params_to_vector_model(model* f, float* vector){
     for(i = 0; i < f->n_rl; i++){
         memcopy_derivative_params_to_vector_rl(f->rls[i],&vector[sum]);
         sum += get_array_size_params_rl(f->rls[i]);
-	}
+    }
 }

@@ -334,6 +334,8 @@ int get_array_size_params_rl(rl* f){
     for(i = 0; i < f->n_cl; i++){
         sum+=get_array_size_params_cl(f->cls[i]);
     }
+    
+    return sum;
 }
 
 /* this function paste the weights and biases in a single vector

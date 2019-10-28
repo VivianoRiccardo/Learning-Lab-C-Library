@@ -67,6 +67,15 @@ sh create_library.sh
 - KL Divergence (25/10/2019)
 - Client-Server for distributed systems implementation (27/10/2019)
 
+# Tests
+
+The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.gz file, to run these tests you have to unpack data.tar.gz
+
+- From test 1 to 6 there are different model* networks with different optimization algorithm, trained on supervised learning
+- Test 7 a vae model trained on unsupervised learning
+- Test 8 is the test 6 trained on distibuted systems client-server
+
+
 # Future implementations
 - Variational auto encoder for rmodel* structure coming soon...
 - ImageNet architecture coming soon...
