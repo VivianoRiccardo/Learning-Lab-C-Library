@@ -71,9 +71,9 @@ sh create_library.sh
 
 The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.gz file, to run these tests you have to unpack data.tar.gz
 
-- From test 1 to 6 there are different model* networks with different optimization algorithm, trained on supervised learning
-- Test 7 a vae model trained on unsupervised learning
-- Test 8 is the test 6 trained on distibuted systems client-server
+- From test 1 to 6 there are different model* networks with different optimization algorithms, trained on supervised learning.
+- Test 7 is a vae model trained on unsupervised learning.
+- Test 8 is the test 6 trained on distibuted systems client-server. To run you it you have to connect 5 clients.
 
 
 # Future implementations
