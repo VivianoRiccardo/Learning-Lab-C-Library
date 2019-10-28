@@ -10,6 +10,12 @@ Creating the library for Linux users:
 sh create_library.sh
 ```
 
+Compiling the tests for Linux users:
+
+```
+sh compile_tests.sh
+```
+
 # Current Roadmap:
 
 - fully-connected-layers feed forward (20/11/2018)
