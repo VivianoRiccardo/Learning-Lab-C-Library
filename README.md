@@ -75,7 +75,8 @@ sh compile_tests.sh
 
 # Tests
 
-Each test has been trained successfully
+Each test has been trained successfully.
+
 The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.gz file, to run these tests you have to unpack data.tar.gz
 
 - From test 1 to 6 there are different model* networks with different optimization algorithms, trained on supervised learning.
