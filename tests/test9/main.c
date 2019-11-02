@@ -1,31 +1,42 @@
 #include <llab.h>
+#include <math.h>
 
 int main(){
-    // 2 CONVOLUTIONAL LAYER:
-    /* input 1° cl = 1*32*32, activation = RELU, normalization = GROUPED NORM, PADDING = 1
-     * input 2° cl = pooling
+    // 1 CONVOLUTIONAL LAYER:
+    /* input 1° cl = 1*32*32, activation = RELU, PADDING = 1, MAX POOLING
+     */
+    // 1 RESIDUAL LAYER:
+    /* input 1° cl = 20*14*14 convoltion, group norm channel division = 10, padding
+     * input 2° cl = 40*14*14 convolution group norm channel division = 5, padding
+     * */
+    // 2 RESIDUAL LAYER:
+    /* input 1° cl = 20*14*14 convoltion, group norm channel division = 10, padding
+     * input 2° cl = 40*14*14 convolution group norm channel division = 5, padding
      * */
     // 2 FULLY-CONNECTED LAYERS:
-    /* input 1° fcl = 784, output = 100, activation = sigmoid,  dropout 0.3
+    /* input 1° fcl = 784, output = 100, activation = sigmoid,  no dropout
      * input 2° fcl = 100, output = 10, activation = softmax, no dropout
      * mini batch = 10
-     * nesterov momentum with momentum = 0.9
+     * radam algorithm with default b1 and b2 + look ahead with a = 0.8, k = 10
      * learning rate = 0.0003
      * l2 regularization with lambda = 0.001
-     * epochs = 20
+     * epochs = 4 (after 4 epochs reaches the best accuracy among all the previous models)
      * */
     srand(time(NULL));
     // Initializing Training resources
-    int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100;
-    int n_layers = 4;
-    int batch_size = 10,threads = 4;
-    int epochs = 20;
+    int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100,counter;
+    float lh_a = 0.5;
+    int lh_k = 5;
+    int n_layers = 7;
+    int batch_size = 10,threads = 8;
+    int epochs = 5;
     unsigned long long int t = 1;
-
     char** ksource = (char**)malloc(sizeof(char*));
     char* filename = "../data/train.bin";
     int size = 0;
     char temp[2];
+    float b1 = BETA1_ADAM;
+    float b2 = BETA2_ADAM;
     temp[1] = '\0';
     float** errors = (float**)malloc(sizeof(float*)*batch_size);
     
@@ -33,13 +44,23 @@ int main(){
         errors[i] = (float*)calloc(output_dimension,sizeof(float));
     }
     // Model Architecture
-    cl** cls = (cl**)malloc(sizeof(cl*)*2);
-    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,0,0,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,0);
-    cls[1] = convolutional(20,28,28,1,1,20,1,1,0,0,2,2,0,0,2,2,NO_NORMALIZATION,RELU,AVARAGE_POOLING,0,NO_CONVOLUTION,1);
+    cl** cls = (cl**)malloc(sizeof(cl*));
+    cl** cls2 = (cl**)malloc(sizeof(cl*)*2);
+    cl** cls3 = (cl**)malloc(sizeof(cl*)*2);
+    rl** rls = (rl**)malloc(sizeof(rl*)*2);
+    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,0);
+    cls2[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,GROUP_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,1);
+    cls3[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,GROUP_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,3);
+    cls2[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,2);
+    cls3[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,4);
+    rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
+    rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls3);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(cls[1]->rows2*cls[1]->cols2*cls[1]->n_kernels,middle_neurons,2,DROPOUT,SIGMOID,0.3);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,3,NO_DROPOUT,SOFTMAX,0);
-    model* m = network(n_layers,0,2,2,NULL,cls,fcls);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0);
+    model* m = network(n_layers,2,1,2,rls,cls,fcls);
+    set_model_error(m,FOCAL_LOSS,0,0,2,NULL,output_dimension);
+    
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
     for(i = 0; i < batch_size; i++){
@@ -47,6 +68,7 @@ int main(){
     }
     int ws = count_weights(m);
     float lr = 0.0003, momentum = 0.9, lambda = 0.0001;
+    model* lh = copy_model(m);
     // Reading the data in a char** vector
     read_file_in_char_vector(ksource,filename,&size);
     float** inputs = (float**)malloc(sizeof(float*)*training_instances);
@@ -63,8 +85,10 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    
+    /*
     printf("Training phase!\n");
+    
+    counter = 0;
     save_model(m,0);
     // Training
     for(k = 0; k < epochs; k++){
@@ -76,20 +100,20 @@ int main(){
         // Shuffling before each epoch
         shuffle_float_matrices(inputs,outputs,training_instances);
         for(i = 0; i < training_instances/batch_size; i++){
-            //printf("Mini batch number: %d\n",i+1);
+            printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
-            model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
-            for(j = 0; j < batch_size; j++){
-                derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
-            }
-            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,output_dimension,ret_err);
+            ff_error_bp_model_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,batch_size,&outputs[i*batch_size],ret_err);
             // sum the partial derivatives in m obtained from backpropagation
-            for(j = 0; j < batch_size; j++){
-                sum_model_partial_derivatives(batch_m[j],m,m);
-            }
+            sum_models_partial_derivatives(m,batch_m,batch_size);
             // update m, reset m and copy the new weights in each instance of m of the batch
-            update_model(m,lr,momentum,batch_size,NESTEROV,NULL,NULL,NO_REGULARIZATION,ws,lambda,&t);
+            update_model(m,lr,momentum,batch_size,ADAM,&b1,&b2,L2_REGULARIZATION,ws,lambda,&t);
             reset_model(m);
+            counter++;
+            if(counter == lh_k){
+                counter = 0;
+                slow_paste_model(m,lh,lh_a);
+                paste_model(lh,m);
+            }
             for(j = 0; j < batch_size; j++){
                 paste_model(m,batch_m[j]);
                 reset_model(batch_m[j]);
@@ -104,6 +128,7 @@ int main(){
     free(ksource[0]);
     free(ksource);
     free_model(m);
+    free_model(lh);
     for(i = 0; i < batch_size; i++){
         free_model(batch_m[i]);
         free(errors[i]);
@@ -117,7 +142,7 @@ int main(){
     }
     free(inputs);
     free(outputs);
-    
+    */
     // Initializing Testing resources
     model* test_m;
     char** ksource2 = (char**)malloc(sizeof(char*));
@@ -157,9 +182,8 @@ int main(){
         itoa(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
-        test_m->fcls[0]->dropout_flag = DROPOUT_TEST;
-        test_m->fcls[0]->dropout_threshold = 0.7;
         for(i = 0; i < testing_instances; i++){
+        //for(i = 0; i < 1; i++){
             // Feed forward
             model_tensor_input_ff(test_m,input_dimension,1,1,inputs_test[i]);
             for(j = 0; j < output_dimension; j++){

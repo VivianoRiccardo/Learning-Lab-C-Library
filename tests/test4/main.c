@@ -91,7 +91,7 @@ int main(){
             for(j = 0; j < batch_size; j++){
                 derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
             }
-            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,&outputs[i*batch_size],output_dimension,ret_err);
+            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,output_dimension,ret_err);
             // sum the partial derivatives in m obtained from backpropagation
             for(j = 0; j < batch_size; j++){
                 sum_model_partial_derivatives(batch_m[j],m,m);

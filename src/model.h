@@ -62,5 +62,7 @@ void kl_model_error(model* m, float* output);
 void entropy_model_error(model* m, float* output);
 void compute_model_error(model* m, float* output);
 float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output);
+void sum_models_partial_derivatives(model* sum_m, model** models, int n_models);
+
 
 #endif

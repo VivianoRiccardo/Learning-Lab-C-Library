@@ -194,9 +194,11 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     m->fcls = fcls;
     m->error = NULL;
     m->error_alpha = NULL;
+    m->beta1_adam = BETA1_ADAM;
+    m->beta2_adam = BETA2_ADAM;
     
     
-    for(i = 0; i < layers || !sla[i][0]; i++);
+    for(i = 0; i < layers && sla[i][0]; i++);
     
     if(i == layers)
         i--;
@@ -2372,16 +2374,16 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         update_residual_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta1_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
         update_residual_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
         update_convolutional_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
         update_fully_connected_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
         (*t)++;
     }     
     
@@ -2719,4 +2721,20 @@ float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tens
     model_tensor_input_ff(m,tensor_depth,tensor_i,tensor_j,input);
     compute_model_error(m,output);
     return model_tensor_input_bp(m,tensor_depth,tensor_i,tensor_j,input, m->error,m->output_dimension);
+}
+
+/*sum partial derivatives of batch sizes in 1 unique model
+ * 
+ * input:
+ * 
+ *             @ model* sum_m:= where are summed up the partial derivatives
+ *             @ model** models:= the models (dimension: n_models)
+ *             @ int n_models:= the number of models
+ * 
+ * */
+void sum_models_partial_derivatives(model* sum_m, model** models, int n_models){
+    int i;
+    for(i = 0; i < n_models; i++){
+        sum_model_partial_derivatives(models[i],sum_m,sum_m);
+    }
 }

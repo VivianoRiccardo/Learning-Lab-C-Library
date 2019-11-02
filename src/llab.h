@@ -91,6 +91,8 @@ SOFTWARE.
 #define MSE_LOSS 5
 #define KL_DIVERGENCE_LOSS 6
 #define ENTROPY_LOSS 7
+#define LOOK_AHEAD_ALPHA 0.8
+#define LOOK_AHEAD_K 10
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
@@ -209,6 +211,8 @@ typedef struct model {
     int layers, n_rl, n_cl, n_fcl,error_flag,output_dimension;
     float error_threshold1;
     float error_threshold2;
+    float beta1_adam;
+    float beta2_adam;
     float error_gamma;
     float* error_alpha;
     float* error;
