@@ -26,7 +26,7 @@ int main(){
     // Initializing Training resources
     int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100;
     int n_layers = 7;
-    int batch_size = 10,threads = 4;
+    int batch_size = 10,threads = 8;
     int epochs = 5;
     unsigned long long int t = 1;
     char** ksource = (char**)malloc(sizeof(char*));

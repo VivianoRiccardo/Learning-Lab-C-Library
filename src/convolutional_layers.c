@@ -125,6 +125,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->d2_biases = (float*)calloc(n_kernels,sizeof(float));
     c->convolutional_flag = convolutional_flag;
     c->group_norm_channels = group_norm_channels;
+    c->pooltemp = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
     
     if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
         c->rows1 = 0;
@@ -231,6 +232,7 @@ void free_convolutional(cl* c){
     free(c->temp);
     free(c->temp2);
     free(c->temp3);
+    free(c->pooltemp);
     free(c->error2);
     if(c->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
@@ -839,6 +841,7 @@ cl* reset_cl(cl* f){
     
     for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
         f->error2[i] = 0;
+        f->pooltemp[i] = 0;
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
@@ -863,7 +866,7 @@ unsigned long long int size_of_cls(cl* f){
     sum += ((unsigned long long int)(f->n_kernels*4*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
-    sum += ((unsigned long long int)(f->channels*f->input_rows*f->input_cols*sizeof(float)));
+    sum += ((unsigned long long int)(f->channels*f->input_rows*f->input_cols*2*sizeof(float)));
     if(f->normalization_flag == GROUP_NORMALIZATION)
         sum+=size_of_bn(f->group_norm[0])*f->n_kernels/f->group_norm_channels;
     

@@ -180,6 +180,8 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
             exit(1);
         }
     }
+    
+    
     /*There is no check if the sizes match or not, this happen during the feed forward*/
     
     m->layers = layers;
@@ -190,6 +192,41 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     m->rls = rls;
     m->cls = cls;
     m->fcls = fcls;
+    m->error = NULL;
+    m->error_alpha = NULL;
+    
+    
+    for(i = 0; i < layers || !sla[i][0]; i++);
+    
+    if(i == layers)
+        i--;
+    
+    if(sla[i][0] == FCLS){
+        if(m->fcls[m->n_fcl-1]->dropout_flag)
+            m->output_layer = m->fcls[m->n_fcl-1]->dropout_temp;
+        else if(m->fcls[m->n_fcl-1]->activation_flag)
+            m->output_layer = m->fcls[m->n_fcl-1]->post_activation;
+        else
+            m->output_layer = m->fcls[m->n_fcl-1]->pre_activation;
+    }
+    
+    else if(sla[i][0] == CLS){
+        if(m->cls[m->n_cl-1]->pooling_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_pooling;
+        else if(m->cls[m->n_cl-1]->normalization_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_normalization;
+        else if(m->cls[m->n_cl-1]->activation_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_activation;
+        else
+            m->output_layer = m->cls[m->n_cl-1]->pre_activation;
+    }
+    
+    else{
+        if(m->rls[m->n_rl-1]->cl_output->activation_flag)
+            m->output_layer = m->rls[m->n_rl-1]->cl_output->post_activation;
+        else
+            m->output_layer = m->rls[m->n_rl-1]->cl_output->pre_activation;
+    }
         
     return m;
 }
@@ -221,6 +258,8 @@ void free_model(model* m){
         free(m->sla[i]);
     }
     free(m->sla);
+    free(m->error);
+    free(m->error_alpha);
     free(m);
 }
 
@@ -258,6 +297,8 @@ model* copy_model(model* m){
         rls[i] = copy_rl(m->rls[i]);
     }
     model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
+    if(m->error!=NULL)
+        set_model_error(copy,m->error_flag,m->error_threshold1,m->error_threshold2,m->error_gamma,m->error_alpha,m->output_dimension);
     return copy;
 }
 
@@ -329,6 +370,12 @@ model* reset_model(model* m){
     }
     for(i = 0; i < m->n_rl; i++){
         reset_rl(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
     }
     return m;
 }
@@ -565,7 +612,6 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                get_dropout_array(f2->input,f1->dropout_mask,f1->pre_activation,f1->dropout_temp);
                 fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             
@@ -583,7 +629,6 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                get_dropout_array(f2->input,f1->dropout_mask,f1->post_activation,f1->dropout_temp);
                 fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             
@@ -607,8 +652,13 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
     
     /* setting the dropout mask, if dropout flag is != 0*/
-    if(f2->dropout_flag)
+    if(f2->dropout_flag == DROPOUT){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
+        if(f2->activation_flag)
+            get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
+        else
+            get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+    }
 
 }
 
@@ -636,7 +686,6 @@ void ff_fcl_cl(fcl* f1, cl* f2){
     }
 
     int i,j,k,z;
-    float* temp = NULL;
     /* f2 pre activation with no activation for f1*/
      if(f1->activation_flag == NO_ACTIVATION){
         if(f1->dropout_flag == NO_DROPOUT){
@@ -647,13 +696,11 @@ void ff_fcl_cl(fcl* f1, cl* f2){
             }
             
             else{
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                copy_array(f1->pre_activation,temp,f2->channels*f2->input_rows*f2->input_cols);
+                copy_array(f1->pre_activation,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
             }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                get_dropout_array(f1->output,f1->dropout_mask,f1->pre_activation,f1->dropout_temp);
                 if(f2->convolutional_flag == CONVOLUTION){
                     for(i = 0; i < f2->n_kernels; i++){
                         convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
@@ -661,8 +708,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 }
                 
                 else{
-                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
                 }
             }
             
@@ -675,8 +721,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 }
                 
                 else{
-                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
                 }
                 
             }
@@ -693,22 +738,19 @@ void ff_fcl_cl(fcl* f1, cl* f2){
             }
             
             else{
-                temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                copy_array(f1->post_activation,temp,f2->channels*f2->input_rows*f2->input_cols);
+                copy_array(f1->post_activation,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
             }
             
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                get_dropout_array(f1->output,f1->dropout_mask,f1->post_activation,f1->dropout_temp);
                 if(f2->convolutional_flag == CONVOLUTION){
                     for(i = 0; i < f2->n_kernels; i++){
                         convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
                     }
                 }
                 else{
-                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
                 }
             }
             
@@ -720,8 +762,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                     }
                 }
                 else{
-                    temp = (float*)malloc(sizeof(float)*f2->channels*f2->input_rows*f2->input_cols);
-                    copy_array(f1->dropout_temp,temp,f2->channels*f2->input_rows*f2->input_cols);
+                    copy_array(f1->dropout_temp,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
                 }
             }
         }
@@ -811,10 +852,10 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         for(i = 0; i < f2->n_kernels; i++){
             if(f2->convolutional_flag == NO_CONVOLUTION){
                 if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
                 else{
-                    avarage_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
             }
                
@@ -845,12 +886,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 }
             }
         }
-    }
-    
-    free(temp);
-    
-
-    
+    }    
 }
 
 
@@ -914,8 +950,13 @@ void ff_cl_fcl(cl* f1, fcl* f2){
 
     
     /* setting the dropout mask, if dropout flag is != 0*/
-    if(f2->dropout_flag)
+    if(f2->dropout_flag == DROPOUT){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
+        if(f2->activation_flag)
+            get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
+        else
+            get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+    }
     
     
 }
@@ -940,7 +981,6 @@ void ff_cl_cl(cl* f1, cl* f2){
     }
 
     int i,j,k,z;
-    float* temp = NULL;
     /* pooling for f1*/
     if(f1->pooling_flag){
         if(f2->convolutional_flag == CONVOLUTION){
@@ -950,8 +990,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         }
         
         else{
-            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
-            copy_array(f1->post_pooling,temp,f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_pooling,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }    
     }
             
@@ -964,8 +1003,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         }
         
         else{
-            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
-            copy_array(f1->post_normalization,temp,f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_normalization,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }   
     }
     /* no pooling, no normalization for f1, but activation*/
@@ -977,8 +1015,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         }
         
         else{
-            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
-            copy_array(f1->post_activation,temp,f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->post_activation,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }
     }
     /* no pooling, no normalization, no activation for f1*/
@@ -990,8 +1027,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         } 
         
         else{
-            temp = (float*)malloc(sizeof(float)*f2->input_rows*f2->input_cols*f2->channels);
-            copy_array(f1->pre_activation,temp,f2->input_rows*f2->input_cols*f2->channels);
+            copy_array(f1->pre_activation,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }
     }
     
@@ -1080,10 +1116,10 @@ void ff_cl_cl(cl* f1, cl* f2){
         for(i = 0; i < f2->n_kernels; i++){
             if(f2->convolutional_flag == NO_CONVOLUTION){
                 if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
                 else{
-                    avarage_pooling_feed_forward(&temp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
                 }
             }
             else if(f2->normalization_flag){
@@ -1115,7 +1151,6 @@ void ff_cl_cl(cl* f1, cl* f2){
         }
     }
     
-    free(temp);
     
     
 }
@@ -1201,15 +1236,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     }
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
     if(f1->dropout_flag){
-        if(f1->activation_flag){
-            dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f2->input);
-            fully_connected_back_prop(f2->temp2, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
-        }
-        
-        else{
-            dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f2->input);
-            fully_connected_back_prop(f2->temp2, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
-        }
+        fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
     }
     
     else{
@@ -1397,23 +1424,10 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
         
         /* computing the weight and bias derivatives for f2 applied to f1 output*/
         if(f1->dropout_flag){
-            if(f1->activation_flag){
-                
-                dot1D(f1->post_activation,f1->dropout_mask,f2->temp2,f1->output);
-                for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-                }
-
+            for(i = 0; i < f2->n_kernels; i++){
+                convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
             }
-            
-            else{
-                dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
-                
-                for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop(f2->temp2, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
-                }
-            }
-        }
+       }
         
         else{
             if(f1->activation_flag){
@@ -2514,4 +2528,195 @@ void memcopy_derivative_params_to_vector_model(model* f, float* vector){
         memcopy_derivative_params_to_vector_rl(f->rls[i],&vector[sum]);
         sum += get_array_size_params_rl(f->rls[i]);
     }
+}
+
+/* Setting the params for the loss computation
+ * 
+ * Inputs:
+ *             @ model* m:= the model
+ *             @ int error_flag:= the loss computed
+ *             @ float threshold1:= the threshold for some errors see math_functions.c (huber loss)
+ *             @ float threshold2:= the threshold for some errors see math_functions.c (huber loss)
+ *             @ float gamma:= the gamma factor for focal loss
+ *             @ float* alpha:= the param for unbalanced dataset (dimension: output_dimension)
+ *             @ int output_dimension:= the error dimension
+ * */
+ 
+ 
+void set_model_error(model* m, int error_flag, float threshold1, float threshold2, float gamma, float* alpha, int output_dimension){
+    m->error_flag = error_flag;
+    m->error_threshold1 = threshold1;
+    m->error_threshold2 = threshold2;
+    m->error_gamma = gamma;
+    m->error = (float*)calloc(output_dimension,sizeof(float));
+    if(alpha != NULL){
+        m->error_alpha = (float*)malloc(sizeof(float)*output_dimension);
+        copy_array(alpha,m->error_alpha,output_dimension);
+    }
+    m->output_dimension = output_dimension;
+}
+
+/* Given a model and an output, this function computes the mse derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void mse_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in mse model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_mse_array(m->output_layer,output,m->error,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the cross entropy derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void cross_entropy_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in cross entropy model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_cross_entropy_array(m->output_layer,output,m->error,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the focal loss derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void focal_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in focal model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_focal_loss_array(m->output_layer,output,m->error,m->error_gamma,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the huber loss derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void huber_one_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in huber one model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_huber_loss_array(m->output_layer,output,m->error,m->error_threshold1,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the modified huber loss derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void huber_two_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in huber two model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_modified_huber_loss_array(m->output_layer,output,m->error_threshold1,m->error,m->error_threshold2,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the kl divergence derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void kl_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in kl model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_kl_divergence(m->output_layer,output,m->error,m->output_dimension);     
+}
+
+/* Given a model and an output, this function computes the entropy derivative in m->error_vector
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void entropy_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in entropy model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_entropy_array(m->output_layer,m->error,m->output_dimension);     
+}
+
+
+/* compute the error of a model
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= model
+ *             @ float* output:= the output
+ * */
+void compute_model_error(model* m, float* output){
+    if(m->error_flag == NO_LOSS)
+        copy_array(output,m->error,m->output_dimension);
+    else if(m->error_flag == MSE_LOSS)
+        mse_model_error(m,output);
+    else if(m->error_flag == CROSS_ENTROPY_LOSS)
+        cross_entropy_model_error(m,output);
+    else if(m->error_flag == FOCAL_LOSS)
+        focal_model_error(m,output);
+    else if(m->error_flag == HUBER1_LOSS)
+        huber_one_model_error(m,output);
+    else if(m->error_flag == HUBER2_LOSS)
+        huber_two_model_error(m,output);
+    else if(m->error_flag == KL_DIVERGENCE_LOSS)
+        kl_model_error(m,output);
+    else if(m->error_flag == ENTROPY_LOSS)
+        entropy_model_error(m,output);            
+}
+
+
+/* computing the feed forward, the error and the back propagation of a model given an input and output
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model with the layers
+ *             @ int tensor_depth:= the depth of the input tensor
+ *             @ int tensor_i:= the number of rows of the tensor
+ *             @ int tensor_j:= the number of columns of the tensor
+ *             @ float* input:= your input array
+ *             @ float* output:= your output array
+ * 
+ * */
+float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output){
+    model_tensor_input_ff(m,tensor_depth,tensor_i,tensor_j,input);
+    compute_model_error(m,output);
+    return model_tensor_input_bp(m,tensor_depth,tensor_i,tensor_j,input, m->error,m->output_dimension);
 }

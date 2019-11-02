@@ -83,6 +83,14 @@ SOFTWARE.
 #define LEAKY_RELU_THRESHOLD 0.1
 #define LSTM_RESIDUAL  1
 #define LSTM_NO_RESIDUAL 0
+#define NO_LOSS 0
+#define CROSS_ENTROPY_LOSS 1
+#define FOCAL_LOSS 2
+#define HUBER1_LOSS 3
+#define HUBER2_LOSS 4
+#define MSE_LOSS 5
+#define KL_DIVERGENCE_LOSS 6
+#define ENTROPY_LOSS 7
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
@@ -157,6 +165,7 @@ typedef struct cl { //convolutional-layers
     float* temp;//n_kernels*rows1*cols1
     float* temp2;//n_kernels*rows1*cols1
     float* temp3;//n_kernels*rows1*cols1
+    float* pooltemp;//channels*input_rows*input_cols
     float* error2;//channels*input_rows*input_cols
     bn** group_norm;//n_kernels/group_norm_channels
 } cl;
@@ -197,11 +206,17 @@ typedef struct lstm { //long short term memory layers
 } lstm;
 
 typedef struct model {
-    int layers, n_rl, n_cl, n_fcl;
+    int layers, n_rl, n_cl, n_fcl,error_flag,output_dimension;
+    float error_threshold1;
+    float error_threshold2;
+    float error_gamma;
+    float* error_alpha;
+    float* error;
     rl** rls;//rls = residual-layers
     cl** cls;//cls = convolutional-layers
     fcl** fcls; // fcls = fully-connected-layers
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, sla = sequential layers array
+    float* output_layer;// will be the last array
 } model;
 
 typedef struct bmodel {

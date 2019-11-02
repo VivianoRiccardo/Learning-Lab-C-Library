@@ -41,6 +41,14 @@ void* model_thread_bp(void* _args) {
     return _args;
 }
 
+void* model_thread_ff_bp(void* _args) {
+    
+    // depacking args
+    thread_args_model* args = (thread_args_model*) _args;
+    args->returning_error[0] = ff_error_bp_model_once(args->m,args->channels,args->rows,args->cols,args->input,args->error);
+    return _args;
+}
+
 
 /* This functions computes the feed forward of a model for a batch of instances of the dataset
  * 
@@ -128,4 +136,48 @@ void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, f
         }
     }
 
-} 
+}
+
+/* This functions computes the feed forward and back propagation of a model for a batch of instances of the dataset
+ * 
+ * Inputs:
+ * 
+ *             
+ *             @ model** m:= the models of the batch, dimensions: mini_batch_size*1
+ *             @ int depth:= the depth of the input tensor
+ *             @ int rows:= the number of rows of the input tensor
+ *             @ int cols:= the number of columns of the input tensor
+ *             @ float** inputs:= the inputs of the batch, dimensions: mini_batch_size*(depth*rows*cols)
+ *             @ int mini_batch_size:= the size of the batch
+ *             @ int threads:= the number of threads you want to use
+ *             @ float** outputs:= the outputs of the batch, dimensions: mini_batch_size*error_dimension
+ *             @ float** returning_error:= where is stored the error of these models, dimensions: mini_batch_size*(depth*rows*cols)
+ *             
+ * 
+ * */
+void ff_error_bp_model_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** outputs, float** returning_error){
+    pthread_t thread[threads];
+    thread_args_model* args[threads];
+    
+    int i,j;
+    
+    for(i = 0; i < mini_batch_size; i+=threads){
+        for(j = 0; j < threads && j+i < mini_batch_size; j++){
+            args[j] = (thread_args_model*)malloc(sizeof(thread_args_model));
+            args[j]->m = m[i+j];
+            args[j]->channels = depth;
+            args[j]->rows = rows;
+            args[j]->cols = cols;
+            args[j]->input = inputs[i+j];
+            args[j]->error = outputs[i+j];
+            args[j]->returning_error = &returning_error[i+j];
+            pthread_create(thread+j, NULL, model_thread_ff_bp, args[j]);
+            
+            }
+                
+        for(j = 0; j < threads && j+i < mini_batch_size; j++) {
+            pthread_join(thread[j], NULL);
+            free(args[j]);
+        }
+    }
+}

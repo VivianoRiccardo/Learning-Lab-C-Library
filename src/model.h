@@ -52,5 +52,15 @@ void memcopy_vector_to_params_model(model* f, float* vector);
 void memcopy_params_to_vector_model(model* f, float* vector);
 void memcopy_vector_to_derivative_params_model(model* f, float* vector);
 void memcopy_derivative_params_to_vector_model(model* f, float* vector);
+void set_model_error(model* m, int error_flag, float threshold1, float threshold2, float gamma, float* alpha, int output_dimension);
+void mse_model_error(model* m, float* output);
+void cross_entropy_model_error(model* m, float* output);
+void focal_model_error(model* m, float* output);
+void huber_one_model_error(model* m, float* output);
+void huber_two_model_error(model* m, float* output);
+void kl_model_error(model* m, float* output);
+void entropy_model_error(model* m, float* output);
+void compute_model_error(model* m, float* output);
+float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output);
 
 #endif
