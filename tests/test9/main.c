@@ -85,7 +85,7 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    /*
+    
     printf("Training phase!\n");
     
     counter = 0;
@@ -142,7 +142,7 @@ int main(){
     }
     free(inputs);
     free(outputs);
-    */
+    
     // Initializing Testing resources
     model* test_m;
     char** ksource2 = (char**)malloc(sizeof(char*));
