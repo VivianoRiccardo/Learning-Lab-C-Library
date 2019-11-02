@@ -654,12 +654,14 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
     
     /* setting the dropout mask, if dropout flag is != 0*/
-    if(f2->dropout_flag == DROPOUT){
+    if(f2->dropout_flag){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
-        if(f2->activation_flag)
-            get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
-        else
-            get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+        if(f2->dropout_flag == DROPOUT){
+            if(f2->activation_flag)
+                get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
+            else
+                get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+        }
     }
 
 }
@@ -952,12 +954,14 @@ void ff_cl_fcl(cl* f1, fcl* f2){
 
     
     /* setting the dropout mask, if dropout flag is != 0*/
-    if(f2->dropout_flag == DROPOUT){
+    if(f2->dropout_flag){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
-        if(f2->activation_flag)
-            get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
-        else
-            get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+        if(f2->dropout_flag == DROPOUT){
+            if(f2->activation_flag)
+                get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
+            else
+                get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+        }
     }
     
     
@@ -1755,8 +1759,8 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
     temp->n_kernels = tensor_depth;
     temp->rows1 = tensor_i;
     temp->cols1 = tensor_j;
-    copy_array(input,temp->post_activation,tensor_depth*tensor_i*tensor_j);
-        
+    temp->post_activation = input;
+    
     /* apply the feed forward to the model*/
     for(i = 0; i < m->layers; i++){
         for(j = 0; j < m->layers && m->sla[i][j] != 0; j++){
@@ -1799,7 +1803,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                     }
                     
                     if(k3-count == 0)
-                        copy_array(temp->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                        m->rls[z]->input = temp->post_activation;
                     
                     ff_cl_cl(temp,m->rls[z]->cls[k3-count]);
                     
@@ -1913,18 +1917,20 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         if(k3-count == 0){
                             if(m->fcls[k1-1]->dropout_flag){
                                 if(m->fcls[k1-1]->activation_flag){
-                                    dot1D(m->fcls[k1-1]->post_activation,m->fcls[k1-1]->dropout_mask,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    dot1D(m->fcls[k1-1]->post_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
                                 }
                                 else{
-                                    dot1D(m->fcls[k1-1]->pre_activation,m->fcls[k1-1]->dropout_mask,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    dot1D(m->fcls[k1-1]->pre_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
                                 }
                             }
                             else{
                                 if(m->fcls[k1-1]->activation_flag){
-                                    copy_array(m->fcls[k1-1]->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->post_activation;
                                 }
                                 else{
-                                    copy_array(m->fcls[k1-1]->pre_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->pre_activation;
                                 }
                             }
                         }
@@ -1935,17 +1941,17 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                     else if(m->sla[i-1][0] == CLS){
                         if(k3-count == 0){
                             if(m->cls[k2-1]->pooling_flag){
-                                copy_array(m->cls[k2-1]->post_pooling,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                m->rls[z]->input = m->cls[k2-1]->post_pooling;
                             }
                             else if(m->cls[k2-1]->normalization_flag){
-                                copy_array(m->cls[k2-1]->post_normalization,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                m->rls[z]->input = m->cls[k2-1]->post_normalization;
                             }
                             
                             else if(m->cls[k2-1]->activation_flag){
-                                copy_array(m->cls[k2-1]->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                m->rls[z]->input = m->cls[k2-1]->post_activation;
                             }
                             else{
-                                copy_array(m->cls[k2-1]->pre_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);                                
+                                m->rls[z]->input = m->cls[k2-1]->pre_activation;
                             }
                         }
                         ff_cl_cl(m->cls[k2-1],m->rls[z]->cls[k3-count]);
@@ -1962,9 +1968,9 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         
                         if(k3-count == 0){
                             if(m->rls[z2]->cl_output->activation_flag)
-                                copy_array(m->rls[z2]->cl_output->post_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                m->rls[z]->input = m->rls[z2]->cl_output->post_activation;
                             else
-                                copy_array(m->rls[z2]->cl_output->pre_activation,m->rls[z]->input,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                m->rls[z]->input = m->rls[z2]->cl_output->pre_activation;
                         }
                         if(z2!=z){
                             ff_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count]);
@@ -2006,7 +2012,6 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
         }
     }
     
-    free(temp->post_activation);
     free(temp);
 }
 
@@ -2049,7 +2054,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     temp->n_kernels = tensor_depth;
     temp->rows1 = tensor_i;
     temp->cols1 = tensor_j;
-    copy_array(input,temp->post_activation,tensor_depth*tensor_i*tensor_j);
+    temp->post_activation = input;
     
     float* error1 = error;
          
@@ -2292,7 +2297,6 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
         }
     }
 
-    free(temp->post_activation);
     free(temp);
     if(!bool_is_real(error1[0])){
         fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");

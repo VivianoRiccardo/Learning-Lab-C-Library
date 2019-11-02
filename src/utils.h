@@ -91,8 +91,15 @@ void update_fully_connected_layer_radam_bmodel(bmodel* m, float lr, int mini_bat
 void update_batch_normalized_layer_radam_bmodel(bmodel* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t);
 void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t);
 long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
-int* accuracy_array(long long unsigned int** cm, int size);
+double* accuracy_array(long long unsigned int** cm, int size);
 int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n);
 int shuffle_float_matrices_float_int_vectors(float** m,float** m1,float* f, int* v,int n);
+double* precision_array(long long unsigned int** cm, int size);
+double* sensitivity_array(long long unsigned int** cm, int size);
+double* specificity_array(long long unsigned int** cm, int size);
+void print_accuracy(long long unsigned int** cm, int size);
+void print_precision(long long unsigned int** cm, int size);
+void print_sensitivity(long long unsigned int** cm, int size);
+void print_specificity(long long unsigned int** cm, int size);
 
 #endif

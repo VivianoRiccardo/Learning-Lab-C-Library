@@ -98,7 +98,7 @@ int main(){
             t = clock();
             int flag = 0; 
             while(read(fd2[0], buff, sizeof(float)*(buffer_size+INPUTS_PER_CLIENT+OUTPUT_PER_CLIENT)) == 0){
-				t+=clock();
+                t+=clock();
                 if((t)/CLOCKS_PER_SEC > 10)
                     flag = 1;
                     

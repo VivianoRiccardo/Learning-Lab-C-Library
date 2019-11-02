@@ -72,6 +72,7 @@ sh compile_tests.sh
 - Confusion matrix and accuracy array (30/9/2019)
 - KL Divergence (25/10/2019)
 - Client-Server for distributed systems implementation (27/10/2019)
+- precision, sensitivity, specificity array (2/11/2019)
 
 # Tests
 

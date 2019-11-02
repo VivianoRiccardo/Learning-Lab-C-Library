@@ -1787,7 +1787,7 @@ long long unsigned int** confusion_matrix(float* model_output, float* real_outpu
     int i;
     if(cm == NULL){
         conf_mat = (long long unsigned int**)malloc(sizeof(long long unsigned int*)*size*2);
-        for(i = 0; i < size; i++){
+        for(i = 0; i < 2*size; i++){
             conf_mat[i] = (long long unsigned int*)calloc(size*2,sizeof(long long unsigned int));
         }
     }
@@ -1797,32 +1797,133 @@ long long unsigned int** confusion_matrix(float* model_output, float* real_outpu
     
     for(i = 0; i < size; i++){
         if(real_output[i] >= threshold && model_output[i] >= threshold)
-            conf_mat[i*2][i*2]++;
-        else if(real_output[i] < threshold && model_output[i] < threshold)
             conf_mat[i*2+1][i*2+1]++;
+        else if(real_output[i] < threshold && model_output[i] < threshold)
+            conf_mat[i*2][i*2]++;
         else if(real_output[i] >= threshold && model_output[i] < threshold)
-            conf_mat[i*2][i*2+1]++;
-        else if(real_output[i] < threshold && model_output[i] >= threshold)
             conf_mat[i*2+1][i*2]++;
+        else if(real_output[i] < threshold && model_output[i] >= threshold)
+            conf_mat[i*2][i*2+1]++;
     }
     
     return conf_mat;
 }
 
-/* this function returns an array with the precision positive rate and precision negative rate for each label i
+/* this function returns an array with the accuracy for each label i
  * 
  * Inputs:
  * 
  *                 @ long long unsigned int** cm:= a confusion matrix, dimensions = size*2xsize*2
  *                 @ int size:= confusion materix dimensions
  * */
-int* accuracy_array(long long unsigned int** cm, int size){
-    int* accuracy_arr = (int*)calloc(size*2,sizeof(int));
+double* accuracy_array(long long unsigned int** cm, int size){
+    double* accuracy_arr = (double*)calloc(size,sizeof(double));
     int i;
     for(i = 0; i < size; i++){
-        accuracy_arr[i*2] = 100*cm[i*2][i*2]/(cm[i*2][i*2]+cm[i*2+1][i*2]);
-        accuracy_arr[i*2+1] = 100*cm[i*2+1][i*2+1]/(cm[i*2+1][i*2+1]+cm[i*2][i*2+1]);
+        accuracy_arr[i] = (double)100*((double)cm[i*2][i*2]+cm[i*2+1][i*2+1])/((double)((cm[i*2][i*2]+cm[i*2+1][i*2+1]+cm[i*2+1][i*2]+cm[i*2][i*2+1])));
+        if(accuracy_arr[i]!=accuracy_arr[i])
+            accuracy_arr[i] = 0;
+        
     }
     
     return accuracy_arr;
 }
+
+/* this function returns an array with the precision for each label i
+ * 
+ * Inputs:
+ * 
+ *                 @ long long unsigned int** cm:= a confusion matrix, dimensions = size*2xsize*2
+ *                 @ int size:= confusion materix dimensions
+ * */
+double* precision_array(long long unsigned int** cm, int size){
+    double* accuracy_arr = (double*)calloc(size,sizeof(double));
+    int i;
+    for(i = 0; i < size; i++){
+        accuracy_arr[i] = (double)100*((double)cm[i*2+1][i*2+1])/((double)((cm[i*2+1][i*2+1]+cm[i*2][i*2+1])));
+        if(accuracy_arr[i]!=accuracy_arr[i])
+            accuracy_arr[i] = 0;
+    }
+    
+    return accuracy_arr;
+}
+
+/* this function returns an array with the sensitivity for each label i
+ * 
+ * Inputs:
+ * 
+ *                 @ long long unsigned int** cm:= a confusion matrix, dimensions = size*2xsize*2
+ *                 @ int size:= confusion materix dimensions
+ * */
+double* sensitivity_array(long long unsigned int** cm, int size){
+    double* accuracy_arr = (double*)calloc(size,sizeof(double));
+    int i;
+    for(i = 0; i < size; i++){
+        accuracy_arr[i] = (double)100*((double)cm[i*2+1][i*2+1])/((double)((cm[i*2+1][i*2+1]+cm[i*2+1][i*2])));
+        if(accuracy_arr[i]!=accuracy_arr[i])
+            accuracy_arr[i] = 0;
+    }
+    
+    return accuracy_arr;
+}
+
+/* this function returns an array with the specificity for each label i
+ * 
+ * Inputs:
+ * 
+ *                 @ long long unsigned int** cm:= a confusion matrix, dimensions = size*2xsize*2
+ *                 @ int size:= confusion materix dimensions
+ * */
+double* specificity_array(long long unsigned int** cm, int size){
+    double* accuracy_arr = (double*)calloc(size,sizeof(double));
+    int i;
+    for(i = 0; i < size; i++){
+        accuracy_arr[i] = (double)100*((double)cm[i*2][i*2])/((double)((cm[i*2][i*2]+cm[i*2][i*2+1])));
+        if(accuracy_arr[i]!=accuracy_arr[i])
+            accuracy_arr[i] = 0;
+    }
+    
+    return accuracy_arr;
+}
+
+
+void print_accuracy(long long unsigned int** cm, int size){
+    int i;
+    double* aa = accuracy_array(cm,size);
+    for(i = 0; i < size; i++){
+        printf("%lf    ",aa[i]);
+    } 
+    printf("\n");
+    free(aa);
+}
+
+void print_precision(long long unsigned int** cm, int size){
+    int i;
+    double* aa = precision_array(cm,size);
+    for(i = 0; i < size; i++){
+        printf("%lf    ",aa[i]);
+    } 
+    printf("\n");
+    free(aa);
+}
+
+void print_sensitivity(long long unsigned int** cm, int size){
+    int i;
+    double* aa = sensitivity_array(cm,size);
+    for(i = 0; i < size; i++){
+        printf("%lf    ",aa[i]);
+    } 
+    printf("\n");
+    free(aa);
+}
+
+void print_specificity(long long unsigned int** cm, int size){
+    int i;
+    double* aa = specificity_array(cm,size);
+    for(i = 0; i < size; i++){
+        printf("%lf    ",aa[i]);
+    } 
+    printf("\n");
+    free(aa);
+}
+

@@ -159,6 +159,8 @@ int main(){
     }
     
     
+    long long unsigned int** cm;
+    
     printf("Testing phase!\n");
     double error = 0;
     // Testing
@@ -174,16 +176,30 @@ int main(){
         itoa(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
-        //for(i = 0; i < testing_instances; i++){
-        for(i = 0; i < 1; i++){
+        for(i = 0; i < testing_instances; i++){
             // Feed forward
+            
             model_tensor_input_ff(test_m,input_dimension,1,1,inputs_test[i]);
             for(j = 0; j < output_dimension; j++){
                 error+=cross_entropy(test_m->fcls[1]->post_activation[j],outputs_test[i][j]);
             }
-            reset_model(test_m);  
+              
+            if(!i)
+                cm = confusion_matrix(test_m->fcls[1]->post_activation, outputs_test[i],NULL, 10,0.5);
+            else
+                cm = confusion_matrix(test_m->fcls[1]->post_activation, outputs_test[i],cm, 10,0.5);
+            reset_model(test_m);
         }
         printf("Error: %lf\n",error);
+        printf("Accuracy, Precision, Sensitivity, Specificity:\n");
+        print_accuracy(cm,output_dimension);
+        print_precision(cm,output_dimension);
+        print_sensitivity(cm,output_dimension);
+        print_specificity(cm,output_dimension);
+        for(i = 0; i < output_dimension*2; i++){
+            free(cm[i]);
+        }
+        free(cm);
         error = 0;
         free_model(test_m);
     }

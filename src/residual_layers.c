@@ -46,7 +46,7 @@ rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     r->input_cols = input_cols;
     r->n_cl = n_cl;
     r->cls =cls;
-    r->input = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
+    r->input;
     r->cl_output = convolutional(channels,input_rows,input_cols,1,1,channels,1,1,0,0,1,1,0,0,0,0,0,RELU,0,0,CONVOLUTION,cls[n_cl-1]->layer);
     return r;
     
@@ -60,7 +60,6 @@ void free_residual(rl* r){
     }
     
     free(r->cls);
-    free(r->input);
     free_convolutional(r->cl_output);
     free(r);
 }
@@ -248,11 +247,7 @@ rl* reset_rl(rl* f){
     }
     
     reset_cl(f->cl_output);
-    
-    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
-        f->input[i] = 0;
-    }
-    
+
     return f;
 }
 
