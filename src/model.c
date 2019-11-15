@@ -2724,6 +2724,8 @@ void compute_model_error(model* m, float* output){
 float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output){
     model_tensor_input_ff(m,tensor_depth,tensor_i,tensor_j,input);
     compute_model_error(m,output);
+    if(m->error_alpha != NULL)
+        dot1D(error_alpha,output,output,output_dimension);
     return model_tensor_input_bp(m,tensor_depth,tensor_i,tensor_j,input, m->error,m->output_dimension);
 }
 
