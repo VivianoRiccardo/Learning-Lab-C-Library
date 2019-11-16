@@ -99,6 +99,8 @@ rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int 
     m->lstms = lstms;
     m->window = window;
     m->hidden_state_mode = hidden_state_mode;
+    m->beta1_adam = BETA1_ADAM;
+    m->beta2_adam = BETA2_ADAM;
         
     return m;
 }
@@ -720,8 +722,8 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
         update_bmodel(bm,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda);
         
         if(gradient_descent_flag == ADAM){
-            (*b1)/=BETA1_ADAM;
-            (*b2)/=BETA2_ADAM;
+            (*b1)/=m->beta1_adam;
+            (*b2)/=m->beta2_adam;
         }
         
         free(bm->bns);

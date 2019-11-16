@@ -233,6 +233,8 @@ typedef struct bmodel {
 } bmodel;
 
 typedef struct rmodel {
+    float beta1_adam;
+    float beta2_adam;
     int layers, n_lstm, window, hidden_state_mode;
     lstm** lstms;
     int** sla;
@@ -329,6 +331,7 @@ typedef struct thread_args_server {
 #include "multi_core_model.h"
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"
+#include "neat_functions.h"
 #include "normalization.h"
 #include "parser.h"
 #include "recurrent.h"
