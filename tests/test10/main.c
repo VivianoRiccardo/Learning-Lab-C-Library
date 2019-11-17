@@ -2,20 +2,6 @@
 
 #define INPUT 2
 #define OUTPUT 1
-#define SPECIES_THERESHOLD 3
-#define INITIAL_POPULATION 100
-#define GENERATIONS 600
-#define PERCENTAGE_SURVIVORS_PER_SPECIE 0.10
-#define CONNECTION_MUTATION_RATE 0.8
-#define NEW_CONNECTION_ASSIGMENT_RATE 0.1
-#define ADD_CONNECTION_BIG_SPECIE_RATE 0.3
-#define ADD_CONNECTION_SMALL_SPECIE_RATE 0.03
-#define ADD_NODE_SPECIE_RATE 0.05
-#define ACTIVATE_CONNECTION_RATE 0.25//there is activate_connection_rate% that a connetion remain disabled
-#define REMOVE_CONNECTION_RATE 0.04//there is remove_connection_rate% that a connection can be removed
-#define CHILDREN 1//new offsprings = children*(1+b*3) where b is round_up(mean fitness specie/mean fitness population)
-#define CROSSOVER_RATE 0.1 
-#define SAVING 10//each <saving> generation the best genomes is saved
 
 
 void compute_fitnesses(genome** gg,int actual_genomes,int global_inn_numb_nodes,int global_inn_numb_connections){
@@ -162,13 +148,13 @@ int main(){
                 b/=a;
                 temp_gg1 = sort_genomes_by_fitness(s[i].all_other_genomes,s[i].numb_all_other_genomes);
                 /*if a specie didn't improve its for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
-                if(s[i].rapresentative_genome->specie_rip < 15 || n_species < 5){
+                if(s[i].rapresentative_genome->specie_rip < 15 || n_species < 10){
                     /*b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                      * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
-                    if(s[i].all_other_genomes[0]->fitness <= s[i].rapresentative_genome->fitness)
+                    if(temp_gg1[0]->fitness <= s[i].rapresentative_genome->fitness)
                         s[i].rapresentative_genome->specie_rip++;
-                    else if(s[i].all_other_genomes[0]->fitness > s[i].rapresentative_genome->fitness){
-                        s[i].rapresentative_genome->fitness = s[i].all_other_genomes[0]->fitness; 
+                    else if(temp_gg1[0]->fitness > s[i].rapresentative_genome->fitness){
+                        s[i].rapresentative_genome->fitness = temp_gg1[0]->fitness; 
                         s[i].rapresentative_genome->specie_rip=0;
                     }
                     else

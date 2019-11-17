@@ -94,6 +94,22 @@ SOFTWARE.
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10
 
+// Neat hyperparams
+#define SPECIES_THERESHOLD 3
+#define INITIAL_POPULATION 100
+#define GENERATIONS 600
+#define PERCENTAGE_SURVIVORS_PER_SPECIE 0.25
+#define CONNECTION_MUTATION_RATE 0.8
+#define NEW_CONNECTION_ASSIGMENT_RATE 0.1
+#define ADD_CONNECTION_BIG_SPECIE_RATE 0.3
+#define ADD_CONNECTION_SMALL_SPECIE_RATE 0.03
+#define ADD_NODE_SPECIE_RATE 0.05
+#define ACTIVATE_CONNECTION_RATE 0.25//there is activate_connection_rate% that a connetion remain disabled
+#define REMOVE_CONNECTION_RATE 0.04//there is remove_connection_rate% that a connection can be removed
+#define CHILDREN 1//new offsprings = children*(1+b*3) where b is round_up(mean fitness specie/mean fitness population)
+#define CROSSOVER_RATE 0.1 
+#define SAVING 10//each <saving> generation the best genomes is saved
+
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
     float epsilon;
