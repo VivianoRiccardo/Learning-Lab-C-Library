@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "genome.h"
 #include "species.h"
+#include "neat_structure.h"
 #include "feed_structure.h"
 // Functions defined in neat_utils.c
 
@@ -76,5 +77,10 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
 float get_mean_fitness(species* s, int n_species);
 float get_mean_specie_fitness(species* s, int i);
 genome** sort_genomes_by_fitness(genome** g, int size);
-
 void compute_fitnesses(genome** gg,int actual_genomes,int global_inn_numb_nodes,int global_inn_numb_connections);
+
+// Functions defined in neat.c
+
+neat* init(int max_buffer, int input, int output);
+void neat_generation_run(neat* nes, genome** gg);
+void free_neat(neat* nes);
