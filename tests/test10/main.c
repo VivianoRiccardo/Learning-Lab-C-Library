@@ -42,20 +42,18 @@ int main(){
     neat* nes = init(100000,INPUT,OUTPUT);
 
     /* START THE GENERATION ITERATIONS */
-    for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){
-        printf(">>>>>>>>>> Generation: %d\n",nes->k);
-        printf(">>>>>>>>>> Number genomes: %d\n",nes->actual_genomes);
-        /* feedforward of the genomes and computing fitness*/
+    for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){ 
+       /* feedforward of the genomes and computing fitness*/
        compute_fitnesses(nes->gg,nes->actual_genomes,nes->global_inn_numb_nodes,nes->global_inn_numb_connections); //just create this function and compute your fitnesses as you want
        neat_generation_run(nes,nes->gg);
+       printf(">>>>>>>>>> Generation: %d\n",nes->k);
+       printf(">>>>>>>>>> Number genomes: %d\n",nes->actual_genomes);
        printf("best fitness for this generation: %f\n",nes->n);
-       printf("num species: %d\n",nes->z);
+       printf("num species: %d\n",nes->n_species);
        printf("biggest specie: %d\n",nes->max);
-       printf(">>>>>>>>>> Total number genomes computed: %d\n",nes->count);
+       printf("Total number genomes computed: %d\n",nes->count);
    }
-
-    
-    /*deallocation*/
-    free_neat(nes);
+   /*deallocation*/
+   free_neat(nes);
     
 }
