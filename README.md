@@ -84,7 +84,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 - From test 1 to 6 there are different model* networks with different optimization algorithms, trained on supervised learning.
 - Test 7 is a vae model trained on unsupervised learning.
 - Test 8 is the test 6 trained on distributed systems client-server. To run it you have to connect 5 clients.
-- Test 9 is trained with look haead algorithm
+- Test 9 is trained with look ahead algorithm
 - Test 10 is the Neat algorithm. it has been tested on the xor with the same parameter settings of the original paper:
   http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf except for the feed forward (each node has a bias of 1) and the bias input node. the test shows close results with the ones
   of the original paper. Indeed on 100 running test there is an avarage of 5947 total genomes computed, compared with the 4755 of the paper. Pay attention the structure of the genome
