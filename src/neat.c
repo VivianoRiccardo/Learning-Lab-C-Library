@@ -126,7 +126,6 @@ void neat_generation_run(neat* nes, genome** gg){
                 }
                 else
                     nes->s[nes->i].rapresentative_genome->specie_rip=0;
-                nes->b = round_up(nes->b);
                 /*in temp_gg3 we save the rapresentative genome of this specie*/
                     
                 nes->temp_gg3[nes->temp_gg3_counter] = copy_genome(nes->s[nes->i].rapresentative_genome);    
