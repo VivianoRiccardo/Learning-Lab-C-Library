@@ -52,6 +52,7 @@ int main(){
        printf("num species: %d\n",nes->n_species);
        printf("biggest specie: %d\n",nes->max);
        printf("Total number genomes computed: %d\n",nes->count);
+       if(nes->n >= 3.5) break;
    }
    /*deallocation*/
    free_neat(nes);

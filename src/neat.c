@@ -150,14 +150,16 @@ void neat_generation_run(neat* nes, genome** gg){
                         /*mutations*/
                         activate_connections(gg[nes->actual_genomes],nes->global_inn_numb_connections,ACTIVATE_CONNECTION_RATE);
                         connections_mutation(gg[nes->actual_genomes],nes->global_inn_numb_connections, CONNECTION_MUTATION_RATE,NEW_CONNECTION_ASSIGMENT_RATE);
-                        while(r2() < REMOVE_CONNECTION_RATE){
-                            remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
-                        }
+                        
                         /*big species*/
                         if(nes->s[nes->i].numb_all_other_genomes >= nes->sum){
                             
                             if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
                                 add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                            }
+                            
+                            else if(r2() < REMOVE_CONNECTION_RATE){
+                                remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                             }
                         }
                         
@@ -165,6 +167,10 @@ void neat_generation_run(neat* nes, genome** gg){
                         else{
                             if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
                                 add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                            }
+                            
+                            else if(r2() < REMOVE_CONNECTION_RATE){
+                                remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                             }
                         }
                                 
