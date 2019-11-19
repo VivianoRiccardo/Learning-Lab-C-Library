@@ -30,7 +30,7 @@ SOFTWARE.
 
     
 typedef struct neat{
-    int i,j,z,k,w,flag,min,max,total_species,count;
+    int i,j,z,k,w,flag,min,max,total_species,count, max_population;
     int global_inn_numb_connections,global_inn_numb_nodes, actual_genomes, n_survivors,temp_gg2_counter,temp_gg3_counter, n_species;
     int* dict_connections;
     int** matrix_nodes;

@@ -111,7 +111,7 @@ SOFTWARE.
 #define SAVING 10//each <saving> generation the best genomes is saved
 #define LIMITING_SPECIES 15 // if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species generations, just kill it
 #define LIMITING_THRESHOLD 3// if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species-limiting_threshold generations, we invert the trend of the specie with adding/removing connection
-
+#define MAX_POPULATION 4000
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
     float epsilon;
