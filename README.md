@@ -93,8 +93,8 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
   try to simplify its structure. The test shows close results (even better) with the ones
   of the original paper. Indeed on 100 running test there is an avarage of 4680 total genomes computed, compared with the 4755 of the paper.
   But it needs more generations (an avarage of 41, probably due to the offspring generation function) and in the worst case (33276 genomes computed).
-  Pay attention the structure of the genome is different from the structure of the deep learning network.s
-  The test 10 can be taken as neat template, you need only to change the compute fitness function
+  Pay attention the structure of the genome is different from the structure of the deep learning networks.
+  The test 10 can be taken as neat template, you need only to change the compute fitness function.
 
 
 # Future implementations
