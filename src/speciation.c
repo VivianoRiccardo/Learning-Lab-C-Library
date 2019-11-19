@@ -213,9 +213,8 @@ void free_species_except_for_rapresentatives(species* s, int total_species, int 
         }
         
         free(s[i].all_other_genomes);
+        s[i].numb_all_other_genomes = 0;
     }
-    
-    free(s);
 }
 
 species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s){

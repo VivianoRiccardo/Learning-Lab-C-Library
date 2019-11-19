@@ -118,7 +118,7 @@ void neat_generation_run(neat* nes, genome** gg){
             if(nes->s[nes->i].rapresentative_genome->specie_rip < 15 || nes->n_species < 10){
                 /*b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
-                if(nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness)
+                if(nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness || nes->b < 1)
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
                 else if(nes->temp_gg1[0]->fitness > nes->s[nes->i].rapresentative_genome->fitness){
                     nes->s[nes->i].rapresentative_genome->fitness = nes->temp_gg1[0]->fitness; 
@@ -141,7 +141,8 @@ void neat_generation_run(neat* nes, genome** gg){
                 }
                 
                 nes->temp_gg3_counter++;
-                for(nes->z = 0; nes->z < (CHILDREN*(1+nes->b*3)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*PERCENTAGE_SURVIVORS_PER_SPECIE)){
+                double bb = round_up(nes->b*3.67);
+                for(nes->z = 0; nes->z < (CHILDREN*(1+bb)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*PERCENTAGE_SURVIVORS_PER_SPECIE)){
                     for(nes->w = 0; nes->w < nes->s[nes->i].numb_all_other_genomes; nes->w++){
                         if(nes->w >= round_up(nes->s[nes->i].numb_all_other_genomes*PERCENTAGE_SURVIVORS_PER_SPECIE)){
                             break;
