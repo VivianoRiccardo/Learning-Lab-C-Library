@@ -100,7 +100,7 @@ SOFTWARE.
 #define GENERATIONS 600000
 #define PERCENTAGE_SURVIVORS_PER_SPECIE 0.25
 #define CONNECTION_MUTATION_RATE 0.8
-#define NEW_CONNECTION_ASSIGMENT_RATE 0.1
+#define NEW_CONNECTION_ASSIGNMENT_RATE 0.1
 #define ADD_CONNECTION_BIG_SPECIE_RATE 0.3
 #define ADD_CONNECTION_SMALL_SPECIE_RATE 0.03
 #define ADD_NODE_SPECIE_RATE 0.05
@@ -112,6 +112,7 @@ SOFTWARE.
 #define LIMITING_SPECIES 15 // if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species generations, just kill it
 #define LIMITING_THRESHOLD 3// if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species-limiting_threshold generations, we invert the trend of the specie with adding/removing connection
 #define MAX_POPULATION 4000
+
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
     float epsilon;

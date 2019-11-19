@@ -58,8 +58,24 @@ neat* init(int max_buffer, int input, int output){
     nes->s = s;
     nes->temp_gg2 = temp_gg2;
     nes->temp_gg3 = temp_gg3;
-    nes->max_population = MAX_POOLING;
+    nes->max_population = MAX_POPULATION;
     nes->g = NULL;
+    nes->species_threshold = SPECIES_THERESHOLD;
+    nes->initial_population = INITIAL_POPULATION;
+    nes->generations = GENERATIONS;
+    nes->percentage_survivors_per_specie = PERCENTAGE_SURVIVORS_PER_SPECIE;
+    nes->connection_mutation_rate = CONNECTION_MUTATION_RATE;
+    nes->new_connection_assignment_rate = NEW_CONNECTION_ASSIGNMENT_RATE;
+    nes->add_connection_big_specie_rate = ADD_CONNECTION_BIG_SPECIE_RATE;
+    nes->add_connection_small_specie_rate = ADD_CONNECTION_SMALL_SPECIE_RATE;
+    nes->add_node_specie_rate = ADD_NODE_SPECIE_RATE;
+    nes->activate_connection_rate = ACTIVATE_CONNECTION_RATE;
+    nes->remove_connection_rate = REMOVE_CONNECTION_RATE;
+    nes->children = CHILDREN;
+    nes->crossover_rate = CROSSOVER_RATE;
+    nes->saving = SAVING;
+    nes->limiting_species = LIMITING_SPECIES;
+    nes->limiting_threshold = LIMITING_THRESHOLD;
     return nes;
 }
 void neat_generation_run(neat* nes, genome** gg){
@@ -76,24 +92,25 @@ void neat_generation_run(neat* nes, genome** gg){
     free(nes->g);
     nes->g = copy_genome(gg[nes->j]);
 
-    if(nes->k%SAVING == 0 || nes->k == GENERATIONS)
+    if(nes->k%nes->saving == 0 || nes->k == nes->generations)
         save_genome(gg[nes->j],nes->global_inn_numb_connections,nes->k+1);
 
-    if(nes->k == GENERATIONS)
+    if(nes->k == nes->generations)
     return;
     
     if(nes->actual_genomes > nes->max_population){
-        nes->temp_gg1 = sort_genomes_by_fitness(nes->gg,nes->actual_genomes);
-        free(nes->gg);
-        nes->gg = nes->temp_gg1;
-        nes->temp_gg1 = NULL;
-        for(nes->i = nes->max_population; nes->i < nes->actual_genomes; nes->i++){
-            free_genome(nes->gg[nes->i],nes->global_inn_numb_connections);
+        nes->temp_gg1 = sort_genomes_by_fitness(gg,nes->actual_genomes);
+        for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
+            if(nes->i <= nes->max_population)
+                gg[nes->i] = nes->temp_gg1[nes->i];
+            else
+                free_genome(nes->temp_gg1[nes->i],nes->global_inn_numb_connections);
         }
+        free(nes->temp_gg1);
         nes->actual_genomes = nes->max_population;
     }
     /*speciation*/
-    nes->s = put_genome_in_species(gg,nes->actual_genomes,nes->global_inn_numb_connections,SPECIES_THERESHOLD,&nes->total_species,&nes->s);
+    nes->s = put_genome_in_species(gg,nes->actual_genomes,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species,&nes->s);
 
 
     /* we copied the genomes in species, now deallocate the genomes in gg */
@@ -125,7 +142,7 @@ void neat_generation_run(neat* nes, genome** gg){
             nes->b/=nes->a;
             nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
             /*if a specie didn't improve its for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
-            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES || nes->n_species < 10){
+            if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species || nes->n_species < 10){
                 /*b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
                 if(nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness || nes->b < 1)
@@ -151,34 +168,34 @@ void neat_generation_run(neat* nes, genome** gg){
                 
                 nes->temp_gg3_counter++;
                 double bb = round_up(nes->b*3.67);
-                for(nes->z = 0; nes->z < (CHILDREN*(1+bb)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*PERCENTAGE_SURVIVORS_PER_SPECIE)){
+                for(nes->z = 0; nes->z < (nes->children*(1+bb)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie)){
                     for(nes->w = 0; nes->w < nes->s[nes->i].numb_all_other_genomes; nes->w++){
-                        if(nes->w >= round_up(nes->s[nes->i].numb_all_other_genomes*PERCENTAGE_SURVIVORS_PER_SPECIE)){
+                        if(nes->w >= round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie)){
                             break;
                         }
                         gg[nes->actual_genomes] = copy_genome(nes->temp_gg1[nes->w]);
                         /*mutations*/
-                        activate_connections(gg[nes->actual_genomes],nes->global_inn_numb_connections,ACTIVATE_CONNECTION_RATE);
-                        connections_mutation(gg[nes->actual_genomes],nes->global_inn_numb_connections, CONNECTION_MUTATION_RATE,NEW_CONNECTION_ASSIGMENT_RATE);
+                        activate_connections(gg[nes->actual_genomes],nes->global_inn_numb_connections,nes->activate_connection_rate);
+                        connections_mutation(gg[nes->actual_genomes],nes->global_inn_numb_connections, nes->connection_mutation_rate,nes->new_connection_assignment_rate);
                             
                         /*big species*/
                         if(nes->s[nes->i].numb_all_other_genomes >= nes->sum){
                             
-                            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES-LIMITING_THRESHOLD){
-                                if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
+                            if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species-nes->limiting_threshold){
+                                if(r2() < nes->add_connection_big_specie_rate){
                                     add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
                                 }
                                 
-                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                else if(r2() < nes->remove_connection_rate){
                                     remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                                 }
                             }
                             
                             else{
-                                if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
+                                if(r2() < nes->add_connection_big_specie_rate){
                                     remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                                 }
-                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                else if(r2() < nes->remove_connection_rate){
                                     add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
                                 }
                             }
@@ -186,27 +203,27 @@ void neat_generation_run(neat* nes, genome** gg){
                         
                         /*small specie*/
                         else{
-                            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES-LIMITING_THRESHOLD){
-                                if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
+                            if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species-nes->limiting_threshold){
+                                if(r2() < nes->add_connection_small_specie_rate){
                                     add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
                                 }
                                 
-                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                else if(r2() < nes->remove_connection_rate){
                                     remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                                 }
                             }
                             
                             else{
-                                if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
+                                if(r2() < nes->add_connection_small_specie_rate){
                                     remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
                                 }
-                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                else if(r2() < nes->remove_connection_rate){
                                     add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
                                 }
                             }
                         }
                                 
-                        if(r2() < ADD_NODE_SPECIE_RATE)
+                        if(r2() < nes->add_node_specie_rate)
                             split_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_nodes,&nes->global_inn_numb_connections,&nes->dict_connections,&nes->matrix_nodes,&nes->matrix_connections);
                         
                         
@@ -219,10 +236,6 @@ void neat_generation_run(neat* nes, genome** gg){
             
         }
         
-    }
-
-    for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
-        gg[nes->i]->fitness = 0;
     }
             
     //these lines save for the next generations the best genomes of the surviving species too
@@ -239,7 +252,7 @@ void neat_generation_run(neat* nes, genome** gg){
 
     free_species(nes->s,nes->total_species,nes->global_inn_numb_connections);
     nes->total_species = 0;
-    nes->s = create_species(nes->temp_gg3,nes->temp_gg3_counter,nes->global_inn_numb_connections,SPECIES_THERESHOLD,&nes->total_species);
+    nes->s = create_species(nes->temp_gg3,nes->temp_gg3_counter,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species);
 
     for(nes->i = 0; nes->i < nes->temp_gg3_counter; nes->i++){
         free_genome(nes->temp_gg3[nes->i],nes->global_inn_numb_connections);
@@ -250,7 +263,7 @@ void neat_generation_run(neat* nes, genome** gg){
     }
 
     for(nes->i = 0; nes->i < nes->temp_gg2_counter-1; nes->i+=2){
-            if(r2() < CROSSOVER_RATE){
+            if(r2() < nes->crossover_rate){
                 gg[nes->actual_genomes] = crossover(nes->temp_gg2[nes->i],nes->temp_gg2[nes->i+1],nes->global_inn_numb_connections,nes->global_inn_numb_nodes);
                 gg[nes->actual_genomes]->fitness = 0;
                 nes->actual_genomes++;
