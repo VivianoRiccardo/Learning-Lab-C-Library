@@ -115,7 +115,7 @@ void neat_generation_run(neat* nes, genome** gg){
             nes->b/=nes->a;
             nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
             /*if a specie didn't improve its for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
-            if(nes->s[nes->i].rapresentative_genome->specie_rip < 15 || nes->n_species < 10){
+            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES || nes->n_species < 10){
                 /*b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
                 if(nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness || nes->b < 1)
@@ -150,27 +150,51 @@ void neat_generation_run(neat* nes, genome** gg){
                         /*mutations*/
                         activate_connections(gg[nes->actual_genomes],nes->global_inn_numb_connections,ACTIVATE_CONNECTION_RATE);
                         connections_mutation(gg[nes->actual_genomes],nes->global_inn_numb_connections, CONNECTION_MUTATION_RATE,NEW_CONNECTION_ASSIGMENT_RATE);
-                        
+                            
                         /*big species*/
                         if(nes->s[nes->i].numb_all_other_genomes >= nes->sum){
                             
-                            if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
-                                add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES-LIMITING_THRESHOLD){
+                                if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
+                                    add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                                }
+                                
+                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                    remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                                }
                             }
                             
-                            else if(r2() < REMOVE_CONNECTION_RATE){
-                                remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                            else{
+                                if(r2() < REMOVE_CONNECTION_RATE){
+                                    add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                                }
+                                
+                                else if(r2() < ADD_CONNECTION_BIG_SPECIE_RATE){
+                                    remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                                }
                             }
                         }
                         
                         /*small specie*/
                         else{
-                            if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
-                                add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                            if(nes->s[nes->i].rapresentative_genome->specie_rip < LIMITING_SPECIES-LIMITING_THRESHOLD){
+                                if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
+                                    add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                                }
+                                
+                                else if(r2() < REMOVE_CONNECTION_RATE){
+                                    remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                                }
                             }
                             
-                            else if(r2() < REMOVE_CONNECTION_RATE){
-                                remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                            else{
+                                if(r2() < REMOVE_CONNECTION_RATE){
+                                    add_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_connections,&nes->matrix_connections,&nes->dict_connections);
+                                }
+                                
+                                else if(r2() < ADD_CONNECTION_SMALL_SPECIE_RATE){
+                                    remove_random_connection(gg[nes->actual_genomes],nes->global_inn_numb_connections);
+                                }
                             }
                         }
                                 

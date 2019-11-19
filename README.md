@@ -86,9 +86,15 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 - Test 8 is the test 6 trained on distributed systems client-server. To run it you have to connect 5 clients.
 - Test 9 is trained with look ahead algorithm
 - Test 10 is the Neat algorithm. it has been tested on the xor with the same parameter settings of the original paper:
-  http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf except for the feed forward (each node has a bias of 1) and the bias input node. the test shows close results with the ones
-  of the original paper. Indeed on 100 running test there is an avarage of 5947 total genomes computed, compared with the 4755 of the paper. Pay attention the structure of the genome
-  is different from the structure of the deep learning network. The test 10 can be taken as neat template, you need only to change the compute fitness function
+  http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf except for the feed forward (output node has a bias of 1) and the bias input node.
+  Another difference is the removal connetcion rate. It has been set to 0.01 only if no connection has been added.
+  However when a specie is close to the death (specie_rip param close to 15) then there is a change in the mutation behaviour:
+  the add connection rate and removal connection rate are switched, in this case there is an inversion of the trend and the network
+  try to simplify its structure. The test shows close results (even better) with the ones
+  of the original paper. Indeed on 100 running test there is an avarage of 4680 total genomes computed, compared with the 4755 of the paper.
+  But it needs more generations (an avarage of 41, propbably due to the offspring generation function) and in the worst case (33276 genomes computed).
+  Pay attention the structure of the genome is different from the structure of the deep learning network.s
+  The test 10 can be taken as neat template, you need only to change the compute fitness function
 
 
 # Future implementations

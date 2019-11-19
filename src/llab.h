@@ -105,10 +105,12 @@ SOFTWARE.
 #define ADD_CONNECTION_SMALL_SPECIE_RATE 0.03
 #define ADD_NODE_SPECIE_RATE 0.05
 #define ACTIVATE_CONNECTION_RATE 0.25//there is activate_connection_rate% that a connetion remain disabled
-#define REMOVE_CONNECTION_RATE 0.04//there is remove_connection_rate% that a connection can be removed
+#define REMOVE_CONNECTION_RATE 0.01//there is remove_connection_rate% that a connection can be removed
 #define CHILDREN 1//new offsprings = children*(1+b*3) where b is round_up(mean fitness specie/mean fitness population)
 #define CROSSOVER_RATE 0.1 
 #define SAVING 10//each <saving> generation the best genomes is saved
+#define LIMITING_SPECIES 15 // if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species generations, just kill it
+#define LIMITING_THRESHOLD 3// if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species-limiting_threshold generations, we invert the trend of the specie with adding/removing connection
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
