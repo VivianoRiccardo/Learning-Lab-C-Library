@@ -40,7 +40,6 @@ int main(){
     
     srand(time(NULL));
     neat* nes = init(100000,INPUT,OUTPUT);
-
     /* START THE GENERATION ITERATIONS */
     for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){ 
        /* feedforward of the genomes and computing fitness*/

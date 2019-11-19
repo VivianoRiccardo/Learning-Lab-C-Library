@@ -101,7 +101,7 @@ void neat_generation_run(neat* nes, genome** gg){
     if(nes->actual_genomes > nes->max_population){
         nes->temp_gg1 = sort_genomes_by_fitness(gg,nes->actual_genomes);
         for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
-            if(nes->i <= nes->max_population)
+            if(nes->i < nes->max_population)
                 gg[nes->i] = nes->temp_gg1[nes->i];
             else
                 free_genome(nes->temp_gg1[nes->i],nes->global_inn_numb_connections);
