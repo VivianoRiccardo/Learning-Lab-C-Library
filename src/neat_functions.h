@@ -70,14 +70,13 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
 species* create_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species);
 void free_species(species* s, int total_species, int global_inn_numb_connections);
 species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s);
-
+void free_species_except_for_rapresentatives(species* s, int total_species, int global_inn_numb_connections);
 
 // Functions defined in fitness.c
 
 float get_mean_fitness(species* s, int n_species);
 float get_mean_specie_fitness(species* s, int i);
 genome** sort_genomes_by_fitness(genome** g, int size);
-void compute_fitnesses(genome** gg,int actual_genomes,int global_inn_numb_nodes,int global_inn_numb_connections);
 
 // Functions defined in neat.c
 

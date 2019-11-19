@@ -205,7 +205,18 @@ void free_species(species* s, int total_species, int global_inn_numb_connections
     free(s);
 }
 
-
+void free_species_except_for_rapresentatives(species* s, int total_species, int global_inn_numb_connections){
+    int i,j;
+    for(i = 0; i < total_species; i++){
+        for(j = 0; j < s[i].numb_all_other_genomes; j++){
+            free_genome(s[i].all_other_genomes[j],global_inn_numb_connections);
+        }
+        
+        free(s[i].all_other_genomes);
+    }
+    
+    free(s);
+}
 
 species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s){
     int i,j,k,z,count_s = (*total_species),flag;

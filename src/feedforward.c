@@ -245,8 +245,7 @@ float* feed_forward(genome* g1, float* inputs, int global_inn_numb_nodes, int gl
     }
     
     for(i = 0; i < global_inn_numb_nodes; i++){
-        if(array3[i]!=NULL)
-            free(array3[i]);
+        free(array3[i]);
     }
 
     free(array3);

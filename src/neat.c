@@ -58,6 +58,7 @@ neat* init(int max_buffer, int input, int output){
     nes->s = s;
     nes->temp_gg2 = temp_gg2;
     nes->temp_gg3 = temp_gg3;
+    nes->g = NULL;
     return nes;
 }
 void neat_generation_run(neat* nes, genome** gg){
@@ -71,6 +72,7 @@ void neat_generation_run(neat* nes, genome** gg){
         }
         
     }
+    free(nes->g);
     nes->g = copy_genome(gg[nes->j]);
 
     if(nes->k%SAVING == 0 || nes->k == GENERATIONS)
@@ -174,8 +176,8 @@ void neat_generation_run(neat* nes, genome** gg){
                         nes->actual_genomes++;    
                     }
                 }
-                free(nes->temp_gg1);
             }
+            free(nes->temp_gg1);
             
         }
         
@@ -227,6 +229,7 @@ void neat_generation_run(neat* nes, genome** gg){
     gg[nes->actual_genomes] = copy_genome(nes->g);
     nes->actual_genomes++;
     free_genome(nes->g,nes->global_inn_numb_connections);
+    nes->g = NULL;
     nes->count+=nes->actual_genomes;
 }
 
@@ -245,7 +248,7 @@ void free_neat(neat* nes){
     for(nes->i = 0; nes->i < nes->global_inn_numb_connections; nes->i++){
         free(nes->matrix_connections[nes->i]);
     }
-    
+    if(nes->g!= NULL)
     free_genome(nes->g,nes->global_inn_numb_connections);
     free(nes->gg);
     free(nes->matrix_nodes);
