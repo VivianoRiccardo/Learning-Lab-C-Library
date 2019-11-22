@@ -163,6 +163,7 @@ void neat_generation_run(neat* nes, genome** gg){
         int n = nes->s[index1].numb_all_other_genomes;
         for(nes->i = 0; nes->i < n; nes->i++){
             temp_gg1[nes->i] = copy_genome(temp_gg1[nes->i]);
+            temp_gg1[nes->i]->specie_rip = 0;
         }
         
         genome** temp_gg2;
@@ -172,7 +173,7 @@ void neat_generation_run(neat* nes, genome** gg){
             n2 += nes->s[index2].numb_all_other_genomes;
             for(nes->i = 0; nes->i < n2; nes->i++){
                 temp_gg2[nes->i] = copy_genome(temp_gg2[nes->i]);
-                print_genome(temp_gg2[nes->i]);
+                temp_gg2[nes->i]->specie_rip = 0;
             }
         }
         nes->actual_genomes+=n;
