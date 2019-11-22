@@ -34,8 +34,7 @@ neat* init(int max_buffer, int input, int output){
     gg[0] = copy_genome(g);
     free_genome(g,global_inn_numb_connections);
 
-    /*initialize first specie with a single rapresentative genome (the empty genome)*/
-    s = create_species(gg,1,global_inn_numb_connections,SPECIES_THERESHOLD,&total_species);
+    
     
     
     for(i = 1; i < INITIAL_POPULATION; i++){
@@ -43,6 +42,10 @@ neat* init(int max_buffer, int input, int output){
         add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
         
     }
+    
+    /*initialize first specie with a single rapresentative genome (the empty genome)*/
+    s = create_species(gg,INITIAL_POPULATION,global_inn_numb_connections,SPECIES_THERESHOLD,&total_species);
+    
     count+=actual_genomes;
     
     neat* nes = (neat*)malloc(sizeof(neat));
