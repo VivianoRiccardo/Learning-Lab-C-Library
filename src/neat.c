@@ -101,6 +101,14 @@ void neat_generation_run(neat* nes, genome** gg){
         nes->fitness_counter = 0;
         nes->new_max_pop = nes->max_population;
     }
+    
+    // If there is always the same fitness as best fitness in the population for about same_fitness_limit times then we take the 2 best species and eliminate the others
+    if(nes->fitness_counter >= nes->same_fitness_limit){
+        nes->fitness_counter = 0;
+        if(nes->actual_genomes >= nes->new_max_pop)
+            nes->new_max_pop*=2;
+    }
+    
     nes->last_fitness = nes->n;
     
     free(nes->g);
@@ -135,11 +143,6 @@ void neat_generation_run(neat* nes, genome** gg){
         free_genome(gg[nes->i],nes->global_inn_numb_connections);
     }
     
-    // If there is always the same fitness as best fitness in the population for about same_fitness_limit times then we take the 2 best species and eliminate the others
-    if(nes->fitness_counter >= nes->same_fitness_limit){
-        nes->fitness_counter = 0;
-        nes->new_max_pop*=2;
-    }
     // now compute the number of species with at least 1 genome inside, the biggest specie and the avarage size of a specie in the entire population
     nes->max = -1;
     nes->sum = 0;
