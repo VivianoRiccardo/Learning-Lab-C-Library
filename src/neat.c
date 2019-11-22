@@ -212,7 +212,7 @@ void neat_generation_run(neat* nes, genome** gg){
     }
 
     nes->sum/=(float)nes->z;
-    
+    nes->n_species = nes->z;
     // compute the man fitness
     nes->a = get_mean_fitness(nes->s,nes->total_species);
     
