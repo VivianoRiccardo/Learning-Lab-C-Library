@@ -31,9 +31,9 @@ SOFTWARE.
 
   
 typedef struct neat{
-    int i,j,z,k,w,flag,min,max,total_species,count;
+    int i,j,z,k,w,flag,min,max,total_species,count,fitness_counter,same_fitness_limit;
     int max_population,initial_population,generations,limiting_species,limiting_threshold,saving;
-    float species_threshold,percentage_survivors_per_specie,connection_mutation_rate,new_connection_assignment_rate,add_connection_big_specie_rate;
+    float species_threshold,percentage_survivors_per_specie,connection_mutation_rate,new_connection_assignment_rate,add_connection_big_specie_rate,last_fitness;
     float add_connection_small_specie_rate,add_node_specie_rate,remove_connection_rate,children,crossover_rate,activate_connection_rate;
     int global_inn_numb_connections,global_inn_numb_nodes, actual_genomes, n_survivors,temp_gg2_counter,temp_gg3_counter, n_species;
     int* dict_connections;

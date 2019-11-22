@@ -9,6 +9,7 @@ void compute_fitnesses(genome** gg,int actual_genomes,int global_inn_numb_nodes,
     float inputs[2] = {0,0};
     float* output;
     for(i = 0; i < actual_genomes; i++){
+		gg[i]->fitness = 0;
         if(gg[i]->fitness == 0){
             inputs[0] = 0;
             inputs[1] = 0;
