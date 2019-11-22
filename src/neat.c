@@ -94,7 +94,7 @@ void neat_generation_run(neat* nes, genome** gg){
     }
     
     // looking for same best fitness according to the previous generation
-    if(nes->n == nes->last_fitness)
+    if(nes->n <= nes->last_fitness)
         nes->fitness_counter++;
     else
         nes->fitness_counter = 0;
@@ -179,7 +179,7 @@ void neat_generation_run(neat* nes, genome** gg){
         nes->actual_genomes+=n;
         free_species(nes->s,nes->total_species,nes->global_inn_numb_connections);
         nes->total_species = 0;
-        nes->s = create_species(temp_gg1,n,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species);
+        nes->s = create_species(temp_gg1,1,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species);
         nes->s = put_genome_in_species(temp_gg1,n,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species,&nes->s);
         if(index2 != -1){
             nes->actual_genomes+=n2;
