@@ -95,7 +95,7 @@ void neat_generation_run(neat* nes, genome** gg){
     }
     
     // looking for same best fitness according to the previous generation
-    if(nes->n == nes->last_fitness && nes->n_species >= 10)
+    if(nes->n <= nes->last_fitness && nes->n_species >= 10)
         nes->fitness_counter++;
     else{
         nes->fitness_counter = 0;
