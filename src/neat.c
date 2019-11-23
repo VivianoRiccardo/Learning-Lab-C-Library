@@ -178,13 +178,14 @@ void neat_generation_run(neat* nes, genome** gg){
             if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species || nes->n_species < 10){
                 /*nes->b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
-                if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness && nes->temp_gg1[0]->fitness!=nes->n) || nes->b < 1){
+                if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness) || nes->b < 1){
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
                     // If there are few species and this specie is going to die, werandomly reset the specie rip param.
-                    if(nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold)
+                    if((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) || nes->temp_gg1[0]->fitness==nes->n){
                     if(r2()<0.5)
                     nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
-                    else nes->s[nes->i].rapresentative_genome->specie_rip = 0;
+                    else nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold-1;
+					}
                 }
                 
                 else if(nes->temp_gg1[0]->fitness > nes->s[nes->i].rapresentative_genome->fitness){
