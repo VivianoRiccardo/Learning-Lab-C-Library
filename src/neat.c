@@ -112,6 +112,7 @@ void neat_generation_run(neat* nes, genome** gg){
         if(nes->actual_genomes >= nes->new_max_pop)
             nes->new_max_pop*=2;
     }
+        
     if(nes->n > nes->last_fitness)
     nes->last_fitness = nes->n;
     
@@ -140,8 +141,7 @@ void neat_generation_run(neat* nes, genome** gg){
     
     /*speciation*/
     nes->s = put_genome_in_species(gg,nes->actual_genomes,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species,&nes->s);
-
-
+    
     /* we copied the genomes in species, now deallocate the genomes in gg */
     for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
         free_genome(gg[nes->i],nes->global_inn_numb_connections);
@@ -184,6 +184,7 @@ void neat_generation_run(neat* nes, genome** gg){
                     if(nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold)
                     if(r2()<0.5)
                     nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
+                    else nes->s[nes->i].rapresentative_genome->specie_rip = 0;
                 }
                 
                 else if(nes->temp_gg1[0]->fitness > nes->s[nes->i].rapresentative_genome->fitness){
