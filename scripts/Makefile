@@ -24,7 +24,7 @@ PROGTESTS = $(patsubst %.c,%,$(SRCSTEST))
 CC:= gcc
 
 CFLAGS:= -O3 -mavx2 -g -pg
-LDLIBS:= -lm -lpthread -lOpenCL
+LDLIBS:= -lm -lpthread
 LABLIB:= -lllab
 
 all: $(PROGS)
