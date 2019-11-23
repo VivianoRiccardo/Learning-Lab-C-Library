@@ -39,8 +39,9 @@ neat* init(int max_buffer, int input, int output){
     
     for(i = 1; i < INITIAL_POPULATION; i++){
         gg[i] = copy_genome(gg[0]);
-        add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
-        
+        for(j = 0; j < input*output; j++){
+            add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+        }
     }
     
     /*initialize first specie with a single rapresentative genome (the empty genome)*/
@@ -185,7 +186,7 @@ void neat_generation_run(neat* nes, genome** gg){
                     if(r2()<0.5)
                     nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
                     else nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold-1;
-					}
+                    }
                 }
                 
                 else if(nes->temp_gg1[0]->fitness > nes->s[nes->i].rapresentative_genome->fitness){
