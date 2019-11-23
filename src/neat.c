@@ -97,21 +97,22 @@ void neat_generation_run(neat* nes, genome** gg){
         
     }
     
-    // looking for same best fitness according to the previous generation
-    if(nes->n <= nes->last_fitness && nes->n_species >= 10)
+    // looking for same best fitness according to the previous generations
+    if(nes->n <= nes->last_fitness)
         nes->fitness_counter++;
     else{
         nes->fitness_counter = 0;
         nes->new_max_pop = nes->max_population;
     }
     
-    // If there is always the same fitness as best fitness in the population for about same_fitness_limit times then we take the 2 best species and eliminate the others
+    // If there is always the same fitness as best fitness in the population for about same_fitness_limit times then we increase the population size
+    // only if the population saturation has been reached
     if(nes->fitness_counter >= nes->same_fitness_limit){
         nes->fitness_counter = 0;
         if(nes->actual_genomes >= nes->new_max_pop)
             nes->new_max_pop*=2;
     }
-    
+    if(nes->n > nes->last_fitness)
     nes->last_fitness = nes->n;
     
     free(nes->g);
@@ -173,12 +174,13 @@ void neat_generation_run(neat* nes, genome** gg){
             nes->b = get_mean_specie_fitness(nes->s,nes->i);
             nes->b/=nes->a;
             nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
-            /*if a specie didn't improve its for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
+            /*if a specie didn't improve its fitness for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
             if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species || nes->n_species < 10){
-                /*b >= 1 means the mean fintess of this specie is above the mean fitness of the population
+                /*nes->b >= 1 means the mean fintess of this specie is above the mean fitness of the population
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
                 if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness) || nes->b < 1){
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
+                    // If there are few species and this specie is going to die, werandomly reset the specie rip param.
                     if(nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold)
                     if(r2()<0.5)
                     nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;

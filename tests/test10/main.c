@@ -9,7 +9,7 @@ void compute_fitnesses(genome** gg,int actual_genomes,int global_inn_numb_nodes,
     float inputs[2] = {0,0};
     float* output;
     for(i = 0; i < actual_genomes; i++){
-		gg[i]->fitness = 0;
+        gg[i]->fitness = 0;
         if(gg[i]->fitness == 0){
             inputs[0] = 0;
             inputs[1] = 0;
@@ -41,6 +41,8 @@ int main(){
     
     srand(time(NULL));
     neat* nes = init(100000,INPUT,OUTPUT);
+    nes->max_population = 200;
+    nes->new_max_pop = 200;
     /* START THE GENERATION ITERATIONS */
     for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){ 
        /* feedforward of the genomes and computing fitness*/
