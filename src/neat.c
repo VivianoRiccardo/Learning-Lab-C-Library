@@ -39,9 +39,8 @@ neat* init(int max_buffer, int input, int output){
     
     for(i = 1; i < INITIAL_POPULATION; i++){
         gg[i] = copy_genome(gg[0]);
-        for(j = 0; j < input*output; j++){
-            add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
-        }
+        add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+        
     }
     
     /*initialize first specie with a single rapresentative genome (the empty genome)*/
@@ -84,6 +83,7 @@ neat* init(int max_buffer, int input, int output){
     nes->last_fitness = -1;
     nes->fitness_counter = 0;
     nes->same_fitness_limit = SAME_FITNESS_LIMIT;
+    nes->keep_parents = 1;
     return nes;
 }
 void neat_generation_run(neat* nes, genome** gg){
@@ -182,7 +182,7 @@ void neat_generation_run(neat* nes, genome** gg){
                 if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness) || nes->b < 1){
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
                     // If there are few species and this specie is going to die, werandomly reset the specie rip param.
-                    if((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) || nes->temp_gg1[0]->fitness==nes->n){
+                    if((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold)){
                     if(r2()<0.5)
                     nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
                     else nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold-1;
@@ -280,14 +280,12 @@ void neat_generation_run(neat* nes, genome** gg){
         
     }
             
-    //these lines save for the next generations the best genomes of the surviving species too
-        //but the tests show that is better keeping disabled these lines
-
-    //for(nes->i = 0; nes->i < nes->temp_gg2_counter; nes->i++){
-        //gg[nes->actual_genomes] = copy_genome(nes->temp_gg2[nes->i]);
-        //nes->actual_genomes++;
-    //}
-
+    if(nes->keep_parents){
+        for(nes->i = 0; nes->i < nes->temp_gg2_counter; nes->i++){
+            gg[nes->actual_genomes] = copy_genome(nes->temp_gg2[nes->i]);
+            nes->actual_genomes++;
+        }
+    }
 
 
 
