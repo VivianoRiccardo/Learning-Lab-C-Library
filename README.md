@@ -75,6 +75,9 @@ sh compile_tests.sh
 - Precision, Sensitivity, Specificity arrays (2/11/2019)
 - NEAT algorithm (17/11/2019)
 
+
+- HAPPY NEW YEAR FOR LLAB!
+
 # Tests
 
 Each test has been trained successfully.
