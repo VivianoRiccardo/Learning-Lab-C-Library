@@ -74,8 +74,6 @@ sh compile_tests.sh
 - Client-Server for distributed systems implementation (27/10/2019)
 - Precision, Sensitivity, Specificity arrays (2/11/2019)
 - NEAT algorithm (17/11/2019)
-
-
 - HAPPY NEW YEAR FOR LLAB!
 
 # Tests
