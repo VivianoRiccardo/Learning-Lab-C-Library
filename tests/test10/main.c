@@ -41,9 +41,7 @@ int main(){
     
     srand(time(NULL));
     neat* nes = init(100000,INPUT,OUTPUT);
-    nes->max_population = 200;
-    nes->new_max_pop = 200;
-    nes->limiting_species = 30;
+    nes->percentage_survivors_per_specie = 0.15;
     /* START THE GENERATION ITERATIONS */
     for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){ 
        /* feedforward of the genomes and computing fitness*/
