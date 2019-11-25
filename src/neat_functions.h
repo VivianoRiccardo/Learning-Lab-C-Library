@@ -71,11 +71,12 @@ species* create_species(genome** g, int numb_genomes, int global_inn_numb_connec
 void free_species(species* s, int total_species, int global_inn_numb_connections);
 species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s);
 void free_species_except_for_rapresentatives(species* s, int total_species, int global_inn_numb_connections);
+int get_oldest_age(species* s, int total_species);
 
 // Functions defined in fitness.c
 
-float get_mean_fitness(species* s, int n_species);
-float get_mean_specie_fitness(species* s, int i);
+float get_mean_fitness(species* s, int n_species, int oldest_age, float age_significance);
+float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_significance);
 genome** sort_genomes_by_fitness(genome** g, int size);
 
 // Functions defined in neat.c

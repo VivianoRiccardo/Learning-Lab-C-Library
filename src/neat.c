@@ -70,6 +70,7 @@ neat* init(int max_buffer, int input, int output){
     nes->percentage_survivors_per_specie = PERCENTAGE_SURVIVORS_PER_SPECIE;
     nes->connection_mutation_rate = CONNECTION_MUTATION_RATE;
     nes->new_connection_assignment_rate = NEW_CONNECTION_ASSIGNMENT_RATE;
+    nes->old_conn_rate = NEW_CONNECTION_ASSIGNMENT_RATE;
     nes->add_connection_big_specie_rate = ADD_CONNECTION_BIG_SPECIE_RATE;
     nes->add_connection_small_specie_rate = ADD_CONNECTION_SMALL_SPECIE_RATE;
     nes->add_node_specie_rate = ADD_NODE_SPECIE_RATE;
@@ -83,10 +84,13 @@ neat* init(int max_buffer, int input, int output){
     nes->last_fitness = -1;
     nes->fitness_counter = 0;
     nes->same_fitness_limit = SAME_FITNESS_LIMIT;
+    nes->keep_parents = 0;
+    nes->age_significance = AGE_SIGNIFICANCE;
     return nes;
 }
 void neat_generation_run(neat* nes, genome** gg){
-
+    
+    
     //save best genome
     nes->n = -1;
     for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
@@ -102,15 +106,15 @@ void neat_generation_run(neat* nes, genome** gg){
         nes->fitness_counter++;
     else{
         nes->fitness_counter = 0;
-        nes->new_max_pop = nes->max_population;
+        nes->new_connection_assignment_rate = nes->old_conn_rate;
     }
     
     // If there is always the same fitness as best fitness in the population for about same_fitness_limit times then we increase the population size
     // only if the population saturation has been reached
     if(nes->fitness_counter >= nes->same_fitness_limit){
         nes->fitness_counter = 0;
-        if(nes->actual_genomes >= nes->new_max_pop)
-            nes->new_max_pop*=2;
+        if(nes->actual_genomes >= nes->new_max_pop && nes->new_connection_assignment_rate < 0.8)
+            nes->new_connection_assignment_rate+=0.03;
     }
     if(nes->n > nes->last_fitness)
     nes->last_fitness = nes->n;
@@ -140,7 +144,7 @@ void neat_generation_run(neat* nes, genome** gg){
     
     /*speciation*/
     nes->s = put_genome_in_species(gg,nes->actual_genomes,nes->global_inn_numb_connections,nes->species_threshold,&nes->total_species,&nes->s);
-
+    int oldest_age = get_oldest_age(nes->s,nes->total_species);
 
     /* we copied the genomes in species, now deallocate the genomes in gg */
     for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
@@ -163,7 +167,7 @@ void neat_generation_run(neat* nes, genome** gg){
     nes->sum/=(float)nes->z;
     nes->n_species = nes->z;
     // compute the man fitness
-    nes->a = get_mean_fitness(nes->s,nes->total_species);
+    nes->a = get_mean_fitness(nes->s,nes->total_species,oldest_age,nes->age_significance);
     
     
     nes->actual_genomes = 0;nes->temp_gg2_counter = 0; nes->temp_gg3_counter = 0;
@@ -171,7 +175,7 @@ void neat_generation_run(neat* nes, genome** gg){
     for(nes->i = 0; nes->i < nes->total_species; nes->i++){
         /*compute mean fitnesses of species*/
         if(nes->s[nes->i].numb_all_other_genomes > 0){
-            nes->b = get_mean_specie_fitness(nes->s,nes->i);
+            nes->b = get_mean_specie_fitness(nes->s,nes->i,oldest_age,nes->age_significance);
             nes->b/=nes->a;
             nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
             /*if a specie didn't improve its fitness for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
@@ -180,14 +184,15 @@ void neat_generation_run(neat* nes, genome** gg){
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
                 if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness)){
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
-                    if((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) && (nes->temp_gg1[0]->fitness == nes->n)){
-						nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
-						if(r2() < 0.2)nes->s[nes->i].rapresentative_genome->specie_rip--;
-					}
+                    if(((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) && (nes->temp_gg1[0]->fitness == nes->n)) || nes->b < 1){
+                        nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
+                        if(r2() < 0.2)nes->s[nes->i].rapresentative_genome->specie_rip--;
+                    }
                 }
                 
                 else if(nes->temp_gg1[0]->fitness > nes->s[nes->i].rapresentative_genome->fitness){
                     nes->s[nes->i].rapresentative_genome->fitness = nes->temp_gg1[0]->fitness; 
+                    nes->s[nes->i].age = 1; 
                     nes->s[nes->i].rapresentative_genome->specie_rip=0;
                 }
                 else
@@ -197,7 +202,7 @@ void neat_generation_run(neat* nes, genome** gg){
                 nes->temp_gg3[nes->temp_gg3_counter] = copy_genome(nes->s[nes->i].rapresentative_genome);    
                 /*in temp_gg2 we save the best genome of this specie if the specie is above the mean fitness*/
                 if(nes->b >= 1){
-                    if(nes->s[nes->i].numb_all_other_genomes>1){
+                    if(nes->s[nes->i].numb_all_other_genomes>(float)1){
                         nes->temp_gg2[nes->temp_gg2_counter] = copy_genome(nes->temp_gg1[0]);
                         nes->temp_gg2_counter++;
                         nes->temp_gg2[nes->temp_gg2_counter] = copy_genome(nes->temp_gg1[1]);
@@ -209,7 +214,7 @@ void neat_generation_run(neat* nes, genome** gg){
                 double bb = round_up(nes->b*3.67);
                 for(nes->z = 0; nes->z < (nes->children*(bb)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie)){
                     for(nes->w = 0; nes->w < nes->s[nes->i].numb_all_other_genomes; nes->w++){
-                        if(nes->w >= round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie)){
+                        if(nes->w >= round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie) || nes->z+nes->w>=nes->children*(bb)){
                             break;
                         }
                         gg[nes->actual_genomes] = copy_genome(nes->temp_gg1[nes->w]);
@@ -279,10 +284,11 @@ void neat_generation_run(neat* nes, genome** gg){
             
     //these lines save for the next generations the best genomes of the surviving species too
         //but the tests show that is better keeping disabled these lines
-    
-    for(nes->i = 0; nes->i < nes->temp_gg2_counter; nes->i++){
-        gg[nes->actual_genomes] = copy_genome(nes->temp_gg2[nes->i]);
-        nes->actual_genomes++;
+    if(nes->keep_parents){
+        for(nes->i = 0; nes->i < nes->temp_gg2_counter; nes->i++){
+            gg[nes->actual_genomes] = copy_genome(nes->temp_gg2[nes->i]);
+            nes->actual_genomes++;
+        }
     }
 
 

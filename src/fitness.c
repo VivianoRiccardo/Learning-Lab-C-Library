@@ -25,32 +25,29 @@ SOFTWARE.
 
 #include "llab.h"
 
-float get_mean_fitness(species* s, int n_species){
+float get_mean_fitness(species* s, int n_species, int oldest_age, float age_significance){
     int i,j;
-    float sum = 0,d = 0;
+    double sum = 0,d = n_species;
     for(i = 0; i < n_species; i++){
-        d+=s[i].numb_all_other_genomes;
-        for(j = 0; j < s[i].numb_all_other_genomes; j++){
-            sum+=s[i].all_other_genomes[j]->fitness;
-        }
+        sum+=get_mean_specie_fitness(s,i,oldest_age,age_significance);
     }
     
     if(!d)
         return 0;
         
-    return sum/d;
+    return (float)(sum/d);
 }
 
-float get_mean_specie_fitness(species* s, int i){
+float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_significance){
     int j;
-    float sum = 0,d = 0;
+    double sum = 0,d = 0;
     d = s[i].numb_all_other_genomes;
     if(!d)
         return 0;
     for(j = 0; j < s[i].numb_all_other_genomes; j++){
         sum += s[i].all_other_genomes[j]->fitness;
     }
-    return sum/d;
+    return (float)((sum/d)*(1+(oldest_age-s[i].age)*(oldest_age-s[i].age)*age_significance));
 }
 
 genome** sort_genomes_by_fitness(genome** g, int size){
@@ -59,9 +56,9 @@ genome** sort_genomes_by_fitness(genome** g, int size){
     genome* temp1;
     genome* temp2;
 
-	
+    
     for(i = 0; i < size; i++){
-		flag = 0;
+        flag = 0;
         for(k = 0; k < j; k++){
             if(g[i]->fitness > gg[k]->fitness){
                 temp1 = gg[k];
@@ -81,7 +78,7 @@ genome** sort_genomes_by_fitness(genome** g, int size){
         if(!j)
             gg[0] = g[i];
         else if(!flag)
-			gg[j] = g[i];
+            gg[j] = g[i];
         j++;
     }
     

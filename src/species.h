@@ -31,6 +31,7 @@ typedef struct species{
     genome* rapresentative_genome;
     genome** all_other_genomes;
     int numb_all_other_genomes;
+    int age;
 }species;
     
 

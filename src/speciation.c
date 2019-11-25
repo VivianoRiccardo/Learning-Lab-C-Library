@@ -159,6 +159,7 @@ species* create_species(genome** g, int numb_genomes, int global_inn_numb_connec
             s = (species*)malloc(sizeof(species));
             s[count_s].rapresentative_genome = copy_genome(g[i]);
             s[count_s].numb_all_other_genomes = 0;
+            s[count_s].age = 1;
             s[count_s].all_other_genomes = NULL;
             count_s++;
         }
@@ -176,6 +177,7 @@ species* create_species(genome** g, int numb_genomes, int global_inn_numb_connec
                 s = (species*)realloc(s,sizeof(species)*(count_s+1));
                 s[count_s].rapresentative_genome = copy_genome(g[i]);
                 s[count_s].numb_all_other_genomes = 0;
+                s[count_s].age = 1;
                 s[count_s].all_other_genomes = NULL;
 
                 count_s++;
@@ -228,6 +230,7 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
             (*s) = (species*)malloc(sizeof(species));
             (*s)[count_s].rapresentative_genome = copy_genome(g[i]);
             (*s)[count_s].numb_all_other_genomes = 1;
+            (*s)[count_s].age = 1;
             (*s)[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
             (*s)[count_s].all_other_genomes[0] = copy_genome(g[i]);
             count_s++;
@@ -254,6 +257,7 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
                     }
                     
                     (*s)[j].numb_all_other_genomes++;
+                    (*s)[j].age++;
                     
                     break;
                 }
@@ -263,6 +267,7 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
                 (*s) = (species*)realloc((*s),sizeof(species)*(count_s+1));
                 (*s)[count_s].rapresentative_genome = copy_genome(g[i]);
                 (*s)[count_s].numb_all_other_genomes = 1;
+                (*s)[count_s].age = 1;
                 (*s)[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
                 (*s)[count_s].all_other_genomes[0] = copy_genome(g[i]);
                 count_s++;
@@ -275,5 +280,19 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
     return (*s);
     
     
+}
+
+
+int get_oldest_age(species* s, int total_species){
+	int i;
+	int max = -1;
+	for(i = 0; i < total_species; i++){
+		if(s[i].numb_all_other_genomes > 0)
+			if(s[i].age > max)
+			    max = s[i].age;
+		
+	}
+	
+	return max;
 }
 

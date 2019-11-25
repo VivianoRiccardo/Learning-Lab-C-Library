@@ -41,12 +41,16 @@ int main(){
     
     srand(time(NULL));
     neat* nes = init(100000,INPUT,OUTPUT);
-    nes->percentage_survivors_per_specie = 0.15;
+    nes->max_population = 200;
     /* START THE GENERATION ITERATIONS */
     for(nes->k = 0; nes->k < GENERATIONS+1; nes->k++){ 
        /* feedforward of the genomes and computing fitness*/
        compute_fitnesses(nes->gg,nes->actual_genomes,nes->global_inn_numb_nodes,nes->global_inn_numb_connections); //just create this function and compute your fitnesses as you want
        neat_generation_run(nes,nes->gg);
+       if(nes->fitness_counter >= 7)
+	   nes->new_connection_assignment_rate+=0.1;
+	   else
+	   nes->new_connection_assignment_rate = NEW_CONNECTION_ASSIGNMENT_RATE;
        printf(">>>>>>>>>> Generation: %d\n",nes->k);
        printf(">>>>>>>>>> Number genomes: %d\n",nes->actual_genomes);
        printf("best fitness for this generation: %f\n",nes->n);
