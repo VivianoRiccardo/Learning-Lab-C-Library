@@ -283,9 +283,6 @@ void ddpg_train(ddpg* d){
         reset_model(d->bm2[i]);
         reset_model(d->bm3[i]);
         reset_model(d->bm4[i]);
-        reset_model(d->tm2[i]);
-        reset_model(d->tm3[i]);
-        reset_model(d->tm4[i]);
         paste_model(d->m2,d->bm2[i]);
         paste_model(d->m3,d->bm3[i]);
         paste_model(d->m4,d->bm4[i]);
