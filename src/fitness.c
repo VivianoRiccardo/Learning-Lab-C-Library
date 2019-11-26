@@ -47,7 +47,7 @@ float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_signif
     for(j = 0; j < s[i].numb_all_other_genomes; j++){
         sum += s[i].all_other_genomes[j]->fitness;
     }
-    return (float)((sum/d)*(1+(oldest_age-s[i].age)*(oldest_age-s[i].age)*age_significance));
+    return (float)((sum/d)*(1+(oldest_age-s[i].age)*age_significance));
 }
 
 genome** sort_genomes_by_fitness(genome** g, int size){

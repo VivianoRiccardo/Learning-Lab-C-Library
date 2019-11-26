@@ -196,6 +196,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     m->error_alpha = NULL;
     m->beta1_adam = BETA1_ADAM;
     m->beta2_adam = BETA2_ADAM;
+    m->error_flag = NO_SET;
     
     
     for(i = 0; i < layers && sla[i][0]; i++);
@@ -2554,8 +2555,12 @@ void set_model_error(model* m, int error_flag, float threshold1, float threshold
     m->error_threshold1 = threshold1;
     m->error_threshold2 = threshold2;
     m->error_gamma = gamma;
+    if(m->error != NULL)
+    free(m->error);
     m->error = (float*)calloc(output_dimension,sizeof(float));
     if(alpha != NULL){
+        if(m->error_alpha != NULL)
+            free(m->error_alpha);
         m->error_alpha = (float*)malloc(sizeof(float)*output_dimension);
         copy_array(alpha,m->error_alpha,output_dimension);
     }

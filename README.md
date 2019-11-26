@@ -75,6 +75,7 @@ sh compile_tests.sh
 - Precision, Sensitivity, Specificity arrays (2/11/2019)
 - NEAT algorithm (17/11/2019)
 - HAPPY NEW YEAR FOR LLAB!
+- DDPG reinforcement learning algorithm added (29/11/2019)
 
 # Tests
 

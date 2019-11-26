@@ -83,6 +83,7 @@ SOFTWARE.
 #define LEAKY_RELU_THRESHOLD 0.1
 #define LSTM_RESIDUAL  1
 #define LSTM_NO_RESIDUAL 0
+#define NO_SET -1
 #define NO_LOSS 0
 #define CROSS_ENTROPY_LOSS 1
 #define FOCAL_LOSS 2
@@ -98,22 +99,22 @@ SOFTWARE.
 #define SPECIES_THERESHOLD 3
 #define INITIAL_POPULATION 100
 #define GENERATIONS 600000
-#define PERCENTAGE_SURVIVORS_PER_SPECIE 0.3
+#define PERCENTAGE_SURVIVORS_PER_SPECIE 0.3 //the number of specie survivors is decided by the fitness of the specie/mean fitness * children param, but the genomes taken to reproduce are the best <PERCENTAGE_SURVIVORS_PER_SPECIE>
 #define CONNECTION_MUTATION_RATE 0.8
 #define NEW_CONNECTION_ASSIGNMENT_RATE 0.1
 #define ADD_CONNECTION_BIG_SPECIE_RATE 0.3
 #define ADD_CONNECTION_SMALL_SPECIE_RATE 0.03
 #define ADD_NODE_SPECIE_RATE 0.05
-#define ACTIVATE_CONNECTION_RATE 0.25//there is activate_connection_rate% that a connetion remain disabled
+#define ACTIVATE_CONNECTION_RATE 0.25//there is activate_connection_rate% that a connetion remains disabled
 #define REMOVE_CONNECTION_RATE 0.01//there is remove_connection_rate% that a connection can be removed
-#define CHILDREN 1//new offsprings = children*(1+b*3) where b is round_up(mean fitness specie/mean fitness population)
+#define CHILDREN 1//new offsprings = children*(round_up(b*3.67)) where b is mean fitness specie/mean fitness population
 #define CROSSOVER_RATE 0.1 
 #define SAVING 10//each <saving> generation the best genomes is saved
 #define LIMITING_SPECIES 15 // if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species generations, just kill it
 #define LIMITING_THRESHOLD 5// if a specie fitness is under the avarage of the population or the fitness doesn't increase for limiting_species-limiting_threshold generations, we invert the trend of the specie with adding/removing connection
-#define MAX_POPULATION 4000
+#define MAX_POPULATION 4000 // the population is cut everytime it exceeds max population param
 #define SAME_FITNESS_LIMIT 10
-#define AGE_SIGNIFICANCE 0.1
+#define AGE_SIGNIFICANCE 0.3// the age significance param affects the mean fitness of a specie according to the age of the specie itself
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
@@ -335,13 +336,43 @@ typedef struct thread_args_server {
     struct sockaddr_in* client_addr;
 } thread_args_server;
 
-
+typedef struct ddpg {
+    int batch_size,regularization1,regularization2,n_weights1,n_weights2,index,m1_input,m1_output,m2_output,m3_output;
+    int gradient_descent_flag1, gradient_descent_flag2,threads,max_frames,buff_size;
+    float lr1,lr2,momentum1,momentum2,lambda1,lambda2,epsilon_greedy,lambda,tau;
+    long long unsigned int t1, t2;
+    model* m1;
+    model* m2;
+    model* m3;
+    model* m4;
+    model** tm1;
+    model** tm2;
+    model** tm3;
+    model** tm4;
+    model** bm1;
+    model** bm2;
+    model** bm3;
+    model** bm4;
+    float** buff1;
+    float** buff2;
+    float* rewards;
+    int* actions;
+    int* terminal;
+    float** tm1_output_array;
+    float** tm2_output_array;
+    float** tm3_output_array;
+    float** tm4_output_array;
+    float** bm1_output_array;
+    float** bm2_output_array;
+    float** bm3_output_array;
+} ddpg;
 #include "batch_norm_layers.h"
 #include "bmodel.h"
 #include "client.h"
 #include "clipping_gradient.h"
 #include "convolutional.h"
 #include "convolutional_layers.h"
+#include "drl.h"
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
 #include "gan_model.h"

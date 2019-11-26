@@ -168,6 +168,7 @@ void neat_generation_run(neat* nes, genome** gg){
     nes->n_species = nes->z;
     // compute the man fitness
     nes->a = get_mean_fitness(nes->s,nes->total_species,oldest_age,nes->age_significance);
+    float a = get_mean_fitness(nes->s,nes->total_species,oldest_age,0);
     
     
     nes->actual_genomes = 0;nes->temp_gg2_counter = 0; nes->temp_gg3_counter = 0;
@@ -176,7 +177,9 @@ void neat_generation_run(neat* nes, genome** gg){
         /*compute mean fitnesses of species*/
         if(nes->s[nes->i].numb_all_other_genomes > 0){
             nes->b = get_mean_specie_fitness(nes->s,nes->i,oldest_age,nes->age_significance);
+            float b = get_mean_specie_fitness(nes->s,nes->i,oldest_age,0);
             nes->b/=nes->a;
+            b/=a;
             nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
             /*if a specie didn't improve its fitness for at least 15 generations we kill that specie except in the case where the number of speicies are few*/
             if(nes->s[nes->i].rapresentative_genome->specie_rip < nes->limiting_species || nes->n_species < 10){
@@ -184,7 +187,7 @@ void neat_generation_run(neat* nes, genome** gg){
                  * in that case or in the case in which the best fitness of the specie doesn't improve we incremant the rip counter*/
                 if((nes->temp_gg1[0]->fitness <= nes->s[nes->i].rapresentative_genome->fitness)){
                     nes->s[nes->i].rapresentative_genome->specie_rip++;
-                    if(((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) && (nes->temp_gg1[0]->fitness == nes->n)) || nes->b < 1){
+                    if(((nes->n_species < 10 && nes->s[nes->i].rapresentative_genome->specie_rip > nes->limiting_species-nes->limiting_threshold) && (nes->temp_gg1[0]->fitness == nes->n)) || b < 1){
                         nes->s[nes->i].rapresentative_genome->specie_rip = nes->limiting_species-nes->limiting_threshold;
                         if(r2() < 0.2)nes->s[nes->i].rapresentative_genome->specie_rip--;
                     }
@@ -201,7 +204,7 @@ void neat_generation_run(neat* nes, genome** gg){
                     
                 nes->temp_gg3[nes->temp_gg3_counter] = copy_genome(nes->s[nes->i].rapresentative_genome);    
                 /*in temp_gg2 we save the best genome of this specie if the specie is above the mean fitness*/
-                if(nes->b >= 1){
+                if(b >= 1){
                     if(nes->s[nes->i].numb_all_other_genomes>(float)1){
                         nes->temp_gg2[nes->temp_gg2_counter] = copy_genome(nes->temp_gg1[0]);
                         nes->temp_gg2_counter++;
