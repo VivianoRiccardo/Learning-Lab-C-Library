@@ -40,7 +40,10 @@ ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int 
         exit(1);
     }
     
-    if(m1->
+    if(m1->error_flag == NO_SET || m2->error_flag == NO_SET || m3->error_flag == NO_SET || m4->error_flag == NO_SET){
+        fprintf(stderr,"Error: pls set the errors for m1,m2,m3,m4\n");
+        exit(1);
+    }
     
     int i;
     
