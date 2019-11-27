@@ -1761,6 +1761,7 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
     temp->rows1 = tensor_i;
     temp->cols1 = tensor_j;
     temp->post_activation = input;
+    temp->layer = -1;
     
     /* apply the feed forward to the model*/
     for(i = 0; i < m->layers; i++){

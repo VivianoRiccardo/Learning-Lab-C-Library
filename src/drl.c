@@ -121,6 +121,7 @@ ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int 
     d->t1 = 1;
     d->t2 = 1;
     d->max_frames = max_frames;
+    d->threads = threads;
     
     d->tm1 = (model**)malloc(sizeof(model*)*batch_size);
     d->tm2 = (model**)malloc(sizeof(model*)*batch_size);
@@ -233,7 +234,7 @@ void ddpg_train(ddpg* d){
         copy_array(d->tm3_output_array[i],&inputx3[i][d->m2_output],d->m3_output);
     }
     
-    model_tensor_input_ff_multicore(d->tm4,1,1,d->m2_output*d->m3_output,inputx3,d->batch_size,d->threads);
+    model_tensor_input_ff_multicore(d->tm4,1,1,d->m2_output+d->m3_output,inputx3,d->batch_size,d->threads);
     
     float** output = (float**)malloc(sizeof(float*)*d->batch_size);
     for(i = 0; i < d->batch_size; i++){
@@ -262,7 +263,7 @@ void ddpg_train(ddpg* d){
     float** ret_err = (float**)malloc(sizeof(float*)*d->batch_size);
     float** ret_err2 = (float**)malloc(sizeof(float*)*d->batch_size);
     
-    ff_error_bp_model_multicore(d->bm4,d->m2_output*d->m3_output,1,1,inputx3,d->batch_size,d->threads,output,ret_err);
+    ff_error_bp_model_multicore(d->bm4,d->m2_output+d->m3_output,1,1,inputx3,d->batch_size,d->threads,output,ret_err);
     model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,inputx4,d->batch_size,d->threads,ret_err,d->m3_output,ret_err2);
     model_tensor_input_bp_multicore(d->bm2,1,1,d->m1_input,d->buff1,d->batch_size,d->threads,ret_err,d->m2_output,ret_err2);
     
@@ -295,12 +296,12 @@ void ddpg_train(ddpg* d){
         copy_array(d->bm2_output_array[i],inputx3[i],d->m2_output);
         copy_array(d->bm3_output_array[i],&inputx3[i][d->m2_output],d->m3_output);
     }
-    model_tensor_input_ff_multicore(d->bm4,1,1,d->m2_output*d->m3_output,inputx3,d->batch_size,d->threads);
+    model_tensor_input_ff_multicore(d->bm4,1,1,d->m2_output+d->m3_output,inputx3,d->batch_size,d->threads);
     for(i = 0; i < d->batch_size; i++){
         output[i][0] = -1;
     }
     
-    model_tensor_input_bp_multicore(d->bm4,1,1,d->m2_output*d->m3_output,inputx3,d->batch_size,d->threads,output,1,ret_err);
+    model_tensor_input_bp_multicore(d->bm4,1,1,d->m2_output+d->m3_output,inputx3,d->batch_size,d->threads,output,1,ret_err);
     model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,d->bm1_output_array,d->batch_size,d->threads,ret_err,d->m3_output,ret_err2);
     model_tensor_input_bp_multicore(d->bm1,1,1,d->m1_input,d->buff1,d->batch_size,d->threads,ret_err2,d->m1_output,ret_err);
     
