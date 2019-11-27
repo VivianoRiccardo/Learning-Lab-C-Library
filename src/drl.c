@@ -262,9 +262,17 @@ void ddpg_train(ddpg* d){
     
     float** ret_err = (float**)malloc(sizeof(float*)*d->batch_size);
     float** ret_err2 = (float**)malloc(sizeof(float*)*d->batch_size);
+    float** ret_err3 = (float**)malloc(sizeof(float*)*d->batch_size);
+    
     
     ff_error_bp_model_multicore(d->bm4,d->m2_output+d->m3_output,1,1,inputx3,d->batch_size,d->threads,output,ret_err);
-    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,inputx4,d->batch_size,d->threads,ret_err,d->m3_output,ret_err2);
+    
+    for(i = 0; i < d->batch_size; i++){
+        ret_err3[i] = (float*)malloc(sizeof(float)*m3_output);
+        copy_array(&ret_err[i][m2_output],ret_err3[i],m3_output);
+    }
+    
+    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,inputx4,d->batch_size,d->threads,ret_err3,d->m3_output,ret_err2);
     model_tensor_input_bp_multicore(d->bm2,1,1,d->m1_input,d->buff1,d->batch_size,d->threads,ret_err,d->m2_output,ret_err2);
     
     sum_models_partial_derivatives(d->m2,d->bm2,d->batch_size);
@@ -302,7 +310,10 @@ void ddpg_train(ddpg* d){
     }
     
     model_tensor_input_bp_multicore(d->bm4,1,1,d->m2_output+d->m3_output,inputx3,d->batch_size,d->threads,output,1,ret_err);
-    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,d->bm1_output_array,d->batch_size,d->threads,ret_err,d->m3_output,ret_err2);
+    for(i = 0; i < d->batch_size; i++){
+        copy_array(&ret_err[i][m2_output],ret_err3[i],m3_output);
+    }
+    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,d->bm1_output_array,d->batch_size,d->threads,ret_err3,d->m3_output,ret_err2);
     model_tensor_input_bp_multicore(d->bm1,1,1,d->m1_input,d->buff1,d->batch_size,d->threads,ret_err2,d->m1_output,ret_err);
     
     sum_models_partial_derivatives(d->m1,d->bm1,d->batch_size);
@@ -324,6 +335,7 @@ void ddpg_train(ddpg* d){
     free_matrix(inputx3,d->batch_size);
     free_matrix(inputx4,d->batch_size);
     free_matrix(output,d->batch_size);
+    free_matric(ret_err3,d->batch_size);
     free(ret_err);
     free(ret_err2);
 }
