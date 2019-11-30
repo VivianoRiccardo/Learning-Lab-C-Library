@@ -159,12 +159,13 @@ ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int 
     d->buff1 = (float**)malloc(sizeof(float*)*max_frames);
     d->buff2 = (float**)malloc(sizeof(float*)*max_frames);
     d->rewards = (float*)malloc(sizeof(float)*max_frames);
-    d->actions = (int*)malloc(sizeof(int)*max_frames);
+    d->actions = (float**)malloc(sizeof(float*)*max_frames);
     d->terminal = (int*)malloc(sizeof(int)*max_frames);
     
     for(i = 0; i < max_frames; i++){
         d->buff1[i] = (float*)malloc(sizeof(float)*buff_size);
         d->buff2[i] = (float*)malloc(sizeof(float)*buff_size);
+        d->actions[i] = (float*)malloc(sizeof(float)*m1_output);
     }
     
     d->buff_size = buff_size;
@@ -207,6 +208,7 @@ void free_ddpg(ddpg* d){
     for(i = 0; i < d->max_frames; i++){
         free(d->buff1[i]);
         free(d->buff2[i]);
+        free(d->actions[i]);
     }
     free(d->buff1);
     free(d->buff2);
@@ -246,14 +248,9 @@ void ddpg_train(ddpg* d){
         output[i][0] = d->rewards[i]+d->lambda*(1-d->terminal[i])*d->tm4_output_array[i][0];
     }
     
-    float** inputx4 = (float**)malloc(sizeof(float*)*d->batch_size);
-    for(i = 0; i < d->batch_size; i++){
-        inputx4[i] = (float*)calloc(d->m1_output,sizeof(float));
-        inputx4[i][d->actions[i]] = 1;
-    }
     
     model_tensor_input_ff_multicore(d->bm2,1,1,d->m1_input,d->buff1,d->batch_size,d->threads);
-    model_tensor_input_ff_multicore(d->bm3,1,1,d->m1_output,inputx4,d->batch_size,d->threads);
+    model_tensor_input_ff_multicore(d->bm3,1,1,d->m1_output,d->actions,d->batch_size,d->threads);
     for(i = 0; i < d->batch_size; i++){
         copy_array(d->bm2_output_array[i],inputx3[i],d->m2_output);
         copy_array(d->bm3_output_array[i],&inputx3[i][d->m2_output],d->m3_output);
@@ -272,7 +269,7 @@ void ddpg_train(ddpg* d){
         copy_array(&ret_err[i][d->m2_output],ret_err3[i],d->m3_output);
     }
     
-    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,inputx4,d->batch_size,d->threads,ret_err3,d->m3_output,ret_err2);
+    model_tensor_input_bp_multicore(d->bm3,1,1,d->m1_output,d->actions,d->batch_size,d->threads,ret_err3,d->m3_output,ret_err2);
     model_tensor_input_bp_multicore(d->bm2,1,1,d->m1_input,d->buff1,d->batch_size,d->threads,ret_err,d->m2_output,ret_err2);
     
     sum_models_partial_derivatives(d->m2,d->bm2,d->batch_size);
@@ -333,7 +330,6 @@ void ddpg_train(ddpg* d){
     }
     
     free_matrix(inputx3,d->batch_size);
-    free_matrix(inputx4,d->batch_size);
     free_matrix(output,d->batch_size);
     free_matrix(ret_err3,d->batch_size);
     free(ret_err);

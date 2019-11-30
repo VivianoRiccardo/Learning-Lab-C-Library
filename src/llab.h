@@ -356,7 +356,7 @@ typedef struct ddpg {
     float** buff1;
     float** buff2;
     float* rewards;
-    int* actions;
+    float** actions;
     int* terminal;
     float** tm1_output_array;
     float** tm2_output_array;
@@ -366,6 +366,18 @@ typedef struct ddpg {
     float** bm2_output_array;
     float** bm3_output_array;
 } ddpg;
+
+typedef struct oustrategy {
+	int action_dim;
+    float mu,theta,sigma,max_sigma,min_sigma;
+    float* action_max;
+    float* action_min;
+    long long unsigned int decay_period;
+    float* state;
+    float* action_space;
+} oustrategy;
+
+
 #include "batch_norm_layers.h"
 #include "bmodel.h"
 #include "client.h"

@@ -76,6 +76,7 @@ sh compile_tests.sh
 - NEAT algorithm (17/11/2019)
 - HAPPY NEW YEAR FOR LLAB!
 - DDPG reinforcement learning algorithm added (29/11/2019)
+- Ornstein-Ulhenbeck Process (30/11/2019)
 
 # Tests
 
