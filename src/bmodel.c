@@ -211,7 +211,52 @@ bmodel* batch_network(int layers, int n_rl, int n_cl, int n_fcl, int n_bnl, rl**
     m->cls = cls;
     m->fcls = fcls;
     m->bns = bnls;
-        
+    m->error = NULL;
+    m->error_alpha = NULL;
+    m->beta1_adam = BETA1_ADAM;
+    m->beta2_adam = BETA2_ADAM;
+    m->error_flag = NO_SET;
+    
+    
+    for(i = 0; i < layers && sla[i][0]; i++);
+    
+    if(i == layers)
+        i--;
+    
+    if(sla[i][0] == FCLS){
+        if(m->fcls[m->n_fcl-1]->dropout_flag)
+            m->output_layer = m->fcls[m->n_fcl-1]->dropout_temp;
+        else if(m->fcls[m->n_fcl-1]->activation_flag)
+            m->output_layer = m->fcls[m->n_fcl-1]->post_activation;
+        else
+            m->output_layer = m->fcls[m->n_fcl-1]->pre_activation;
+        m->output_layer_bn_training_mode = NULL;
+    }
+    
+    else if(sla[i][0] == CLS){
+        if(m->cls[m->n_cl-1]->pooling_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_pooling;
+        else if(m->cls[m->n_cl-1]->normalization_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_normalization;
+        else if(m->cls[m->n_cl-1]->activation_flag)
+            m->output_layer = m->cls[m->n_cl-1]->post_activation;
+        else
+            m->output_layer = m->cls[m->n_cl-1]->pre_activation;
+        m->output_layer_bn_training_mode = NULL;
+    }
+    
+    else if(sla[i][0] == BNS)
+        m->output_layer_bn_training_mode = m->bns[m->n_bn-1]->outputs;
+    
+    
+    else{
+        if(m->rls[m->n_rl-1]->cl_output->activation_flag)
+            m->output_layer = m->rls[m->n_rl-1]->cl_output->post_activation;
+        else
+            m->output_layer = m->rls[m->n_rl-1]->cl_output->pre_activation;
+        m->output_layer_bn_training_mode = NULL;
+    }
+    
     return m;
 }
 
@@ -299,7 +344,7 @@ bmodel* copy_bmodel(bmodel* m){
 
 
 /* This function copies a bmodel using the paste function for the layers
- * see layers.c files
+ * see layers.c files (are copied biases and weights)
  * 
  * Input:
  *         
@@ -327,7 +372,7 @@ void paste_bmodel(bmodel* m,bmodel* copy){
     return;
 }
 
-/* This function copies a bmodel with the rule: teta_i:= teta_j*tau +(1-tau)*teta_i
+/* This function copies a bmodel with the rule: teta_i:= teta_j*tau +(1-tau)*teta_i for biases and weights
  * 
  * Input:
  *         
@@ -358,6 +403,10 @@ void slow_paste_bmodel(bmodel* m, bmodel* copy, float tau){
 }
 /* This function resets a bmodel using the copy bmodel function
  * returns a bmodel equal to the one as input but with all resetted except for weights and biases
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the bmodel m that must be resetted
  * */
 bmodel* reset_bmodel(bmodel* m){
     if(m == NULL)
@@ -380,7 +429,7 @@ bmodel* reset_bmodel(bmodel* m){
 }
 
 
-/* this function compute the space allocated by the arrays of m
+/* this function returns the space allocated by the arrays of m
  * 
  * Input:
  * 
@@ -622,12 +671,20 @@ int count_bmodel_weights(bmodel* m){
     }
     
     for(i = 0; i < m->n_cl; i++){
-        sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+        if(m->cls[i]->convolutional_flag == CONVOLUTION){
+            sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols;
+            if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
+                sum+=m->cls[i]->n_kernels/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
+            }
+        }
     }
     
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols;
+            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                sum+=m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels*m->rls[i]->cls[j]->group_norm[0]->vector_dim;
+            }
         }
     }
     
@@ -639,7 +696,7 @@ int count_bmodel_weights(bmodel* m){
 }
 
 
-/* This function can update the bmodel of the network using the adam algorithm or the nesterov momentum
+/* This function can update the bmodel of the network using the adam algorithm, radam algorithm or the nesterov momentum
  * 
  * Input:
  * 
@@ -653,15 +710,19 @@ int count_bmodel_weights(bmodel* m){
  *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
  *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
  *                @ float lambda:= a float value for l2 regularization
+ *                 @ unsigned long long int *t:= the t param used by the radam algorithm
  * 
  * */
-void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda){
+void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
     if(m == NULL)
         return;
     
     lambda*=mini_batch_size;
     
     if(regularization == L2_REGULARIZATION){
+        // l2 regularization with batch normalization doesn't make sense! i can't add it to batch norm layers, so in the case
+        // i presume that you are using this model just to keep all togheter and you want to merge this bmodel to another one
+        // later, i hope that you didn't used batch norm layers in this case, otherwise is a mess
         add_l2_residual_layer_bmodel(m,total_number_weights,lambda);
         add_l2_convolutional_layer_bmodel(m,total_number_weights,lambda);
         add_l2_fully_connected_layer_bmodel(m,total_number_weights,lambda);
@@ -680,15 +741,24 @@ void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int
         update_convolutional_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
         update_fully_connected_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
         update_batch_normalized_layer_adam_bmodel(m,lr,mini_batch_size, (*b1), (*b2));
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
-    }    
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
+    } 
+    
+    else if(gradient_descent_flag == RADAM){
+        update_residual_layer_radam_bmodel(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_convolutional_layer_radam_bmodel(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_fully_connected_layer_radam_bmodel(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_batch_normalized_layer_radam_bmodel(m,lr,mini_batch_size,(*b1),(*b2),*t);
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
+        (*t)++;
+    } 
     
 
 }
 
-
-/* This function sum the partial derivatives in bmodel m1 and m2 in m3
+/* This function sums the partial derivatives in bmodel m1 and m2 in m3
  * 
  * Input:
  *     
@@ -707,5 +777,602 @@ void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3){
     sum_residual_layers_partial_derivatives_bmodel(m,m2,m3);
 }
 
+/* This function computes the feed-forward for a bmodel m. each layer at the index l makes the feed-forward
+ * for the first layer at the index l-1. if the input is a 1d array then you should split its dimension
+ * in 3 dimension to turn the input in a tensor, for example:
+ * I have an input array of length 59, then i can split this in 3 dimensions: depth = 1, row = 1, cols = 59
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model with the layers
+ *             @ int tensor_depth:= the depth of the input tensor
+ *             @ int tensor_i:= the number of rows of the tensor
+ *             @ int tensor_j:= the number of columns of the tensor
+ *             @ float* input:= your input array
+ *             @ int* k1k2k3k4:= is an array of input of dimension = 4, where k1 keeps the fully connected layers that have been reached
+ *                               k2 the convolutional layers, k3 the residual layers and k4 the batch normalized layers(size : 4)
+ * 
+ * */
+void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, int* k1k2k3k4){
+    if(m == NULL)
+        return;
+    int i,j,z,w,count,count2,z2;
+    
+    /* Setting the input inside a convolutional structure*/
+    cl* temp = (cl*)malloc(sizeof(cl));
+    temp->post_activation = (float*)malloc(sizeof(float)*tensor_depth*tensor_i*tensor_j);
+    temp->normalization_flag = NO_NORMALIZATION;
+    temp->pooling_flag = NO_POOLING;
+    temp->activation_flag = SIGMOID;
+    temp->n_kernels = tensor_depth;
+    temp->rows1 = tensor_i;
+    temp->cols1 = tensor_j;
+    temp->post_activation = input;
+    temp->layer = -1;
+    
+    /* apply the feed forward to the model*/
+    for(i = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3]; i < m->layers; i++){
+        for(j = 0; j < m->layers && m->sla[i][j] != 0; j++){
+            
+                
+            if(!i){
+                if(m->sla[i][j] == FCLS){
+                    if(m->fcls[k1k2k3k4[0]]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    ff_cl_fcl(temp,m->fcls[k1k2k3k4[0]]);
+                    k1k2k3k4[0]++;
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    if(m->cls[k1k2k3k4[1]]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    ff_cl_cl(temp,m->cls[k1k2k3k4[1]]);
+                    k1k2k3k4[1]++;
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k1k2k3k4[2]; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                
+                    
+                    if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    if(k1k2k3k4[2]-count == 0)
+                        m->rls[z]->input = temp->post_activation;
+                    
+                    ff_cl_cl(temp,m->rls[z]->cls[k1k2k3k4[2]-count]);
+                    
+                    if(k1k2k3k4[2]-count == m->rls[z]->n_cl-1){
+                        if(m->rls[z]->cls[k1k2k3k4[2]-count]->pooling_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_pooling,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows2*m->rls[z]->cls[k1k2k3k4[2]-count]->cols2);
+                        
+                        else if(m->rls[z]->cls[k1k2k3k4[2]-count]->normalization_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        
+                        else if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        
+                        else
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == RELU)
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                    }
+                    
+                    k1k2k3k4[2]++;
+                    
+                    
+                }
+                
+                else if(m->sla[i][j] == BNS){
+                    k1k2k3k4[3]++;
+                    free(temp);
+                    return;
+                }
+            }
+            
+            else{
+                
+                if(m->sla[i][j] == FCLS){
+                    if(m->fcls[k1k2k3k4[0]]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        ff_fcl_fcl(m->fcls[k1k2k3k4[0]-1],m->fcls[k1k2k3k4[0]]);
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        ff_cl_fcl(m->cls[k1k2k3k4[1]-1],m->fcls[k1k2k3k4[0]]);
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                    
+                        
+                        ff_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1k2k3k4[0]]);
+                    }
+                    
+                    k1k2k3k4[0]++;
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    if(m->cls[k1k2k3k4[1]]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        ff_fcl_cl(m->fcls[k1k2k3k4[0]-1],m->cls[k1k2k3k4[1]]);
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        ff_cl_cl(m->cls[k1k2k3k4[1]-1],m->cls[k1k2k3k4[1]]);
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                    
+                        
+                        ff_cl_cl(m->rls[z2]->cl_output,m->cls[k1k2k3k4[1]]);
+                    }
+                    k1k2k3k4[1]++;
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k1k2k3k4[2]; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                
+                    
+                    if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        if(k1k2k3k4[2]-count == 0){
+                            if(m->fcls[k1k2k3k4[0]-1]->dropout_flag){
+                                if(m->fcls[k1k2k3k4[0]-1]->activation_flag){
+                                    dot1D(m->fcls[k1k2k3k4[0]-1]->post_activation,m->fcls[k1k2k3k4[0]-1]->dropout_mask,m->fcls[k1k2k3k4[0]-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1k2k3k4[0]-1]->dropout_temp;
+                                }
+                                else{
+                                    dot1D(m->fcls[k1k2k3k4[0]-1]->pre_activation,m->fcls[k1k2k3k4[0]-1]->dropout_mask,m->fcls[k1k2k3k4[0]-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1k2k3k4[0]-1]->dropout_temp;
+                                }
+                            }
+                            else{
+                                if(m->fcls[k1k2k3k4[0]-1]->activation_flag){
+                                    m->rls[z]->input = m->fcls[k1k2k3k4[0]-1]->post_activation;
+                                }
+                                else{
+                                    m->rls[z]->input = m->fcls[k1k2k3k4[0]-1]->pre_activation;
+                                }
+                            }
+                        }
+                    
+                        ff_fcl_cl(m->fcls[k1k2k3k4[0]-1],m->rls[z]->cls[k1k2k3k4[2]-count]);
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        if(k1k2k3k4[2]-count == 0){
+                            if(m->cls[k1k2k3k4[1]-1]->pooling_flag){
+                                m->rls[z]->input = m->cls[k1k2k3k4[1]-1]->post_pooling;
+                            }
+                            else if(m->cls[k1k2k3k4[1]-1]->normalization_flag){
+                                m->rls[z]->input = m->cls[k1k2k3k4[1]-1]->post_normalization;
+                            }
+                            
+                            else if(m->cls[k1k2k3k4[1]-1]->activation_flag){
+                                m->rls[z]->input = m->cls[k1k2k3k4[1]-1]->post_activation;
+                            }
+                            else{
+                                m->rls[z]->input = m->cls[k1k2k3k4[1]-1]->pre_activation;
+                            }
+                        }
+                        ff_cl_cl(m->cls[k1k2k3k4[1]-1],m->rls[z]->cls[k1k2k3k4[2]-count]);
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                        
+                        if(k1k2k3k4[2]-count == 0){
+                            if(m->rls[z2]->cl_output->activation_flag)
+                                m->rls[z]->input = m->rls[z2]->cl_output->post_activation;
+                            else
+                                m->rls[z]->input = m->rls[z2]->cl_output->pre_activation;
+                        }
+                        if(z2!=z){
+                            ff_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k1k2k3k4[2]-count]);
+
+                        }
+                        else{
+                            ff_cl_cl(m->rls[z2]->cls[k1k2k3k4[2]-1-count2],m->rls[z]->cls[k1k2k3k4[2]-count]);
+                        }
+                    }
+                    
+                    if(k1k2k3k4[2]-count == m->rls[z]->n_cl-1){
+                        if(m->rls[z]->cls[k1k2k3k4[2]-count]->pooling_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_pooling,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows2*m->rls[z]->cls[k1k2k3k4[2]-count]->cols2);
+                        else if(m->rls[z]->cls[k1k2k3k4[2]-count]->normalization_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        else if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        else
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k1k2k3k4[2]-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k1k2k3k4[2]-count]->n_kernels*m->rls[z]->cls[k1k2k3k4[2]-count]->rows1*m->rls[z]->cls[k1k2k3k4[2]-count]->cols1);
+                        
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == RELU)
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+
+                    }
+                    
+                    k1k2k3k4[2]++;
+                    
+                    
+                }
+                
+                else if(m->sla[i][j] == BNS){
+                    k1k2k3k4[3]++;
+                    free(temp);
+                    return;
+                }
+                
+            }
+            
+        }
+    }
+    
+    free(temp);
+}
+
+
+/* This function computes the back-propagation for a bmodel m. each first layer at the index l makes the backprop
+ * from the first layer at the index l+1. if the input is a 1d array then you should split its dimension
+ * in 3 dimension to turn the input in a tensor, for example:
+ * I have an input array of legth 59, then i can split this in 3 dimensions: depth = 1, row = 1, cols = 59
+ * 
+ * Input:
+ *             
+ *             @ bmodel* m:= the model with the layers
+ *             @ int tensor_depth:= the depth of the input tensor
+ *             @ int tensor_i:= the number of rows of the tensor
+ *             @ int tensor_j:= the number of columns of the tensor
+ *             @ float* input:= your input array
+ *                @ float* error:= the error of the last layer of the last function computed
+ *                @ int error_dimension:= the dimension of the float* error vector
+ *             @ int* k1k2k3k4:= is an array of input of dimension = 4, where k1 keeps the fully connected layers that have been reached
+ *                               k2 the convolutional layers, k3 the residual layers and k4 the batch normalized layers (size : 4)
+ * 
+ * 
+ * */
+float* bmodel_tensor_input_bp(bmodel* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension, int* k1k2k3k4){
+    if(m == NULL)
+        return NULL;
+        
+    int i,j,z,w,count,count2,z2;
+ 
+    
+    /* Setting the input inside a convolutional structure*/
+    cl* temp = (cl*)malloc(sizeof(cl));
+    temp->post_activation = (float*)malloc(sizeof(float)*tensor_depth*tensor_i*tensor_j);
+    temp->normalization_flag = NO_NORMALIZATION;
+    temp->pooling_flag = NO_POOLING;
+    temp->activation_flag = SIGMOID;
+    temp->n_kernels = tensor_depth;
+    temp->rows1 = tensor_i;
+    temp->cols1 = tensor_j;
+    temp->post_activation = input;
+    
+    float* error1 = error;
+         
+    float* error_residual = NULL;    
+    /* apply the backpropagation to the model*/
+    for(i = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3]-1; i >= 0; i--){
+        for(j = 0; j < 1 && m->sla[i][j] != 0; j++){
+            
+            
+            if(!i){
+                if(m->sla[i][j] == FCLS){
+                    k1k2k3k4[0]--;
+                    if(m->fcls[k1k2k3k4[0]]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    error1 = bp_cl_fcl(temp,m->fcls[k1k2k3k4[0]],error1);
+                    
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    k1k2k3k4[1]--;
+                    if(m->cls[k1k2k3k4[1]]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    error1 = bp_cl_cl(temp,m->cls[k1k2k3k4[1]],error1);
+                    
+                    
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    k1k2k3k4[2]--;
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k1k2k3k4[2]; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                    
+                    if(k1k2k3k4[2]-count == m->rls[z]->n_cl-1){
+                        error_residual = error1; 
+                    }
+                    
+                    if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    
+                    
+                    error1 = bp_cl_cl(temp,m->rls[z]->cls[k1k2k3k4[2]-count],error1);
+                    
+                    
+                    if(k1k2k3k4[2]-count == 0)
+                        sum1D(error1,error_residual,error1,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                    
+                    
+                    
+                    
+                }
+                
+                else if(m->sla[i][j] == BNS){
+                    k1k2k3k4[3]--;
+                    free(temp);
+                    return error1;
+                }
+            }
+            
+            else{
+                
+                if(m->sla[i][j] == FCLS){
+                    k1k2k3k4[0]--;
+                    if(m->fcls[k1k2k3k4[0]]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        error1 = bp_fcl_fcl(m->fcls[k1k2k3k4[0]-1],m->fcls[k1k2k3k4[0]],error1);
+                        }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        error1 = bp_cl_fcl(m->cls[k1k2k3k4[1]-1],m->fcls[k1k2k3k4[0]], error1);
+                        }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                    
+                        
+                        error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1k2k3k4[0]],error1);
+                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
+                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        
+                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            
+                        error1 = m->rls[z2]->cl_output->temp;
+                        
+                    }
+                    
+                    
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    k1k2k3k4[1]--;
+                    if(m->cls[k1k2k3k4[1]]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        error1 = bp_fcl_cl(m->fcls[k1k2k3k4[0]-1],m->cls[k1k2k3k4[1]],error1);
+                        
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        error1 = bp_cl_cl(m->cls[k1k2k3k4[1]-1],m->cls[k1k2k3k4[1]],error1);
+                        
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                    
+                        
+                        error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k1k2k3k4[1]],error1);
+                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
+                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        else
+                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        error1 = m->rls[z2]->cl_output->temp;
+                        }
+                    
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    k1k2k3k4[2]--;
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k1k2k3k4[2]; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                    
+                    if(k1k2k3k4[2]-count == m->rls[z]->n_cl-1){
+                        
+                        error_residual = error1;                    
+                        
+                    }
+                    
+                    if(m->rls[z]->cls[k1k2k3k4[2]-count]->activation_flag == SOFTMAX){
+                        fprintf(stderr,"Error: the softmax can be applied only on the last fully-connected layers\n");
+                        exit(1);
+                    }
+                    
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        
+                    
+                        error1 = bp_fcl_cl(m->fcls[k1k2k3k4[0]-1],m->rls[z]->cls[k1k2k3k4[2]-count],error1);
+                       
+                        
+                        
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        error1 = bp_cl_cl(m->cls[k1k2k3k4[1]-1],m->rls[z]->cls[k1k2k3k4[2]-count],error1);
+                       
+                        
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k1k2k3k4[2]-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                        if(z2 == z)
+                            error1 = bp_cl_cl(m->rls[z2]->cls[k1k2k3k4[2]-1-count2],m->rls[z]->cls[k1k2k3k4[2]-count],error1);
+                        else{
+                            error1 = bp_cl_cl(m->rls[z2]->cl_output,m->rls[z]->cls[k1k2k3k4[2]-count],error1);
+                            if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == RELU)
+                                derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            error1 = m->rls[z2]->cl_output->temp;
+                        }
+                        
+                        
+                    }
+                    
+                    
+                    
+                    if(k1k2k3k4[2]-count == 0)
+                        sum1D(error1,error_residual,error1,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                    
+                    
+                    
+                    
+                }
+                
+                 else if(m->sla[i][j] == BNS){
+                    k1k2k3k4[3]--;
+                    free(temp);
+                    return error1;
+                }
+                
+            }
+            
+        }
+    }
+
+    free(temp);
+    if(!bool_is_real(error1[0])){
+        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");
+        exit(1);
+    }
+    return error1;
+}
 
 

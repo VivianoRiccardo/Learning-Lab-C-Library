@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "llab.h"
 
-/* this functions build a batch normalization layer
+/* this function builds a batch normalization layer
  * 
  * Input:
  * 
@@ -182,6 +182,13 @@ void save_bn(bn* b, int n){
         exit(1);
     }
     
+    i = fwrite(&b->mode_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
+        exit(1);
+    }
+    
     i = fwrite(b->gamma,sizeof(float)*(b->vector_dim),1,fw);
     
     if(i != 1){
@@ -223,11 +230,11 @@ void save_bn(bn* b, int n){
 }
 
 
-/* This function load a batch_normalized layer from a file
+/* This function loads a batch_normalized layer from a file
  * 
  * Inputs:
  * 
- *                 @ FILE* fr:= the file where the batch normalized layer must been loaded
+ *                 @ FILE* fr:= the file from where the batch normalized layer must been loaded
  * 
  * */
 bn* load_bn(FILE* fr){
@@ -235,7 +242,7 @@ bn* load_bn(FILE* fr){
         return NULL;
     int i;
     
-    int batch_size = 0,vector_dim = 0, layer = 0, activation_flag;
+    int batch_size = 0,vector_dim = 0, layer = 0, activation_flag,mode_flag;
     float* gamma;
     float* beta;
     float* final_mean;
@@ -263,6 +270,13 @@ bn* load_bn(FILE* fr){
     }
     
     i = fread(&activation_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
+        exit(1);
+    }
+    
+    i = fread(&mode_flag,sizeof(int),1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
@@ -312,7 +326,7 @@ bn* load_bn(FILE* fr){
     copy_array(beta,b->beta,vector_dim);
     copy_array(final_mean,b->final_mean,vector_dim);
     copy_array(final_var,b->final_var,vector_dim);
-    
+    b->mode_flag = mode_flag;
     free(gamma);
     free(beta);
     free(final_mean);
@@ -322,12 +336,11 @@ bn* load_bn(FILE* fr){
     
 }
 
-/* This function returns a bn* layer that is the same copy of the input f
- * arrays used during the feed forward and backpropagation
+/* This function returns a bn* layer that is the same copy of the input b.
  * 
  * Input:
  * 
- *             @ bn* f:= the batch normalized layer that must be copied
+ *             @ bn* b:= the batch normalized layer that must be copied
  * 
  * */ 
 bn* copy_bn(bn* b){
@@ -344,16 +357,17 @@ bn* copy_bn(bn* b){
     copy_array(b->d2_beta,copy->d2_beta,b->vector_dim);
     copy_array(b->final_mean,copy->final_mean,b->vector_dim);
     copy_array(b->final_var,copy->final_var,b->vector_dim);
+    copy->mode_flag = b->mode_flag;
     
     return copy;
 }
 
-/* this function reset all the arrays of a batch normalized layer
+/* this function resets all the arrays of a batch normalized layer (used by feed forward and back propagation) but it keeps the weights andbiases.
  * 
  * 
  * Input:
  * 
- *             @ bn* b:= a bn* f layer
+ *             @ bn* b:= a bn* b layer
  * 
  * */
 bn* reset_bn(bn* b){
@@ -380,7 +394,8 @@ bn* reset_bn(bn* b){
     return b;
 }
 
-/* this function computes the size of the space allocated by the arrays of a batch normalized layer
+/* this function computes the size of the space allocated by the arrays of a batch normalized layer (more or less)
+ * just to give an idea of the size occupied by this structure
  * 
  * Input:
  * 

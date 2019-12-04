@@ -32,6 +32,39 @@ SOFTWARE.
  * lr1 is the learning rate of the policy network, lr2 of the q-function network. momentum1 is the momentum for policy network, momentum2 is for the q-function network. 
  * lambda1 is the value of l2 regularization if there is any l2 regularization of policy network, lambda2 of q-function network. tau is the param used by the target networks to copy the original networks
  * lambda is the param used for the q function algorithm.
+ * 
+ * Input:
+ * 
+ *             
+ *                 @ model * m1:= the policy network (avoid softmax we are talking of ddpg! no discrete action space man)
+ *                 @ model* m2:= critic network. is the part of the critic network that handles the frames of the game
+ *                 @ model* m3:= critic network:= is the part of the critic network that handles the actions taken
+ *                 @ model* m4:= critic network:= is the final part of critic network that takes as input m2 and m3 output
+ *                 @ int batch_size:0 the size of the batch
+ *                 @ int threads:= the number of threads you want to use
+ *                 @ int regularization1:= the regularization of actor network
+ *                 @ int regularization2:= the regularization of critic network
+ *                 @ m1_input:= the size of the input for m1
+ *                 @ m1_output:= the size of the output of m1
+ *                 @ m2_output:= the size of the output of m2
+ *                 @ m3_output:= the size of the output of m3
+ *                 @ int gradient_descent_flag1:= the optimization algorithm used for actor network
+ *                 @ int gradient_descent_flag2:= the optimization algorithm used for critic network
+ *                 @ int buff_size:= is equal to m1_input (idk why i added this param, i don't want to change it sorry :p, bad developer here)
+ *                 @ int max_frames:= the size of the actions, terminal, rewards... you have 2 options: 1) when you train your ddpg model you can set immediatly
+ *                                    max frames equal to your maximum number of frames ex: 5 milions, and handle the terminal actions and reward state from ddpg structure
+ *                                    or you can create your own buffer for states, actions, rewards, termnal and set max frames = batch_size and then when you train
+ *                                    your ddpg model you copy your frames, actions, rewards, etc in these structures, cause ddpg_train function uses the buffer of this structure
+ *                 @ float lr1:= the learning rate of actor network
+ *                 @ float lr2:= the learning rate of critic network
+ *                 @ float momentum1:= the momentum of actor network
+ *                 @ float momentum2:= the momentum of critic network
+ *                 @ float tau:= the parameter used by the target networks for both target actor and target critic
+ *                 @ float epsilon_greedy:= is useless
+ *                 @ float lambda:= is the lambda param used by the q-function (for the god sake go to learn something!)
+ *                 
+ *                 
+ *                 
  * */ 
 ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int threads, int regularization1,int regularization2, int m1_input,int m1_output,int m2_output,int m3_output,int gradient_descent_flag1,int gradient_descent_flag2, int buff_size, int max_frames, float lr1, float lr2, float momentum1, float momentum2, float lambda1, float lambda2, float tau,float epsilon_greedy, float lambda){
                     
@@ -220,7 +253,12 @@ void free_ddpg(ddpg* d){
 
 
 /* This function computes the calculations that you can see in this pseudocode: https://spinningup.openai.com/en/latest/algorithms/ddpg.html
- * from line 12 to line 16*/
+ * from line 12 to line 16
+ * 
+ * Input:
+ * 
+ *             @ ddpg* d:= the ddpg model that i hope you have initialized
+ * */
 void ddpg_train(ddpg* d){
     
     int i;

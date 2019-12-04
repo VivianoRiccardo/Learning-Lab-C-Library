@@ -35,7 +35,9 @@ unsigned long long int size_of_bmodel(bmodel* m);
 void save_bmodel(bmodel* m, int n);
 bmodel* load_bmodel(char* file);
 int count_bmodel_weights(bmodel* m);
-void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda);
+void update_bmodel(bmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3);
+void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, int* k1k2k3k4);
+float* bmodel_tensor_input_bp(bmodel* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension, int* k1k2k3k4);
 
 #endif

@@ -25,6 +25,28 @@ SOFTWARE.
 
 #include "llab.h"
 
+
+/* this feedforward is a little bit slow, but it's a real feedforward for any kind of genomes, indeed it
+ * can handle recursive genomes, any kind of recursive genomes, is really powerfull.
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ genome* g1:= is the genome that should output the results of the feedforward
+ *                 @ float* inputs:= is the inputs given to the genome
+ *                 @ int global_inn_numb_nodes:= is the innovation numbers reached until now for the nodes globally
+ *                 @ int global_inn_numb_connections:= the same of global_inn_numb_nodes, but for the connections
+ * 
+ * Example of this powerfull feed forward:
+ * 
+ * Genome:
+ *         ----O3----
+ *       /     |     \
+ * O1---O2     |      -----O5----O6    o1 input, o6 output, feedforward : O1-O2-O3-O4-O2-O3-O5-O4-O3-O5-O6
+ *       \     |            |
+ *        -----O4------------
+ * 
+ * */
 float* feed_forward(genome* g1, float* inputs, int global_inn_numb_nodes, int global_inn_numb_connections){
     genome* g = copy_genome(g1);
     int i,j,k1,k2,k3,k4,size,global_j,number_connections,flag,there_is_storing = 0;
@@ -258,6 +280,8 @@ float* feed_forward(genome* g1, float* inputs, int global_inn_numb_nodes, int gl
     return outputs;
 }
 
+/* This function is just a functions used to make more modular the feed forward, should not be used outside of the feed forward
+ * */
 int ff_reconstruction(genome* g, int** array, node* head, int len, ff** lists,int* size, int* global_j){
     int i,j,k,flag = 1;
     
@@ -339,7 +363,8 @@ int ff_reconstruction(genome* g, int** array, node* head, int len, ff** lists,in
     return j;
     
 }
-
+/* This function is just a functions used to make more modular the feed forward, should not be used outside of the feed forward
+ * */
 int recursive_computation(int** array, node* head, genome* g, connection* c,float* actual_value){
     /*caso base stiamo su un estremo che può essere o un fake input o un input che prima era un 
      * fake input o un vero input*/

@@ -709,7 +709,8 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
         bm = (bmodel*)malloc(sizeof(bmodel*));
         bm->n_bn = count2;
         bm->bns = (bn**)malloc(sizeof(bn*)*count2);
-    
+        bm->beta1_adam = m->beta1_adam;
+        bm->beta2_adam = m->beta2_adam;
         for(i = 0; i < m->layers; i++){
             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
                 for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
@@ -719,11 +720,17 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
             }
         }
         
-        update_bmodel(bm,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda);
+        update_bmodel(bm,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
         
         if(gradient_descent_flag == ADAM){
             (*b1)/=m->beta1_adam;
             (*b2)/=m->beta2_adam;
+        }
+        
+        if(gradient_descent_flag == RADAM){
+            (*b1)/=m->beta1_adam;
+            (*b2)/=m->beta2_adam;
+            (*t)--;
         }
         
         free(bm->bns);

@@ -2381,7 +2381,7 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
         (*b1)*=m->beta1_adam;
-        (*b2)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){

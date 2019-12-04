@@ -204,7 +204,13 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     return c;
 }
 
-/* Given a cl* structure this function frees the space allocated by this structure*/
+/* Given a cl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ cl* c:= the convolutional structure
+ * 
+ * */
 void free_convolutional(cl* c){
     if(c == NULL){
         return;
@@ -765,6 +771,7 @@ cl* load_cl(FILE* fr){
 
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
+ * and all the temporary arrays used for the feed forward and back propagation
  * You have a cl* f structure, this function creates an identical structure
  * with all the arrays used for the feed forward and back propagation
  * with all the initial states. and the same weights and derivatives in f are copied
@@ -802,11 +809,11 @@ cl* copy_cl(cl* f){
     return copy;
 }
 
-/* this function reset all the arrays of a convolutional layer
+/* this function resets all the arrays of a convolutional layer
  * used during the feed forward and backpropagation
  * You have a cl* f structure, this function resets all the arrays used
  * for the feed forward and back propagation with partial derivatives D inculded
- * but the weights and D1 and D2 don't change
+ * but the weights and D1 and D2 don't change.
  * 
  * Input:
  * 
@@ -818,14 +825,15 @@ cl* reset_cl(cl* f){
         return NULL;
     
     int i,j;
-    for(i = 0; i < f->n_kernels; i++){
-        for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
-            f->d_kernels[i][j] = 0;
+    if(f->convolutional_flag == CONVOLUTION){
+        for(i = 0; i < f->n_kernels; i++){
+            for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
+                f->d_kernels[i][j] = 0;
+            }
+            
+            f->d_biases[i] = 0;
         }
-        
-        f->d_biases[i] = 0;
     }
-    
     for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
         f->pre_activation[i] = 0;
         f->post_activation[i] = 0;
@@ -853,7 +861,7 @@ cl* reset_cl(cl* f){
     return f;
 }
 
-/* this function compute the space allocated by the arrays of f
+/* this function returns the space allocated by the arrays of f (more or less)
  * 
  * Input:
  * 
@@ -875,6 +883,7 @@ unsigned long long int size_of_cls(cl* f){
 
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
+ * and all the arrays used by the feed forward and backpropagation.
  * This functions copies the weights and D and D1 and D2 into a another structure
  * 
  * Input:
@@ -959,7 +968,7 @@ int get_array_size_params_cl(cl* f){
     return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels;
 }
 
-/* this function paste the weights and biases in a single vector
+/* this function pastes the weights and biases from a vector in a cl structure
  * 
  * Inputs:
  * 
@@ -987,7 +996,7 @@ void memcopy_vector_to_params_cl(cl* f, float* vector){
 }
 
 
-/* this function paste the vector in the weights and biases of the cl
+/* this function pastes the cl structure weights and biases in a vector
  * 
  * Inputs:
  * 
@@ -1014,7 +1023,7 @@ void memcopy_params_to_vector_cl(cl* f, float* vector){
     }
 }
 
-/* this function paste the dweights and dbiases in a single vector
+/* this function pastes the vector in the the dweights and dbiases of a cl structure
  * 
  * Inputs:
  * 
@@ -1042,7 +1051,7 @@ void memcopy_vector_to_derivative_params_cl(cl* f, float* vector){
 }
 
 
-/* this function paste the vector in the dweights and dbiases of the cl
+/* this function pastes the dweights and dbiases of the cl in a vector
  * 
  * Inputs:
  * 

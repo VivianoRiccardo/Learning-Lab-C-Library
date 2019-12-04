@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "llab.h"
 
-/* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold
+/* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
  * in that case DL/Dw_i *= threshold/||DL/Dw||
  * 
  * Input:
@@ -106,6 +106,15 @@ void clipping_gradient_bmodel(bmodel* m, float threshold) {
      
 }
 
+/* This function, given a threshold, clips the gradient of the weights of the vaemodel if the ||DL/Dw|| > threshold
+ * in that case DL/Dw_i *= threshold/||DL/Dw||
+ * 
+ * Input:
+ * 
+ *             @ vaemodel* vm:= the variational autoencoder model
+ *             @ float threshold:= the threshold
+ * 
+ * */
 void clipping_gradient_vae_model(vaemodel* vm, float threshold) {
      float sum = 0;
      sum += sum_all_quadratic_derivative_weights_fcls(vm->encoder->fcls, vm->encoder->n_fcl);
@@ -159,16 +168,18 @@ void clip_rls(rl** rls, int n, float threshold,float norm){
 void clip_cls(cl** cls, int n, float threshold, float norm){
     int j,k,z;
     for(j = 0; j < n; j++){
-        for(k = 0; k < cls[j]->n_kernels; k++){
-            for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
-                cls[j]->d_kernels[k][z]*=(threshold)/(norm);
+        if(cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < cls[j]->n_kernels; k++){
+                for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
+                    cls[j]->d_kernels[k][z]*=(threshold)/(norm);
+                }
             }
-        }
-        
-        if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
-                for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
-                    cls[j]->group_norm[k]->d_gamma[z]*=(threshold)/(norm);
+            
+            if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
+                    for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
+                        cls[j]->group_norm[k]->d_gamma[z]*=(threshold)/(norm);
+                    }
                 }
             }
         }
@@ -278,18 +289,20 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
     int j,k,z;
     float sum = 0,temp;
     for(j = 0; j < n; j++){
-        for(k = 0; k < cls[j]->n_kernels; k++){
-            for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
-                temp = cls[j]->d_kernels[k][z];
-                sum += temp*temp;
-            }
-        }
-        
-        if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
-            for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
-                for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
-                    temp = cls[j]->group_norm[k]->d_gamma[z];
+        if(cls[j]->convolutional_flag == CONVOLUTION){
+            for(k = 0; k < cls[j]->n_kernels; k++){
+                for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
+                    temp = cls[j]->d_kernels[k][z];
                     sum += temp*temp;
+                }
+            }
+            
+            if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
+                    for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
+                        temp = cls[j]->group_norm[k]->d_gamma[z];
+                        sum += temp*temp;
+                    }
                 }
             }
         }

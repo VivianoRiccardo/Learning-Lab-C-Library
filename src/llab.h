@@ -246,18 +246,32 @@ typedef struct model {
 } model;
 
 typedef struct bmodel {
-    int layers, n_rl, n_cl, n_fcl, n_bn;
+    int layers, n_rl, n_cl, n_fcl, n_bn, error_flag, output_dimension;
+    float error_threshold1;
+    float error_threshold2;
+    float beta1_adam;
+    float beta2_adam;
+    float error_gamma;
+    float* error_alpha;
+    float* error;
     rl** rls;//rls = residual-layers
     cl** cls;//cls = convolutional-layers
     fcl** fcls; // fcls = fully-connected-layers
     bn** bns; // bn = batch-normalization layer
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, 4 = batch normalization sla = sequential layers array
+    float** output_layer_bn_training_mode;// will be the last array in case the last array is of the bn layer
+    float* output_layer;// will be the last array
 } bmodel;
 
 typedef struct rmodel {
+    int layers, n_lstm, window, hidden_state_mode, error_flag, output_dimension;
+    float error_threshold1;
+    float error_threshold2;
     float beta1_adam;
     float beta2_adam;
-    int layers, n_lstm, window, hidden_state_mode;
+    float error_gamma;
+    float** error_alpha;
+    float** error;;
     lstm** lstms;
     int** sla;
 } rmodel;

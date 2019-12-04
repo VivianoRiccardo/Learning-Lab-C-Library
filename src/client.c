@@ -25,6 +25,18 @@ SOFTWARE.
 // Code directly taken from https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/ and modified
 #include "llab.h"
 
+/* This function uses sockfd for the reading a buffersize*sizeof(float) array from the server, then use writing_pipe
+ * to send this array to the father wwho created the son who called this function, then reading pipe is used to read the answer 
+ * from the parent waiting always for an array of buffersize*sizeof(float) dimension, and then the answer is sent back to sockfd
+ * 
+ * Input:
+ * 
+ *                 @ int sockfd:= the socket between server and client (who calls this function is the client)
+ *                 @ int buffer_size:= the size*sizeof(float) space that must be read
+ *                 @ int reading_pipe:= the pipe used for the communication father son (who calls this function is the son)
+ *                 @ int writing_pipe:= the pipe used for the communication father son, the son must write in this pie
+ * 
+ * */
 void contact_server(int sockfd, int buffer_size, int reading_pipe, int writing_pipe) { 
     float* buff = (float*)calloc(buffer_size,sizeof(float));
     int ret;

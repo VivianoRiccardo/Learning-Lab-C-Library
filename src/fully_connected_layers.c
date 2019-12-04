@@ -30,9 +30,9 @@ SOFTWARE.
  * 
  *             @ int input:= number of neurons of the previous layer
  *             @ int output:= number of neurons of the current layer
- *             @ int layer:= number of sequential layer [1,∞)
- *             @ int dropout_flag:= is set to 0 if you don't want to apply dropout
- *             @ int activation_flag:= is set to 0 if you don't want to apply the activation function else read in layers.h
+ *             @ int layer:= number of sequential layer [0,∞)
+ *             @ int dropout_flag:= is set to 0 if you don't want to apply dropout, NO_DROPOUT (flag)
+ *             @ int activation_flag:= is set to 0 if you don't want to apply the activation function else read in llab.h
  *             @ float dropout_threshold:= [0,1]
  * */
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold){
@@ -79,7 +79,12 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     return f;
 }
 
-/* Given a fcl* structure this function frees the space allocated by this structure*/
+/* Given a fcl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fcl structure that must be deallocated
+ * */
 void free_fully_connected(fcl* f){
     if(f == NULL){
         return;
@@ -301,7 +306,7 @@ fcl* load_fcl(FILE* fr){
 }
 
 /* This function returns a fcl* layer that is the same copy of the input f
- * except for the activation arrays and the dropout mask array.
+ * except for the activation arrays and the dropout mask array, and all the arrays used by ff and bp.
  * You have a fcl* f structure, this function creates an identical structure
  * with all the arrays used for the feed forward and back propagation
  * with all the initial states. and the same weights and derivatives in f are copied
@@ -327,7 +332,7 @@ fcl* copy_fcl(fcl* f){
     return copy;
 }
 
-/* this function reset all the arrays of a fully-connected layer
+/* this function resets all the arrays of a fully-connected layer
  * used during the feed forward and backpropagation
  * You have a fcl* f structure, this function resets all the arrays used
  * for the feed forward and back propagation with partial derivatives D inculded
@@ -364,7 +369,7 @@ fcl* reset_fcl(fcl* f){
     return f;
 }
 
-/* this function compute the space allocated by the arrays of f
+/* this function returns the space allocated by the arrays of f (more or less)
  * 
  * Input:
  * 
@@ -462,7 +467,7 @@ int get_array_size_params(fcl* f){
     return f->input*f->output+f->output;
 }
 
-/* this function paste the weights and biases in a single vector
+/* this function pastes the weights and biases from a vector into in a fcl structure
  * 
  * Inputs:
  * 
@@ -476,7 +481,7 @@ void memcopy_vector_to_params(fcl* f, float* vector){
 }
 
 
-/* this function paste the vector in the weights and biases of the fcl
+/* this function pastes the the weights and biases from a fcl structure into a vector
  * 
  * Inputs:
  * 
@@ -489,7 +494,7 @@ void memcopy_params_to_vector(fcl* f, float* vector){
     memcpy(&vector[f->input*f->output],f->biases,f->output*sizeof(float));
 }
 
-/* this function paste the dweights and dbiases in a single vector
+/* this function pastes the dweights and dbiases from a vector into in a fcl structure
  * 
  * Inputs:
  * 
@@ -503,7 +508,7 @@ void memcopy_vector_to_derivative_params(fcl* f, float* vector){
 }
 
 
-/* this function paste the vector in the dweights and dbiases of the fcl
+/* this function pastes the the dweights and dbiases from a fcl structure into a vector
  * 
  * Inputs:
  * 
