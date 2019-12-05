@@ -170,6 +170,72 @@ void batch_normalization_feed_forward(int batch_size, float** input_vectors,floa
 
 }
 
+/* This computes the mean and variance for the batch normalization across batches
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs:= where we store the outputs coming from this normalization
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_feed_forward_first_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon){
+    int i,j;
+    float temp;
+    /*mean*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            mean[j] += input_vectors[i][j];
+            if(i == batch_size-1)
+                mean[j]/=(float)batch_size;
+        }
+    }
+    
+    /*variance*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            temp = input_vectors[i][j]-mean[j];
+            temp = temp*temp;
+            var[j] += temp;
+            if(i == batch_size-1)
+                var[j]/=(float)batch_size;
+        }
+    }
+
+}
+
+/* This computes the batch norm for the batch normalization across batches
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs:= where we store the outputs coming from this normalization
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_feed_forward_second_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon, int i){
+
+    for(j = 0; j < size_vectors; j++){
+        temp_vectors[i][j] = (input_vectors[i][j]-mean[j])/(sqrtf(var[j]+epsilon));
+        outputs[i][j] = temp_vectors[i][j]*gamma[j] + beta[j];
+    }
+    
+}
+
 /* This Function computes the error from a batch normalization
  * 
  * Input:
@@ -220,6 +286,79 @@ void batch_normalization_back_prop(int batch_size, float** input_vectors,float**
 
 }
 
+/* This Function computes the first step for the error from a batch normalization
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs_error:= where are stored the output errors coming from the next layer
+ *             @ float* gamma_error:= where we store the partial derivatives of gamma
+ *             @ float* beta_error:= where we store the partial derivatives of beta
+ *             @ float** input_error:= where we store the input error
+ *             @ float** temp_vectors_error:= useful for the computation
+ *             @ float* temp_array:= useful for the computation
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_back_prop_first_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon){
+    int i,j,z;
+
+
+    /* gamma and beta error*/
+    for(i = 0; i < batch_size; i++){
+        for(j = 0; j < size_vectors; j++){
+            gamma_error[j] += outputs_error[i][j]*temp_vectors[i][j];
+            beta_error[j] += outputs_error[i][j];
+            temp_vectors_error[i][j] = outputs_error[i][j]*gamma[j];
+            temp_array[j] += input_vectors[i][j] - mean[j];
+        }
+    }
+
+}
+
+/* This Function computes the error from a batch normalization
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the size of the batch (number of total instances actually running)
+ *             @ float** input_vectors:= the total instances running, dimensions: batch_size*size_vectors
+ *             @ float** temp_vectors:= a temporary vector where we store the h_hat_i, dimensions:= batch_size*size_vectors
+ *             @ int size_vectors:= the size of each vector
+ *             @ float* gamma:= the parameters that we must learn
+ *             @ float* beta:= other params that we must learn
+ *             @ float* mean:= a vector initialized with all 0s where we store the mean
+ *             @ float* var:= a vector initialized with all 0s where we store the variance
+ *             @ float** outputs_error:= where are stored the output errors coming from the next layer
+ *             @ float* gamma_error:= where we store the partial derivatives of gamma
+ *             @ float* beta_error:= where we store the partial derivatives of beta
+ *             @ float** input_error:= where we store the input error
+ *             @ float** temp_vectors_error:= useful for the computation
+ *             @ float* temp_array:= useful for the computation
+ *             @ float epsilon:= a param that let us to avoid division by 0
+ * 
+ * */
+void batch_normalization_back_prop_second_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon, int j){
+    int i,z;
+
+    /* input_error*/
+    for(i = 0; i < batch_size; i++){    
+        for(z = 0; z < size_vectors; z++){
+            if(i == j)
+                input_error[j][z] += temp_vectors_error[j][z]*((float)(1-(float)1/batch_size)/(float)sqrtf(var[z]+epsilon)-(float)((input_vectors[j][z]-mean[z])*2*(float)(1-(float)1/batch_size)*(input_vectors[j][z]-mean[z])-(float)(2/batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
+            else
+                input_error[j][z] += temp_vectors_error[j][z]*(-(float)(sqrtf((float)var[z]+epsilon)/(float)batch_size)-(float)((input_vectors[i][z]-mean[z])*2*(float)(1-(float)1/(float)batch_size)*(float)(input_vectors[j][z]-mean[z])-((float)2/(float)batch_size)*(float)(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
+
+        }
+    }
+
+}
 
 /* This function computes the final mean and variance for a bn layer once the training is ended, according to the 
  * second part of the pseudocode that you can find here: https://standardfrancis.wordpress.com/2015/04/16/batch-normalization/

@@ -793,10 +793,10 @@ void sum_model_partial_derivatives_bmodel(bmodel* m, bmodel* m2, bmodel* m3){
  *                               k2 the convolutional layers, k3 the residual layers and k4 the batch normalized layers(size : 4)
  * 
  * */
-void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, int* k1k2k3k4){
+int bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, int* k1k2k3k4){
     if(m == NULL)
         return;
-    int i,j,z,w,count,count2,z2;
+    int i,j,z,w,count,count2,z2, layers = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3];
     
     /* Setting the input inside a convolutional structure*/
     cl* temp = (cl*)malloc(sizeof(cl));
@@ -811,7 +811,7 @@ void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor
     temp->layer = -1;
     
     /* apply the feed forward to the model*/
-    for(i = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3]; i < m->layers; i++){
+    for(i = layers; i < m->layers; i++){
         for(j = 0; j < m->layers && m->sla[i][j] != 0; j++){
             
                 
@@ -887,7 +887,7 @@ void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor
                 else if(m->sla[i][j] == BNS){
                     k1k2k3k4[3]++;
                     free(temp);
-                    return;
+                    return i;
                 }
             }
             
@@ -1065,7 +1065,7 @@ void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor
                 else if(m->sla[i][j] == BNS){
                     k1k2k3k4[3]++;
                     free(temp);
-                    return;
+                    return i;
                 }
                 
             }
@@ -1074,6 +1074,7 @@ void bmodel_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor
     }
     
     free(temp);
+    return i;
 }
 
 
@@ -1100,7 +1101,7 @@ float* bmodel_tensor_input_bp(bmodel* m, int tensor_depth, int tensor_i, int ten
     if(m == NULL)
         return NULL;
         
-    int i,j,z,w,count,count2,z2;
+    int i,j,z,w,count,count2,z2,layers = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3]-1;
  
     
     /* Setting the input inside a convolutional structure*/
@@ -1118,7 +1119,7 @@ float* bmodel_tensor_input_bp(bmodel* m, int tensor_depth, int tensor_i, int ten
          
     float* error_residual = NULL;    
     /* apply the backpropagation to the model*/
-    for(i = k1k2k3k4[0]+k1k2k3k4[1]+k1k2k3k4[2]+k1k2k3k4[3]-1; i >= 0; i--){
+    for(i = layers; i >= 0; i--){
         for(j = 0; j < 1 && m->sla[i][j] != 0; j++){
             
             

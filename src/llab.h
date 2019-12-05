@@ -319,6 +319,15 @@ typedef struct thread_args_model {
     float** returning_error;
 } thread_args_model;
 
+typedef struct thread_args_bmodel {
+    model* m;
+    int rows,cols,channels,error_dimension,batch_instance, *layer;
+    float* input;
+    float* error;
+    float** returning_error;
+    int* k1k2k3k4;
+} thread_args_bmodel;
+
 typedef struct thread_args_rmodel {
     rmodel* m;
     float** hidden_states;
