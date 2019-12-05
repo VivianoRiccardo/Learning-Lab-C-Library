@@ -37,7 +37,6 @@ float sum_all_quadratic_derivative_weights_lstms(lstm** lstms, int n);
 void clipping_gradient_rmodel(rmodel* m, float threshold);
 float sum_all_quadratic_derivative_weights_bns(bn** bns, int n);
 void clip_bns(bn** bns, int n, float threshold, float norm);
-void clipping_gradient_bmodel(bmodel* m, float threshold);
 void clipping_gradient_vae_model(vaemodel* m, float threshold);
 
 #endif

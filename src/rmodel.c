@@ -704,37 +704,27 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
         }
     }
     
-    bmodel* bm = NULL;
+    bn** bns = NULL;
     if(count){
-        bm = (bmodel*)malloc(sizeof(bmodel*));
-        bm->n_bn = count2;
-        bm->bns = (bn**)malloc(sizeof(bn*)*count2);
-        bm->beta1_adam = m->beta1_adam;
-        bm->beta2_adam = m->beta2_adam;
+        int n_bn = count2;
+        bns = (bn**)malloc(sizeof(bn*)*count2);
         for(i = 0; i < m->layers; i++){
             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
                 for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
-                    bm->bns[k] = m->lstms[i]->bns[j];
+                    bns[k] = m->lstms[i]->bns[j];
                     k++;
                 }
             }
         }
         
-        update_bmodel(bm,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
+        if(gradient_descent_flag == NESTEROV)
+            update_batch_normalized_layer_nesterov(bns,n_bn,lr,momentum,mini_batch_size);
+        else if(gradient_descent_flag == ADAM)
+            update_batch_normalized_layer_adam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam);
+        else if(gradient_descent_flag == RADAM)
+            update_batch_normalized_layer_radam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,(*t));
         
-        if(gradient_descent_flag == ADAM){
-            (*b1)/=m->beta1_adam;
-            (*b2)/=m->beta2_adam;
-        }
-        
-        if(gradient_descent_flag == RADAM){
-            (*b1)/=m->beta1_adam;
-            (*b2)/=m->beta2_adam;
-            (*t)--;
-        }
-        
-        free(bm->bns);
-        free(bm);
+        free(bns);
     }
     
     lambda*=(float)mini_batch_size;
@@ -749,13 +739,13 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
     
     
     else if(gradient_descent_flag == ADAM){
-        update_lstm_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
+        update_lstm_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
         (*b1)*=BETA1_ADAM;
         (*b2)*=BETA2_ADAM;
     }
     
     else if(gradient_descent_flag == RADAM){
-        update_lstm_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_lstm_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
         (*b1)*=BETA1_ADAM;
         (*b2)*=BETA2_ADAM;
         (*t)++;

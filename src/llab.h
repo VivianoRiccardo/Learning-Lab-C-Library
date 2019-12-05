@@ -224,9 +224,6 @@ typedef struct lstm { //long short term memory layers
     float dropout_threshold_up;
     float dropout_threshold_right;
     bn** bns;//window/n_grouped_cell
-    
-    
-    
 } lstm;
 
 typedef struct model {
@@ -244,24 +241,6 @@ typedef struct model {
     int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, sla = sequential layers array
     float* output_layer;// will be the last array
 } model;
-
-typedef struct bmodel {
-    int layers, n_rl, n_cl, n_fcl, n_bn, error_flag, output_dimension;
-    float error_threshold1;
-    float error_threshold2;
-    float beta1_adam;
-    float beta2_adam;
-    float error_gamma;
-    float* error_alpha;
-    float* error;
-    rl** rls;//rls = residual-layers
-    cl** cls;//cls = convolutional-layers
-    fcl** fcls; // fcls = fully-connected-layers
-    bn** bns; // bn = batch-normalization layer
-    int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, 4 = batch normalization sla = sequential layers array
-    float** output_layer_bn_training_mode;// will be the last array in case the last array is of the bn layer
-    float* output_layer;// will be the last array
-} bmodel;
 
 typedef struct rmodel {
     int layers, n_lstm, window, hidden_state_mode, error_flag, output_dimension;
@@ -311,6 +290,22 @@ typedef struct ganmodel{
     unsigned long long int discriminator_t;
 } ganmodel;
 
+typedef struct sequential_model {
+    int layers, n_rl, n_cl, n_fcl,error_flag,output_dimension;
+    float error_threshold1;
+    float error_threshold2;
+    float beta1_adam;
+    float beta2_adam;
+    float error_gamma;
+    float* error_alpha;
+    float* error;
+    rl** rls;//rls = residual-layers
+    cl** cls;//cls = convolutional-layers
+    fcl** fcls; // fcls = fully-connected-layers
+    int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, sla = sequential layers array
+    float* output_layer;// will be the last array
+} sequential_model;
+
 typedef struct thread_args_model {
     model* m;
     int rows,cols,channels,error_dimension;
@@ -319,14 +314,6 @@ typedef struct thread_args_model {
     float** returning_error;
 } thread_args_model;
 
-typedef struct thread_args_bmodel {
-    model* m;
-    int rows,cols,channels,error_dimension,batch_instance, *layer;
-    float* input;
-    float* error;
-    float** returning_error;
-    int* k1k2k3k4;
-} thread_args_bmodel;
 
 typedef struct thread_args_rmodel {
     rmodel* m;
@@ -402,7 +389,6 @@ typedef struct oustrategy {
 
 
 #include "batch_norm_layers.h"
-#include "bmodel.h"
 #include "client.h"
 #include "clipping_gradient.h"
 #include "convolutional.h"

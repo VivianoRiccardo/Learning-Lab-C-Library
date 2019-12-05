@@ -339,18 +339,6 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
                 vm->dstd[j] += (exp(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[vm->latent_size+j]) - 1)/2;
                 vm->dmean[j] += vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[j];
             }
-            
-            if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag == SIGMOID)
-                derivative_sigmoid_array(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->n_kernels*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->rows1*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->cols1);
-            else if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag == TANH)
-                derivative_tanhh_array(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->n_kernels*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->rows1*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->cols1);
-            else if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag == LEAKY_RELU)
-                derivative_leaky_relu_array(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->n_kernels*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->rows1*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->cols1);
-            else if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag == RELU)
-                derivative_relu_array(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->n_kernels*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->rows1*vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->cols1);
-            
-            dot1D(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3,vm->dmean,vm->dmean,vm->latent_size);
-            dot1D(&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->temp3[vm->latent_size],vm->dstd,vm->dstd,vm->latent_size);
         }
         
         else{

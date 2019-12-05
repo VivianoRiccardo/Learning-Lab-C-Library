@@ -2101,7 +2101,24 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     count-=m->rls[z]->n_cl;
                     
                     if(k3-count == m->rls[z]->n_cl-1){
-                        error_residual = error1; 
+                        if(i == m->layers-1){
+                            if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
+                                derivative_leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == RELU)
+                                derivative_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            
+                            if(m->rls[z]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z]->cl_output->temp3,error1,m->rls[z]->cl_output->temp,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z]->cl_output->temp,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                                
+                            error1 = m->rls[z]->cl_output->temp;
+                        }
+                        error_residual = error1;
                     }
                     
                     if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
@@ -2228,8 +2245,24 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                     count-=m->rls[z]->n_cl;
                     
                     if(k3-count == m->rls[z]->n_cl-1){
-                        
-                        error_residual = error1;                    
+                        if(i == m->layers-1){
+                            if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU)
+                                derivative_leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == RELU)
+                                derivative_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else if(m->rls[z]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->temp3,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            
+                            if(m->rls[z]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z]->cl_output->temp3,error1,m->rls[z]->cl_output->temp,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z]->cl_output->temp,m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                                
+                            error1 = m->rls[z]->cl_output->temp;
+                        }
+                        error_residual = error1;                   
                         
                     }
                     
@@ -2377,17 +2410,17 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
     }
     
     else if(gradient_descent_flag == ADAM){
-        update_residual_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
-        update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
-        update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2));
+        update_residual_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
         (*b1)*=m->beta1_adam;
         (*b2)*=m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
-        update_residual_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
-        update_convolutional_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
-        update_fully_connected_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t);
+        update_residual_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
+        update_convolutional_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
+        update_fully_connected_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
         (*b1)*=m->beta1_adam;
         (*b2)*=m->beta2_adam;
         (*t)++;

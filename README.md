@@ -68,7 +68,6 @@ sh compile_tests.sh
 - Modified Huber Loss (26/7/2019)
 - Focal Loss (18/8/2019)
 - Rectified Adam (22/8/2019)
-- Gan model (28/8/2019)
 - Confusion matrix and accuracy array (30/9/2019)
 - KL Divergence (25/10/2019)
 - Client-Server for distributed systems implementation (27/10/2019)

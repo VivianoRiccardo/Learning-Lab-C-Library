@@ -79,32 +79,6 @@ void clipping_gradient_rmodel(rmodel* m, float threshold) {
      
 }
 
-/* This function, given a threshold, clips the gradient of the weights of the bmodel if the ||DL/Dw|| > threshold
- * in that case DL/Dw_i *= threshold/||DL/Dw||
- * 
- * Input:
- * 
- *             @ bmodel* m:= the recurrent model
- *             @ float threshold:= the threshold
- * 
- * */
- 
-void clipping_gradient_bmodel(bmodel* m, float threshold) {
-     float sum = 0;
-     sum += sum_all_quadratic_derivative_weights_fcls(m->fcls, m->n_fcl);
-     sum += sum_all_quadratic_derivative_weights_cls(m->cls, m->n_cl);
-     sum += sum_all_quadratic_derivative_weights_rls(m->rls, m->n_rl);
-     sum += sum_all_quadratic_derivative_weights_bns(m->bns, m->n_bn);
-     
-     sum = sqrtf(sum);
-     if(sum >= threshold){
-         clip_fcls(m->fcls, m->n_fcl, threshold, sum);
-         clip_cls(m->cls, m->n_cl, threshold, sum);
-         clip_rls(m->rls, m->n_rl, threshold, sum);
-         clip_bns(m->bns, m->n_bn, threshold, sum);
-     }
-     
-}
 
 /* This function, given a threshold, clips the gradient of the weights of the vaemodel if the ||DL/Dw|| > threshold
  * in that case DL/Dw_i *= threshold/||DL/Dw||
