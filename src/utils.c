@@ -534,10 +534,7 @@ void dot1D(float* input1, float* input2, float* output, int size){
  * 
  * */
 void copy_array(float* input, float* output, int size){
-    int i;
-    for(i = 0; i < size; i++){
-        output[i] = input[i];
-    }
+    memcpy(output,input,(sizeof(float)*size));
 }
 
 /* given a char* input array this function copies it in char* output array
@@ -550,10 +547,7 @@ void copy_array(float* input, float* output, int size){
  * 
  * */
 void copy_char_array(char* input, char* output, int size){
-    int i;
-    for(i = 0; i < size; i++){
-        output[i] = input[i];
-    }
+    memcpy(output,input,(sizeof(char)*size));
 }
 
 /* This function computes the sum between 2 array, input and input2
