@@ -66,6 +66,8 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
     output[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj] = tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj]/sum;
 }
 
+
+
  /* This function compute the local response normalization for a convolutional layer
   * 
   * Input:
@@ -120,7 +122,6 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
             tensor_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj] += output_error[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*(-(float)(2*beta*alpha*tensor[c*tensor_i*tensor_j + index_ai*tensor_j + index_aj]*tensor[index_ac*tensor_i*tensor_j + index_ai*tensor_j + index_aj])/temp);
     }
 }
-
 
 /* This computes the batch normalization across batches
  * 
@@ -228,7 +229,7 @@ void batch_normalization_feed_forward_first_step(int batch_size, float** input_v
  * 
  * */
 void batch_normalization_feed_forward_second_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon, int i){
-	int j;
+    int j;
     for(j = 0; j < size_vectors; j++){
         temp_vectors[i][j] = (input_vectors[i][j]-mean[j])/(sqrtf(var[j]+epsilon));
         outputs[i][j] = temp_vectors[i][j]*gamma[j] + beta[j];

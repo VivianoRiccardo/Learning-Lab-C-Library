@@ -76,6 +76,7 @@ sh compile_tests.sh
 - HAPPY NEW YEAR FOR LLAB!
 - DDPG reinforcement learning algorithm added (29/11/2019)
 - Ornstein-Ulhenbeck Process (30/11/2019)
+- Edge-Popup training algorithm for fully connected and convolutional layers (14/12/2019)
 
 # Tests
 
@@ -97,6 +98,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
   But it needs more generations (an avarage of 41, probably due to the offspring generation function) and in the worst case (33276 genomes computed).
   Pay attention the structure of the genome is different from the structure of the deep learning networks.
   The test 10 can be taken as neat template, you need only to change the compute fitness function.
+- Test 11 is test 6 trained with edge popup, converge but really slow (cause the network should be very deep to work well edge popup)
 
 
 # Future implementations

@@ -39,6 +39,6 @@ void memcopy_vector_to_params_rl(rl* f, float* vector);
 void memcopy_params_to_vector_rl(rl* f, float* vector);
 void memcopy_vector_to_derivative_params_rl(rl* f, float* vector);
 void memcopy_derivative_params_to_vector_rl(rl* f, float* vector);
-
+void set_residual_biases_to_zero(rl* r);
 
 #endif

@@ -41,5 +41,7 @@ void memcopy_params_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_params(fcl* f, float* vector);
 void memcopy_derivative_params_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_derivative_params(fcl* f, float* vector);
+void set_fully_connected_biases_to_zero(fcl* f);
+void set_fully_connected_unused_weights_to_zero(fcl* f);
 
 #endif

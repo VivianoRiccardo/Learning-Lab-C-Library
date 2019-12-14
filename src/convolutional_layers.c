@@ -96,6 +96,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     int i,j;
     cl* c = (cl*)malloc(sizeof(cl));
     c->layer = layer;
+    c->k_percentage = 1;
     c->channels = channels;
     c->input_rows = input_rows;
     c->input_cols = input_cols;
@@ -126,7 +127,13 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->convolutional_flag = convolutional_flag;
     c->group_norm_channels = group_norm_channels;
     c->pooltemp = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
-    
+    c->training_mode = GRADIENT_DESCENT;
+    c->feed_forward_flag = FULLY_FEED_FORWARD;
+    c->scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
+    c->d_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
+    c->d1_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
+    c->d2_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
+    c->indices = (int*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(int));
     if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
         c->rows1 = 0;
     else
@@ -187,6 +194,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->d2_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         for(j = 0; j < channels*kernel_rows*kernel_cols; j++){
             c->kernels[i][j] = random_general_gaussian(0, (float)channels*input_rows*input_cols);
+            c->indices[i*channels*kernel_rows*kernel_cols+j] = i*channels*kernel_rows*kernel_cols+j;
         }
     }
     
@@ -240,6 +248,11 @@ void free_convolutional(cl* c){
     free(c->temp3);
     free(c->pooltemp);
     free(c->error2);
+    free(c->indices);
+    free(c->scores);
+    free(c->d_scores);
+    free(c->d1_scores);
+    free(c->d2_scores);
     if(c->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
             free_batch_normalization(c->group_norm[i]);
@@ -272,6 +285,20 @@ void save_cl(cl* f, int n){
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->training_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
@@ -474,6 +501,20 @@ void save_cl(cl* f, int n){
         exit(1);
     }
     
+    i = fwrite(f->scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->indices,sizeof(int)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
     
     i = fclose(fw);
     
@@ -537,9 +578,26 @@ cl* load_cl(FILE* fr){
     int normalization_flag = 0, activation_flag = 0, pooling_flag = 0;
     int rows1 = 0, cols1 = 0, rows2 = 0,cols2 = 0;
     int group_norm_channels = 0;
+    int training_mode = 0,feed_forward_flag = 0;
     float** kernels;
     float* biases;
+    float* scores;
+    int* indices;
     bn** group_norm = NULL;
+    
+    i = fread(&feed_forward_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&training_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
     
     i = fread(&group_norm_channels,sizeof(int),1,fr);
     
@@ -725,6 +783,8 @@ cl* load_cl(FILE* fr){
     
     kernels = (float**)malloc(sizeof(float*)*n_kernels);
     biases = (float*)malloc(sizeof(float)*n_kernels);
+    scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    indices = (int*)malloc(sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows);
     
     for(k = 0; k < n_kernels; k++){
         kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
@@ -737,6 +797,20 @@ cl* load_cl(FILE* fr){
     }
     
     i = fread(biases,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(indices,sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
@@ -764,8 +838,14 @@ cl* load_cl(FILE* fr){
     for(i= 0; i < n_kernels; i++){
         free(kernels[i]);
     }
+    copy_array(scores,f->scores,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_int_array(indices,f->indices,n_kernels*channels*kernel_cols*kernel_rows);
+    f->training_mode = training_mode;
+    f->feed_forward_flag = feed_forward_flag;
     free(kernels);
     free(biases);
+    free(scores);
+    free(indices);
     return f;
 }
 
@@ -805,7 +885,13 @@ cl* copy_cl(cl* f){
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
-    
+    copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy->feed_forward_flag = f->feed_forward_flag;
+    copy->training_mode = f->training_mode;
     return copy;
 }
 
@@ -858,6 +944,14 @@ cl* reset_cl(cl* f){
         }
     }
     
+    if(f->training_mode == EDGE_POPUP){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+        float_abs_array(f->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows-1);
+    }
     return f;
 }
 
@@ -870,7 +964,8 @@ cl* reset_cl(cl* f){
  * */
 unsigned long long int size_of_cls(cl* f){
     unsigned long long int sum = 0;
-    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*4*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*8*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*sizeof(int)));
     sum += ((unsigned long long int)(f->n_kernels*4*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
@@ -913,7 +1008,13 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->d_biases,copy->d_biases,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
-    
+    if(f->feed_forward_flag == EDGE_POPUP){
+        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+    }
     return;
 }
 
@@ -945,6 +1046,12 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
         }
     }
     
+     if(f->feed_forward_flag == EDGE_POPUP){
+         for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+             copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+         }
+         quick_sort(copy->scores,copy->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+     }
     return;
 }
 
@@ -1077,3 +1184,28 @@ void memcopy_derivative_params_to_vector_cl(cl* f, float* vector){
         }
     }
 }
+
+/* setting the biases to 0
+ * 
+ * Input:
+ *             @ cl* c:= the convolutional layer
+ * */
+void set_convolutional_biases_to_zero(cl* c){
+    int i;
+    for(i = 0; i < c->n_kernels; i++){
+        c->biases[i] = 0;
+    }
+}
+
+/* setting the unused weights to 0
+ * 
+ * Input:
+ *             @ cl* c:= the convolutional layer
+ * */
+void set_convolutional_unused_weights_to_zero(cl* c){
+    int i;
+    for(i = 0; i < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; i++){
+        c->kernels[(int)(c->indices[i]/c->channels*c->kernel_rows*c->kernel_cols)][(c->indices[i]%c->channels*c->kernel_rows*c->kernel_cols)] = 0;
+    }
+}
+

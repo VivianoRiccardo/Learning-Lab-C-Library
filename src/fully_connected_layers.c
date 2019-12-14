@@ -64,12 +64,19 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->temp3 = (float*)calloc(output,sizeof(float));
     f->temp2 = (float*)calloc(input,sizeof(float));
     f->error2 = (float*)calloc(input,sizeof(float));
-    
+    f->training_mode = GRADIENT_DESCENT;
+    f->scores = (float*)calloc(output*input,sizeof(float));
+    f->d_scores = (float*)calloc(output*input,sizeof(float));
+    f->d1_scores = (float*)calloc(output*input,sizeof(float));
+    f->d2_scores = (float*)calloc(output*input,sizeof(float));
+    f->indices = (int*)calloc(output*input,sizeof(int));
     f->post_activation = (float*)calloc(output,sizeof(float));
     f->dropout_mask = (float*)calloc(output,sizeof(float));
-    
+    f->feed_forward_flag = FULLY_FEED_FORWARD;
+    f->k_percentage = 1;
     for(i = 0; i < output; i++){
         for(j = 0; j < input; j++){
+            f->indices[i*input+j] = i*input+j;
             f->weights[i*input+j] = random_general_gaussian(0, (float)input);
         }
         if(dropout_flag)
@@ -106,6 +113,11 @@ void free_fully_connected(fcl* f){
     free(f->temp2);
     free(f->temp3);
     free(f->error2);
+    free(f->scores);
+    free(f->d_scores);
+    free(f->d1_scores);
+    free(f->d2_scores);
+    free(f->indices);
     free(f);    
 }
 
@@ -132,6 +144,20 @@ void save_fcl(fcl* f, int n){
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->training_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
@@ -191,6 +217,20 @@ void save_fcl(fcl* f, int n){
         exit(1);
     }
     
+    i = fwrite(f->scores,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->indices,sizeof(int)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
     i = fclose(fw);
     
     if(i != 0){
@@ -212,13 +252,8 @@ void save_fcl(fcl* f, int n){
  * 
  * */
 void copy_fcl_params(fcl* f, float* weights, float* biases){
-    int i,j;
-    for(i = 0; i < f->output; i++){
-        for(j = 0; j < f->input; j++){
-            f->weights[i*f->input+j] = weights[i*f->input+j];
-        }
-        f->biases[i] = biases[i];
-    }
+    copy_array(weights,f->weights,f->input*f->output);
+    copy_array(biases,f->biases,f->output);
 }
 
 /* This function loads a fully-connected layer from a .bin file from fr
@@ -233,10 +268,26 @@ fcl* load_fcl(FILE* fr){
         return NULL;
     int i;
     
-    int input = 0,output = 0,layer = 0,dropout_flag = 0,activation_flag = 0;
+    int input = 0,output = 0,layer = 0,dropout_flag = 0,activation_flag = 0, training_mode = 0,feed_forward_flag = 0;
     float dropout_threshold = 0;
     float* weights;
     float* biases;
+    float* scores;
+    int* indices;
+    
+    i = fread(&feed_forward_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&training_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
     
     i = fread(&input,sizeof(int),1,fr);
     
@@ -281,6 +332,8 @@ fcl* load_fcl(FILE* fr){
     }
     
     weights = (float*)malloc(sizeof(float)*input*output);
+    scores = (float*)malloc(sizeof(float)*input*output);
+    indices = (int*)malloc(sizeof(int)*input*output);
     biases = (float*)malloc(sizeof(float)*output);
     
     i = fread(weights,sizeof(float)*(input)*(output),1,fr);
@@ -297,11 +350,30 @@ fcl* load_fcl(FILE* fr){
         exit(1);
     }
     
+    i = fread(scores,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(indices,sizeof(int)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
     fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold);
     copy_fcl_params(f,weights,biases);
-    
+    copy_array(scores,f->scores,input*output);
+    copy_int_array(indices,f->indices,input*output);
+    f->training_mode = training_mode;
+    f->feed_forward_flag = feed_forward_flag;
     free(weights);
     free(biases);
+    free(indices);
+    free(scores);
     return f;
 }
 
@@ -329,6 +401,13 @@ fcl* copy_fcl(fcl* f){
     copy_array(f->d_biases,copy->d_biases,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
+    copy_array(f->scores,copy->scores,f->input*f->output);
+    copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+    copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
+    copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+    copy_int_array(f->indices,copy->indices,f->input*f->output);
+    copy->training_mode = f->training_mode;
+    copy->feed_forward_flag = f->feed_forward_flag;
     return copy;
 }
 
@@ -365,6 +444,15 @@ fcl* reset_fcl(fcl* f){
             f->error2[i] = 0;
         }
         f->d_weights[i] = 0;
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+    }
+    if(f->training_mode == EDGE_POPUP){
+        float_abs_array(f->scores,f->output*f->input);
+        quick_sort(f->scores,f->indices,0,f->output*f->input-1);
     }
     return f;
 }
@@ -378,7 +466,8 @@ fcl* reset_fcl(fcl* f){
  * */
 unsigned long long int size_of_fcls(fcl* f){
     unsigned long long int sum = 0;
-    sum += ((unsigned long long int)(f->input*f->output*4*sizeof(float)));
+    sum += ((unsigned long long int)(f->input*f->output*8*sizeof(float)));
+    sum += ((unsigned long long int)(f->input*f->output*sizeof(int)));
     sum += ((unsigned long long int)(f->output*10*sizeof(float)));
     sum += ((unsigned long long int)(f->input*2*sizeof(float)));
     return sum;
@@ -387,7 +476,7 @@ unsigned long long int size_of_fcls(fcl* f){
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array
  * This functions copies the weights and D and D1 and D2 into a another structure
- * 
+ * the edge popup params are pasted only if feedforwardflag or training mode is set to edge popup
  * Input:
  * 
  *             @ fcl* f:= the fully-connected layer that must be copied
@@ -405,6 +494,13 @@ void paste_fcl(fcl* f,fcl* copy){
     copy_array(f->d_biases,copy->d_biases,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
+    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
+        copy_array(f->scores,copy->scores,f->input*f->output);
+        copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+        copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
+        copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+        copy_int_array(f->indices,copy->indices,f->input*f->output);
+    }
     return;
 }
 
@@ -425,14 +521,22 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
         if(i < f->output)
             copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
         copy->weights[i] = tau*f->weights[i] + (1-tau)*copy->weights[i];
+        if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
+            copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+            copy->indices[i] = i;
+        }
+        
     }
+    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP)
+        quick_sort(copy->scores,copy->indices,0,f->output*f->input-1);
+    
     return;
 }
 
 /* This function merges 2 fully connected layers in a single one
  * the new fcl layers will be with input size and f1+f2 output size
  * the activation flag is the one of the first fcl layer (f1) and is the same
- * for dropout flag dropout threshold
+ * for dropout flag dropout threshold, doesn't count the edge popup params
  * 
  * Inputs:
  * 
@@ -519,4 +623,26 @@ void memcopy_vector_to_derivative_params(fcl* f, float* vector){
 void memcopy_derivative_params_to_vector(fcl* f, float* vector){
     memcpy(vector,f->d_weights,f->input*f->output*sizeof(float));
     memcpy(&vector[f->input*f->output],f->d_biases,f->output*sizeof(float));
+}
+
+/* setting the biases to 0
+ * Inpout:
+ *             @ fcl* f:= the fully connected layer
+ * */
+void set_fully_connected_biases_to_zero(fcl* f){
+    int i;
+    for(i = 0; i < f->output; i++){
+        f->biases[i] = 0;
+    }
+}
+
+/* setting the unused weights to 0
+ * Inpout:
+ *             @ fcl* f:= the fully connected layer
+ * */
+void set_fully_connected_unused_weights_to_zero(fcl* f){
+    int i;
+    for(i = 0; i < f->output*f->input-f->output*f->input*f->k_percentage; i++){
+        f->weights[f->indices[i]] = 0;
+    }
 }

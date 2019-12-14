@@ -40,5 +40,7 @@ void memcopy_params_to_vector_cl(cl* f, float* vector);
 void memcopy_vector_to_params_cl(cl* f, float* vector);
 void memcopy_derivative_params_to_vector_cl(cl* f, float* vector);
 void memcopy_vector_to_derivative_params_cl(cl* f, float* vector);
+void set_convolutional_biases_to_zero(cl* c);
+void set_convolutional_unused_weights_to_zero(cl* c);
 
 #endif

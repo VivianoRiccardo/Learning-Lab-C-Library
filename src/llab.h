@@ -94,6 +94,10 @@ SOFTWARE.
 #define ENTROPY_LOSS 7
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10
+#define GRADIENT_DESCENT 1
+#define EDGE_POPUP 2
+#define FULLY_FEED_FORWARD 3
+#define FREEZE_TRAINING 4
 
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
@@ -118,6 +122,8 @@ SOFTWARE.
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim, layer, activation_flag, mode_flag;
+    float k_percentage;// for edge-popup algorithm
+    int n_best_w;// for edge-popup algorithm
     float epsilon;
     float** input_vectors;//batch_size*vector_dim
     float** temp_vectors;//batch_size*vector_dim
@@ -138,6 +144,9 @@ typedef struct bn{//batch_normalization layer
     float** post_activation;//batch_size*vector_dim
     float* final_mean;//vector_dim
     float* final_var;//vector_dim
+    int* indeces;// for edge-popup algorithm, vector_dim
+    float* scores;//for edge-popup algorithm,vector_dim
+    int training_mode;//GRADIENT_DESCENT, EDGE_POPUP
 }bn;
 
 
@@ -145,6 +154,7 @@ typedef struct bn{//batch_normalization layer
 typedef struct fcl { //fully-connected-layers
     int input,output,layer,dropout_flag;//dropout flag = 1 if dropout must be applied
     int activation_flag; // activation flag = 0 -> no activation, flag = 1 -> sigmoid, = 2 -> relu, = 3 -> softmax, 4->tanhh
+    int training_mode,feed_forward_flag;//GRADIENT_DESCENT, EDGE_POPUP
     float* weights;// output*input
     float* d_weights;// output*input
     float* d1_weights;// output*input
@@ -162,6 +172,14 @@ typedef struct fcl { //fully-connected-layers
     float* temp2;//input
     float* error2;//input
     float dropout_threshold;
+    float k_percentage;// for edge-popup algorithm
+    int n_best_w;// for edge-popup algorithm
+    int* indices;// for edge-popup algorithm, output*input
+    float* scores;//for edge-popup algorithm,output*input
+    float* d_scores;//for edge-popup algorithm,output*input
+    float* d1_scores;//for edge-popup algorithm,output*input
+    float* d2_scores;//for edge-popup algorithm,output*input
+    
 } fcl;
 
 /* PADDING_ROWS MUST BE = PADDING_COLS AND ALSO STRIDE_ROWS = STRIDE_COLS*/
@@ -174,6 +192,7 @@ typedef struct cl { //convolutional-layers
     int normalization_flag, activation_flag, pooling_flag; // activation flag = 0, no activation, = 1 sigmoid, = 2 relu, pooling flag = 1 max-pooling, = 2 avarage-pooling
     int rows1, cols1, rows2,cols2;
     int group_norm_channels;
+    int training_mode,feed_forward_flag;//GRADIENT_DESCENT, EDGE_POPUP
     float** kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d1_kernels; //n_kernels - channels*kernel_rows*kernel_cols
@@ -192,6 +211,13 @@ typedef struct cl { //convolutional-layers
     float* pooltemp;//channels*input_rows*input_cols
     float* error2;//channels*input_rows*input_cols
     bn** group_norm;//n_kernels/group_norm_channels
+    float k_percentage;// for edge-popup algorithm
+    int n_best_w;// for edge-popup algorithm
+    int* indices;// for edge-popup algorithm, n_kernels*channels*kernel_rows*kernel_cols
+    float* scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    float* d_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    float* d1_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    float* d2_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
 } cl;
 
 typedef struct rl { //residual-layers
@@ -265,47 +291,6 @@ typedef struct vaemodel{
     model* decoder;
 } vaemodel;
 
-typedef struct ganmodel{
-    model* generator;
-    model* discriminator;
-    model* discriminator2;
-    int mini_batch_size;
-    int generator_gradient_descent_flag;
-    int discriminator_gradient_descent_flag;
-    int generator_regularization;
-    int discriminator_regularization;
-    int generator_total_number_weights;
-    int discriminator_total_number_weights;
-    float generator_lr;
-    float discriminator_lr;
-    float generator_momentum;
-    float discriminator_momentum;
-    float generator_b1;
-    float discriminator_b1;
-    float generator_b2;
-    float discriminator_b2;
-    float generator_lambda;
-    float discriminator_lambda;
-    unsigned long long int generator_t;
-    unsigned long long int discriminator_t;
-} ganmodel;
-
-typedef struct sequential_model {
-    int layers, n_rl, n_cl, n_fcl,error_flag,output_dimension;
-    float error_threshold1;
-    float error_threshold2;
-    float beta1_adam;
-    float beta2_adam;
-    float error_gamma;
-    float* error_alpha;
-    float* error;
-    rl** rls;//rls = residual-layers
-    cl** cls;//cls = convolutional-layers
-    fcl** fcls; // fcls = fully-connected-layers
-    int** sla; //layers*layers, 1 for fcls, 2 for cls, 3 for rls, sla = sequential layers array
-    float* output_layer;// will be the last array
-} sequential_model;
-
 typedef struct thread_args_model {
     model* m;
     int rows,cols,channels,error_dimension;
@@ -332,14 +317,6 @@ typedef struct thread_args_vae_model {
     float* error;
     float** returning_error;
 } thread_args_vae_model;
-
-typedef struct thread_args_gan_model {
-    ganmodel* gm;
-    int g_d_in,g_i_in,g_j_in,d_d_in,d_i_in,d_j_in,output_size;
-    float* real_input;
-    float* noise_input;
-    float** ret_err;
-} thread_args_gan_model;
 
 typedef struct thread_args_server {
     int idx,client_desc, reading_pipe, writing_pipe,buffer_size;
@@ -378,7 +355,7 @@ typedef struct ddpg {
 } ddpg;
 
 typedef struct oustrategy {
-	int action_dim;
+    int action_dim;
     float mu,theta,sigma,max_sigma,min_sigma;
     float* action_max;
     float* action_min;
@@ -396,11 +373,9 @@ typedef struct oustrategy {
 #include "drl.h"
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
-#include "gan_model.h"
 #include "gd.h"
 #include "math_functions.h"
 #include "model.h"
-#include "multi_core_gan_model.h"
 #include "multi_core_model.h"
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"

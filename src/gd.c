@@ -40,6 +40,7 @@ void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float d
      (*p) += m*m*temp - (1+m)*lr*(float)(dp/mini_batch_size);
 }
 
+
 /* This function update a parameter p using the adam optimization algorithm
  * 
  * Input:
@@ -95,3 +96,4 @@ void radam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, 
      else 
         (*p) -= lr*m_t_hat;
 }
+

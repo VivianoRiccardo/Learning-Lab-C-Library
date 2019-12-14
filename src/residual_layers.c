@@ -399,5 +399,15 @@ void memcopy_derivative_params_to_vector_rl(rl* f, float* vector){
     }
 }
 
-
+/* setting the biases of convolutional layers inside residual ones to 0
+ * 
+ * Input:
+ *             @ rl* r:= the residual layer
+ * */
+void set_residual_biases_to_zero(rl* r){
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        set_convolutional_biases_to_zero(r->cls[i]);
+    }
+}
 
