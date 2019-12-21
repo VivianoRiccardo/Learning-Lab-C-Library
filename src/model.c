@@ -726,6 +726,17 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 }
             }
             
+            else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
+                }
+                else if(f2->feed_forward_flag == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                    exit(1);
+                }
+            }
             else{
                 copy_array(f1->pre_activation,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
             }
@@ -740,6 +751,18 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                     }
                     else if(f2->feed_forward_flag == EDGE_POPUP){
                         convolutional_feed_forward_edge_popup(f1->dropout_temp,f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
+                    }
+                }
+                
+                else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                        for(i = 0; i < f2->n_kernels; i++){
+                            transposed_convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                        }
+                    }
+                    else if(f2->feed_forward_flag == EDGE_POPUP){
+                        fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                        exit(1);
                     }
                 }
                 
@@ -758,6 +781,18 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                     }
                     else if(f2->feed_forward_flag == EDGE_POPUP){
                         convolutional_feed_forward_edge_popup(f1->dropout_temp,f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
+                    }
+                }
+                
+                else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                        for(i = 0; i < f2->n_kernels; i++){
+                            transposed_convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                        }
+                    }
+                    else if(f2->feed_forward_flag == EDGE_POPUP){
+                        fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                        exit(1);
                     }
                 }
                 
@@ -784,6 +819,19 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 }
             }
             
+            else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                    }
+                }
+                
+                else if(f2->feed_forward_flag == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                    exit(1);
+                }
+            }
+            
             else{
                 copy_array(f1->post_activation,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
             }
@@ -801,6 +849,17 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                         convolutional_feed_forward_edge_popup(f1->dropout_temp,f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
                     }
                 }
+                else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                        for(i = 0; i < f2->n_kernels; i++){
+                            transposed_convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                        }
+                    }
+                    else if(f2->feed_forward_flag == EDGE_POPUP){
+                        fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                        exit(1);
+                    }
+                }
                 else{
                     copy_array(f1->dropout_temp,f2->pooltemp,f2->channels*f2->input_rows*f2->input_cols);
                 }
@@ -816,6 +875,17 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                     }
                     else if(f2->feed_forward_flag == EDGE_POPUP){
                         convolutional_feed_forward_edge_popup(f1->dropout_temp,f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
+                    }
+                }
+                else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                        for(i = 0; i < f2->n_kernels; i++){
+                            transposed_convolutional_feed_forward(f1->dropout_temp, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                        }
+                    }
+                    else if(f2->feed_forward_flag == EDGE_POPUP){
+                        fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                        exit(1);
                     }
                 }
                 else{
@@ -901,6 +971,42 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
             else
                 group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+        }
+    }
+    
+    else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+        /* activation for f2, if there is any activation*/
+        if(f2->activation_flag == SIGMOID)
+            sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+                  
+        else if(f2->activation_flag == RELU)
+            relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        else if(f2->activation_flag == TANH)
+            tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+        
+        else if(f2->activation_flag == LEAKY_RELU)
+            leaky_relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+        /* normalization for f2, if there is any normalization*/
+        
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = 0; j < f2->rows1; j++){
+                    for(k = 0; k < f2->cols1;k++){
+                        if(f2->activation_flag != NO_ACTIVATION)
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                    }
+                }
+            }    
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            if(f2->activation_flag != NO_ACTIVATION)
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+            else
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
         }
     }
     
@@ -1066,6 +1172,19 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
         }
         
+        else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_feed_forward(f1->post_pooling, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
+            }
+            
+            else if(f2->feed_forward_flag == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                exit(1);
+            }
+        }
+        
         else{
             copy_array(f1->post_pooling,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }    
@@ -1081,6 +1200,18 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 convolutional_feed_forward_edge_popup(f1->post_normalization, f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
+            }
+        }
+        
+        else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_feed_forward(f1->post_normalization, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
+            }
+            else if(f2->feed_forward_flag == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                exit(1);
             }
         }
         
@@ -1101,6 +1232,18 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
         }
         
+        else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
+            }
+            else if(f2->feed_forward_flag == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                exit(1);
+            }
+        }
+        
         else{
             copy_array(f1->post_activation,f2->pooltemp,f2->input_rows*f2->input_cols*f2->channels);
         }
@@ -1115,6 +1258,18 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 convolutional_feed_forward_edge_popup(f1->pre_activation, f2->kernels, f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases, f2->channels, f2->pre_activation, f2->stride1_rows, f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage);
+            }
+        } 
+        
+        else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_feed_forward(f1->pre_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows, f2->padding1_rows);
+                }
+            }
+            else if(f2->feed_forward_flag == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+                exit(1);
             }
         } 
         
@@ -1200,6 +1355,42 @@ void ff_cl_cl(cl* f1, cl* f2){
                 group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
             else
                 group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+        }
+    }
+    
+    else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+        /* activation for f2, if there is any activation*/
+        if(f2->activation_flag == SIGMOID)
+            sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+                  
+        else if(f2->activation_flag == RELU)
+            relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+
+        else if(f2->activation_flag == TANH)
+            tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+        
+        else if(f2->activation_flag == LEAKY_RELU)
+            leaky_relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
+        /* normalization for f2, if there is any normalization*/
+        
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = 0; j < f2->rows1; j++){
+                    for(k = 0; k < f2->cols1;k++){
+                        if(f2->activation_flag != NO_ACTIVATION)
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                    }
+                }
+            }    
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            if(f2->activation_flag != NO_ACTIVATION)
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+            else
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
         }
     }
     
@@ -1380,7 +1571,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     int i,j,k;
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
-        if(f2->convolutional_flag == CONVOLUTION){
+        if(f2->convolutional_flag == CONVOLUTION || f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->normalization_flag){
                     max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
@@ -1615,6 +1806,163 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
         return f2->error2;
     }
     
+    else if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = 0; j < f2->rows1; j++){
+                    for(k = 0; k < f2->cols1; k++){
+                        if(f2->activation_flag)
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+
+                    }
+                }
+            }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            
+            if(f2->activation_flag)
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+            else
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else{
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+        }
+        
+        /* computing the weight and bias derivatives for f2 applied to f1 output*/
+        if(f1->dropout_flag){
+            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                }
+            }
+            
+            else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                exit(1);
+            } 
+            
+            else if(f2->training_mode == EDGE_POPUP){
+                fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                exit(1);
+            }
+       }
+        
+        else{
+            if(f1->activation_flag){
+                if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                    }
+                }
+                
+                else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                    exit(1);
+                } 
+                
+                else if(f2->training_mode == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                    exit(1);
+                }
+            }
+            
+            else{
+                if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                    }
+                }
+                
+                else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                    exit(1);
+                } 
+                else if(f2->training_mode == EDGE_POPUP){
+                    fprintf(stderr,"Error: edge popup for transposed convolution is not implemented yet!\n");
+                    exit(1);
+                }
+            }
+        }
+        
+        return f2->error2;
+    }
+    
     else
         return f2->temp;
     
@@ -1644,7 +1992,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
-        if(f2->convolutional_flag == CONVOLUTION){
+        if(f2->convolutional_flag == CONVOLUTION || f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->normalization_flag)
                     max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
@@ -1862,6 +2210,135 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                 
                 convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_cols*f2->kernel_rows*f2->k_percentage);
             }
+            
+        }
+        
+        
+        return f2->error2;
+    }
+    
+    else  if(f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(f2->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
+            for(i = 0; i < f2->n_kernels; i++){
+                for(j = 0; j < f2->rows1; j++){
+                    for(k = 0; k < f2->cols1; k++){
+                        if(f2->activation_flag)
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                        else
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+
+                    }
+                }
+            }
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else if(f2->normalization_flag == GROUP_NORMALIZATION){
+            
+            if(f2->activation_flag)
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+            else
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+
+            
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == NO_ACTIVATION){
+                copy_array(f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            
+        }
+        
+        else{
+            if(f2->activation_flag == SIGMOID){
+                derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == RELU){
+                derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == TANH){
+                derivative_tanhh_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+            
+            if(f2->activation_flag == LEAKY_RELU){
+                derivative_leaky_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
+                dot1D(f2->temp3,f2->temp,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
+            }
+        }
+        
+        /* computing the weight and bias derivatives for f2 applied to f1 output*/
+        
+        if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f1->pooling_flag)
+                    transposed_convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                else if(f1->normalization_flag)
+                    transposed_convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                else if(f1->activation_flag)
+                    transposed_convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+                else
+                    transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows);                
+            }
+        }
+        
+        else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
+           fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+           exit(1);
+        }
+        
+        
+        else if(f2->training_mode == EDGE_POPUP){
+            fprintf(stderr,"Error: edge popup for transposed convolution not implemented yet!\n");
+            exit(1);
             
         }
         

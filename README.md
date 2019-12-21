@@ -77,7 +77,7 @@ sh compile_tests.sh
 - DDPG reinforcement learning algorithm added (29/11/2019)
 - Ornstein-Ulhenbeck Process (30/11/2019)
 - Edge-Popup training algorithm for fully connected and convolutional layers (14/12/2019)
-
+- 2d Transposed convolution feed forward and back propagation (21/12/2019)
 # Tests
 
 Each test has been trained successfully.

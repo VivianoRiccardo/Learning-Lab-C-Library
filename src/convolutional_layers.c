@@ -79,7 +79,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         exit(1);
     }
     
-    if(convolutional_flag == CONVOLUTION && normalization_flag == GROUP_NORMALIZATION){
+    if(convolutional_flag != NO_CONVOLUTION && normalization_flag == GROUP_NORMALIZATION){
         if(n_kernels%group_norm_channels){
             fprintf(stderr,"Error: your normalization channels doesn't divide perfectly the number of kernels of this layer\n");
             exit(1);
@@ -134,15 +134,25 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->d1_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->d2_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->indices = (int*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(int));
-    if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
-        c->rows1 = 0;
-    else
-        c->rows1 = ((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows);
-    if(convolutional_flag == CONVOLUTION){
-        if(!bool_is_real((float)((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)))
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
+        if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
+            c->rows1 = 0;
+        else
+            c->rows1 = ((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows);
+    }
+    
+    else if(convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((input_rows-1)*stride1_rows +kernel_rows - 2*padding1_rows)))
+            c->rows1 = 0;
+        else
+            c->rows1 = ((input_rows-1)*stride1_rows +kernel_rows - 2*padding1_rows);
+    }
+    
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((c->rows1 - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)))
             c->rows2 = 0;
         else
-            c->rows2 = ((((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows) - pooling_rows)/stride2_rows + 1 + 2*padding2_rows);
+            c->rows2 = ((c->rows1 - pooling_rows)/stride2_rows + 1 + 2*padding2_rows);
         }
     else{
         if(!bool_is_real((float)((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows)))
@@ -150,15 +160,24 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         else
             c->rows2 = ((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows);
     }
-    if(!bool_is_real((float)((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)))
-        c->cols1 = 0;
-    else
-        c->cols1 = ((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols);
-    if(convolutional_flag == CONVOLUTION){
-        if(!bool_is_real((float)((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)))
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
+        if(!bool_is_real((float)((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)))
+            c->cols1 = 0;
+        else
+            c->cols1 = ((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols);
+    }
+    
+    else if(convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((input_cols-1)*stride1_cols +kernel_cols - 2*padding1_cols)))
+            c->cols1 = 0;
+        else
+            c->cols1 = ((input_cols-1)*stride1_cols +kernel_cols - 2*padding1_cols);
+    }
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((c->cols1 - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)))
             c->cols2 = 0;
         else
-            c->cols2 = ((((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
+            c->cols2 = ((c->cols1 - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
         }
     else{
         if(!bool_is_real((float)((input_cols-pooling_cols)/stride2_cols +1 + 2*padding2_cols)))
@@ -206,7 +225,10 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     else{
         c->group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
         for(i = 0; i < n_kernels/group_norm_channels; i++){
+            if(convolutional_flag == CONVOLUTION)
             c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1-2*padding1_rows-2*padding1_cols,i,NO_ACTIVATION);
+            else if(convolutional_flag == TRANSPOSED_CONVOLUTION)
+            c->group_norm[i] = batch_normalization(group_norm_channels,c->rows1*c->cols1,i,NO_ACTIVATION);
         }
     }
     return c;
@@ -911,7 +933,7 @@ cl* reset_cl(cl* f){
         return NULL;
     
     int i,j;
-    if(f->convolutional_flag == CONVOLUTION){
+    if(f->convolutional_flag == CONVOLUTION || f->convolutional_flag == TRANSPOSED_CONVOLUTION){
         for(i = 0; i < f->n_kernels; i++){
             for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
                 f->d_kernels[i][j] = 0;
