@@ -46,6 +46,7 @@ SOFTWARE.
 #define NESTEROV 1
 #define ADAM 2
 #define RADAM 3
+#define DIFF_GRAD 4
 #define FCLS 1
 #define CLS 2
 #define RLS 3
@@ -136,6 +137,8 @@ typedef struct bn{//batch_normalization layer
     float* d_beta;//vector_dim
     float* d1_beta;//vector_dim
     float* d2_beta;//vector_dim
+    float* ex_d_gamma_diff_grad; //vector dim
+    float* ex_d_beta_diff_grad; //vector dim
     float* mean;//vector_dim
     float* var;//vector_dim
     float** outputs;//batch_size*vector_dim
@@ -164,6 +167,8 @@ typedef struct fcl { //fully-connected-layers
     float* d_biases; //output
     float* d1_biases; //output
     float* d2_biases; //output
+    float* ex_d_weights_diff_grad;//output*input
+    float* ex_d_biases_diff_grad;//output
     float* pre_activation; //output
     float* post_activation; //output
     float* dropout_mask;//output
@@ -178,6 +183,7 @@ typedef struct fcl { //fully-connected-layers
     int* indices;// for edge-popup algorithm, output*input
     float* scores;//for edge-popup algorithm,output*input
     float* d_scores;//for edge-popup algorithm,output*input
+    float* ex_d_scores_diff_grad;//for edge-popup algorithm,output*input
     float* d1_scores;//for edge-popup algorithm,output*input
     float* d2_scores;//for edge-popup algorithm,output*input
     
@@ -202,6 +208,8 @@ typedef struct cl { //convolutional-layers
     float* d_biases; //n_kernels
     float* d1_biases; //n_kernels
     float* d2_biases; //n_kernels
+    float** ex_d_kernels_diff_grad; //n_kernels - channels*kernel_rows*kernel_cols
+    float* ex_d_biases_diff_grad; //n_kernels
     float* pre_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
     float* post_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
     float* post_normalization;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
@@ -217,6 +225,7 @@ typedef struct cl { //convolutional-layers
     int* indices;// for edge-popup algorithm, n_kernels*channels*kernel_rows*kernel_cols
     float* scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    float* ex_d_scores_diff_grad;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d1_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d2_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
 } cl;
@@ -233,13 +242,16 @@ typedef struct lstm { //long short term memory layers
     float** w;// 4 x size*size
     float** u;// 4 x size*size
     float** d_w;// 4 x size*size
+    float** ex_d_w_diff_grad;// 4 x size*size
     float** d1_w;// 4 x size*size
     float** d2_w;// 4 x size*size
     float** d_u;// 4 x size*size
+    float** ex_d_u_diff_grad;// 4 x size*size
     float** d1_u;// 4 x size*size
     float** d2_u;// 4 x size*size
     float** biases; //4 x size
     float** d_biases; //4 x size
+    float** ex_d_biases_diff_grad; //4 x size
     float** d1_biases; //4 x size
     float** d2_biases; //4 x size
     float*** lstm_z; //window x 4 x size

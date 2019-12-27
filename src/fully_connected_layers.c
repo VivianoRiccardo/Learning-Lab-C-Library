@@ -52,10 +52,12 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->dropout_threshold = dropout_threshold;
     f->weights = (float*)malloc(sizeof(float)*output*input);
     f->d_weights = (float*)calloc(output*input,sizeof(float));
+    f->ex_d_weights_diff_grad = (float*)calloc(output*input,sizeof(float));
     f->d1_weights = (float*)calloc(output*input,sizeof(float));
     f->d2_weights = (float*)calloc(output*input,sizeof(float));
     f->biases = (float*)calloc(output,sizeof(float));
     f->d_biases = (float*)calloc(output,sizeof(float));
+    f->ex_d_biases_diff_grad = (float*)calloc(output,sizeof(float));
     f->d1_biases = (float*)calloc(output,sizeof(float));
     f->d2_biases = (float*)calloc(output,sizeof(float));
     f->pre_activation = (float*)calloc(output,sizeof(float));
@@ -67,6 +69,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->training_mode = GRADIENT_DESCENT;
     f->scores = (float*)calloc(output*input,sizeof(float));
     f->d_scores = (float*)calloc(output*input,sizeof(float));
+    f->ex_d_scores_diff_grad = (float*)calloc(output*input,sizeof(float));
     f->d1_scores = (float*)calloc(output*input,sizeof(float));
     f->d2_scores = (float*)calloc(output*input,sizeof(float));
     f->indices = (int*)calloc(output*input,sizeof(int));
@@ -99,10 +102,12 @@ void free_fully_connected(fcl* f){
     
     free(f->weights);
     free(f->d_weights);
+    free(f->ex_d_weights_diff_grad);
     free(f->d1_weights);
     free(f->d2_weights);
     free(f->biases);
     free(f->d_biases);
+    free(f->ex_d_biases_diff_grad);
     free(f->d1_biases);
     free(f->d2_biases);
     free(f->pre_activation);
@@ -115,6 +120,7 @@ void free_fully_connected(fcl* f){
     free(f->error2);
     free(f->scores);
     free(f->d_scores);
+    free(f->ex_d_scores_diff_grad);
     free(f->d1_scores);
     free(f->d2_scores);
     free(f->indices);
@@ -395,14 +401,17 @@ fcl* copy_fcl(fcl* f){
     fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold);
     copy_array(f->weights,copy->weights,f->output*f->input);
     copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+    copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
     copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
     copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
     copy_array(f->biases,copy->biases,f->output);
     copy_array(f->d_biases,copy->d_biases,f->output);
+    copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
     copy_array(f->scores,copy->scores,f->input*f->output);
     copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+    copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
     copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
     copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
     copy_int_array(f->indices,copy->indices,f->input*f->output);
@@ -466,9 +475,9 @@ fcl* reset_fcl(fcl* f){
  * */
 unsigned long long int size_of_fcls(fcl* f){
     unsigned long long int sum = 0;
-    sum += ((unsigned long long int)(f->input*f->output*8*sizeof(float)));
+    sum += ((unsigned long long int)(f->input*f->output*10*sizeof(float)));
     sum += ((unsigned long long int)(f->input*f->output*sizeof(int)));
-    sum += ((unsigned long long int)(f->output*10*sizeof(float)));
+    sum += ((unsigned long long int)(f->output*11*sizeof(float)));
     sum += ((unsigned long long int)(f->input*2*sizeof(float)));
     return sum;
 }
@@ -488,15 +497,18 @@ void paste_fcl(fcl* f,fcl* copy){
         return;
     copy_array(f->weights,copy->weights,f->output*f->input);
     copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+    copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
     copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
     copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
     copy_array(f->biases,copy->biases,f->output);
     copy_array(f->d_biases,copy->d_biases,f->output);
+    copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
     if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
         copy_array(f->scores,copy->scores,f->input*f->output);
         copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
         copy_int_array(f->indices,copy->indices,f->input*f->output);

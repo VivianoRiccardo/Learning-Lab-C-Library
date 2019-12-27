@@ -3161,7 +3161,15 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         (*b1)*=m->beta1_adam;
         (*b2)*=m->beta2_adam;
         (*t)++;
-    }     
+    }
+    
+    else if(gradient_descent_flag == DIFF_GRAD){
+        update_residual_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        update_convolutional_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        update_fully_connected_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
+    }
     
 
 }

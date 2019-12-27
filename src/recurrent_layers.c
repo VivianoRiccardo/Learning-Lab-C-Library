@@ -64,13 +64,16 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
     lstml->w = (float**)malloc(sizeof(float*)*4);
     lstml->u = (float**)malloc(sizeof(float*)*4);
     lstml->d_w = (float**)malloc(sizeof(float*)*4);
+    lstml->ex_d_w_diff_grad = (float**)malloc(sizeof(float*)*4);
     lstml->d1_w = (float**)malloc(sizeof(float*)*4);
     lstml->d2_w = (float**)malloc(sizeof(float*)*4);
     lstml->d_u = (float**)malloc(sizeof(float*)*4);
+    lstml->ex_d_u_diff_grad = (float**)malloc(sizeof(float*)*4);
     lstml->d1_u = (float**)malloc(sizeof(float*)*4);
     lstml->d2_u = (float**)malloc(sizeof(float*)*4);
     lstml->biases = (float**)malloc(sizeof(float*)*4);
     lstml->d_biases = (float**)malloc(sizeof(float*)*4);
+    lstml->ex_d_biases_diff_grad = (float**)malloc(sizeof(float*)*4);
     lstml->d1_biases = (float**)malloc(sizeof(float*)*4);
     lstml->d2_biases = (float**)malloc(sizeof(float*)*4);
     lstml->lstm_z = (float***)malloc(sizeof(float**)*window);
@@ -118,9 +121,11 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
             lstml->u[i][j] = random_general_gaussian(0,size);
         }
         lstml->d_w[i] = (float*)calloc(size*size,sizeof(float));
+        lstml->ex_d_w_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
         lstml->d1_w[i] = (float*)calloc(size*size,sizeof(float));
         lstml->d2_w[i] = (float*)calloc(size*size,sizeof(float));
         lstml->d_u[i] = (float*)calloc(size*size,sizeof(float));
+        lstml->ex_d_u_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
         lstml->d1_u[i] = (float*)calloc(size*size,sizeof(float));
         lstml->d2_u[i] = (float*)calloc(size*size,sizeof(float));
         lstml->biases[i] = (float*)calloc(size,sizeof(float));
@@ -128,6 +133,7 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
             lstml->biases[i][j] = 1;
         }
         lstml->d_biases[i] = (float*)calloc(size,sizeof(float));
+        lstml->ex_d_biases_diff_grad[i] = (float*)calloc(size,sizeof(float));
         lstml->d1_biases[i] = (float*)calloc(size,sizeof(float));
         lstml->d2_biases[i] = (float*)calloc(size,sizeof(float));
         
@@ -175,9 +181,11 @@ void free_recurrent_lstm(lstm* rlstm){
         free(rlstm->w[i]);
         free(rlstm->u[i]);
         free(rlstm->d_w[i]);
+        free(rlstm->ex_d_w_diff_grad[i]);
         free(rlstm->d1_w[i]);
         free(rlstm->d2_w[i]);
         free(rlstm->d_u[i]);
+        free(rlstm->ex_d_u_diff_grad[i]);
         free(rlstm->d1_u[i]);
         free(rlstm->d2_u[i]);
         free(rlstm->biases[i]);
@@ -196,13 +204,15 @@ void free_recurrent_lstm(lstm* rlstm){
     free(rlstm->w);
     free(rlstm->u);
     free(rlstm->d_w);
+    free(rlstm->ex_d_w_diff_grad);
     free(rlstm->d1_w);
     free(rlstm->d2_w);
     free(rlstm->d_u);
+    free(rlstm->ex_d_u_diff_grad);
     free(rlstm->d1_u);
     free(rlstm->d2_u);
     free(rlstm->biases);
-    free(rlstm->d_biases);
+    free(rlstm->ex_d_biases_diff_grad);
     free(rlstm->d1_biases);
     free(rlstm->d2_biases);
     free(rlstm->lstm_z);
@@ -526,17 +536,20 @@ lstm* copy_lstm(lstm* l){
     lstm* copy = recurrent_lstm(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell);
     for(i = 0; i < 4; i++){
         copy_array(l->w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d_w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d1_w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d2_w[i],copy->w[i],l->size*l->size);
+        copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
+        copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->size*l->size);
+        copy_array(l->d1_w[i],copy->d1_w[i],l->size*l->size);
+        copy_array(l->d2_w[i],copy->d2_w[i],l->size*l->size);
         copy_array(l->u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d_u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d1_u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d2_u[i],copy->u[i],l->size*l->size);
+        copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
+        copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->size*l->size);
+        copy_array(l->d1_u[i],copy->d1_u[i],l->size*l->size);
+        copy_array(l->d2_u[i],copy->d2_u[i],l->size*l->size);
         copy_array(l->biases[i],copy->biases[i],l->size);
-        copy_array(l->d_biases[i],copy->biases[i],l->size);
-        copy_array(l->d1_biases[i],copy->biases[i],l->size);
-        copy_array(l->d2_biases[i],copy->biases[i],l->size);
+        copy_array(l->d_biases[i],copy->d_biases[i],l->size);
+        copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->size);
+        copy_array(l->d1_biases[i],copy->d1_biases[i],l->size);
+        copy_array(l->d2_biases[i],copy->d2_biases[i],l->size);
     }
     
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -570,17 +583,20 @@ void paste_lstm(lstm* l,lstm* copy){
     int i;
     for(i = 0; i < 4; i++){
         copy_array(l->w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d_w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d1_w[i],copy->w[i],l->size*l->size);
-        copy_array(l->d2_w[i],copy->w[i],l->size*l->size);
+        copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
+        copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->size*l->size);
+        copy_array(l->d1_w[i],copy->d1_w[i],l->size*l->size);
+        copy_array(l->d2_w[i],copy->d2_w[i],l->size*l->size);
         copy_array(l->u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d_u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d1_u[i],copy->u[i],l->size*l->size);
-        copy_array(l->d2_u[i],copy->u[i],l->size*l->size);
+        copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
+        copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->size*l->size);
+        copy_array(l->d1_u[i],copy->d1_u[i],l->size*l->size);
+        copy_array(l->d2_u[i],copy->d2_u[i],l->size*l->size);
         copy_array(l->biases[i],copy->biases[i],l->size);
-        copy_array(l->d_biases[i],copy->biases[i],l->size);
-        copy_array(l->d1_biases[i],copy->biases[i],l->size);
-        copy_array(l->d2_biases[i],copy->biases[i],l->size);
+        copy_array(l->d_biases[i],copy->d_biases[i],l->size);
+        copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->size);
+        copy_array(l->d1_biases[i],copy->d1_biases[i],l->size);
+        copy_array(l->d2_biases[i],copy->d2_biases[i],l->size);
     }
     
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -687,7 +703,7 @@ int get_array_size_params_lstm(lstm* f){
             sum+=f->bns[i]->vector_dim*2;
         }
     }
-    return sum+8*f->size*f->size+4*f->size;
+    return sum+10*f->size*f->size+5*f->size;
 }
 
 /* this function paste the weights and biases in a single vector

@@ -55,8 +55,11 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3);
 void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3);
 void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3);
 void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
+void update_residual_layer_adam_diff_grad(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
 void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
+void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
 void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
+void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
 void add_l2_residual_layer(model* m,int total_number_weights,float lambda);
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);
 void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);
@@ -65,10 +68,12 @@ void copy_char_array(char* input, char* output, int size);
 int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
 void update_batch_normalized_layer_nesterov(bn** bns,int n_bn, float lr, float momentum, int mini_batch_size);
 void update_batch_normalized_layer_adam(bn** bns,int n_bn, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
+void update_batch_normalized_layer_adam_diff_grad(bn** bns,int n_bn, float lr, int mini_batch_size, float b1, float b2,float beta1_adam,float beta2_adam);
 void free_matrix(float** m, int n);
 void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
 void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_batch_size);
 void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, float b2,float beta1_adam,float beta2_adam);
+void update_lstm_layer_adam_diff_grad(rmodel* m,float lr,int mini_batch_size,float b1, float b2,float beta1_adam,float beta2_adam);
 void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long t,float beta1_adam,float beta2_adam);
 void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t,float beta1_adam,float beta2_adam);
@@ -91,5 +96,6 @@ void copy_int_array(int* input, int* output, int size);
 float float_abs(float a);
 void float_abs_array(float* a, int n);
 float random_general_gaussian_kaiming_init(float mean, float n);
+
 
 #endif

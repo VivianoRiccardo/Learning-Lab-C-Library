@@ -71,5 +71,7 @@ float entropy(float y_hat);
 void entropy_array(float* y_hat, float* output, int size);
 float derivative_entropy(float y_hat);
 void derivative_entropy_array(float* y_hat, float* output, int size);
+float abs_sigmoid(float x);
+void abs_sigmoid_array(float* input, float* output, int size);
 
 #endif

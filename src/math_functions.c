@@ -55,10 +55,20 @@ float sigmoid(float x){
     return 1/(1+exp(-x));
 }
 
+float abs_sigmoid(float x){
+    return 1/(1+exp(-float_abs(x)));
+}
 void sigmoid_array(float* input, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
         output[i] = sigmoid(input[i]);
+    }
+}
+
+void abs_sigmoid_array(float* input, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = abs_sigmoid(input[i]);
     }
 }
 

@@ -78,6 +78,7 @@ sh compile_tests.sh
 - Ornstein-Ulhenbeck Process (30/11/2019)
 - Edge-Popup training algorithm for fully connected and convolutional layers (14/12/2019)
 - 2d Transposed convolution feed forward and back propagation (21/12/2019)
+- DiffGrad optimization algorithm for cnn fcl lstm layers (27/12/2019)
 # Tests
 
 Each test has been trained successfully.
