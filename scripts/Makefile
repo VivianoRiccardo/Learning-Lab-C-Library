@@ -15,7 +15,7 @@ T8:=test8/
 T9:=test9/
 T10:=test10/
 T11:=test11/
-T11:=test12/
+T12:=test12/
 
 
 SRCS = $(wildcard $(DIR)*.c)

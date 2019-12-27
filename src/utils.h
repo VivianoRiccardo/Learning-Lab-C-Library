@@ -89,7 +89,7 @@ void print_specificity(long long unsigned int** cm, int size);
 void quick_sort(float A[], int I[], int lo, int hi);
 void copy_int_array(int* input, int* output, int size);
 float float_abs(float a);
-void* float_abs_array(float* a, int n);
+void float_abs_array(float* a, int n);
 float random_general_gaussian_kaiming_init(float mean, float n);
 
 #endif

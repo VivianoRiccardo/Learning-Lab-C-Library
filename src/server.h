@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "llab.h"
 
-int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipes, int buffer_size);
+int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipes, int buffer_size, char* ip);
 void* server_thread(void* _args);
 
 

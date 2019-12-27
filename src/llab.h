@@ -37,7 +37,7 @@ SOFTWARE.
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
-
+#include <fcntl.h>
 
 #define N_NORMALIZATION 5
 #define BETA_NORMALIZATION 0.75

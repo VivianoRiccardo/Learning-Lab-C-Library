@@ -62,7 +62,7 @@ float random_general_gaussian_xavier_init(float mean, float n){
 /* a random number from a gaussian distribution with mean 0 and std = sqrtf(1/n)
  * where n is the number of neuron of layer l-1*/
 float random_general_gaussian_kaiming_init(float mean, float n){
-    random_general_gaussian(mean,n);
+    return random_general_gaussian(mean,n);
 }
 /* This function set the output from a given mask already set
  * 
@@ -1608,7 +1608,7 @@ float float_abs(float a){
 }
 
 /* absolute value of each value of an array*/
-void* float_abs_array(float* a, int n){
+void float_abs_array(float* a, int n){
     int i;
     for(i = 0; i < n; i++){
         a[i] = float_abs(a[i]);

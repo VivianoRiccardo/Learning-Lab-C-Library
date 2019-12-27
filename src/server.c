@@ -23,7 +23,6 @@ SOFTWARE.
 */
 
 #include "llab.h"
-
 void* server_thread(void* _args) {
     
     // depacking args
@@ -61,7 +60,7 @@ void* server_thread(void* _args) {
  *                 @ int buffer_size:= the buffer of the vector
  * 
  * */
-int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipes, int buffer_size){
+int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipes, int buffer_size, char* ip){
     int socket_desc, client_desc,sockaddr_len = sizeof(struct sockaddr_in),c = 1;
     int ret;
     struct sockaddr_in server_addr;
@@ -69,13 +68,14 @@ int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipe
     struct sockaddr_in* client_addr2;
     
     bzero(&server_addr, sizeof(server_addr)); 
-    
+    inet_pton(AF_INET, ip, &(&server_addr)->sin_addr);
     // socket creation
     socket_desc = socket(AF_INET,SOCK_STREAM,0);
     if(socket_desc == -1){
         fprintf(stderr,"Error: can't create socket\n");
         exit(1);
     }
+    
     // Which connection can accept
     
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -112,7 +112,7 @@ int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipe
     while(1){
         client_addr = calloc(1,sizeof(struct sockaddr_in));
         client_desc = accept(socket_desc,(struct sockaddr*)&client_addr,(socklen_t*)&sockaddr_len);
-        if(client_desc == 1 && errno == EINTR) continue;
+        if((client_desc == 1 && errno == EINTR)) continue;
         thread_args_server* thread = (thread_args_server*)malloc(sizeof(thread_args_server));
         thread->idx = i;
         thread->client_desc = client_desc;
@@ -123,6 +123,7 @@ int run_server(int port, int max_num_conn, int* reading_pipes, int* writing_pipe
         pthread_t t;
         pthread_create(&t,NULL,server_thread,thread);
         pthread_detach(t);
+        printf("connected client id: %d\n",i);
         i++;
     }
     

@@ -64,7 +64,7 @@ int main(){
         int buffer_size = get_array_size_params_model(m);
         free_model(m);
         
-        run_server(PORT,number_connections,r,w,buffer_size+INPUTS_PER_CLIENT+OUTPUT_PER_CLIENT);
+        run_server(PORT,number_connections,r,w,buffer_size+INPUTS_PER_CLIENT+OUTPUT_PER_CLIENT, "127.0.0.1");
         
         for(i = 0; i < number_connections; i++){
             close(writers[i][1]);

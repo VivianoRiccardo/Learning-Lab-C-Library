@@ -38,6 +38,7 @@ oustrategy* init_oustrategy(int action_dim, float* act_max, float* act_min){
     ou->state = (float*)calloc(action_dim,sizeof(float));
     ou->action_max = act_max;
     ou->action_min = act_min;
+    return ou;
 }
 
 
