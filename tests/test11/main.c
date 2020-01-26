@@ -81,7 +81,7 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    
+    /*
     printf("Training phase!\n");
     save_model(m,0);
     // Training
@@ -90,7 +90,7 @@ int main(){
         // Shuffling before each epoch
         shuffle_float_matrices(inputs,outputs,training_instances);
         for(i = 0; i < training_instances/batch_size; i++){
-            //printf("Mini batch number: %d\n",i+1);
+            printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
             model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
             for(j = 0; j < batch_size; j++){
@@ -113,10 +113,15 @@ int main(){
         }
         // Saving the model
         set_model_training_gd(m);
-        save_model(m,k+1);
+        model* mm = copy_model(m);
+        set_model_training_edge_popup(mm,0.5);
+        printf("creating subnetwork\n");
+        get_subnetwork_from_edge_popup(mm);
+        save_model(mm,k+1);
+        free_model(mm);
         set_model_training_edge_popup(m,0.5);
     }
-    
+    */
     // Deallocating Training resources
     free(ksource[0]);
     free(ksource);

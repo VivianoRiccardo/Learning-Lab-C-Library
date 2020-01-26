@@ -69,7 +69,7 @@ void fully_connected_feed_forward(float* input, float* output, float* weight,flo
 void fully_connected_feed_forward_edge_popup(float* input, float* output, float* weight,float* bias, int input_size, int output_size, int* indices, int last_n){
     int i,j;
     for(j = output_size*input_size-last_n; j < output_size*input_size; j++){
-        output[(int)(indices[j]/input_size)] += input[(indices[j]%input_size)]*weight[(int)(indices[j]/input_size)*input_size+(indices[j]%input_size)];
+        output[(int)(indices[j]%output_size)] += input[(indices[j]%input_size)]*weight[indices[j]];
     }
     for(j = 0; j < output_size; j++){
         output[j] += bias[j];
@@ -138,7 +138,7 @@ void fully_connected_back_prop_edge_popup(float* input, float* output_error, flo
     }
 
     for(j = output_size*input_size-last_n; j < output_size*input_size; j++){
-        input_error[(indices[j]%input_size)] += output_error[(int)(indices[j]/input_size)]*weight[(int)(indices[j]/input_size)*input_size+(indices[j]%input_size)];
+        input_error[(indices[j]%input_size)] += output_error[(int)(indices[j]%output_size)]*weight[(indices[j])];
     }
 }
 
@@ -167,14 +167,14 @@ void fully_connected_back_prop_edge_popup(float* input, float* output_error, flo
 void fully_connected_back_prop_edge_popup_ff_gd_bp(float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size,float* score_error, int* indices, int last_n){
     int i,j;
     for(j = output_size*input_size-last_n; j < output_size*input_size; j++){
-        weight_error[(int)(indices[j]/input_size)*input_size+(indices[j]%input_size)]+=output_error[(int)(indices[j]/input_size)]*input[(indices[j]%input_size)];
+        weight_error[(indices[j])]+=output_error[((int)(indices[j]%output_size))]*input[(indices[j]%input_size)];
     }
     for(j = 0; j < output_size; j++){
         bias_error[j]+=output_error[j];
     }
 
     for(j = output_size*input_size-last_n; j < output_size*input_size; j++){
-        input_error[(indices[j]%input_size)] += output_error[(int)(indices[j]/input_size)]*weight[(int)(indices[j]/input_size)*input_size+(indices[j]%input_size)];
+        input_error[(indices[j]%input_size)] += output_error[((int)(indices[j]%output_size))]*weight[indices[j]];
     }
 }
 

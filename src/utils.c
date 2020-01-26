@@ -1784,3 +1784,10 @@ void float_abs_array(float* a, int n){
         a[i] = float_abs(a[i]);
     }
 }
+
+void dot_float_input(float* input1, int* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = (float)(input1[i]*input2[i]);
+    }
+} 

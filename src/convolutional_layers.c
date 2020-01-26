@@ -137,6 +137,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->d1_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->d2_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->indices = (int*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(int));
+    c->used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
         if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
             c->rows1 = 0;
@@ -211,6 +212,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     
     for(i = 0; i < n_kernels; i++){
         c->kernels[i] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        c->used_kernels[i] = 1;
         c->d_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->ex_d_kernels_diff_grad[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->d1_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
@@ -259,6 +261,7 @@ void free_convolutional(cl* c){
         free(c->d2_kernels[i]);
     }
     free(c->kernels);
+    free(c->used_kernels);
     free(c->d_kernels);
     free(c->ex_d_kernels_diff_grad);
     free(c->d1_kernels);
@@ -545,6 +548,12 @@ void save_cl(cl* f, int n){
         exit(1);
     }
     
+    i = fwrite(f->used_kernels,sizeof(int)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
     
     i = fclose(fw);
     
@@ -613,6 +622,7 @@ cl* load_cl(FILE* fr){
     float* biases;
     float* scores;
     int* indices;
+    int* used_kernels;
     bn** group_norm = NULL;
     
     i = fread(&feed_forward_flag,sizeof(int),1,fr);
@@ -815,6 +825,7 @@ cl* load_cl(FILE* fr){
     biases = (float*)malloc(sizeof(float)*n_kernels);
     scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
     indices = (int*)malloc(sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows);
+    used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     
     for(k = 0; k < n_kernels; k++){
         kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
@@ -847,6 +858,13 @@ cl* load_cl(FILE* fr){
         exit(1);
     }
     
+    i = fread(used_kernels,sizeof(int)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
     if(normalization_flag == GROUP_NORMALIZATION){
         group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
         for(k = 0; k < n_kernels/group_norm_channels; k++){
@@ -870,12 +888,14 @@ cl* load_cl(FILE* fr){
     }
     copy_array(scores,f->scores,n_kernels*channels*kernel_cols*kernel_rows);
     copy_int_array(indices,f->indices,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_int_array(used_kernels,f->used_kernels,n_kernels);
     f->training_mode = training_mode;
     f->feed_forward_flag = feed_forward_flag;
     free(kernels);
     free(biases);
     free(scores);
     free(indices);
+    free(used_kernels);
     return f;
 }
 
@@ -923,6 +943,7 @@ cl* copy_cl(cl* f){
     copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
     copy->feed_forward_flag = f->feed_forward_flag;
     copy->training_mode = f->training_mode;
     return copy;
@@ -982,8 +1003,16 @@ cl* reset_cl(cl* f){
             f->indices[i] = i;
             f->d_scores[i] = 0;
         }
+        for(i = 0; i < f->n_kernels; i++){
+            f->used_kernels[i] = 0;
+        }
+        
         float_abs_array(f->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
         quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows-1);
+        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        }
+        
     }
     return f;
 }
@@ -999,6 +1028,7 @@ unsigned long long int size_of_cls(cl* f){
     unsigned long long int sum = 0;
     sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*10*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*sizeof(int)));
+    sum += ((unsigned long long int)(f->n_kernels*sizeof(int)));
     sum += ((unsigned long long int)(f->n_kernels*5*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
@@ -1045,6 +1075,7 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
     if(f->feed_forward_flag == EDGE_POPUP){
         copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
         copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
@@ -1085,8 +1116,15 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
      if(f->feed_forward_flag == EDGE_POPUP){
          for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
              copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+             copy->indices[i] = i;
+         }
+         for(i = 0; i < f->n_kernels; i++){
+             copy->used_kernels[i] = 0;
          }
          quick_sort(copy->scores,copy->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+         for(i = copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols-copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols*copy->k_percentage; i < copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols; i++){
+            copy->used_kernels[(int)(copy->indices[i]/(copy->channels*copy->kernel_rows*copy->kernel_cols))] = 1;
+         }
      }
     return;
 }
@@ -1245,3 +1283,79 @@ void set_convolutional_unused_weights_to_zero(cl* c){
     }
 }
 
+
+/* Given the inputs that will be surely used and those not used, and giving the output neurons
+ * attached to some used weights in the next layers, the convolutional layer looks at the
+ * weights used and if some weight is used where there is no input or active output neuron, then the weight is cut off.
+ * pay attention, this mechanism works with convolutional/residual input layer before this convolutional layer and
+ * convolutional/residual/fully connected output layer. so it doesn't work perfectly with fully connected input layer, 
+ * because to simplify i m going to look to the feature maps not all neurons for the used input. so there could be some cases
+ * where if you have a fcl layer as input, some weights are not cut off even if they are not attached to some active input neuron
+ * and could be seen as further biases.
+ * however is rare that such a thing happens. returns 1 if some weight has been cut off, 0 otherwise,
+ * this function even modifies the used_output of the channel looking at the kernels if you decomment the commented part
+ * 
+ * Inputs:
+ * 
+ *             cl* c:= the convolutional layer
+ *             int* used_input:= the input used dimensions: (channels)
+ *                int* used_output:= the output attached to some output weight dimensions: (n_kernels)
+ * */
+int cl_adjusting_weights_after_edge_popup(cl* c, int* used_input, int* used_output){
+    int flag = 0,i,j,z, lower = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage;
+    for(i = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; i < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols; i++){
+            if(!used_input[((int)(c->indices[i]%(c->channels*c->kernel_rows*c->kernel_cols)))/(c->kernel_rows*c->kernel_cols)] || !used_output[((int)(c->indices[i]/(c->channels*c->kernel_rows*c->kernel_cols)))]){
+                flag = 1;
+                for(z = i; z > lower; z--){
+                    int temp = c->indices[z-1];
+                    c->indices[z-1] = c->indices[z];
+                    c->indices[z] = temp;
+                }
+                lower++; 
+            }
+    }
+    
+    c->k_percentage = (float)(1-(float)(((double)(lower))/((double)(c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols))));
+    cl* copy = c;
+    for(i = 0; i < copy->n_kernels; i++){
+        copy->used_kernels[i] = 0;
+    }
+    for(i = copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols-copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols*copy->k_percentage; i < copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols; i++){
+        copy->used_kernels[(int)(copy->indices[i]/(copy->channels*copy->kernel_rows*copy->kernel_cols))] = 1;
+    }
+    /*
+    for(i = 0; i < c->n_kernels; i++){
+        if(!c->used_kernels[i])
+            used_output[i] = 0;
+    }
+    * */
+    return flag;
+}
+
+
+/* This function gives you an array of channel dimensions saying wich channels is used and which not
+ * 
+ * Inputs:
+ * 
+ *             @ cl* c:= the convolutional layer
+ *             @ int* ch:= the channel array, can be null and this function is going to allocate
+ * */
+int* get_used_channels(cl* c, int* ch){
+    int* channels;
+    if(ch == NULL)
+        channels = (int*)calloc(c->channels,sizeof(int));
+    else
+        channels = ch;
+    
+    int i,j;
+    for(i = 0; i < c->channels; i++){
+        channels[i] = 0;
+    }
+    
+    for(j = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; j < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols; j++){
+        channels[((int)(c->indices[i]%(c->channels*c->kernel_rows*c->kernel_cols)))/(c->kernel_rows*c->kernel_cols)] = 1;
+    }
+    
+    return channels;
+
+}

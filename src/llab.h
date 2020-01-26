@@ -181,6 +181,7 @@ typedef struct fcl { //fully-connected-layers
     float k_percentage;// for edge-popup algorithm
     int n_best_w;// for edge-popup algorithm
     int* indices;// for edge-popup algorithm, output*input
+    int* active_output_neurons;// for edge-popup algorithm, output
     float* scores;//for edge-popup algorithm,output*input
     float* d_scores;//for edge-popup algorithm,output*input
     float* ex_d_scores_diff_grad;//for edge-popup algorithm,output*input
@@ -200,6 +201,7 @@ typedef struct cl { //convolutional-layers
     int rows1, cols1, rows2,cols2;
     int group_norm_channels;
     int training_mode,feed_forward_flag;//GRADIENT_DESCENT, EDGE_POPUP
+    int* used_kernels; //k_kernels, 1 where the kernel is used, 0 otherwise
     float** kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d1_kernels; //n_kernels - channels*kernel_rows*kernel_cols
@@ -228,6 +230,7 @@ typedef struct cl { //convolutional-layers
     float* ex_d_scores_diff_grad;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d1_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d2_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    
 } cl;
 
 typedef struct rl { //residual-layers

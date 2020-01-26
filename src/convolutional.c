@@ -84,24 +84,20 @@ void convolutional_feed_forward(float* input, float* kernel, int input_i, int in
  *                @ int last_n:= the last n best indices
  * */
 void convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride, int padding, int* indices, int n_kernels, int last_n){
-    int oi,oj,i,j,c,s,z;
+    int oi,oj,i,j,c,s,z,flag = -1;
     int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
     int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
                 output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*kernel_i*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)]*input[(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*input_i*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                if(flag!=(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj){
+                    flag = (int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj;
+                    output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += bias[(int)(indices[s]/(channels*kernel_i*kernel_j))];
+                }
             }
         }
     }
-    for(oi = padding; oi < output_i-padding; oi++){
-        for(oj = padding; oj < output_j-padding; oj++){
-            for(i = 0; i < n_kernels; i++){
-                output[i*output_i*output_j+oi*output_j+oj] += bias[i]; 
-            }
-        }
-    }
-
 }
 
 /* This function computes the errors using the backpropagation
@@ -294,7 +290,7 @@ void max_pooling_feed_forward(float* input, float* output, int input_i, int inpu
     int i,j,k1,k2;
     int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
     int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
-    float max = -9999;
+    float max = -999999;
     
     for(i = 0; i < output_i - 2*padding; i++){
         for(j = 0; j < output_j - 2*padding; j++){
@@ -305,7 +301,7 @@ void max_pooling_feed_forward(float* input, float* output, int input_i, int inpu
                 }
             }
             output[(padding+i)*output_j+padding+j] = max;
-            max = -99999;        
+            max = -999999;        
         }
     }
     
@@ -332,7 +328,7 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
     int i,j,k1,k2, index1 = 0, index2 = 0;
     int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
     int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
-    float max = -9999;
+    float max = -999999;
     
     for(i = 0; i < output_i - 2*padding; i++){
         for(j = 0; j < output_j - 2*padding; j++){
@@ -361,7 +357,7 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
                 
                 }
             }
-            max = -99999;        
+            max = -9999999;        
         }
     } 
 }

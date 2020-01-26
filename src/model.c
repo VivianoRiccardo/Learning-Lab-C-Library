@@ -675,6 +675,10 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     else if(f2->activation_flag == LEAKY_RELU)
         leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
     
+    if(f2->feed_forward_flag == EDGE_POPUP)
+        dot_float_input(f2->post_activation,f2->active_output_neurons,f2->post_activation,f2->output);
+    
+    
     /* setting the dropout mask, if dropout flag is != 0*/
     if(f2->dropout_flag){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
@@ -958,9 +962,9 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
                         if(f2->activation_flag != NO_ACTIVATION)
-                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                     }
                 }
             }    
@@ -968,9 +972,9 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             if(f2->activation_flag != NO_ACTIVATION)
-                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
             else
-                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
         }
     }
     
@@ -994,9 +998,9 @@ void ff_fcl_cl(fcl* f1, cl* f2){
                 for(j = 0; j < f2->rows1; j++){
                     for(k = 0; k < f2->cols1;k++){
                         if(f2->activation_flag != NO_ACTIVATION)
-                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                     }
                 }
             }    
@@ -1004,9 +1008,9 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             if(f2->activation_flag != NO_ACTIVATION)
-                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization, f2->used_kernels);
             else
-                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization, f2->used_kernels);
         }
     }
     
@@ -1121,7 +1125,8 @@ void ff_cl_fcl(cl* f1, fcl* f2){
         tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
     else if(f2->activation_flag == LEAKY_RELU)
         leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
-    
+    if(f2->feed_forward_flag == EDGE_POPUP)
+        dot_float_input(f2->post_activation,f2->active_output_neurons,f2->post_activation,f2->output);
 
     
     /* setting the dropout mask, if dropout flag is != 0*/
@@ -1282,58 +1287,43 @@ void ff_cl_cl(cl* f1, cl* f2){
     if(f2->convolutional_flag == CONVOLUTION){
         /* activation for f2, if there is any activation*/
         if(f2->activation_flag == SIGMOID){
-            if(f2->padding1_rows){
-                for(i = 0; i < f2->n_kernels; i++){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->used_kernels[i]){
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         sigmoid_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
                     }
                 }
             }
-            
-            else
-                sigmoid_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
         }
             
         
         else if(f2->activation_flag == RELU){
-            if(f2->padding1_rows){
-                for(i = 0; i < f2->n_kernels; i++){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->used_kernels[i]){
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
                     }
                 }
             }
-            
-            else
-                relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
         }
         else if(f2->activation_flag == TANH){
-            if(f2->padding1_rows){
-                for(i = 0; i < f2->n_kernels; i++){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->used_kernels[i]){
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         tanhh_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
                     }
                 }
             }
-            
-            else
-                tanhh_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
-
         }
         
         else if(f2->activation_flag == LEAKY_RELU){
-            if(f2->padding1_rows){
-                for(i = 0; i < f2->n_kernels; i++){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f2->used_kernels[i]){
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         leaky_relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
                     }
                 }
             }
-            
-            else
-                leaky_relu_array(f2->pre_activation,f2->post_activation,f2->n_kernels*f2->rows1*f2->cols1);
 
         }
         /* normalization for f2, if there is any normalization*/
@@ -1342,9 +1332,9 @@ void ff_cl_cl(cl* f1, cl* f2){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows;k++){
                         if(f2->activation_flag)
-                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                     }
                 }
             }    
@@ -1352,9 +1342,9 @@ void ff_cl_cl(cl* f1, cl* f2){
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             if(f2->activation_flag != NO_ACTIVATION)
-                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
             else
-                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization);
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
         }
     }
     
@@ -1378,9 +1368,9 @@ void ff_cl_cl(cl* f1, cl* f2){
                 for(j = 0; j < f2->rows1; j++){
                     for(k = 0; k < f2->cols1;k++){
                         if(f2->activation_flag != NO_ACTIVATION)
-                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->post_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_feed_forward(f2->pre_activation,f2->post_normalization, i,j,k, f2->n_kernels, f2->rows1, f2->cols1,N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                     }
                 }
             }    
@@ -1388,9 +1378,9 @@ void ff_cl_cl(cl* f1, cl* f2){
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             if(f2->activation_flag != NO_ACTIVATION)
-                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+                group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization,f2->used_kernels);
             else
-                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization);
+                group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,0,0,f2->post_normalization,f2->used_kernels);
         }
     }
     
@@ -1629,9 +1619,9 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
                         if(f2->activation_flag)
-                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
 
                     }
                 }
@@ -1667,9 +1657,9 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
             else
-                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -1812,9 +1802,9 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 for(j = 0; j < f2->rows1; j++){
                     for(k = 0; k < f2->cols1; k++){
                         if(f2->activation_flag)
-                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
 
                     }
                 }
@@ -1850,9 +1840,9 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f2->used_kernels);
             else
-                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f2->used_kernels);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -2034,9 +2024,9 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                 for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                     for(k = f2->padding1_rows; k < f2->cols1-f2->padding1_rows; k++){
                         if(f2->activation_flag)
-                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
 
                     }
                 }
@@ -2072,9 +2062,9 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
             else
-                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2);
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -2223,9 +2213,9 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                 for(j = 0; j < f2->rows1; j++){
                     for(k = 0; k < f2->cols1; k++){
                         if(f2->activation_flag)
-                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->post_activation,f2->temp2,f2->temp, i,j-f2->padding1_rows,k-f2->padding1_rows,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
                         else
-                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION);
+                            local_response_normalization_back_prop(f2->pre_activation,f2->temp2,f2->temp, i,j,k,f2->n_kernels,f2->rows1, f2->cols1, N_NORMALIZATION,BETA_NORMALIZATION,ALPHA_NORMALIZATION,K_NORMALIZATION,f2->used_kernels);
 
                     }
                 }
@@ -2261,9 +2251,9 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+                group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f2->used_kernels);
             else
-                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2);
+                group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f2->used_kernels);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -3085,7 +3075,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
  * 
  * */
 int count_weights(model* m){
-    int i,j;
+    int i,j,z,c;
     int sum = 0;
     for(i = 0; i < m->n_fcl; i++){
         sum+=m->fcls[i]->input*m->fcls[i]->output*m->fcls[i]->k_percentage;
@@ -3095,7 +3085,11 @@ int count_weights(model* m){
         if(m->cls[i]->convolutional_flag == CONVOLUTION){
             sum+=m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols*m->cls[i]->k_percentage;
             if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
-                sum+=m->cls[i]->n_kernels/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
+                for(z = 0, c = 0; z < m->cls[i]->n_kernels; z++){
+                    if(m->cls[i]->used_kernels[z])
+                        c++;
+                }
+                sum+=c/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
             }
         }
     }
@@ -3104,7 +3098,11 @@ int count_weights(model* m){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->k_percentage;
             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                sum+=m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels*m->rls[i]->cls[j]->group_norm[0]->vector_dim;
+                for(z = 0, c = 0; z < m->rls[i]->cls[j]->n_kernels; z++){
+                    if(m->rls[i]->cls[j]->used_kernels[z])
+                        c++;
+                }
+                sum+=c/m->rls[i]->cls[j]->group_norm_channels*m->rls[i]->cls[j]->group_norm[0]->vector_dim;
             }
         }
     }
@@ -3584,6 +3582,8 @@ void set_model_training_edge_popup(model* m, float k_percentage){
         m->fcls[i]->training_mode = EDGE_POPUP;
         m->fcls[i]->feed_forward_flag = EDGE_POPUP;
         m->fcls[i]->k_percentage = k_percentage;
+        free(m->fcls[i]->active_output_neurons);
+        m->fcls[i]->active_output_neurons = get_used_outputs( m->fcls[i],NULL,FCLS, m->fcls[i]->output);
     }
     
     for(i = 0; i < m->n_cl; i++){
@@ -3601,6 +3601,12 @@ void set_model_training_edge_popup(model* m, float k_percentage){
     }
 }
 
+/*é This function set the gradient descent training flag for the model m
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ * */
 void set_model_training_gd(model* m){
     int i,j;
     for(i = 0; i < m->n_fcl; i++){
@@ -3616,4 +3622,352 @@ void set_model_training_gd(model* m){
             m->rls[i]->cls[j]->training_mode = GRADIENT_DESCENT;
         }
     }
+}
+
+
+/* This function adjusts all the unused weights in the model after an edge popup training, deleting
+ * useless weights still considerated but not attached to any active input or output neuron for each layer
+ * return 1 if some weight has been deleting, 0 otherwise
+ * 
+ * Inputs:
+ * 
+ *                 @ model* m:= the model m
+ * */
+int adjust_model_weights_after_edge_popup(model* m){
+    int k,k1,k2,k3,i,j, flag = 0;
+    int** inputs_fcls = (int**)malloc(sizeof(int*)*m->layers);
+    int** inputs_cls = (int**)malloc(sizeof(int*)*m->layers);
+    int** inputs_rls = (int**)malloc(sizeof(int*)*m->layers);
+    int** outputs_fcls = (int**)malloc(sizeof(int*)*m->layers);
+    int** outputs_cls = (int**)malloc(sizeof(int*)*m->layers);
+    int** outputs_rls = (int**)malloc(sizeof(int*)*m->layers);
+    for(i = 0; i < m->layers; i++){
+        inputs_fcls[i] = NULL;
+        inputs_cls[i] = NULL;
+        inputs_rls[i] = NULL;
+        outputs_fcls[i] = NULL;
+        outputs_cls[i] = NULL;
+        outputs_rls[i] = NULL;
+    }
+    for(i = 0,k1 = 0, k2 = 0, k3 = 0; i < m->layers && m->sla[i][0] != 0; i++){
+        if(m->sla[i][0] == FCLS){
+            if(!i || m->sla[i-1][0] == FCLS)
+                inputs_fcls[k1] = get_used_inputs(m->fcls[k1],NULL,FCLS,m->fcls[k1]->input);
+            else if(m->sla[i-1][0] == CLS)
+                inputs_fcls[k1] = get_used_inputs(m->fcls[k1],NULL,CLS,m->cls[k2-1]->n_kernels);
+            else
+                inputs_fcls[k1] = get_used_inputs(m->fcls[k1],NULL,CLS,m->rls[k3-1]->channels);
+                
+            if(i == m->layers-1 || !m->sla[i+1][0] || m->sla[i+1][0] == FCLS)
+                outputs_fcls[k1] = get_used_outputs(m->fcls[k1],NULL,FCLS,m->fcls[k1]->output);
+            else if(m->sla[i+1][0] == CLS)
+                outputs_fcls[k1] = get_used_outputs(m->fcls[k1],NULL,CLS,m->cls[k2]->channels);
+            else
+                outputs_fcls[k1] = get_used_outputs(m->fcls[k1],NULL,CLS,m->rls[k3]->channels);
+            k1++;
+        }
+        
+        else if(m->sla[i][0] == CLS){
+            inputs_cls[k2] = get_used_channels(m->cls[k2],NULL);
+            outputs_cls[k2] = (int*)calloc(m->cls[k2]->n_kernels,sizeof(int));
+            copy_int_array(m->cls[k2]->used_kernels,outputs_cls[k2],m->cls[k2]->n_kernels);
+            k2++;
+        }
+        
+        else{
+            i+=m->rls[k3]->n_cl-1;
+            k3++;    
+        }
+    }
+    
+    
+    for(i = 0,k1 = 0, k2 = 0, k3 = 0; i < m->layers && m->sla[i][0] != 0; i++){
+        if(m->sla[i][0] == FCLS){
+            k1++;
+        }
+        
+        else if(m->sla[i][0] == CLS){
+            k2++;
+        }
+        
+        else{
+            int* temp = (int*)calloc(m->rls[k3]->channels,sizeof(int));
+            int k4 = k3;
+            for(j = i; j < m->layers && m->sla[j][0] != 0 && m->sla[j][0] != RLS; j+=m->rls[k4]->n_cl, k4++){
+                int* temp3 = (int*)calloc(m->rls[k4]->channels,sizeof(int));
+                int* temp2 = get_used_channels_rl(m->rls[k4],temp3);
+                for(k = 0; k < m->rls[k4]->channels; k++){
+                    if(temp[k] || temp2[k])
+                        temp[k] = 1;
+                }
+                
+                free(temp2);
+                free(temp3);
+            }
+            if(j != m->layers && m->sla[j][0] != 0){
+                if(m->sla[j][0] == FCLS){
+                    for(k = 0; k < m->rls[k3]->channels; k++){
+                        if(temp[k] || inputs_fcls[k1])
+                            temp[k] = 1;
+                    }
+                }
+                else if(m->sla[j][0] == CLS){
+                    for(k = 0; k < m->rls[k3]->channels; k++){
+                        if(temp[k] || inputs_cls[k2])
+                            temp[k] = 1;
+                    }
+                }
+            }
+            
+            inputs_rls[k3] = get_used_channels_rl(m->rls[k3],temp);
+            free(temp);
+            
+            temp = (int*)calloc(m->rls[k3]->channels,sizeof(int));
+            k4 = k3;
+            for(j = i; j > 0 && m->sla[j][0] != RLS; j-=m->rls[k4]->n_cl, k4--){
+                int* temp3 = (int*)calloc(m->rls[k4]->channels,sizeof(int));
+                int* temp2 = get_used_kernels_rl(m->rls[k4],temp3);
+                for(k = 0; k < m->rls[k4]->channels; k++){
+                    if(temp[k] || temp2[k])
+                        temp[k] = 1;
+                }
+                
+                free(temp2);
+                free(temp3);
+            }
+            if(i > 0){
+                if(m->sla[i-1][0] == FCLS){
+                    for(k = 0; k < m->rls[k3]->channels; k++){
+                        if(temp[k] || outputs_fcls[k1])
+                            temp[k] = 1;
+                    }
+                }
+                else if(m->sla[i-1][0] == CLS){
+                    for(k = 0; k < m->rls[k3]->channels; k++){
+                        if(temp[k] || outputs_cls[k2])
+                            temp[k] = 1;
+                    }
+                }
+                
+                else if(m->sla[i-1][0] == RLS){
+                    for(k = 0; k < m->rls[k3]->channels; k++){
+                        if(temp[k] || outputs_rls[k3-1])
+                            temp[k] = 1;
+                    }
+                }
+            }
+            
+            outputs_rls[k3] = get_used_kernels_rl(m->rls[k3],temp);
+            free(temp);
+            
+            i+=m->rls[k3]->n_cl-1;
+            k3++;    
+        }
+    }
+    k1 = 0;k2 = 0;k3 = 0;
+    if(m->sla[0][0] == FCLS)
+        k1++;
+    if(m->sla[0][0] == CLS)
+        k2++;
+    if(m->sla[0][0] == RLS)
+        k3++;
+        
+    for(i = 1; i < m->layers && m->sla[i][0] != 0; i++){
+        if(m->sla[i][0] == FCLS){
+            if(m->sla[i-1][0] == FCLS){
+                for(j = 0; j < m->fcls[k1]->input; j++){
+                    if(inputs_fcls[k1][j] != 1 || outputs_fcls[k1-1][j] != 1){
+                        inputs_fcls[k1][j] = 0;
+                        outputs_fcls[k1-1][j] = 0;
+                    }
+                }
+            }
+            else if(m->sla[i-1][0] == CLS){
+                for(j = 0; j < m->cls[k2-1]->n_kernels; j++){
+                    if(inputs_fcls[k1][j] != 1 || outputs_cls[k2-1][j] != 1){
+                        inputs_fcls[k1][j] = 0;
+                        outputs_cls[k2-1][j] = 0;
+                    }
+                }
+            }
+            else if(i){
+                for(j = 0; j < m->rls[k3-1]->channels; j++){
+                    if(inputs_fcls[k1][j] != 1 || outputs_rls[k3-1][j] != 1){
+                        inputs_fcls[k1][j] = 0;
+                        outputs_rls[k3-1] = 0;
+                    }
+                }
+            }
+            k1++;
+        }
+        
+        else if(m->sla[i][0] == CLS){
+            for(j = 0; j < m->cls[k2]->channels; j++){
+                if(m->sla[i-1][0] == FCLS){
+                    if(outputs_fcls[k1-1][j] != 1 || inputs_cls[k2][j] != 1){
+                        inputs_cls[k2][j] = 0;
+                        outputs_fcls[k1-1][j] = 0;
+                    }
+                }
+                
+                if(m->sla[i-1][0] == CLS){
+                    if(outputs_cls[k2-1][j] != 1 || inputs_cls[k2][j] != 1){
+                        inputs_cls[k2][j] = 0;
+                        outputs_cls[k2-1][j] = 0;
+                    }
+                }
+                
+                if(m->sla[i-1][0] == RLS){
+                    if(outputs_rls[k3-1][j] != 1 || inputs_cls[k2][j] != 1){
+                        inputs_cls[k2][j] = 0;
+                        outputs_rls[k3-1][j] = 0;
+                    }
+                }
+            }
+            k2++;
+        }
+        
+        else{
+            for(j = 0; j < m->rls[k3]->channels; j++){
+                if(m->sla[i-1][0] == FCLS){
+                    if(outputs_fcls[k1-1][j] != 1 || inputs_rls[k3][j] != 1){
+                        inputs_rls[k3][j] = 0;
+                        outputs_fcls[k1-1][j] = 0;
+                    }
+                }
+                
+                if(m->sla[i-1][0] == CLS){
+                    if(outputs_cls[k2-1][j] != 1 || inputs_rls[k3][j] != 1){
+                        inputs_rls[k3][j] = 0;
+                        outputs_cls[k2-1][j] = 0;
+                    }
+                }
+                
+                if(m->sla[i-1][0] == RLS){
+                    if(outputs_rls[k3-1][j] != 1 || inputs_rls[k3][j] != 1){
+                        inputs_rls[k3][j] = 0;
+                        outputs_rls[k3-1][j] = 0;
+                    }
+                }
+            }
+            i+=m->rls[k3]->n_cl-1;
+            k3++;    
+        }
+    }
+    
+    for(i = 0,k1 = 0, k2 = 0, k3 = 0; i < m->layers && m->sla[i][0] != 0; i++){
+        if(m->sla[i][0] == FCLS){
+            if(!i || m->sla[i-1][0] == FCLS){
+                if(i == m->layers-1 || !m->sla[i+1][0] || m->sla[i+1][0] == FCLS)
+                    flag+=fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],outputs_fcls[k1],FCLS,m->fcls[k1]->input);
+                else if(m->sla[i+1][0] == CLS){
+                    int* temp = (int*)calloc(m->fcls[k1]->output,sizeof(int));
+                    int n = m->fcls[k1]->output/m->cls[k2]->channels;
+                    for(j = 0; j < m->cls[k2]->channels; j++){
+                        if(outputs_fcls[k1][j]){
+                            for(k = 0; k < n; k++){
+                                temp[j*n+k] = 1;
+                            }
+                        }
+                    }
+                    flag+=fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],temp,FCLS,m->fcls[k1]->input);
+                    free(temp);
+                }
+                
+                else if(m->sla[i+1][0] == RLS){
+                    int* temp = (int*)calloc(m->fcls[k1]->output,sizeof(int));
+                    int n = m->fcls[k1]->output/m->rls[k3]->channels;
+                    for(j = 0; j < m->rls[k3]->channels; j++){
+                        if(outputs_fcls[k1][j]){
+                            for(k = 0; k < n; k++){
+                                temp[j*n+k] = 1;
+                            }
+                        }
+                    }
+                    flag+=fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],temp,FCLS,m->fcls[k1]->input);
+                    free(temp);
+                }
+                    
+            }
+            
+            else{
+                int ss;
+                if(m->sla[i-1][0] == CLS)
+                    ss = m->cls[k2-1]->n_kernels;
+                else
+                    ss = m->rls[k3-1]->channels;
+                    
+                if(i == m->layers-1 || !m->sla[i+1][0] || m->sla[i+1][0] == FCLS)
+                    fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],outputs_fcls[k1],CLS,ss);
+                else if(m->sla[i+1][0] == CLS){
+                    int* temp = (int*)calloc(m->fcls[k1]->output,sizeof(int));
+                    int n = m->fcls[k1]->output/m->cls[k2]->channels;
+                    for(j = 0; j < m->cls[k2]->channels; j++){
+                        if(outputs_fcls[k1][j]){
+                            for(k = 0; k < n; k++){
+                                temp[j*n+k] = 1;
+                            }
+                        }
+                    }
+                    
+                    flag+=fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],temp,CLS,ss);
+                    free(temp);
+                }
+                
+                else if(m->sla[i+1][0] == RLS){
+                    int* temp = (int*)calloc(m->fcls[k1]->output,sizeof(int));
+                    int n = m->fcls[k1]->output/m->rls[k3]->channels;
+                    for(j = 0; j < m->rls[k3]->channels; j++){
+                        if(outputs_fcls[k1][j]){
+                            for(k = 0; k < n; k++){
+                                temp[j*n+k] = 1;
+                            }
+                        }
+                    }
+                    
+                    flag+=fcl_adjusting_weights_after_edge_popup(m->fcls[k1],inputs_fcls[k1],temp,CLS,ss);
+                    free(temp);
+                }
+            }
+            k1++;
+        }
+        
+        else if(m->sla[i][0] == CLS){
+            flag += cl_adjusting_weights_after_edge_popup(m->cls[k2],inputs_cls[k2],outputs_cls[k2]);
+            k2++;
+        }
+        
+        else{
+            flag += rl_adjusting_weights_after_edge_popup(m->rls[k3],inputs_rls[k3],outputs_rls[k3]);
+            i+=m->rls[k3]->n_cl-1;
+            k3++;
+        }
+    }
+    
+    for(i = 0; i < m->layers; i++){
+        free(inputs_cls[i]);
+        free(inputs_fcls[i]);
+        free(inputs_rls[i]);
+        free(outputs_cls[i]);
+        free(outputs_fcls[i]);
+        free(outputs_rls[i]);
+    }
+    free(inputs_cls);
+    free(inputs_fcls);
+    free(inputs_rls);
+    if(flag)
+        return 1;
+    return 0;
+    
+}
+
+/* This function adjust iterativly after each little adjustment the model* m
+ * 
+ * Inputs:
+ * 
+ *             @ model* m
+ * */
+void get_subnetwork_from_edge_popup(model* m){
+    while(adjust_model_weights_after_edge_popup(m));
+    return;
 }

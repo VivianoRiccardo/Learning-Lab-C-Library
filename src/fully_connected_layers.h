@@ -43,5 +43,7 @@ void memcopy_derivative_params_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_derivative_params(fcl* f, float* vector);
 void set_fully_connected_biases_to_zero(fcl* f);
 void set_fully_connected_unused_weights_to_zero(fcl* f);
-
+int fcl_adjusting_weights_after_edge_popup(fcl* f, int* used_input, int* used_output, int layer_flag, int input_size);
+int* get_used_inputs(fcl* f, int* used_input, int flag, int input_size);
+int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size);
 #endif

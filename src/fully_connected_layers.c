@@ -73,11 +73,13 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->d1_scores = (float*)calloc(output*input,sizeof(float));
     f->d2_scores = (float*)calloc(output*input,sizeof(float));
     f->indices = (int*)calloc(output*input,sizeof(int));
+    f->active_output_neurons = (int*)calloc(output,sizeof(int));
     f->post_activation = (float*)calloc(output,sizeof(float));
     f->dropout_mask = (float*)calloc(output,sizeof(float));
     f->feed_forward_flag = FULLY_FEED_FORWARD;
     f->k_percentage = 1;
     for(i = 0; i < output; i++){
+        f->active_output_neurons[i] = 1;
         for(j = 0; j < input; j++){
             f->indices[i*input+j] = i*input+j;
             f->weights[i*input+j] = random_general_gaussian(0, (float)input);
@@ -124,6 +126,7 @@ void free_fully_connected(fcl* f){
     free(f->d1_scores);
     free(f->d2_scores);
     free(f->indices);
+    free(f->active_output_neurons);
     free(f);    
 }
 
@@ -237,6 +240,13 @@ void save_fcl(fcl* f, int n){
         exit(1);
     }
     
+    i = fwrite(f->active_output_neurons,sizeof(int)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
     i = fclose(fw);
     
     if(i != 0){
@@ -280,6 +290,7 @@ fcl* load_fcl(FILE* fr){
     float* biases;
     float* scores;
     int* indices;
+    int* active_output_neurons;
     
     i = fread(&feed_forward_flag,sizeof(int),1,fr);
     
@@ -340,6 +351,7 @@ fcl* load_fcl(FILE* fr){
     weights = (float*)malloc(sizeof(float)*input*output);
     scores = (float*)malloc(sizeof(float)*input*output);
     indices = (int*)malloc(sizeof(int)*input*output);
+    active_output_neurons = (int*)malloc(sizeof(int)*output);
     biases = (float*)malloc(sizeof(float)*output);
     
     i = fread(weights,sizeof(float)*(input)*(output),1,fr);
@@ -370,15 +382,24 @@ fcl* load_fcl(FILE* fr){
         exit(1);
     }
     
+    i = fread(active_output_neurons,sizeof(int)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
     fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold);
     copy_fcl_params(f,weights,biases);
     copy_array(scores,f->scores,input*output);
     copy_int_array(indices,f->indices,input*output);
+    copy_int_array(active_output_neurons,f->active_output_neurons,output);
     f->training_mode = training_mode;
     f->feed_forward_flag = feed_forward_flag;
     free(weights);
     free(biases);
     free(indices);
+    free(active_output_neurons);
     free(scores);
     return f;
 }
@@ -415,6 +436,7 @@ fcl* copy_fcl(fcl* f){
     copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
     copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
     copy_int_array(f->indices,copy->indices,f->input*f->output);
+    copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
     copy->training_mode = f->training_mode;
     copy->feed_forward_flag = f->feed_forward_flag;
     return copy;
@@ -462,6 +484,8 @@ fcl* reset_fcl(fcl* f){
     if(f->training_mode == EDGE_POPUP){
         float_abs_array(f->scores,f->output*f->input);
         quick_sort(f->scores,f->indices,0,f->output*f->input-1);
+        free(f->active_output_neurons);
+        f->active_output_neurons = get_used_outputs(f,NULL,FCLS,f->output);
     }
     return f;
 }
@@ -477,7 +501,7 @@ unsigned long long int size_of_fcls(fcl* f){
     unsigned long long int sum = 0;
     sum += ((unsigned long long int)(f->input*f->output*10*sizeof(float)));
     sum += ((unsigned long long int)(f->input*f->output*sizeof(int)));
-    sum += ((unsigned long long int)(f->output*11*sizeof(float)));
+    sum += ((unsigned long long int)(f->output*12*sizeof(float)));
     sum += ((unsigned long long int)(f->input*2*sizeof(float)));
     return sum;
 }
@@ -512,6 +536,7 @@ void paste_fcl(fcl* f,fcl* copy){
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
         copy_int_array(f->indices,copy->indices,f->input*f->output);
+        copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
     }
     return;
 }
@@ -539,8 +564,15 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
         }
         
     }
-    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP)
+    
+    for(i = 0; i < f->input*f->output; i++){
+        copy->indices[i] = i;
+    }
+    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
         quick_sort(copy->scores,copy->indices,0,f->output*f->input-1);
+        free(copy->active_output_neurons);
+        copy->active_output_neurons = get_used_outputs(copy,NULL,FCLS,copy->output);
+    }
     
     return;
 }
@@ -657,4 +689,129 @@ void set_fully_connected_unused_weights_to_zero(fcl* f){
     for(i = 0; i < f->output*f->input-f->output*f->input*f->k_percentage; i++){
         f->weights[f->indices[i]] = 0;
     }
+}
+
+/* This function minimize k percentage and the used weights if there are some used weights attached to inactive neurons
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fully connected layer
+ *             @ int* used_input:= an array of the input used, can be dimension (n_feature_maps) if layer_flag = CONVOLUTION f->input*f->output dimension otherwise
+ *             @ int* used_output:= the active neurons of the next layer, f->output dimension
+ *             @ int layer_flag:= it says if the previous layer was a convolution/residual (CONVOLUTION) or a fcl layer (FULLY_CONNECTED)
+ *             @ int input_size:= the size of used_input array
+ * */
+int fcl_adjusting_weights_after_edge_popup(fcl* f, int* used_input, int* used_output, int layer_flag, int input_size){
+    int i,j,z,flag = 0, lower = f->input*f->output-f->input*f->output*f->k_percentage;
+    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
+        if(layer_flag == CLS){
+            int n_per_feature_map = f->input/input_size;
+            for(j = 0; j < input_size; j++){
+                if(((int)(f->indices[i]%f->input)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->input) >= n_per_feature_map*(j)) || (!used_output[(int)(f->indices[i]%f->output)])){
+                    if(!used_input[j]){
+                        flag = 1;
+                        for(z = i; z > lower; z--){
+                            int temp = f->indices[z-1];
+                            f->indices[z-1] = f->indices[z];
+                            f->indices[z] = temp;
+                        }
+                        lower++;
+                    }
+                }
+            }
+            
+        }
+        
+        else{
+            if((!used_input[(int)(f->indices[i]%f->input)]) || (!used_output[(int)(f->indices[i]%f->output)])){
+                flag = 1;
+                for(z = i; z > lower; z--){
+                    int temp = f->indices[z-1];
+                    f->indices[z-1] = f->indices[z];
+                    f->indices[z] = temp;
+                }
+                lower++;
+            }
+        }
+    }
+    
+    f->k_percentage = (float)(1-(float)(((double)(lower))/((double)(f->input*f->output))));
+    return flag;
+}
+
+
+/* This function returns the input surely used by current weights
+ * 
+ * Inputs:
+ *             
+ *             @ fcl* f:= the fully-connected layer
+ *             @ int* used_input:= the used input
+ *             @ int flag == convolution or fully connected
+ *             @ int input_size:= the size of the array used_input
+ * */
+int* get_used_inputs(fcl* f, int* used_input, int flag, int input_size){
+    int i,j;
+    int* ui;
+    if(used_input == NULL)
+        ui = (int*)calloc(input_size,sizeof(int));
+    else
+        ui = used_input;
+    for(i = 0; i < input_size; i++){
+        ui[i] = 0;
+    }
+    
+    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
+        if(flag == CLS){
+            int n_per_feature_map = f->input/input_size;
+            for(j = 0; j < input_size; j++){
+                if(((int)(f->indices[i]%f->input)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->input) >= n_per_feature_map*(j)))
+                ui[j] = 1;
+            }
+        }
+            
+        else{
+            ui[f->indices[i]%f->input] = 1;
+        }
+    }
+    
+    return ui;    
+}
+
+/* This function returns the output surely used by current weights
+ * 
+ * Inputs:
+ *             
+ *             @ fcl* f:= the fully-connected layer
+ *             @ int* used_input:= the used output
+ *             @ int flag == convolution or fully connected
+ *             @ int input_size:= the size of the array used_output
+ * */
+int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
+    int i,j;
+    int* uo;
+    if(used_output == NULL)
+        uo= (int*)calloc(output_size,sizeof(int));
+    else
+        uo = used_output;
+    
+    for(i = 0; i < output_size; i++){
+        uo[i] = 0;
+    }
+    
+    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
+        if(flag == CLS){
+            int n_per_feature_map = f->output/output_size;
+            for(j = 0; j < output_size; j++){
+                if(((int)(f->indices[i]%f->output)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->output) >= n_per_feature_map*(j)))
+                uo[j] = 1;
+            }
+        }
+            
+        else{
+            uo[f->indices[i]%f->output] = 1;
+        }
+    }
+    
+    return uo;  
+    
 }
