@@ -526,13 +526,7 @@ lstm* copy_lstm(lstm* l){
     if(l == NULL)
         return NULL;
     int i;
-    bn** bns = NULL;
-    if(l->norm_flag == GROUP_NORMALIZATION){
-        bns = (bn**)malloc(sizeof(bn*)*l->window/l->n_grouped_cell);
-        for(i = 0; i < l->window/l->n_grouped_cell; i++){
-            bns[i] = copy_bn(l->bns[i]);
-        }
-    }
+    
     lstm* copy = recurrent_lstm(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell);
     for(i = 0; i < 4; i++){
         copy_array(l->w[i],copy->w[i],l->size*l->size);
@@ -554,10 +548,16 @@ lstm* copy_lstm(lstm* l){
     
     if(l->norm_flag == GROUP_NORMALIZATION){
         for(i = 0; i < l->window/l->n_grouped_cell; i++){
-            free(copy->bns[i]);
+            copy_array(l->bns[i]->gamma,copy->bns[i]->gamma,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->d_gamma,copy->bns[i]->d_gamma,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->d1_gamma,copy->bns[i]->d1_gamma,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->d2_gamma,copy->bns[i]->d2_gamma,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->ex_d_gamma_diff_grad,copy->bns[i]->ex_d_gamma_diff_grad,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->beta,copy->bns[i]->beta,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->d_beta,copy->bns[i]->d_beta,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->d2_beta,copy->bns[i]->d2_beta,l->bns[i]->vector_dim);
+            copy_array(l->bns[i]->ex_d_beta_diff_grad,copy->bns[i]->ex_d_beta_diff_grad,l->bns[i]->vector_dim);
         }
-        free(copy->bns);
-        copy->bns = bns;
     }
     
     

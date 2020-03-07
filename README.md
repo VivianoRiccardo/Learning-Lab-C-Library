@@ -79,6 +79,8 @@ sh compile_tests.sh
 - Edge-Popup training algorithm for fully connected and convolutional layers (14/12/2019)
 - 2d Transposed convolution feed forward and back propagation (21/12/2019)
 - DiffGrad optimization algorithm for cnn fcl lstm layers (27/12/2019)
+- Recurrent Encoder-Decoder with attention mechanism structure (7/3/2020)
+
 # Tests
 
 Each test has been trained successfully.

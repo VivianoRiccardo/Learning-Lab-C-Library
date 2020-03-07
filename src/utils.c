@@ -441,6 +441,28 @@ int shuffle_int_matrix(int** m,int n){
     return 0;
 }
 
+/* Function used to shuffle randomly the pointers of the matrix m
+ * 
+ * Input:
+ *             @char** m:= a matrix
+ *                         dimensions: n*k
+ *             @int n:= number of pointers char* of m
+ * */
+int shuffle_int_array(int* m,int n){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = m[j];
+          m[j] = m[i];
+          m[i] = t;
+        }
+    
+    }
+    return 0;
+}
+
 
 /* Function used to shuffle randomly the pointers of the 2 matrices m and m1
  * 

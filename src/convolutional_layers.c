@@ -927,8 +927,7 @@ cl* copy_cl(cl* f){
     }
     if(f->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            free_batch_normalization(copy->group_norm[i]);
-            copy->group_norm[i] = copy_bn(f->group_norm[i]);
+            paste_bn(f->group_norm[i],copy->group_norm[i]);
         }
     }
     

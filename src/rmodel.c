@@ -261,6 +261,12 @@ void save_rmodel(rmodel* m, int n){
         save_lstm(m->lstms[i],n);
     }
     
+    i = fclose(fw);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
     free(s);
 }
 
@@ -710,9 +716,8 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
         bns = (bn**)malloc(sizeof(bn*)*count2);
         for(i = 0; i < m->layers; i++){
             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-                for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
+                for(j = 0,k = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++, k++){
                     bns[k] = m->lstms[i]->bns[j];
-                    k++;
                 }
             }
         }
@@ -723,6 +728,9 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
             update_batch_normalized_layer_adam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam);
         else if(gradient_descent_flag == RADAM)
             update_batch_normalized_layer_radam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,(*t));
+        else if(gradient_descent_flag == DIFF_GRAD)
+            update_batch_normalized_layer_adam_diff_grad(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam);
+
         
         free(bns);
     }
@@ -862,6 +870,18 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
 }
 
 
+
+/* this function return a vector of float of a lstm cell for the dL/Dh of the same lstms cell
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ int index:= the index of the unrolled lstm cell
+ *                 @ int output:= the size of the lstm cell
+ *                 @ float** returning error the dfioc of the lstm cell
+ *                 @ lstm* lstms:= the lstm cell
+ * 
+ * */
 float* lstm_dh(int index, int output, float** returning_error, lstm* lstms){
     
     int k,k2;
@@ -950,36 +970,29 @@ float* lstm_dh(int index, int output, float** returning_error, lstm* lstms){
 void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, rmodel* m){
     if(m == NULL)
         return;
-    int i = 0,j,k,z;
+    int i,j,k,z;
     
     float** temp = (float**)malloc(sizeof(float*)*m->window);
     for(i = 0; i < m->window; i++){
         temp[i] = input_model[i];
     }
-    i = 0;
-    while(i < m->layers){
-        for(k = 0; i < m->layers; i++){
-            k++;
-            if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-                i++;
-                break;
-            }
-        }
-        
-        
-        ff_rmodel_lstm(&hidden_states[i-k],&cell_states[i-k],temp,m->window,m->lstms[0]->size,k,&m->lstms[i-k]);
+    int n_cells;
+    for(i = 0, n_cells = 1;i < m->layers; i+=n_cells, n_cells = 1){
+        for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
+        if(k == m->layers){ n_cells--; k--;}
+        ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,m->lstms[0]->size,n_cells,&m->lstms[i]);
         for(j = 0; j < m->window; j++){
-            temp[j] = m->lstms[i-1]->out_up[j];
+            temp[j] = m->lstms[k]->out_up[j];
         }
         
-        if(m->lstms[i-1]->norm_flag == GROUP_NORMALIZATION){
-            for(j = 0; j < m->lstms[i-1]->window/m->lstms[i-1]->n_grouped_cell; j++){
-                batch_normalization_feed_forward(m->lstms[i-1]->n_grouped_cell,&temp[j*m->lstms[i-1]->n_grouped_cell],m->lstms[i-1]->bns[j]->temp_vectors,m->lstms[i-1]->bns[j]->vector_dim,m->lstms[i-1]->bns[j]->gamma,m->lstms[i-1]->bns[j]->beta,m->lstms[i-1]->bns[j]->mean,m->lstms[i-1]->bns[j]->var,m->lstms[i-1]->bns[j]->outputs,m->lstms[i-1]->bns[j]->epsilon);
+        if(m->lstms[k]->norm_flag == GROUP_NORMALIZATION){
+            for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell; j++){
+                batch_normalization_feed_forward(m->lstms[k]->n_grouped_cell,&temp[j*m->lstms[k]->n_grouped_cell],m->lstms[k]->bns[j]->temp_vectors,m->lstms[k]->bns[j]->vector_dim,m->lstms[k]->bns[j]->gamma,m->lstms[k]->bns[j]->beta,m->lstms[k]->bns[j]->mean,m->lstms[k]->bns[j]->var,m->lstms[k]->bns[j]->outputs,m->lstms[k]->bns[j]->epsilon);
             }
             
-            for(j = 0; j < m->lstms[i-1]->window/m->lstms[i-1]->n_grouped_cell; j++){
-                for(z = 0; z < m->lstms[i-1]->n_grouped_cell; z++){
-                    temp[j*m->lstms[i-1]->n_grouped_cell+z] = m->lstms[i-1]->bns[j]->outputs[z];
+            for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell; j++){
+                for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
+                    temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
                 }
             }
             
@@ -1011,71 +1024,75 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
     float*** ret2;//to handle the returned values of bp of lstms
     float** input_error3 = (float**)malloc(sizeof(float*)*m->window);//input error for lstms
     float** error2_model = (float**)malloc(sizeof(float*)*m->window);//error propagated
-    int i,j,ret_count = m->layers,z;
+    int i,j,ret_count = m->layers-1,z;
     float** temp = (float**)malloc(sizeof(float*)*m->window);// inputs of lstms
     for(i = 0; i < m->window; i++){
         error2_model[i] = (float*)calloc(m->lstms[0]->size,sizeof(float));
         copy_array(error_model[i],error2_model[i],m->lstms[0]->size);
     }
-    i = m->layers-1;
-    while(i >= 0){
-        int k = 1;
-        for(k = 1; i >= 0; i--, k++){
-            if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION)
-                break;
-            
-        }
-        if(i >= 0){
-            if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-                for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell;j++){
-                    for(z = 0; z < m->lstms[i]->n_grouped_cell; z++){
-                        temp[j*m->lstms[i]->n_grouped_cell+z] = m->lstms[i]->bns[j]->outputs[z];
-                    }
-                }
-                if(m->layers-i-k){
-                    ret_count-=k;
-                    ret2 = bp_rmodel_lstm(&hidden_states[ret_count],&cell_states[ret_count],temp,error2_model,m->window,m->lstms[0]->size,k,&m->lstms[i+1],input_error3);
-                    for(j = 0; j < m->window; j++){
-                        copy_array(input_error3[j],error2_model[j],m->lstms[0]->size);
-                        free(input_error3[j]);
-                    }
-                    for(j = ret_count; j < ret_count+k; j++){
-                        ret[j] = ret2[j-ret_count];
-                        }
-                    free(ret2);
-
-                }
-                for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell;j++){
-                    batch_normalization_back_prop(m->lstms[i]->n_grouped_cell,&m->lstms[i]->out_up[j*m->lstms[i]->n_grouped_cell],m->lstms[i]->bns[j]->temp_vectors,m->lstms[i]->bns[j]->vector_dim,m->lstms[i]->bns[j]->gamma,m->lstms[i]->bns[j]->beta,m->lstms[i]->bns[j]->mean,m->lstms[i]->bns[j]->var,&error2_model[j*m->lstms[i]->n_grouped_cell],m->lstms[i]->bns[j]->d_gamma,m->lstms[i]->bns[j]->d_beta,m->lstms[i]->bns[j]->error2,m->lstms[i]->bns[j]->temp1,m->lstms[i]->bns[j]->temp2,m->lstms[i]->bns[j]->epsilon);
-                }
-                
-                for(j = 0; j < m->window/m->lstms[i]->n_grouped_cell; j++){
-                    for(z = 0; z < m->lstms[i]->n_grouped_cell; z++){
-                        copy_array(m->lstms[i]->bns[j]->error2[z],error2_model[j*m->lstms[i]->n_grouped_cell+z],m->lstms[0]->size);
-                    }
-                }
-            }
-        }
-        
-        else{
-            for(k = 0; k < m->layers; k++){
-                if(m->lstms[k]->norm_flag == GROUP_NORMALIZATION){
-                    k++;
+    int flagg = 0;
+    int k = 0;
+    while(k > -1){
+        int flag = 0;
+        for(k = ret_count; k >= 0; k--){
+            if(m->lstms[k]->norm_flag == GROUP_NORMALIZATION){
+                if(flagg) flagg = 0;
+                else{
+                    flag = 1;
                     break;
                 }
             }
-            for(j = 0; j < m->window; j++){
-                temp[j] = input_model[j];
+        }
+        if(flag){
+            int n_cells = ret_count-k;
+            flagg = 1;
+            if(n_cells){
+                for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell; j++){
+                    for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
+                        temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
+                    }
+                }
+                ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k+1],input_error3);
+                for(j = 0; j < m->window; j++){
+                    copy_array(input_error3[j],error2_model[j],m->lstms[0]->size);
+                    free(input_error3[j]);
+                }
+                for(j = ret_count; j > ret_count-n_cells; j--){
+                    ret[j] = ret2[n_cells-1-(ret_count-j)];
+                }
+                free(ret2);
+            }
+            for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell;j++){
+                batch_normalization_back_prop(m->lstms[k]->n_grouped_cell,&m->lstms[k]->out_up[j*m->lstms[k]->n_grouped_cell],m->lstms[k]->bns[j]->temp_vectors,m->lstms[k]->bns[j]->vector_dim,m->lstms[k]->bns[j]->gamma,m->lstms[k]->bns[j]->beta,m->lstms[k]->bns[j]->mean,m->lstms[k]->bns[j]->var,&error2_model[j*m->lstms[k]->n_grouped_cell],m->lstms[k]->bns[j]->d_gamma,m->lstms[k]->bns[j]->d_beta,m->lstms[k]->bns[j]->error2,m->lstms[k]->bns[j]->temp1,m->lstms[k]->bns[j]->temp2,m->lstms[k]->bns[j]->epsilon);
             }
             
-            ret2 = bp_rmodel_lstm(hidden_states,cell_states,temp,error2_model,m->window,m->lstms[0]->size,k,&m->lstms[i],input_error);
-            for(j = 0; j < k; j++){
-                ret[j] = ret2[j];
+            for(j = 0; j < m->window/m->lstms[k]->n_grouped_cell; j++){
+                for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
+                    copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[0]->size);
+                }
             }
+            
+            if(n_cells)
+                ret_count = k;
+        }
+        
+        else{
+            int n_cells = ret_count-k;
+            int k2 = k;
+            if(k < 0) k = 0;
+            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k],input_error3);
+            k = k2;
+            
+            for(j = 0; j < m->window; j++){
+                if(input_error != NULL)
+                copy_array(input_error3[j],input_error[j],m->lstms[0]->size);
+                free(input_error3[j]);
+            }
+            for(j = ret_count; j > k; j--){
+                ret[j] = ret2[j];
+            }    
             free(ret2);
         }
-            
-        
     }
     
     free_matrix(error2_model,m->window);

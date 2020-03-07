@@ -292,10 +292,23 @@ typedef struct rmodel {
     float beta2_adam;
     float error_gamma;
     float** error_alpha;
-    float** error;;
+    float** error;
     lstm** lstms;
     int** sla;
 } rmodel;
+
+typedef struct recurrent_enc_dec {
+	rmodel* encoder;
+	rmodel* decoder;
+	float** attention_weights; // size x size (encoder, decoder)
+	float** d_attention_weights; // size x size (encoder, decoder)
+	float** ex_d_attention_weights_diff_grad; // size x size (encoder, decoder)
+    float** d1_attention_weights; // size x size (encoder, decoder)
+    float** d2_attention_weights; // size x size (encoder, decoder)
+    float** score; //size x window encoder
+    float** post_activation; // size x window encoder
+    float** context_vector; // size x window encoder
+}recurrent_enc_dec;
 
 typedef struct vaemodel{
     int latent_size;
@@ -380,12 +393,39 @@ typedef struct oustrategy {
     float* action_space;
 } oustrategy;
 
+// Generic dictionary for int vectors
+typedef struct mystruct{
+    struct mystruct* brother;
+    struct mystruct* son;
+    int c;
+}mystruct;
+
+typedef struct modularity_struct{
+    int n_models;
+    model** m;
+    double** k_in_positive_cls;
+    double** k_in_negative_cls;
+    double** k_out_positive_cls;
+    double** k_out_negative_cls;
+    double** k_in_positive_fcls;
+    double** k_in_negative_fcls;
+    double** k_out_positive_fcls;
+    double** k_out_negative_fcls;
+    int* in_size_fcl;
+    int* in_size_cl;
+    int* out_size_fcl;
+    int* out_size_cl;
+    double w_n;
+    double w_p;
+    double modularity;
+}modularity_struct;
 
 #include "batch_norm_layers.h"
 #include "client.h"
 #include "clipping_gradient.h"
 #include "convolutional.h"
 #include "convolutional_layers.h"
+#include "dictionary.h"
 #include "drl.h"
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
@@ -399,6 +439,7 @@ typedef struct oustrategy {
 #include "normalization.h"
 #include "parser.h"
 #include "recurrent.h"
+#include "recurrent_encoder_decoder.h"
 #include "recurrent_layers.h"
 #include "residual_layers.h"
 #include "rmodel.h"

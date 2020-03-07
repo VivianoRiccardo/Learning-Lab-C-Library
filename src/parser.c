@@ -106,7 +106,7 @@ int single_instance_multiple_csv_file_parser(float** input, float** output,char*
 Inputs:
  * 
  *             @ float** input:= the float vector where will be stored the input from the files, dimension: n_filesxinput_size 
- *             @ float** output:= the float vector where will be stored the output from the files, dimension: n_filesxinput_size
+ *             @ float** output:= the float vector where will be stored the output from the files, dimension: n_filesxoutput_size
  *             @ char* filename:= the filename
  *             @ int input_size:= the size of the input. (is not required output size, 'cause the end of the line will handle this factor)
  * */        

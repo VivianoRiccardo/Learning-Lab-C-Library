@@ -190,7 +190,7 @@ void derivative_mse_array(float* y_hat, float* y, float* output, int size){
 float cross_entropy(float y_hat, float y){
     float log_one;
     float constant;
-    if(y_hat == 0)
+    if(y_hat == 0 || y_hat != y_hat)
         log_one = -999999;
     else
         log_one = log((double)y_hat);

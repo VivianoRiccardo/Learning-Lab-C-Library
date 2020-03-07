@@ -37,7 +37,10 @@ void* rmodel_thread_bp(void* _args) {
     
     // depacking args
     thread_args_rmodel* args = (thread_args_rmodel*) _args;
+    if(args->ret_input_error != NULL)
     args->returning_error[0] = bp_rmodel(args->hidden_states,args->cell_states,args->input_model,args->error_model,args->m,args->ret_input_error[0]);
+    else
+    args->returning_error[0] = bp_rmodel(args->hidden_states,args->cell_states,args->input_model,args->error_model,args->m,NULL);
     return _args;
 }
 
@@ -91,7 +94,7 @@ void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
  *             @ float*** error_model:= the errors of each instance of the batch, dimensions: mini_batch_size*window*m[0]->size
  *             @ int mini_batch_size:= the batch size used
  *             @ int threads:= the number of threads you want to use
- *             @ float**** returning_error:= where will be stored the errors, dimensions:= mini_batch_size*m[0]->layers*4*m[0]->size
+ *             @ float**** returning_error:= where will be stored the errors, dimensions:= mini_batch_size*m[0]->layers*4*m[0]->size, must be allocated only the batch size
  *             @ float*** returning_input_error:= where will be stored the errors of the input of the model, dimensions:= mini_batch_size*m[0]->window*m[0]->size
  * 
  * */
@@ -110,7 +113,10 @@ void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, floa
             args[j]->input_model = input_model[i+j];
             args[j]->error_model = error_model[i+j];
             args[j]->returning_error = &returning_error[i+j];
+            if(returning_input_error != NULL)
             args[j]->ret_input_error = &returning_input_error[i+j];
+            else
+            args[j]->ret_input_error = NULL;
             pthread_create(thread+j, NULL, rmodel_thread_bp, args[j]);
             
             }
