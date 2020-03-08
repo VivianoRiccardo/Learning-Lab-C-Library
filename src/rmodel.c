@@ -377,8 +377,8 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
             
             if(j == 0){ //j = 0 means that we are at the first lstm_cell in vertical
                 if(i == 0){//i = 0 means we are at the first lstm in orizontal
-                
                     //in this case the h-1 and c-1 come from the last mini_batch
+                    
                     if(lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
                    
@@ -592,7 +592,8 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
     for(j = layers-1; j >= 0; j--){
             
         dx = (float*)calloc(lstms[0]->size,sizeof(float));
-        
+        if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+            sum1D(dx,dz,dx,lstms[0]->size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
         else if(j != layers-1 && i == window-1)
@@ -648,6 +649,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             matrix[j] = temp;
             
         }
+        copy_array(dx,dz,lstms[0]->size);
         free(dx);
         
         if(!j && input_error != NULL)
@@ -714,9 +716,9 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
     if(count){
         int n_bn = count2;
         bns = (bn**)malloc(sizeof(bn*)*count2);
-        for(i = 0; i < m->layers; i++){
+        for(i = 0, k = 0; i < m->layers; i++){
             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-                for(j = 0,k = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++, k++){
+                for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++, k++){
                     bns[k] = m->lstms[i]->bns[j];
                 }
             }
@@ -971,13 +973,13 @@ void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, 
     if(m == NULL)
         return;
     int i,j,k,z;
-    
     float** temp = (float**)malloc(sizeof(float*)*m->window);
     for(i = 0; i < m->window; i++){
         temp[i] = input_model[i];
     }
     int n_cells;
-    for(i = 0, n_cells = 1;i < m->layers; i+=n_cells, n_cells = 1){
+    for(i = 0, n_cells = 1;i < m->layers; i+=n_cells){
+        n_cells = 1;
         for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
         if(k == m->layers){ n_cells--; k--;}
         ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,m->lstms[0]->size,n_cells,&m->lstms[i]);
@@ -1019,7 +1021,6 @@ void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, 
 float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error){
     if(m == NULL)
         return NULL;
-        
     float*** ret = (float***)malloc(sizeof(float**)*m->layers);//Storing all the returned values of bp of lstms
     float*** ret2;//to handle the returned values of bp of lstms
     float** input_error3 = (float**)malloc(sizeof(float*)*m->window);//input error for lstms
@@ -1080,14 +1081,9 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
             int n_cells = ret_count-k;
             int k2 = k;
             if(k < 0) k = 0;
-            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k],input_error3);
+            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k],input_error);
             k = k2;
-            
-            for(j = 0; j < m->window; j++){
-                if(input_error != NULL)
-                copy_array(input_error3[j],input_error[j],m->lstms[0]->size);
-                free(input_error3[j]);
-            }
+
             for(j = ret_count; j > k; j--){
                 ret[j] = ret2[j];
             }    

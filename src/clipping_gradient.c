@@ -24,6 +24,53 @@ SOFTWARE.
 
 #include "llab.h"
 
+/* This function, given a threshold, clips the gradient of the weights of the whole model given by all the models m and rmodels r if the ||DL/Dw|| > threshold,
+ * in that case DL/Dw_i *= threshold/||DL/Dw||
+ * 
+ * Input:
+ * 
+ *             @ model** m:= the models
+ *             @ model** r:= the rmodels
+ *             @ int n_m:= the number of models
+ *             @ int n_r:= the number of rmodels
+ *             @ float threshold:= the threshold
+ * 
+ * */
+void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float threshold){
+    double sum = 0;
+    int i,j;
+    for(i = 0; i < n_m; i++){
+        sum += (double)sum_all_quadratic_derivative_weights_fcls(m[i]->fcls,m[i]->n_fcl);
+        sum += (double)sum_all_quadratic_derivative_weights_cls(m[i]->cls,m[i]->n_cl);
+        sum += (double)sum_all_quadratic_derivative_weights_rls(m[i]->rls,m[i]->n_rl);
+    }
+    
+    for(i = 0; i < n_r; i++){
+        sum += (double)sum_all_quadratic_derivative_weights_lstms(r[i]->lstms,r[i]->layers);
+        for(j = 0; j < r[i]->layers; j++){
+            if(r[i]->lstms[j]->norm_flag == GROUP_NORMALIZATION){
+                sum += (double)sum_all_quadratic_derivative_weights_bns(r[i]->lstms[j]->bns,r[i]->lstms[j]->window/r[i]->lstms[j]->n_grouped_cell); 
+            }
+        }
+    }
+    
+    sum = sqrtf(sum);
+    if(sum >= threshold){
+        for(i = 0; i < n_m; i++){
+            clip_fcls(m[i]->fcls,m[i]->n_fcl,threshold,sum);
+            clip_cls(m[i]->cls,m[i]->n_cl,threshold,sum);
+            clip_rls(m[i]->rls,m[i]->n_rl,threshold,sum);
+        }
+    }
+    for(i = 0; i < n_r; i++){
+        clip_lstms(r[i]->lstms,r[i]->layers,threshold,sum);
+        for(j = 0; j < r[i]->layers; j++){
+            if(r[i]->lstms[j]->norm_flag == GROUP_NORMALIZATION){
+                clip_bns(r[i]->lstms[j]->bns,r[i]->lstms[j]->window/r[i]->lstms[j]->n_grouped_cell,threshold,sum);
+            }
+        }
+    }
+}
 /* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
  * in that case DL/Dw_i *= threshold/||DL/Dw||
  * 

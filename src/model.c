@@ -3332,12 +3332,10 @@ void set_model_error(model* m, int error_flag, float threshold1, float threshold
     m->error_threshold1 = threshold1;
     m->error_threshold2 = threshold2;
     m->error_gamma = gamma;
-    if(m->error != NULL)
     free(m->error);
     m->error = (float*)calloc(output_dimension,sizeof(float));
     if(alpha != NULL){
-        if(m->error_alpha != NULL)
-            free(m->error_alpha);
+        free(m->error_alpha);
         m->error_alpha = (float*)malloc(sizeof(float)*output_dimension);
         copy_array(alpha,m->error_alpha,output_dimension);
     }

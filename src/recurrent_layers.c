@@ -130,7 +130,7 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
         lstml->d2_u[i] = (float*)calloc(size*size,sizeof(float));
         lstml->biases[i] = (float*)calloc(size,sizeof(float));
         for(j = 0; j < size; j++){
-            lstml->biases[i][j] = 1;
+            lstml->biases[i][j] = 0;
         }
         lstml->d_biases[i] = (float*)calloc(size,sizeof(float));
         lstml->ex_d_biases_diff_grad[i] = (float*)calloc(size,sizeof(float));
@@ -192,6 +192,7 @@ void free_recurrent_lstm(lstm* rlstm){
         free(rlstm->d_biases[i]);
         free(rlstm->d1_biases[i]);
         free(rlstm->d2_biases[i]);
+        free(rlstm->ex_d_biases_diff_grad[i]);
         
     }
     
@@ -212,6 +213,7 @@ void free_recurrent_lstm(lstm* rlstm){
     free(rlstm->d1_u);
     free(rlstm->d2_u);
     free(rlstm->biases);
+    free(rlstm->d_biases);
     free(rlstm->ex_d_biases_diff_grad);
     free(rlstm->d1_biases);
     free(rlstm->d2_biases);
