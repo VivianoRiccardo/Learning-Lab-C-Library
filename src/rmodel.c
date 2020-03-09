@@ -101,6 +101,7 @@ rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int 
     m->hidden_state_mode = hidden_state_mode;
     m->beta1_adam = BETA1_ADAM;
     m->beta2_adam = BETA2_ADAM;
+    m->beta3_adamod = BETA3_ADAMOD;
         
     return m;
 }
@@ -170,6 +171,25 @@ void paste_rmodel(rmodel* m, rmodel* copy){
     return;
 }
 
+/* This function copies a rmodel using the paste function for the layers
+ * see recurrent_layers.c file
+ * 
+ * Input:
+ *         
+ *             @ rmodel* m:= the rmodel that must be copied
+ *             @ rmodel* copy:= the rmodel where m is copied
+ * 
+ * */
+void paste_w_rmodel(rmodel* m, rmodel* copy){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_lstm; i++){
+        paste_w_lstm(m->lstms[i],copy->lstms[i]);
+    }
+    return;
+}
 /* This function copies a rmodel with the rule: teta_i:= teta_j*tau +(1-tau)*teta_i
  * 
  * Input:
@@ -732,7 +752,9 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
             update_batch_normalized_layer_radam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,(*t));
         else if(gradient_descent_flag == DIFF_GRAD)
             update_batch_normalized_layer_adam_diff_grad(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam);
-
+		else if(gradient_descent_flag == ADAMOD)
+            update_batch_normalized_layer_adamod(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
+        
         
         free(bns);
     }
@@ -763,6 +785,12 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
     
     else if(gradient_descent_flag == DIFF_GRAD){
         update_lstm_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        (*b1)*=BETA1_ADAM;
+        (*b2)*=BETA2_ADAM;
+    }
+    
+    else if(gradient_descent_flag == ADAMOD){
+        update_lstm_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
         (*b1)*=BETA1_ADAM;
         (*b2)*=BETA2_ADAM;
     }    

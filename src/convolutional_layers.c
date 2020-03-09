@@ -121,11 +121,13 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->ex_d_kernels_diff_grad = (float**)malloc(sizeof(float*)*n_kernels);
     c->d1_kernels = (float**)malloc(sizeof(float*)*n_kernels);
     c->d2_kernels = (float**)malloc(sizeof(float*)*n_kernels);
+    c->d3_kernels = (float**)malloc(sizeof(float*)*n_kernels);
     c->biases = (float*)calloc(n_kernels,sizeof(float));
     c->d_biases = (float*)calloc(n_kernels,sizeof(float));
     c->ex_d_biases_diff_grad = (float*)calloc(n_kernels,sizeof(float));
     c->d1_biases = (float*)calloc(n_kernels,sizeof(float));
     c->d2_biases = (float*)calloc(n_kernels,sizeof(float));
+    c->d3_biases = (float*)calloc(n_kernels,sizeof(float));
     c->convolutional_flag = convolutional_flag;
     c->group_norm_channels = group_norm_channels;
     c->pooltemp = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
@@ -136,6 +138,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->ex_d_scores_diff_grad = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->d1_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->d2_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
+    c->d3_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
     c->indices = (int*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(int));
     c->used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
@@ -217,6 +220,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->ex_d_kernels_diff_grad[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->d1_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->d2_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
+        c->d3_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         for(j = 0; j < channels*kernel_rows*kernel_cols; j++){
             c->kernels[i][j] = random_general_gaussian(0, (float)channels*input_rows*input_cols);
             c->indices[i*channels*kernel_rows*kernel_cols+j] = i*channels*kernel_rows*kernel_cols+j;
@@ -259,6 +263,7 @@ void free_convolutional(cl* c){
         free(c->ex_d_kernels_diff_grad[i]);
         free(c->d1_kernels[i]);
         free(c->d2_kernels[i]);
+        free(c->d3_kernels[i]);
     }
     free(c->kernels);
     free(c->used_kernels);
@@ -271,6 +276,7 @@ void free_convolutional(cl* c){
     free(c->ex_d_biases_diff_grad);
     free(c->d1_biases);
     free(c->d2_biases);
+    free(c->d3_biases);
     free(c->pre_activation);
     free(c->post_activation);
     free(c->post_normalization);
@@ -286,6 +292,7 @@ void free_convolutional(cl* c){
     free(c->ex_d_scores_diff_grad);
     free(c->d1_scores);
     free(c->d2_scores);
+    free(c->d3_scores);
     if(c->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
             free_batch_normalization(c->group_norm[i]);
@@ -924,6 +931,7 @@ cl* copy_cl(cl* f){
         copy_array(f->ex_d_kernels_diff_grad[i],copy->ex_d_kernels_diff_grad[i],f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d3_kernels[i],copy->d3_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
     }
     if(f->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
@@ -936,11 +944,13 @@ cl* copy_cl(cl* f){
     copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+    copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
     copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
     copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
     copy->feed_forward_flag = f->feed_forward_flag;
@@ -1025,10 +1035,10 @@ cl* reset_cl(cl* f){
  * */
 unsigned long long int size_of_cls(cl* f){
     unsigned long long int sum = 0;
-    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*10*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*12*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*sizeof(int)));
     sum += ((unsigned long long int)(f->n_kernels*sizeof(int)));
-    sum += ((unsigned long long int)(f->n_kernels*5*sizeof(float)));
+    sum += ((unsigned long long int)(f->n_kernels*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows1*f->cols1*6*sizeof(float)));
     sum += ((unsigned long long int)(f->n_kernels*f->rows2*f->cols2*sizeof(float)));
     sum += ((unsigned long long int)(f->channels*f->input_rows*f->input_cols*2*sizeof(float)));
@@ -1060,6 +1070,7 @@ void paste_cl(cl* f, cl* copy){
         copy_array(f->ex_d_kernels_diff_grad[i],copy->ex_d_kernels_diff_grad[i],f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d3_kernels[i],copy->d3_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
@@ -1072,6 +1083,7 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->n_kernels);
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+    copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
     if(f->feed_forward_flag == EDGE_POPUP){
         copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
@@ -1080,6 +1092,41 @@ void paste_cl(cl* f, cl* copy){
         copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+    }
+    return;
+}
+
+/* This function returns a cl* layer that is the same copy of the input f
+ * except for the activation arrays , the post normalization and post polling arrays
+ * and all the arrays used by the feed forward and backpropagation.
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ *             @ cl* copy:= the convolutional layer where f is copied
+ * 
+ * */
+void paste_w_cl(cl* f, cl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            paste_w_bn(f->group_norm[i],copy->group_norm[i]);
+        }
+    }
+    copy_array(f->biases,copy->biases,f->n_kernels);
+    if(f->feed_forward_flag == EDGE_POPUP){
+        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
+        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
     }
     return;
 }

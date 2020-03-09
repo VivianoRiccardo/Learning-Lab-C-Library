@@ -81,7 +81,7 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    /*
+    /
     printf("Training phase!\n");
     save_model(m,0);
     // Training
@@ -121,7 +121,7 @@ int main(){
         free_model(mm);
         set_model_training_edge_popup(m,0.5);
     }
-    */
+    
     // Deallocating Training resources
     free(ksource[0]);
     free(ksource);

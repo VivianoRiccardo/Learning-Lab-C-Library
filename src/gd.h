@@ -29,5 +29,6 @@ void nesterov_momentum(float* p, float lr, float m, int mini_batch_size, float d
 void adam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size);
 void radam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size, unsigned long long int t);
 void adam_diff_grad_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size, float* ex_d);
+void adamod(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size, float b3, float* delta3);
 
 #endif

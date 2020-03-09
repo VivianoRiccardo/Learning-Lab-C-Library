@@ -724,6 +724,55 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
     }
 }
 
+/* Given a model, this function update the params of the residual layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                        adamod(&m->rls[i]->cls[j]->kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->rls[i]->cls[j]->d3_kernels[k][u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+                                    }
+                                }
+                            }
+                            adamod(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod, &m->rls[i]->cls[j]->d3_biases[k]);
+                            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                                update_batch_normalized_layer_adamod(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
+                            }
+                        }
+                    }
+                    else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
+                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
+                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
+                                        adamod(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->rls[i]->cls[j]->d3_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /* Given a model, this function update the params of the residual layers of the model with the adam diff grad optimization algorithm
  * 
  * Input:
@@ -956,6 +1005,55 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
     }
 }
 
+/* Given a model, this function update the params of the convolutional layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        if(m->cls[j]->training_mode != FREEZE_TRAINING){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                        for(u = 0; u < m->cls[j]->channels; u++){
+                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                                    adamod(&m->cls[j]->kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->cls[j]->d3_kernels[k][u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+                                }
+                                    
+                            }
+                        }
+                        adamod(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->cls[j]->d3_biases[k]);
+                        if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                            update_batch_normalized_layer_adamod(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
+                        }
+                    }
+                }
+                else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
+                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                        for(u = 0; u < m->cls[j]->channels; u++){
+                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
+                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
+                                    adamod(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->cls[j]->d3_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
+                                }
+                                    
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /* Given a model, this function update the params of the convolutional layers of the model with the adam diff grad optimization algorithm
  * 
  * Input:
@@ -1169,6 +1267,34 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
     }
 }
 
+/* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+            for(j = 0; j < m->fcls[i]->output; j++){
+                for(k = 0; k < m->fcls[i]->input; k++){
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    adamod(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
+                    else if(m->fcls[i]->training_mode == EDGE_POPUP)
+                    adamod(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_scores[j*m->fcls[i]->input+k]);
+                }
+                if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                adamod(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_biases[j]);
+            }
+        }
+    }
+}
 /* Given a model, this function update the params of the fully-connected layers of the model with the adam diff grad optimization algorithm
  * 
  * Input:
@@ -1273,6 +1399,27 @@ void update_batch_normalized_layer_adam(bn** bns,int n_bn, float lr, int mini_ba
     }
 }
 
+/* Given a bns** layers, this function update the params of the batch-normalized layers of the model with the adam optimization algorithm
+ * 
+ * Input:
+ *             
+ *             @ bn** bns:= batch_normalized layers
+ *             @ int n_bn:= number of bn
+ *             @ float lr:= the learning rate
+ *             @ int mini_batch_size:= the size of the mini_batch
+ *                @ float b1:= BETA1_ADAM^t
+ *                @ float b2:= BETA2_ADAM^t
+ * 
+ * */
+void update_batch_normalized_layer_adamod(bn** bns,int n_bn, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int i,j,k;
+    for(i = 0; i < n_bn; i++){
+        for(j = 0; j < bns[i]->vector_dim; j++){
+            adamod(&bns[i]->gamma[j],&bns[i]->d1_gamma[j], &bns[i]->d2_gamma[j], bns[i]->d_gamma[j], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&bns[i]->d3_gamma[j]);
+            adamod(&bns[i]->beta[j],&bns[i]->d1_beta[j], &bns[i]->d2_beta[j], bns[i]->d_beta[j], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&bns[i]->d3_beta[j]);  
+        }
+    }
+}
 /* Given tot bns layers, this function update the params of the batch-normalized layers of the model with the adam optimization algorithm
  * 
  * Input:
@@ -1515,6 +1662,29 @@ void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, flo
     }
 }
 
+/* Given a rmodel, this function update the params of the lstm layers of the model with the adam algorithm
+ * 
+ * Input:
+ *             
+ *             @ rmodel* m:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *                @ int mini_batch_size:= the mini batch dimensions
+ * 
+ * */
+void update_lstm_layer_adamod(rmodel* m,float lr,int mini_batch_size,float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int i,j,k;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+                adamod(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_w[j][k]);
+                adamod(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_u[j][k]);
+                if(k < m->lstms[i]->size)
+                    adamod(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_biases[j][k]);
+            }
+        }
+    }
+}
 /* Given a rmodel, this function update the params of the lstm layers of the model with the adam algorithm
  * 
  * Input:

@@ -121,3 +121,18 @@ void adam_diff_grad_algorithm(float* p,float* delta1, float* delta2, float dp, f
      (*ex_d) = (float)(dp/mini_batch_size);
      (*p) -= ((lr*diff_gard_friction*(*delta1)/(1-bb1))/(sqrtf((*delta2)/(1-bb2))+epsilon));
 }
+
+
+
+void adamod(float* p,float* delta1, float* delta2, float dp, float lr, float b1, float b2, float bb1, float bb2, float epsilon, int mini_batch_size, float b3, float* delta3){
+    float temp = (float)dp/mini_batch_size;
+    (*delta1) = b1*(*delta1)+(1-b1)*temp;
+    (*delta2) = b2*(*delta2) + (1-b2)*(temp*temp);
+    float m = (*delta1)/(1-bb1);
+    float v = (*delta2)/(1-bb2);
+    float n = (lr)/(sqrtf(v)+epsilon);
+    (*delta3) = b3*(*delta3)+(1-b3)*n;
+    if(n > (*delta3))
+        n = (*delta3);
+    (*p) -= n*m;
+}

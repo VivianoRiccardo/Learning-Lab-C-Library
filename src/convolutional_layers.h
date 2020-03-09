@@ -44,5 +44,6 @@ void set_convolutional_biases_to_zero(cl* c);
 void set_convolutional_unused_weights_to_zero(cl* c);
 int cl_adjusting_weights_after_edge_popup(cl* c, int* used_input, int* used_output);
 int* get_used_channels(cl* c, int* ch);
+void paste_w_cl(cl* f, cl* copy);
 
 #endif

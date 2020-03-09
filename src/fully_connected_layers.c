@@ -55,11 +55,13 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->ex_d_weights_diff_grad = (float*)calloc(output*input,sizeof(float));
     f->d1_weights = (float*)calloc(output*input,sizeof(float));
     f->d2_weights = (float*)calloc(output*input,sizeof(float));
+    f->d3_weights = (float*)calloc(output*input,sizeof(float));
     f->biases = (float*)calloc(output,sizeof(float));
     f->d_biases = (float*)calloc(output,sizeof(float));
     f->ex_d_biases_diff_grad = (float*)calloc(output,sizeof(float));
     f->d1_biases = (float*)calloc(output,sizeof(float));
     f->d2_biases = (float*)calloc(output,sizeof(float));
+    f->d3_biases = (float*)calloc(output,sizeof(float));
     f->pre_activation = (float*)calloc(output,sizeof(float));
     f->dropout_temp = (float*)calloc(output,sizeof(float));
     f->temp = (float*)calloc(output,sizeof(float));
@@ -72,6 +74,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->ex_d_scores_diff_grad = (float*)calloc(output*input,sizeof(float));
     f->d1_scores = (float*)calloc(output*input,sizeof(float));
     f->d2_scores = (float*)calloc(output*input,sizeof(float));
+    f->d3_scores = (float*)calloc(output*input,sizeof(float));
     f->indices = (int*)calloc(output*input,sizeof(int));
     f->active_output_neurons = (int*)calloc(output,sizeof(int));
     f->post_activation = (float*)calloc(output,sizeof(float));
@@ -107,11 +110,13 @@ void free_fully_connected(fcl* f){
     free(f->ex_d_weights_diff_grad);
     free(f->d1_weights);
     free(f->d2_weights);
+    free(f->d3_weights);
     free(f->biases);
     free(f->d_biases);
     free(f->ex_d_biases_diff_grad);
     free(f->d1_biases);
     free(f->d2_biases);
+    free(f->d3_biases);
     free(f->pre_activation);
     free(f->post_activation);
     free(f->dropout_mask);
@@ -125,6 +130,7 @@ void free_fully_connected(fcl* f){
     free(f->ex_d_scores_diff_grad);
     free(f->d1_scores);
     free(f->d2_scores);
+    free(f->d3_scores);
     free(f->indices);
     free(f->active_output_neurons);
     free(f);    
@@ -425,16 +431,19 @@ fcl* copy_fcl(fcl* f){
     copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
     copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
     copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
+    copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
     copy_array(f->biases,copy->biases,f->output);
     copy_array(f->d_biases,copy->d_biases,f->output);
     copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
+    copy_array(f->d3_biases,copy->d3_biases,f->output);
     copy_array(f->scores,copy->scores,f->input*f->output);
     copy_array(f->d_scores,copy->d_scores,f->input*f->output);
     copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
     copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
     copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+    copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
     copy_int_array(f->indices,copy->indices,f->input*f->output);
     copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
     copy->training_mode = f->training_mode;
@@ -499,7 +508,7 @@ fcl* reset_fcl(fcl* f){
  * */
 unsigned long long int size_of_fcls(fcl* f){
     unsigned long long int sum = 0;
-    sum += ((unsigned long long int)(f->input*f->output*10*sizeof(float)));
+    sum += ((unsigned long long int)(f->input*f->output*13*sizeof(float)));
     sum += ((unsigned long long int)(f->input*f->output*sizeof(int)));
     sum += ((unsigned long long int)(f->output*12*sizeof(float)));
     sum += ((unsigned long long int)(f->input*2*sizeof(float)));
@@ -524,17 +533,44 @@ void paste_fcl(fcl* f,fcl* copy){
     copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
     copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
     copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
+    copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
     copy_array(f->biases,copy->biases,f->output);
     copy_array(f->d_biases,copy->d_biases,f->output);
     copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
     copy_array(f->d1_biases,copy->d1_biases,f->output);
     copy_array(f->d2_biases,copy->d2_biases,f->output);
+    copy_array(f->d3_biases,copy->d3_biases,f->output);
     if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
         copy_array(f->scores,copy->scores,f->input*f->output);
         copy_array(f->d_scores,copy->d_scores,f->input*f->output);
         copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+        copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
+        copy_int_array(f->indices,copy->indices,f->input*f->output);
+        copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
+    }
+    return;
+}
+
+
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * the edge popup params are pasted only if feedforwardflag or training mode is set to edge popup
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ *             @ fcl* copy:= the fully-connected layer where f is copied
+ * 
+ * */
+void paste_w_fcl(fcl* f,fcl* copy){
+    if(f == NULL)
+        return;
+    copy_array(f->weights,copy->weights,f->output*f->input);
+    copy_array(f->biases,copy->biases,f->output);
+    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
+        copy_array(f->scores,copy->scores,f->input*f->output);
         copy_int_array(f->indices,copy->indices,f->input*f->output);
         copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
     }

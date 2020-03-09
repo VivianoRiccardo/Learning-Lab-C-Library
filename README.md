@@ -80,6 +80,7 @@ sh compile_tests.sh
 - 2d Transposed convolution feed forward and back propagation (21/12/2019)
 - DiffGrad optimization algorithm for cnn fcl lstm layers (27/12/2019)
 - Recurrent Encoder-Decoder with attention mechanism structure (7/3/2020)
+- ADAMOD optimization algorithm (9/3/2020)
 
 # Tests
 

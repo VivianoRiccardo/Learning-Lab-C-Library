@@ -42,5 +42,6 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms);
 float* lstm_dh(int index, int output, float** returning_error, lstm* lstms);
 void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, rmodel* m);
 float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error);
+void paste_w_rmodel(rmodel* m, rmodel* copy);
 
 #endif

@@ -76,10 +76,15 @@ void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, flo
 void update_lstm_layer_adam_diff_grad(rmodel* m,float lr,int mini_batch_size,float b1, float b2,float beta1_adam,float beta2_adam);
 void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long t,float beta1_adam,float beta2_adam);
+void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t,float beta1_adam,float beta2_adam);
+void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t,float beta1_adam,float beta2_adam);
+void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 void update_batch_normalized_layer_radam(bn** bns, int n_bn, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t,float beta1_adam,float beta2_adam);
+void update_batch_normalized_layer_adamod(bn** bns,int n_bn, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, float b2, unsigned long long int t,float beta1_adam,float beta2_adam);
+void update_lstm_layer_adamod(rmodel* m,float lr,int mini_batch_size,float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
 double* accuracy_array(long long unsigned int** cm, int size);
 int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n);

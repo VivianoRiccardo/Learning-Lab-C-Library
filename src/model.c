@@ -196,6 +196,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     m->error_alpha = NULL;
     m->beta1_adam = BETA1_ADAM;
     m->beta2_adam = BETA2_ADAM;
+    m->beta3_adamod = BETA3_ADAMOD;
     m->error_flag = NO_SET;
     
     
@@ -333,6 +334,32 @@ void paste_model(model* m, model* copy){
     return;
 }
 
+
+/* This function copies a model using the paste function for the layers
+ * see layers.c file
+ * 
+ * Input:
+ *         
+ *             @ model* m:= the model that must be copied
+ *             @ model* copy:= the model where m is copied
+ * 
+ * */
+void paste_w_model(model* m, model* copy){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_fcl; i++){
+        paste_w_fcl(m->fcls[i],copy->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        paste_w_cl(m->cls[i],copy->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        paste_w_rl(m->rls[i],copy->rls[i]);
+    }
+    return;
+}
 /* This function copies a model with the rule: teta_i:= teta_j*tau +(1-tau)*teta_i
  * 
  * Input:
@@ -3165,6 +3192,14 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
         update_residual_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
         update_convolutional_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
         update_fully_connected_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
+    }
+    
+    else if(gradient_descent_flag == ADAMOD){
+        update_residual_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
+        update_convolutional_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
+        update_fully_connected_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
         (*b1)*=m->beta1_adam;
         (*b2)*=m->beta2_adam;
     }

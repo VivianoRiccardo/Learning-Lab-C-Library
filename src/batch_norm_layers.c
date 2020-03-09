@@ -58,11 +58,13 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     b->ex_d_gamma_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d1_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d2_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d3_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d_beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->ex_d_beta_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d1_beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d2_beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d3_beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->mean = (float*)calloc(vector_input_dimension,sizeof(float));
     b->var = (float*)calloc(vector_input_dimension,sizeof(float));
     b->temp2 = (float*)calloc(vector_input_dimension,sizeof(float));
@@ -119,11 +121,13 @@ void free_batch_normalization(bn* b){
     free(b->ex_d_gamma_diff_grad);
     free(b->d1_gamma);
     free(b->d2_gamma);
+    free(b->d3_gamma);
     free(b->beta);
     free(b->d_beta);
     free(b->ex_d_beta_diff_grad);
     free(b->d1_beta);
     free(b->d2_beta);
+    free(b->d3_beta);
     free(b->temp2);
     free(b->final_mean);
     free(b->final_var);
@@ -356,11 +360,13 @@ bn* copy_bn(bn* b){
     copy_array(b->ex_d_gamma_diff_grad,copy->ex_d_gamma_diff_grad,b->vector_dim);
     copy_array(b->d1_gamma,copy->d1_gamma,b->vector_dim);
     copy_array(b->d2_gamma,copy->d2_gamma,b->vector_dim);
+    copy_array(b->d3_gamma,copy->d3_gamma,b->vector_dim);
     copy_array(b->beta,copy->beta,b->vector_dim);
     copy_array(b->d_beta,copy->d_beta,b->vector_dim);
     copy_array(b->ex_d_beta_diff_grad,copy->ex_d_beta_diff_grad,b->vector_dim);
     copy_array(b->d1_beta,copy->d1_beta,b->vector_dim);
     copy_array(b->d2_beta,copy->d2_beta,b->vector_dim);
+    copy_array(b->d3_beta,copy->d3_beta,b->vector_dim);
     copy_array(b->final_mean,copy->final_mean,b->vector_dim);
     copy_array(b->final_var,copy->final_var,b->vector_dim);
     copy->mode_flag = b->mode_flag;
@@ -411,7 +417,7 @@ bn* reset_bn(bn* b){
 unsigned long long int size_of_bn(bn* b){
     unsigned long long int sum = 0;
     sum+= (b->batch_size*b->vector_dim*6);
-    sum+= (b->vector_dim*15);
+    sum+= (b->vector_dim*17);
     return sum;
 }
 
@@ -432,17 +438,39 @@ void paste_bn(bn* b1, bn* b2){
     copy_array(b1->ex_d_gamma_diff_grad,b2->ex_d_gamma_diff_grad,b1->vector_dim);
     copy_array(b1->d1_gamma,b2->d1_gamma,b1->vector_dim);
     copy_array(b1->d2_gamma,b2->d2_gamma,b1->vector_dim);
+    copy_array(b1->d3_gamma,b2->d3_gamma,b1->vector_dim);
     copy_array(b1->beta,b2->beta,b1->vector_dim);
     copy_array(b1->d_beta,b2->d_beta,b1->vector_dim);
     copy_array(b1->ex_d_beta_diff_grad,b2->ex_d_beta_diff_grad,b1->vector_dim);
     copy_array(b1->d1_beta,b2->d1_beta,b1->vector_dim);
     copy_array(b1->d2_beta,b2->d2_beta,b1->vector_dim);
+    copy_array(b1->d3_beta,b2->d3_beta,b1->vector_dim);
+    copy_array(b1->d3_beta,b2->d3_beta,b1->vector_dim);
     copy_array(b1->final_mean,b2->final_mean,b1->vector_dim);
     copy_array(b1->final_var,b2->final_var,b1->vector_dim);
     
     return;
 }
 
+/* This function returns a bn* layer that is the same copy of the input b1
+ * except for temp arrays used for feed forward and backprop 
+ * Input:
+ * 
+ *             @ bn* b1:= the batch normalized layer that must be copied
+ *             @ bn* b2:= the batch normalized layer where b1 is copied
+ * 
+ * */
+void paste_w_bn(bn* b1, bn* b2){
+    if(b1 == NULL || b2 == NULL)
+        return;
+    
+    copy_array(b1->gamma,b2->gamma,b1->vector_dim);
+    copy_array(b1->beta,b2->beta,b1->vector_dim);
+    copy_array(b1->final_mean,b2->final_mean,b1->vector_dim);
+    copy_array(b1->final_var,b2->final_var,b1->vector_dim);
+    
+    return;
+}
 /* This function returns a bn* layer that is the same copy for the weights and biases
  * of the layer f with the rule teta_i = tau*teta_j + (1-tau)*teta_i
  * 

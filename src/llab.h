@@ -47,6 +47,7 @@ SOFTWARE.
 #define ADAM 2
 #define RADAM 3
 #define DIFF_GRAD 4
+#define ADAMOD 5
 #define FCLS 1
 #define CLS 2
 #define RLS 3
@@ -70,6 +71,7 @@ SOFTWARE.
 #define GROUP_NORMALIZATION 3
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
+#define BETA3_ADAMOD 0.9999
 #define EPSILON_ADAM 0.00000001
 #define EPSILON 0.00000001
 #define RADAM_THRESHOLD 4
@@ -133,10 +135,12 @@ typedef struct bn{//batch_normalization layer
     float* d_gamma;//vector_dim
     float* d1_gamma;//vector_dim
     float* d2_gamma;//vector_dim
+    float* d3_gamma;//vector_dim
     float* beta;//vector_dim
     float* d_beta;//vector_dim
     float* d1_beta;//vector_dim
     float* d2_beta;//vector_dim
+    float* d3_beta;//vector_dim
     float* ex_d_gamma_diff_grad; //vector dim
     float* ex_d_beta_diff_grad; //vector dim
     float* mean;//vector_dim
@@ -163,10 +167,12 @@ typedef struct fcl { //fully-connected-layers
     float* d_weights;// output*input
     float* d1_weights;// output*input
     float* d2_weights;// output*input
+    float* d3_weights;// output*input
     float* biases; //output
     float* d_biases; //output
     float* d1_biases; //output
     float* d2_biases; //output
+    float* d3_biases; //output
     float* ex_d_weights_diff_grad;//output*input
     float* ex_d_biases_diff_grad;//output
     float* pre_activation; //output
@@ -187,6 +193,7 @@ typedef struct fcl { //fully-connected-layers
     float* ex_d_scores_diff_grad;//for edge-popup algorithm,output*input
     float* d1_scores;//for edge-popup algorithm,output*input
     float* d2_scores;//for edge-popup algorithm,output*input
+    float* d3_scores;//for edge-popup algorithm,output*input
     
 } fcl;
 
@@ -206,10 +213,12 @@ typedef struct cl { //convolutional-layers
     float** d_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d1_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float** d2_kernels; //n_kernels - channels*kernel_rows*kernel_cols
+    float** d3_kernels; //n_kernels - channels*kernel_rows*kernel_cols
     float* biases; //n_kernels
     float* d_biases; //n_kernels
     float* d1_biases; //n_kernels
     float* d2_biases; //n_kernels
+    float* d3_biases; //n_kernels
     float** ex_d_kernels_diff_grad; //n_kernels - channels*kernel_rows*kernel_cols
     float* ex_d_biases_diff_grad; //n_kernels
     float* pre_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
@@ -230,6 +239,7 @@ typedef struct cl { //convolutional-layers
     float* ex_d_scores_diff_grad;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d1_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d2_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
+    float* d3_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     
 } cl;
 
@@ -248,15 +258,18 @@ typedef struct lstm { //long short term memory layers
     float** ex_d_w_diff_grad;// 4 x size*size
     float** d1_w;// 4 x size*size
     float** d2_w;// 4 x size*size
+    float** d3_w;// 4 x size*size
     float** d_u;// 4 x size*size
     float** ex_d_u_diff_grad;// 4 x size*size
     float** d1_u;// 4 x size*size
     float** d2_u;// 4 x size*size
+    float** d3_u;// 4 x size*size
     float** biases; //4 x size
     float** d_biases; //4 x size
     float** ex_d_biases_diff_grad; //4 x size
     float** d1_biases; //4 x size
     float** d2_biases; //4 x size
+    float** d3_biases; //4 x size
     float*** lstm_z; //window x 4 x size
     float** lstm_hidden; //window x size
     float** lstm_cell; //window x size
@@ -274,6 +287,7 @@ typedef struct model {
     float error_threshold2;
     float beta1_adam;
     float beta2_adam;
+    float beta3_adamod;
     float error_gamma;
     float* error_alpha;
     float* error;
@@ -290,6 +304,7 @@ typedef struct rmodel {
     float error_threshold2;
     float beta1_adam;
     float beta2_adam;
+    float beta3_adamod;
     float error_gamma;
     float** error_alpha;
     float** error;

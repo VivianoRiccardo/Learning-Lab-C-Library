@@ -43,5 +43,6 @@ void set_residual_biases_to_zero(rl* r);
 int rl_adjusting_weights_after_edge_popup(rl* c, int* used_input, int* used_output);
 int* get_used_kernels_rl(rl* c, int* used_input);
 int* get_used_channels_rl(rl* c, int* used_output);
+void paste_w_rl(rl* f, rl* copy);
 
 #endif

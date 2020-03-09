@@ -292,7 +292,27 @@ void paste_rl(rl* f, rl* copy){
     return;
 }
 
-
+/* This function returns a rl* layer that is the same copy of the input f
+ * except for the input array
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the residual layer that must be copied
+ *             @ rl* copy:= the residual layer where f is copied
+ * 
+ * */
+void paste_w_rl(rl* f, rl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        paste_w_cl(f->cls[i],copy->cls[i]);
+    }
+    
+    return;
+}
 /* This function returns a rl* layer that is the same copy for the weights and biases
  * of the layer f with the rule teta_i = tau*teta_j + (1-tau)*teta_i
  * 
