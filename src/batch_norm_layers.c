@@ -487,7 +487,15 @@ void slow_paste_bn(bn* f, bn* copy,float tau){
     int i,j;
     for(i = 0; i < f->vector_dim; i++){
         copy->gamma[i] = tau*f->gamma[i] + (1-tau)*copy->gamma[i];
+        copy->d1_gamma[i] = tau*f->d1_gamma[i] + (1-tau)*copy->d1_gamma[i];
+        copy->d2_gamma[i] = tau*f->d2_gamma[i] + (1-tau)*copy->d2_gamma[i];
+        copy->d3_gamma[i] = tau*f->d3_gamma[i] + (1-tau)*copy->d3_gamma[i];
+        copy->ex_d_gamma_diff_grad[i] = tau*f->ex_d_gamma_diff_grad[i] + (1-tau)*copy->ex_d_gamma_diff_grad[i];
         copy->beta[i] = tau*f->beta[i] + (1-tau)*copy->beta[i];
+        copy->d1_beta[i] = tau*f->d1_beta[i] + (1-tau)*copy->d1_beta[i];
+        copy->d2_beta[i] = tau*f->d2_beta[i] + (1-tau)*copy->d2_beta[i];
+        copy->d3_beta[i] = tau*f->d3_beta[i] + (1-tau)*copy->d3_beta[i];
+        copy->ex_d_beta_diff_grad[i] = tau*f->ex_d_beta_diff_grad[i] + (1-tau)*copy->ex_d_beta_diff_grad[i];
     }
     
     return;

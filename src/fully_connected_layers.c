@@ -591,11 +591,24 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
         return;
     int i;
     for(i = 0; i < f->output*f->input; i++){
-        if(i < f->output)
+        if(i < f->output){
             copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+            copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
+            copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
+            copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
+            copy->ex_d_biases_diff_grad[i] = tau*f->ex_d_biases_diff_grad[i] + (1-tau)*copy->ex_d_biases_diff_grad[i];
+        }
         copy->weights[i] = tau*f->weights[i] + (1-tau)*copy->weights[i];
+        copy->d1_weights[i] = tau*f->d1_weights[i] + (1-tau)*copy->d1_weights[i];
+        copy->d2_weights[i] = tau*f->d2_weights[i] + (1-tau)*copy->d2_weights[i];
+        copy->d3_weights[i] = tau*f->d3_weights[i] + (1-tau)*copy->d3_weights[i];
+        copy->ex_d_weights_diff_grad[i] = tau*f->ex_d_weights_diff_grad[i] + (1-tau)*copy->ex_d_weights_diff_grad[i];
         if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
             copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+            copy->d1_scores[i] = tau*f->d1_scores[i] + (1-tau)*copy->d1_scores[i];
+            copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
+            copy->d3_scores[i] = tau*f->d3_scores[i] + (1-tau)*copy->d3_scores[i];
+            copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
             copy->indices[i] = i;
         }
         

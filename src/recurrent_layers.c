@@ -672,9 +672,22 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
     for(i = 0; i < 4; i++){
         for(j = 0; j < l->size*l->size; j++){
             copy->w[i][j] = tau*l->w[i][j] + (1-tau)*copy->w[i][j];
+            copy->d1_w[i][j] = tau*l->d1_w[i][j] + (1-tau)*copy->d1_w[i][j];
+            copy->d2_w[i][j] = tau*l->d2_w[i][j] + (1-tau)*copy->d2_w[i][j];
+            copy->d3_w[i][j] = tau*l->d3_w[i][j] + (1-tau)*copy->d3_w[i][j];
+            copy->ex_d_w_diff_grad[i][j] = tau*l->ex_d_w_diff_grad[i][j] + (1-tau)*copy->ex_d_w_diff_grad[i][j];
             copy->u[i][j] = tau*l->u[i][j] + (1-tau)*copy->u[i][j];
-            if(j < l->size)
+            copy->d1_u[i][j] = tau*l->d1_u[i][j] + (1-tau)*copy->d1_u[i][j];
+            copy->d2_u[i][j] = tau*l->d2_u[i][j] + (1-tau)*copy->d2_u[i][j];
+            copy->d3_u[i][j] = tau*l->d3_u[i][j] + (1-tau)*copy->d3_u[i][j];
+            copy->ex_d_u_diff_grad[i][j] = tau*l->ex_d_u_diff_grad[i][j] + (1-tau)*copy->ex_d_u_diff_grad[i][j];
+            if(j < l->size){
                 copy->biases[i][j] = tau*l->biases[i][j] + (1-tau)*copy->biases[i][j];
+                copy->d1_biases[i][j] = tau*l->d1_biases[i][j] + (1-tau)*copy->d1_biases[i][j];
+                copy->d2_biases[i][j] = tau*l->d2_biases[i][j] + (1-tau)*copy->d2_biases[i][j];
+                copy->d3_biases[i][j] = tau*l->d3_biases[i][j] + (1-tau)*copy->d3_biases[i][j];
+                copy->ex_d_biases_diff_grad[i][j] = tau*l->ex_d_biases_diff_grad[i][j] + (1-tau)*copy->ex_d_biases_diff_grad[i][j];
+			}
         }
     }
     

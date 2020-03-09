@@ -1148,9 +1148,17 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
     for(i = 0; i < f->n_kernels; i++){
         for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
             copy->kernels[i][j] = tau*f->kernels[i][j] + (1-tau)*copy->kernels[i][j];
+            copy->d1_kernels[i][j] = tau*f->d1_kernels[i][j] + (1-tau)*copy->d1_kernels[i][j];
+            copy->d2_kernels[i][j] = tau*f->d2_kernels[i][j] + (1-tau)*copy->d2_kernels[i][j];
+            copy->d3_kernels[i][j] = tau*f->d3_kernels[i][j] + (1-tau)*copy->d3_kernels[i][j];
+            copy->ex_d_kernels_diff_grad[i][j] = tau*f->ex_d_kernels_diff_grad[i][j] + (1-tau)*copy->ex_d_kernels_diff_grad[i][j];
         }
         
         copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+        copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
+        copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
+        copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
+        copy->ex_d_biases_diff_grad[i] = tau*f->ex_d_biases_diff_grad[i] + (1-tau)*copy->ex_d_biases_diff_grad[i];
     }
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
@@ -1162,6 +1170,10 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
      if(f->feed_forward_flag == EDGE_POPUP){
          for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
              copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+             copy->d1_scores[i] = tau*f->d1_scores[i] + (1-tau)*copy->d1_scores[i];
+             copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
+             copy->d3_scores[i] = tau*f->d3_scores[i] + (1-tau)*copy->d3_scores[i];
+             copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
              copy->indices[i] = i;
          }
          for(i = 0; i < f->n_kernels; i++){
