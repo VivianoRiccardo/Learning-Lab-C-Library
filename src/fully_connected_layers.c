@@ -263,6 +263,219 @@ void save_fcl(fcl* f, int n){
     
 }
 
+
+/* This function saves a fully-connected layer on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the actual layer that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void heavy_save_fcl(fcl* f, int n){
+    if(f == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"a+");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->training_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->input,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->output,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->layer,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->dropout_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->activation_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->dropout_threshold,sizeof(float),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->weights,sizeof(float)*(f->input)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d1_weights,sizeof(float)*(f->input)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d2_weights,sizeof(float)*(f->input)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d3_weights,sizeof(float)*(f->input)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->ex_d_weights_diff_grad,sizeof(float)*(f->input)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->biases,sizeof(float)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d1_biases,sizeof(float)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d2_biases,sizeof(float)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d3_biases,sizeof(float)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->ex_d_biases_diff_grad,sizeof(float)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->scores,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d1_scores,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d2_scores,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d3_scores,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->ex_d_scores_diff_grad,sizeof(float)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->indices,sizeof(int)*(f->output)*(f->input),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->active_output_neurons,sizeof(int)*(f->output),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    
+    if(i != 0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    free(s);
+    
+}
+
+
 /* This function copies the values in weights and biases vector in the weights 
  * and biases vector of a fcl structure
  * 
@@ -285,6 +498,268 @@ void copy_fcl_params(fcl* f, float* weights, float* biases){
  *             @ FILE* fr:= a pointer to a file already opened
  * 
  * */
+fcl* heavy_load_fcl(FILE* fr){
+    if(fr == NULL)
+        return NULL;
+    int i;
+    
+    int input = 0,output = 0,layer = 0,dropout_flag = 0,activation_flag = 0, training_mode = 0,feed_forward_flag = 0;
+    float dropout_threshold = 0;
+    float* weights;
+    float* d1_weights;
+    float* d2_weights;
+    float* d3_weights;
+    float* ex_d_weights_diff_grad;
+    float* biases;
+    float* d1_biases;
+    float* d2_biases;
+    float* d3_biases;
+    float* ex_d_biases_diff_grad;
+    float* scores;
+    float* d1_scores;
+    float* d2_scores;
+    float* d3_scores;
+    float* ex_d_scores_diff_grad;
+    int* indices;
+    int* active_output_neurons;
+    
+    i = fread(&feed_forward_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&training_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&input,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&output,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&layer,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&dropout_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&activation_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&dropout_threshold,sizeof(float),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    weights = (float*)malloc(sizeof(float)*input*output);
+    d1_weights = (float*)malloc(sizeof(float)*input*output);
+    d2_weights = (float*)malloc(sizeof(float)*input*output);
+    d3_weights = (float*)malloc(sizeof(float)*input*output);
+    ex_d_weights_diff_grad = (float*)malloc(sizeof(float)*input*output);
+    scores = (float*)malloc(sizeof(float)*input*output);
+    d1_scores = (float*)malloc(sizeof(float)*input*output);
+    d2_scores = (float*)malloc(sizeof(float)*input*output);
+    d3_scores = (float*)malloc(sizeof(float)*input*output);
+    ex_d_scores_diff_grad = (float*)malloc(sizeof(float)*input*output);
+    indices = (int*)malloc(sizeof(int)*input*output);
+    active_output_neurons = (int*)malloc(sizeof(int)*output);
+    biases = (float*)malloc(sizeof(float)*output);
+    d1_biases = (float*)malloc(sizeof(float)*output);
+    d2_biases = (float*)malloc(sizeof(float)*output);
+    d3_biases = (float*)malloc(sizeof(float)*output);
+    ex_d_biases_diff_grad = (float*)malloc(sizeof(float)*output);
+    
+    i = fread(weights,sizeof(float)*(input)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d1_weights,sizeof(float)*(input)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d2_weights,sizeof(float)*(input)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d3_weights,sizeof(float)*(input)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(ex_d_weights_diff_grad,sizeof(float)*(input)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    i = fread(biases,sizeof(float)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d1_biases,sizeof(float)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d2_biases,sizeof(float)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d3_biases,sizeof(float)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(ex_d_biases_diff_grad,sizeof(float)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    i = fread(scores,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d1_scores,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d2_scores,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d3_scores,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(ex_d_scores_diff_grad,sizeof(float)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    i = fread(indices,sizeof(int)*(output)*(input),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    i = fread(active_output_neurons,sizeof(int)*(output),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    
+    fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold);
+    copy_fcl_params(f,weights,biases);
+    copy_array(scores,f->scores,input*output);
+    copy_array(d1_weights,f->d1_weights,input*output);
+    copy_array(d2_weights,f->d2_weights,input*output);
+    copy_array(d3_weights,f->d3_weights,input*output);
+    copy_array(ex_d_weights_diff_grad,f->ex_d_weights_diff_grad,input*output);
+    copy_array(d1_biases,f->d1_biases,output);
+    copy_array(d2_biases,f->d2_biases,output);
+    copy_array(d3_biases,f->d3_biases,output);
+    copy_array(ex_d_biases_diff_grad,f->ex_d_biases_diff_grad,output);
+    copy_array(d1_scores,f->d1_scores,input*output);
+    copy_array(d2_scores,f->d2_scores,input*output);
+    copy_array(d3_scores,f->d3_scores,input*output);
+    copy_array(ex_d_scores_diff_grad,f->ex_d_scores_diff_grad,input*output);
+    copy_int_array(indices,f->indices,input*output);
+    copy_int_array(active_output_neurons,f->active_output_neurons,output);
+    f->training_mode = training_mode;
+    f->feed_forward_flag = feed_forward_flag;
+    free(weights);
+    free(d1_weights);
+    free(d2_weights);
+    free(d3_weights);
+    free(ex_d_weights_diff_grad);
+    free(biases);
+    free(d1_biases);
+    free(d2_biases);
+    free(d3_biases);
+    free(ex_d_biases_diff_grad);
+    free(indices);
+    free(d1_scores);
+    free(d2_scores);
+    free(d3_scores);
+    free(ex_d_scores_diff_grad);
+    free(active_output_neurons);
+    free(scores);
+    return f;
+}
+
+
+/* This function loads a fully-connected layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
 fcl* load_fcl(FILE* fr){
     if(fr == NULL)
         return NULL;
@@ -295,6 +770,7 @@ fcl* load_fcl(FILE* fr){
     float* weights;
     float* biases;
     float* scores;
+    float* ex_d_scores_diff_grad;
     int* indices;
     int* active_output_neurons;
     
@@ -409,6 +885,7 @@ fcl* load_fcl(FILE* fr){
     free(scores);
     return f;
 }
+
 
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array, and all the arrays used by ff and bp.

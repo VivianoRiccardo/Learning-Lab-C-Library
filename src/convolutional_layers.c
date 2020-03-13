@@ -579,6 +579,368 @@ void save_cl(cl* f, int n){
     
 }
 
+
+/* This function saves a convolutional layer on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the actual layer that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void heavy_save_cl(cl* f, int n){
+    if(f == NULL)
+        return;
+    int i,k;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"a+");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->training_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->group_norm_channels,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->convolutional_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->channels,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->input_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->input_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->layer,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->kernel_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->kernel_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->n_kernels,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->stride1_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->stride1_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->padding1_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->padding1_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->stride2_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->stride2_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->padding2_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->padding2_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->pooling_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->pooling_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->normalization_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->activation_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->pooling_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->rows1,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->cols1,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->rows2,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->cols2,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    for(k = 0; k < f->n_kernels; k++){
+        i = fwrite((f->kernels[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
+
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+            exit(1);
+        }
+        i = fwrite((f->d1_kernels[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
+
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+            exit(1);
+        }
+        i = fwrite((f->d2_kernels[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
+
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+            exit(1);
+        }
+        i = fwrite((f->d3_kernels[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
+
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+            exit(1);
+        }
+        i = fwrite((f->ex_d_kernels_diff_grad[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
+
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+            exit(1);
+        }
+        
+    }
+    
+    i = fwrite(f->biases,sizeof(float)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d1_biases,sizeof(float)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d2_biases,sizeof(float)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d3_biases,sizeof(float)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->ex_d_biases_diff_grad,sizeof(float)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d1_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d2_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->d3_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    i = fwrite(f->ex_d_scores_diff_grad,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->indices,sizeof(int)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(f->used_kernels,sizeof(int)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(k = 0; k < f->n_kernels/f->group_norm_channels; k++){
+            heavy_save_bn(f->group_norm[k],n);
+        }
+    }
+    
+    free(s);
+    
+}
+
 /* This function copies the values in weights and biases vector in the weights 
  * and biases vector of a cl structure
  * 
@@ -901,6 +1263,445 @@ cl* load_cl(FILE* fr){
     free(kernels);
     free(biases);
     free(scores);
+    free(indices);
+    free(used_kernels);
+    return f;
+}
+
+
+/* This function loads a convolutional layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
+cl* heavy_load_cl(FILE* fr){
+    if(fr == NULL)
+        return NULL;
+    int i,k;
+    
+    int channels = 0, input_rows = 0, input_cols = 0,layer = 0, convolutional_flag;
+    int kernel_rows = 0, kernel_cols = 0, n_kernels = 0;
+    int stride1_rows = 0, stride1_cols = 0, padding1_rows = 0, padding1_cols = 0;
+    int stride2_rows = 0, stride2_cols = 0, padding2_rows = 0, padding2_cols = 0;
+    int pooling_rows = 0, pooling_cols = 0;
+    int normalization_flag = 0, activation_flag = 0, pooling_flag = 0;
+    int rows1 = 0, cols1 = 0, rows2 = 0,cols2 = 0;
+    int group_norm_channels = 0;
+    int training_mode = 0,feed_forward_flag = 0;
+    float** kernels;
+    float** d1_kernels;
+    float** d2_kernels;
+    float** d3_kernels;
+    float** ex_d_kernels_diff_grad;
+    float* biases;
+    float* d1_biases;
+    float* d2_biases;
+    float* d3_biases;
+    float* ex_d_biases_diff_grad;
+    float* scores;
+    float* d1_scores;
+    float* d2_scores;
+    float* d3_scores;
+    float* ex_d_scores_diff_grad;
+    int* indices;
+    int* used_kernels;
+    bn** group_norm = NULL;
+    
+    i = fread(&feed_forward_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&training_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&group_norm_channels,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&convolutional_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&channels,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&input_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&input_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&layer,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&kernel_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&kernel_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&n_kernels,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&stride1_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&stride1_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&padding1_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&padding1_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&stride2_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&stride2_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&padding2_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&padding2_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&pooling_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&pooling_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&normalization_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&activation_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&pooling_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&rows1,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&cols1,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&rows2,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&cols2,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    kernels = (float**)malloc(sizeof(float*)*n_kernels);
+    d1_kernels = (float**)malloc(sizeof(float*)*n_kernels);
+    d2_kernels = (float**)malloc(sizeof(float*)*n_kernels);
+    d3_kernels = (float**)malloc(sizeof(float*)*n_kernels);
+    ex_d_kernels_diff_grad = (float**)malloc(sizeof(float*)*n_kernels);
+    biases = (float*)malloc(sizeof(float)*n_kernels);
+    d1_biases = (float*)malloc(sizeof(float)*n_kernels);
+    d2_biases = (float*)malloc(sizeof(float)*n_kernels);
+    d3_biases = (float*)malloc(sizeof(float)*n_kernels);
+    ex_d_biases_diff_grad = (float*)malloc(sizeof(float)*n_kernels);
+    scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    d1_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    d2_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    d3_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    ex_d_scores_diff_grad = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
+    indices = (int*)malloc(sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows);
+    used_kernels = (int*)malloc(sizeof(int)*n_kernels);
+    
+    for(k = 0; k < n_kernels; k++){
+        kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        i = fread(kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+            exit(1);
+        }
+        d1_kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        i = fread(d1_kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+            exit(1);
+        }
+        d2_kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        i = fread(d2_kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+            exit(1);
+        }
+        d3_kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        i = fread(d3_kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+            exit(1);
+        }
+        ex_d_kernels_diff_grad[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
+        i = fread(ex_d_kernels_diff_grad[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
+    
+        if(i != 1){
+            fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+            exit(1);
+        }
+    }
+    
+    i = fread(biases,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d1_biases,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d2_biases,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d3_biases,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(ex_d_biases_diff_grad,sizeof(float)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d1_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d2_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(d3_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(ex_d_scores_diff_grad,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(indices,sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    i = fread(used_kernels,sizeof(int)*n_kernels,1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
+    if(normalization_flag == GROUP_NORMALIZATION){
+        group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
+        for(k = 0; k < n_kernels/group_norm_channels; k++){
+            group_norm[k] = heavy_load_bn(fr);
+        }
+    }
+    
+    cl* f = convolutional(channels, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride1_rows, stride1_cols, padding1_rows, padding1_cols, stride2_rows, stride2_cols, padding2_rows, padding2_cols, pooling_rows, pooling_cols, normalization_flag, activation_flag, pooling_flag, group_norm_channels, convolutional_flag,layer);
+    copy_cl_params(f,kernels,biases);
+    
+    if(normalization_flag == GROUP_NORMALIZATION){
+        for(k = 0; k < n_kernels/group_norm_channels; k++){
+            free_batch_normalization(f->group_norm[k]);
+        }
+        free(f->group_norm);
+        f->group_norm = group_norm;
+    }
+    
+    for(i= 0; i < n_kernels; i++){
+        copy_array(d1_kernels[i],f->d1_kernels[i],channels*kernel_cols*kernel_rows);
+        copy_array(d2_kernels[i],f->d2_kernels[i],channels*kernel_cols*kernel_rows);
+        copy_array(d3_kernels[i],f->d3_kernels[i],channels*kernel_cols*kernel_rows);
+        copy_array(ex_d_kernels_diff_grad[i],f->ex_d_kernels_diff_grad[i],channels*kernel_cols*kernel_rows);
+        free(kernels[i]);
+        free(d1_kernels[i]);
+        free(d2_kernels[i]);
+        free(d3_kernels[i]);
+        free(ex_d_kernels_diff_grad[i]);
+    }
+    copy_array(d1_biases,f->d1_biases,n_kernels);
+    copy_array(d2_biases,f->d2_biases,n_kernels);
+    copy_array(d3_biases,f->d3_biases,n_kernels);
+    copy_array(ex_d_biases_diff_grad,f->ex_d_biases_diff_grad,n_kernels);
+    copy_array(scores,f->scores,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(d1_scores,f->d1_scores,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(d2_scores,f->d2_scores,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(d3_scores,f->d3_scores,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(ex_d_scores_diff_grad,f->ex_d_scores_diff_grad,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_int_array(indices,f->indices,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_int_array(used_kernels,f->used_kernels,n_kernels);
+    f->training_mode = training_mode;
+    f->feed_forward_flag = feed_forward_flag;
+    free(kernels);
+    free(d1_kernels);
+    free(d2_kernels);
+    free(d3_kernels);
+    free(ex_d_kernels_diff_grad);
+    free(biases);
+    free(d1_biases);
+    free(d2_biases);
+    free(d3_biases);
+    free(ex_d_biases_diff_grad);
+    free(scores);
+    free(d1_scores);
+    free(d2_scores);
+    free(d3_scores);
+    free(ex_d_scores_diff_grad);
     free(indices);
     free(used_kernels);
     return f;

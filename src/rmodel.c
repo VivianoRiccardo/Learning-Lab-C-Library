@@ -242,7 +242,7 @@ void save_rmodel(rmodel* m, int n){
     s = itoa(n,s);
     s = strcat(s,t);
     
-    fw = fopen(s,"a");
+    fw = fopen(s,"w");
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
@@ -277,9 +277,75 @@ void save_rmodel(rmodel* m, int n){
         exit(1);
     }
     
+    i = fclose(fw);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
     for(i = 0; i < m->n_lstm; i++){
         save_lstm(m->lstms[i],n);
     }
+    
+    
+    
+    free(s);
+}
+
+/* This function saves a rmodel(recurrent network) on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ rmodel* m:= the actual recurrent network that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void heavy_save_rmodel(rmodel* m, int n){
+    if(m == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"w");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&m->layers,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the rmodel\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_lstm,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the rmodel\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->window,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the rmodel\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->hidden_state_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the rmodel\n");
+        exit(1);
+    }
+    
     
     i = fclose(fw);
     if(i!=0){
@@ -287,9 +353,12 @@ void save_rmodel(rmodel* m, int n){
         exit(1);
     }
     
+    for(i = 0; i < m->n_lstm; i++){
+        heavy_save_lstm(m->lstms[i],n);
+    }
+    
     free(s);
 }
-
 
 /* This function loads a recurrent network model from a .bin file with name file
  * 
@@ -325,7 +394,6 @@ rmodel* load_rmodel(char* file){
     }
     
     i = fread(&window,sizeof(int),1,fr);
-    
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
@@ -363,7 +431,77 @@ rmodel* load_rmodel(char* file){
 }
 
 
-
+/* This function loads a recurrent network model from a .bin file with name file
+ * 
+ * Input:
+ * 
+ *             @ char* file:= the binary file from which the rmodel will be loaded
+ * 
+ * */
+rmodel* heavy_load_rmodel(char* file){
+    if(file == NULL)
+        return NULL;
+    int i;
+    FILE* fr = fopen(file,"r");
+    
+    if(fr == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
+        exit(1);
+    }
+    
+    int layers = 0,n_lstm = 0, window = 0, hidden_state_mode = 0;
+    
+    i = fread(&layers,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&n_lstm,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&window,sizeof(int),1,fr);
+    
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&hidden_state_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    lstm** lstms;
+    
+    if(!n_lstm)
+        lstms = NULL;
+    else
+        lstms = (lstm**)malloc(sizeof(lstm*)*n_lstm);
+    
+    printf("%d\n",n_lstm);
+    for(i = 0; i < n_lstm; i++){
+        lstms[i] = heavy_load_lstm(fr);
+    }
+    
+    i = fclose(fr);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
+        exit(1);
+    }
+    
+    rmodel* m = recurrent_network(layers,n_lstm,lstms, window, hidden_state_mode);
+    
+    return m;
+    
+}
 
 /* Given a rmodel with only long short term memory cells, this functions computes the feed forward
  * for that model given in input the previous hidden state, previous cell state the input model
@@ -752,7 +890,7 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
             update_batch_normalized_layer_radam(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,(*t));
         else if(gradient_descent_flag == DIFF_GRAD)
             update_batch_normalized_layer_adam_diff_grad(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam);
-		else if(gradient_descent_flag == ADAMOD)
+        else if(gradient_descent_flag == ADAMOD)
             update_batch_normalized_layer_adamod(bns,n_bn,lr,mini_batch_size,(*b1),(*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
         
         

@@ -432,6 +432,15 @@ typedef struct modularity_struct{
     double modularity;
 }modularity_struct;
 
+typedef struct training{
+    model** m;
+    rmodel** r;
+    int epochs,instance,n_char_size,n_int_size,n_float_size,n_m, n_r, n_float, n_int, n_char;
+    char** chars;
+    int** ints;
+    float** floats;
+}training;
+
 #include "batch_norm_layers.h"
 #include "client.h"
 #include "clipping_gradient.h"
@@ -456,6 +465,7 @@ typedef struct modularity_struct{
 #include "residual_layers.h"
 #include "rmodel.h"
 #include "server.h"
+#include "training.h"
 #include "utils.h"
 #include "vae_model.h"
 

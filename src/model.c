@@ -461,7 +461,7 @@ void save_model(model* m, int n){
     s = itoa(n,s);
     s = strcat(s,t);
     
-    fw = fopen(s,"a");
+    fw = fopen(s,"w");
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
@@ -512,6 +512,82 @@ void save_model(model* m, int n){
     
     for(i = 0; i < m->n_fcl; i++){
         save_fcl(m->fcls[i],n);
+    }
+    
+    free(s);
+}
+
+
+/* This function saves a model(network) on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the actual network that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void heavy_save_model(model* m, int n){
+    if(m == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"w");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&m->layers,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_rl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_cl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_fcl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
+    for(i = 0; i < m->n_rl; i++){
+        heavy_save_rl(m->rls[i],n);
+    }
+    
+    for(i = 0; i < m->n_cl; i++){
+        heavy_save_cl(m->cls[i],n);
+    }
+    
+    for(i = 0; i < m->n_fcl; i++){
+        heavy_save_fcl(m->fcls[i],n);
     }
     
     free(s);
@@ -606,6 +682,95 @@ model* load_model(char* file){
     
 }
 
+
+/* This function loads a network model from a .bin file with name file
+ * 
+ * Input:
+ * 
+ *             @ char* file:= the binary file from which the model will be loaded
+ * 
+ * */
+model* heavy_load_model(char* file){
+    if(file == NULL)
+        return NULL;
+    int i;
+    FILE* fr = fopen(file,"r");
+    
+    if(fr == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
+        exit(1);
+    }
+    
+    int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
+    
+    i = fread(&layers,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_rl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_cl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_fcl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+
+    rl** rls;
+    cl** cls;
+    fcl** fcls;
+    
+    if(!n_rl)
+        rls = NULL;
+    else
+        rls = (rl**)malloc(sizeof(rl*)*n_rl);
+    if(!n_cl)
+        cls = NULL;
+    else
+        cls = (cl**)malloc(sizeof(cl*)*n_cl);
+    if(!n_fcl)
+        fcls = NULL;
+    else
+        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
+    
+    for(i = 0; i < n_rl; i++){
+        rls[i] = heavy_load_rl(fr);
+    }
+    
+    for(i = 0; i < n_cl; i++){
+        cls[i] = heavy_load_cl(fr);
+    }
+    
+    for(i = 0; i < n_fcl; i++){
+        fcls[i] = heavy_load_fcl(fr);
+    }
+    
+    i = fclose(fr);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
+        exit(1);
+    }
+    
+    model* m = network(layers,n_rl,n_cl,n_fcl,rls,cls,fcls);
+    
+    return m;
+    
+}
 /* This function compute the feed forward between 2 fully-connected layer
  * 
  * Input:

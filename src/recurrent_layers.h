@@ -39,5 +39,7 @@ void memcopy_params_to_vector_lstm(lstm* f, float* vector);
 void memcopy_vector_to_derivative_params_lstm(lstm* f, float* vector);
 void memcopy_derivative_params_to_vector_lstm(lstm* f, float* vector);
 void paste_w_lstm(lstm* l,lstm* copy);
+void heavy_save_lstm(lstm* rlstm, int n);
+lstm* heavy_load_lstm(FILE* fr);
 
 #endif

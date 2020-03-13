@@ -22,29 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __RESIDUAL_LAYERS_H__
-#define __RESIDUAL_LAYERS_H__
+#ifndef __TRAINING_H__
+#define __TRAINING_H__
 
-rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls);
-void free_residual(rl* r);
-void save_rl(rl* f, int n);
-void heavy_save_rl(rl* f, int n);
-rl* load_rl(FILE* fr);
-rl* heavy_load_rl(FILE* fr);
-rl* copy_rl(rl* f);
-void paste_rl(rl* f, rl* copy);
-rl* reset_rl(rl* f);
-unsigned long long int size_of_rls(rl* f);
-void slow_paste_rl(rl* f, rl* copy,float tau);
-int get_array_size_params_rl(rl* f);
-void memcopy_vector_to_params_rl(rl* f, float* vector);
-void memcopy_params_to_vector_rl(rl* f, float* vector);
-void memcopy_vector_to_derivative_params_rl(rl* f, float* vector);
-void memcopy_derivative_params_to_vector_rl(rl* f, float* vector);
-void set_residual_biases_to_zero(rl* r);
-int rl_adjusting_weights_after_edge_popup(rl* c, int* used_input, int* used_output);
-int* get_used_kernels_rl(rl* c, int* used_input);
-int* get_used_channels_rl(rl* c, int* used_output);
-void paste_w_rl(rl* f, rl* copy);
+#include "llab.h"
+
+
+training* get_training(char** chars, int** ints, float** floats, model** m, rmodel** r,int epochs, int n_char_size, int n_float_size, int n_int_size, int instance, int n_m, int m_r, int n_char, int n_float, int n_int);
+void save_training(training* t,int n);
+training* load_training(int n, int n_files);
 
 #endif

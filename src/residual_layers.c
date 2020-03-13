@@ -137,7 +137,79 @@ void save_rl(rl* f, int n){
     free(s);
 }
 
-
+/* This function saves a residual layer on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the actual layer that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ * 
+ * 
+ * */
+void heavy_save_rl(rl* f, int n){
+    if(f == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    
+    fw = fopen(s,"a+");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&f->cl_output->activation_flag,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a rl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->channels,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a rl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->input_rows,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a rl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->input_cols,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a rl layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&f->n_cl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a rl layer\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
+    for(i = 0; i < f->n_cl; i++){
+        heavy_save_cl(f->cls[i],n);
+    }
+    
+    free(s);
+}
 /* This function loads a residual layer from a .bin file from fr
  * 
  * Input:
@@ -191,6 +263,66 @@ rl* load_rl(FILE* fr){
     cls = (cl**)malloc(sizeof(cl*)*n_cl);
     for(i = 0; i < n_cl; i++){
         cls[i] = load_cl(fr);
+    }
+    
+    rl* f = residual(channels,input_rows,input_cols,n_cl,cls);
+    f->cl_output->activation_flag = act_flag;
+    return f;
+}
+
+/* This function loads a residual layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
+rl* heavy_load_rl(FILE* fr){
+    if(fr == NULL)
+        return NULL;
+    int i;
+    
+    int channels = 0,input_rows = 0,input_cols = 0,n_cl = 0, act_flag = 0;
+    cl** cls;
+    
+    i = fread(&act_flag,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&channels,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&input_rows,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&input_cols,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
+        exit(1);
+    }
+    
+    i = fread(&n_cl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a rl layer\n");
+        exit(1);
+    }
+    
+    cls = (cl**)malloc(sizeof(cl*)*n_cl);
+    for(i = 0; i < n_cl; i++){
+        cls[i] = heavy_load_cl(fr);
     }
     
     rl* f = residual(channels,input_rows,input_cols,n_cl,cls);

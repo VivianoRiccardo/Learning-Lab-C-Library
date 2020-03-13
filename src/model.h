@@ -29,7 +29,9 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
 void free_model(model* m);
 model* copy_model(model* m);
 void save_model(model* m, int n);
+void heavy_save_model(model* m, int n);
 model* load_model(char* file);
+model* heavy_load_model(char* file);
 void ff_fcl_fcl(fcl* f1, fcl* f2);
 void ff_fcl_cl(fcl* f1, cl* f2);
 void ff_cl_fcl(cl* f1, fcl* f2);

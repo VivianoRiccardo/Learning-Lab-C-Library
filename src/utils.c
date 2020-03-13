@@ -1982,4 +1982,25 @@ void dot_float_input(float* input1, int* input2, float* output, int size){
     for(i = 0; i < size; i++){
         output[i] = (float)(input1[i]*input2[i]);
     }
-} 
+}
+
+
+
+char** get_files(int index1, int n_files){
+    char** files = (char**)malloc(sizeof(char*)*n_files);
+    int i;
+    char* temp = ".bin";
+    for(i = 0; i < n_files; i++){
+        files[i] = (char*)malloc(sizeof(char*)*256);
+        files[i][0] = '.';
+        files[i][1] = '/';
+        files[i][2] = '\0';
+        char* b = (char*)malloc(sizeof(char)*256);
+        b = itoa((i+index1),b);
+        strcat(files[i],b);
+        strcat(files[i],temp);
+        free(b);
+    }
+    
+    return files;
+}

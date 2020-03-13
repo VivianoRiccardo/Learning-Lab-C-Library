@@ -35,5 +35,7 @@ unsigned long long int size_of_bn(bn* b);
 void paste_bn(bn* b1, bn* b2);
 void slow_paste_bn(bn* f, bn* copy,float tau);
 void paste_w_bn(bn* b1, bn* b2);
+void heavy_save_bn(bn* b, int n);
+bn* heavy_load_bn(FILE* fr);
 
 #endif

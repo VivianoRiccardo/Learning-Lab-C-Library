@@ -45,5 +45,7 @@ void set_convolutional_unused_weights_to_zero(cl* c);
 int cl_adjusting_weights_after_edge_popup(cl* c, int* used_input, int* used_output);
 int* get_used_channels(cl* c, int* ch);
 void paste_w_cl(cl* f, cl* copy);
+void heavy_save_cl(cl* f, int n);
+cl* heavy_load_cl(FILE* fr);
 
 #endif
