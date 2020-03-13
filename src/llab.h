@@ -315,14 +315,11 @@ typedef struct rmodel {
 typedef struct recurrent_enc_dec {
 	rmodel* encoder;
 	rmodel* decoder;
-	float** attention_weights; // size x size (encoder, decoder)
-	float** d_attention_weights; // size x size (encoder, decoder)
-	float** ex_d_attention_weights_diff_grad; // size x size (encoder, decoder)
-    float** d1_attention_weights; // size x size (encoder, decoder)
-    float** d2_attention_weights; // size x size (encoder, decoder)
-    float** score; //size x window encoder
-    float** post_activation; // size x window encoder
-    float** context_vector; // size x window encoder
+	model** m;//decoder->window
+	float** output_encoder;//encoder->window x encoder->size
+	float** output_error_encoder;//encoder->window x encoder->size
+	float* softmax_array;//encoder->window*encoder->size
+	float* context_array;//encoder->window*encoder->size
 }recurrent_enc_dec;
 
 typedef struct vaemodel{
