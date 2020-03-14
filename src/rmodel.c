@@ -486,7 +486,6 @@ rmodel* heavy_load_rmodel(char* file){
     else
         lstms = (lstm**)malloc(sizeof(lstm*)*n_lstm);
     
-    printf("%d\n",n_lstm);
     for(i = 0; i < n_lstm; i++){
         lstms[i] = heavy_load_lstm(fr);
     }
