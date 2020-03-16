@@ -84,20 +84,23 @@ void convolutional_feed_forward(float* input, float* kernel, int input_i, int in
  *                @ int last_n:= the last n best indices
  * */
 void convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride, int padding, int* indices, int n_kernels, int last_n){
-    int oi,oj,i,j,c,s,z,flag = -1;
+    int oi,oj,i,j,c,s,z;
     int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
     int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    float* flags = (float*)calloc(n_kernels*output_i*output_j,sizeof(float));
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
                 output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*kernel_i*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)]*input[(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*input_i*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
-                if(flag!=(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj){
-                    flag = (int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj;
+                if(!flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj]){
+                    flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] = 1;
                     output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += bias[(int)(indices[s]/(channels*kernel_i*kernel_j))];
                 }
             }
         }
     }
+    
+    free(flags);
 }
 
 /* This function computes the errors using the backpropagation
