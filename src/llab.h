@@ -313,13 +313,17 @@ typedef struct rmodel {
 } rmodel;
 
 typedef struct recurrent_enc_dec {
-	rmodel* encoder;
-	rmodel* decoder;
-	model** m;//decoder->window
-	float** output_encoder;//encoder->window x encoder->size
-	float** output_error_encoder;//encoder->window x encoder->size
-	float* softmax_array;//encoder->window*encoder->size
-	float* context_array;//encoder->window*encoder->size
+    rmodel* encoder;
+    rmodel* decoder;
+    model** m;//decoder->window
+    float beta1_adam;
+    float beta2_adam;
+    float beta3_adamod;
+    float* flatten_fcl_input;//encoder->size*(encoder->window+1)
+    float** output_encoder;//encoder->window x encoder->size
+    float** hiddens;//decoder->window x encoder->size
+    float** output_error_encoder;//encoder->window x decoder->size
+    float** softmax_array;//decoder->window x encoder->window
 }recurrent_enc_dec;
 
 typedef struct vaemodel{
@@ -350,6 +354,18 @@ typedef struct thread_args_rmodel {
     float**** returning_error;
     float*** ret_input_error;
 } thread_args_rmodel;
+
+typedef struct thread_args_enc_dec_model {
+    recurrent_enc_dec* m;
+    float** hidden_states;
+    float** cell_states;
+    float** input_model1;
+    float** input_model2;
+    float** error_model;
+    float**** returning_error;
+    float*** ret_input_error1;
+    float*** ret_input_error2;
+} thread_args_enc_dec_model;
 
 typedef struct thread_args_vae_model {
     vaemodel* vm;
@@ -454,6 +470,7 @@ typedef struct training{
 #include "math_functions.h"
 #include "model.h"
 #include "multi_core_model.h"
+#include "multi_core_recurrent_enc_dec.h"
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"
 #include "neat_functions.h"

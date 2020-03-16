@@ -148,6 +148,9 @@ rmodel* copy_rmodel(rmodel* m){
         lstms[i] = copy_lstm(m->lstms[i]);
     }
     rmodel* copy = recurrent_network(m->layers, m->n_lstm,lstms, m->window, m->hidden_state_mode);
+    copy->beta1_adam = m->beta1_adam;
+    copy->beta2_adam = m->beta2_adam;
+    copy->beta3_adamod = m->beta3_adamod;
     return copy;
 }
 
@@ -725,7 +728,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                     temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 
                 else
-                    temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j+1]->lstm_z[i],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                    temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 
                 if(matrix[j]!= NULL)
                     free_matrix(matrix[j],4);
@@ -909,27 +912,27 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
     
     else if(gradient_descent_flag == ADAM){
         update_lstm_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
         update_lstm_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
         (*t)++;
     } 
     
     else if(gradient_descent_flag == DIFF_GRAD){
         update_lstm_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
     }
     
     else if(gradient_descent_flag == ADAMOD){
         update_lstm_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
-        (*b1)*=BETA1_ADAM;
-        (*b2)*=BETA2_ADAM;
+        (*b1)*=m->beta1_adam;
+        (*b2)*=m->beta2_adam;
     }    
     
 
@@ -953,7 +956,25 @@ void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
     sum_lstm_layers_partial_derivatives(m,m2,m3);
 }
 
-
+/* This function sum the partial derivatives in rmodel m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ rmodel* m:= first input rmodel
+ *             @ rmodel* m2:= second input rmodel
+ *             @ rmodel* m3:= output rmodel
+ * 
+ * */
+void sum_rmodels_partial_derivatives(rmodel* m, rmodel** m2, int n_models){
+    if(m == NULL || m2 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    int i;
+    for(i = 0; i < n_models; i++){
+        sum_rmodel_partial_derivatives(m,m2[i],m);
+    }
+}
 /* this function return a vector of float of a lstm cell for the dL/Dinput of the same lstms cell
  * 
  * Inputs:

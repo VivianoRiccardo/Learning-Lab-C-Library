@@ -81,6 +81,7 @@ sh compile_tests.sh
 - DiffGrad optimization algorithm for cnn fcl lstm layers (27/12/2019)
 - Recurrent Encoder-Decoder with attention mechanism structure (7/3/2020)
 - ADAMOD optimization algorithm (9/3/2020)
+- Recurrent encoder decoder with global attention mechanism feedforward, back propagation, update (16/03/2020)
 
 # Tests
 

@@ -303,6 +303,10 @@ model* copy_model(model* m){
     model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
     if(m->error!=NULL)
         set_model_error(copy,m->error_flag,m->error_threshold1,m->error_threshold2,m->error_gamma,m->error_alpha,m->output_dimension);
+    
+    copy->beta1_adam = m->beta1_adam;
+    copy->beta2_adam = m->beta2_adam;
+    copy->beta3_adamod = m->beta3_adamod;
     return copy;
 }
 
