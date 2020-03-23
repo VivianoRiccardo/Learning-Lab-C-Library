@@ -69,6 +69,7 @@ SOFTWARE.
 #define LOCAL_RESPONSE_NORMALIZATION 1
 #define BATCH_NORMALIZATION 2
 #define GROUP_NORMALIZATION 3
+#define LAYER_NORMALIZATION 4
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define BETA3_ADAMOD 0.9999
@@ -160,9 +161,9 @@ typedef struct bn{//batch_normalization layer
 
 /* LAYERS MUST START FROM 0*/
 typedef struct fcl { //fully-connected-layers
-    int input,output,layer,dropout_flag;//dropout flag = 1 if dropout must be applied
+    int input,output,layer,dropout_flag, normalization_flag;//dropout flag = 1 if dropout must be applied
     int activation_flag; // activation flag = 0 -> no activation, flag = 1 -> sigmoid, = 2 -> relu, = 3 -> softmax, 4->tanhh
-    int training_mode,feed_forward_flag;//GRADIENT_DESCENT, EDGE_POPUP
+    int training_mode,feed_forward_flag, n_groups;//GRADIENT_DESCENT, EDGE_POPUP
     float* weights;// output*input
     float* d_weights;// output*input
     float* d1_weights;// output*input
@@ -177,6 +178,7 @@ typedef struct fcl { //fully-connected-layers
     float* ex_d_biases_diff_grad;//output
     float* pre_activation; //output
     float* post_activation; //output
+    float* post_normalization; //output
     float* dropout_mask;//output
     float* dropout_temp;//output
     float* temp;//output
@@ -194,6 +196,8 @@ typedef struct fcl { //fully-connected-layers
     float* d1_scores;//for edge-popup algorithm,output*input
     float* d2_scores;//for edge-popup algorithm,output*input
     float* d3_scores;//for edge-popup algorithm,output*input
+    bn* layer_norm;
+    
     
 } fcl;
 

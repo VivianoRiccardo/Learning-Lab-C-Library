@@ -67,7 +67,7 @@ recurrent_enc_dec* recurrent_enc_dec_network(rmodel* encoder, rmodel* decoder){
     r->encoder = encoder;
     r->decoder = decoder;
     fcl** fcls = (fcl**)malloc(sizeof(fcl*));
-    fcls[0] = fully_connected(encoder->lstms[0]->size*(encoder->window+1),encoder->window,0,NO_DROPOUT,TANH,0);
+    fcls[0] = fully_connected(encoder->lstms[0]->size*(encoder->window+1),encoder->window,0,NO_DROPOUT,TANH,0,0,NO_NORMALIZATION);
     model** m = (model**)malloc(sizeof(model*)*decoder->window);
     m[0] = network(1,0,0,1,NULL,NULL,fcls);
     for(i = 1; i < decoder->window; i++){

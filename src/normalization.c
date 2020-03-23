@@ -454,7 +454,7 @@ void channel_normalization_feed_forward(int batch_size, float* input_vectors,flo
     float temp;
     /*mean*/
     for(i = 0, ii = 0; ii < batch_size; i++){
-        if(used_kernels[i]){
+        if(used_kernels == NULL || used_kernels[i]){
             for(j = rows_pad; j < rows-rows_pad; j++){
                 for(k = cols_pad; k < cols-cols_pad; k++){
                     mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += input_vectors[i*rows*cols+j*cols+k];
@@ -469,7 +469,7 @@ void channel_normalization_feed_forward(int batch_size, float* input_vectors,flo
     
     /*variance*/
     for(i = 0, ii = 0; ii < batch_size; i++){
-        if(used_kernels[i]){
+        if(used_kernels == NULL || used_kernels[i]){
             for(j = rows_pad; j < rows-rows_pad; j++){
                 for(k = cols_pad; k < cols-cols_pad; k++){
                     temp = input_vectors[i*rows*cols+j*cols+k]-mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
@@ -504,7 +504,7 @@ void channel_normalization_back_prop(int batch_size, float* input_vectors,float*
 
     /* gamma and beta error*/
     for(i = 0, ii = 0; ii < batch_size;i++){
-        if(used_kernels[i]){
+        if(used_kernels == NULL || used_kernels[i]){
             for(j = rows_pad; j < rows-rows_pad; j++){
                 for(k = cols_pad; k < cols-cols_pad; k++){
                     gamma_error[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] += outputs_error[i*rows*cols+j*cols+k]*temp_vectors[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad];
@@ -519,9 +519,9 @@ void channel_normalization_back_prop(int batch_size, float* input_vectors,float*
 
     /* input_error*/
     for(i = 0, ii = 0; ii < batch_size; i++){
-        if(used_kernels[i]){
+        if(used_kernels == NULL || used_kernels[i]){
             for(j = 0, jj = 0; jj < batch_size; j++){
-                if(used_kernels[j]){
+                if(used_kernels == NULL || used_kernels[j]){
                     for(z = rows_pad; z < rows-rows_pad; z++){
                         for(k = cols_pad; k < cols-cols_pad; k++){
                         if(i == j)
@@ -565,7 +565,7 @@ void group_normalization_feed_forward(float* tensor,int tensor_c, int tensor_i, 
             n_ch++;
     }
     if(n_ch%n_channels){
-        fprintf(stderr,"Error: your grouped normalization layers doesn't group up a number of channls that perfectly divide the total number of channels you have\n");
+        fprintf(stderr,"Error: your grouped normalization layers doesn't group up a number of channels that perfectly divide the total number of channels you have\n");
         exit(1);
     }
     int n_bns = (n_ch-n_channels)/stride+1;

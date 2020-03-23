@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __FULLY_CONNECTED_LAYERS_H__
 #define __FULLY_CONNECTED_LAYERS_H__
 
-fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold);
+fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag);
 void free_fully_connected(fcl* f);
 void save_fcl(fcl* f, int n);
 void copy_fcl_params(fcl* f, float* weights, float* biases);
@@ -35,7 +35,6 @@ void paste_fcl(fcl* f, fcl* copy);
 fcl* reset_fcl(fcl* f);
 unsigned long long int size_of_fcls(fcl* f);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
-fcl* fcl_merge(fcl* f1, fcl* f2);
 int get_array_size_params(fcl* f);
 void memcopy_params_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_params(fcl* f, float* vector);
