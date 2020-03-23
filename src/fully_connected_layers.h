@@ -48,5 +48,7 @@ int* get_used_inputs(fcl* f, int* used_input, int flag, int input_size);
 int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size);
 void heavy_save_fcl(fcl* f, int n);
 fcl* heavy_load_fcl(FILE* fr);
+void sum_score_fcl(fcl* input1, fcl* input2, fcl* output);
+void dividing_score_fcl(fcl* f, float value);
 
 #endif

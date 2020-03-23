@@ -82,6 +82,7 @@ sh compile_tests.sh
 - Recurrent Encoder-Decoder with attention mechanism structure (7/3/2020)
 - ADAMOD optimization algorithm (9/3/2020)
 - Recurrent encoder decoder with global attention mechanism feedforward, back propagation, update (16/03/2020)
+- Edge popup for Transposed convolution 23/3/2020)
 
 # Tests
 

@@ -46,5 +46,7 @@ int rl_adjusting_weights_after_edge_popup(rl* c, int* used_input, int* used_outp
 int* get_used_kernels_rl(rl* c, int* used_input);
 int* get_used_channels_rl(rl* c, int* used_output);
 void paste_w_rl(rl* f, rl* copy);
+void sum_score_rl(rl* input1, rl* input2, rl* output);
+void dividing_score_rl(rl* f, float value);
 
 #endif

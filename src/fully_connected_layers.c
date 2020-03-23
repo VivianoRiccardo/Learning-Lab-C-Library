@@ -968,10 +968,13 @@ fcl* reset_fcl(fcl* f){
         }
     }
     if(f->training_mode == EDGE_POPUP){
-        float_abs_array(f->scores,f->output*f->input);
+        //float* temp = float_abs_array_(f->scores,f->output*f->input);
+        //float_abs_array(f->scores,f->output*f->input);
         quick_sort(f->scores,f->indices,0,f->output*f->input-1);
+        //quick_sort(temp,f->indices,0,f->output*f->input-1);
         free(f->active_output_neurons);
         f->active_output_neurons = get_used_outputs(f,NULL,FCLS,f->output);
+        //free(temp);
     }
     return f;
 }
@@ -1095,7 +1098,11 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
         copy->indices[i] = i;
     }
     if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
+        //float* temp = float_abs_array_(copy->scores,f->output*f->input);
+        //float_abs_array(copy->scores,f->output*f->input);
         quick_sort(copy->scores,copy->indices,0,f->output*f->input-1);
+        //quick_sort(temp,copy->indices,0,f->output*f->input-1);
+        //free(temp);
         free(copy->active_output_neurons);
         copy->active_output_neurons = get_used_outputs(copy,NULL,FCLS,copy->output);
     }
@@ -1217,12 +1224,12 @@ void set_fully_connected_unused_weights_to_zero(fcl* f){
     }
 }
 
-/* This function minimize k percentage and the used weights if there are some used weights attached to inactive neurons
+/* This function minimizes k percentage and the used weights if there are some used weights attached to inactive neurons
  * 
  * Input:
  * 
  *             @ fcl* f:= the fully connected layer
- *             @ int* used_input:= an array of the input used, can be dimension (n_feature_maps) if layer_flag = CONVOLUTION f->input*f->output dimension otherwise
+ *             @ int* used_input:= an array of the input used, can be dimension (n_feature_maps) if layer_flag = CLS f->input*f->output dimension otherwise
  *             @ int* used_output:= the active neurons of the next layer, f->output dimension
  *             @ int layer_flag:= it says if the previous layer was a convolution/residual (CONVOLUTION) or a fcl layer (FULLY_CONNECTED)
  *             @ int input_size:= the size of used_input array
@@ -1334,10 +1341,22 @@ int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
         }
             
         else{
-            uo[f->indices[i]%f->output] = 1;
+            uo[(int)((f->indices[i]/f->input))] = 1;
         }
     }
     
     return uo;  
     
+}
+
+
+void sum_score_fcl(fcl* input1, fcl* input2, fcl* output){
+    sum1D(input1->scores,input2->scores,output->scores,input1->input*input1->output);
+}
+
+void dividing_score_fcl(fcl* f, float value){
+    int i;
+    for(i = 0; i < f->input*f->output; i++){
+        f->scores[i]/=value;
+    }
 }

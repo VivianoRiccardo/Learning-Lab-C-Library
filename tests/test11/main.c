@@ -25,9 +25,9 @@ int main(){
     srand(time(NULL));
     // Initializing Training resources
     int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100;
-    int n_layers = 7;
+    int n_layers = 15;
     int batch_size = 10,threads = 8;
-    int epochs = 50;
+    int epochs = 10;
     unsigned long long int t = 1;
     char** ksource = (char**)malloc(sizeof(char*));
     char* filename = "../data/train.bin";
@@ -41,30 +41,54 @@ int main(){
     for(i = 0; i < batch_size; i++){
         errors[i] = (float*)calloc(output_dimension,sizeof(float));
     }
+    
     // Model Architecture
     cl** cls = (cl**)malloc(sizeof(cl*));
-    cl** cls2 = (cl**)malloc(sizeof(cl*)*2);
-    cl** cls3 = (cl**)malloc(sizeof(cl*)*2);
+    cl** cls2 = (cl**)malloc(sizeof(cl*)*6);
+    cl** cls3 = (cl**)malloc(sizeof(cl*)*6);
     rl** rls = (rl**)malloc(sizeof(rl*)*2);
     cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,0);
     cls2[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,1);
-    cls3[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,3);
+    cls3[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,7);
     cls2[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,2);
-    cls3[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,4);
-    rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
-    rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls3);
+    cls3[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,8);
+    cls2[2] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,3);
+    cls3[2] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,9);
+    cls2[3] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,4);
+    cls3[3] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,10);
+    cls2[4] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,5);
+    cls3[4] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,10,CONVOLUTION,11);
+    cls2[5] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,6);
+    cls3[5] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,12);
+    rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,6,cls2);
+    rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,6,cls3);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,13,NO_DROPOUT,SIGMOID,0);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,14,NO_DROPOUT,SOFTMAX,0);
     model* m = network(n_layers,2,1,2,rls,cls,fcls);
+    /*
+    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*5);
+    fcls[0] = fully_connected(input_dimension,200,0,NO_DROPOUT,RELU,0);
+    for(i = 1; i <4; i++){
+		fcls[i] = fully_connected(200,200,i,NO_DROPOUT,RELU,0);
+	}
+	fcls[i] = fully_connected(200,10,i,NO_DROPOUT,SIGMOID,0);
+	model* m = network(5,0,0,5,NULL,NULL,fcls);
+	*/
     set_model_training_edge_popup(m,0.5);
+    m->fcls[1]->feed_forward_flag = FULLY_FEED_FORWARD;
+    m->fcls[1]->training_mode = FREEZE_TRAINING;
+    m->fcls[0]->feed_forward_flag = FULLY_FEED_FORWARD;
+    m->fcls[0]->training_mode = FREEZE_TRAINING;
+    set_model_error(m,FOCAL_LOSS,0,0,2,NULL,10);
+    reset_model(m);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
     for(i = 0; i < batch_size; i++){
         batch_m[i] = copy_model(m);
     }
     int ws = count_weights(m);
-    float lr = 0.1, momentum = 0.99, lambda = 0.0001;
+    float lr = 0.001, momentum = 0, lambda = 0.0001;
     // Reading the data in a char** vector
     read_file_in_char_vector(ksource,filename,&size);
     float** inputs = (float**)malloc(sizeof(float*)*training_instances);
@@ -81,7 +105,7 @@ int main(){
                 inputs[i][j] = atof(temp);
         }
     }
-    /
+    
     printf("Training phase!\n");
     save_model(m,0);
     // Training
@@ -90,36 +114,34 @@ int main(){
         // Shuffling before each epoch
         shuffle_float_matrices(inputs,outputs,training_instances);
         for(i = 0; i < training_instances/batch_size; i++){
-            printf("Mini batch number: %d\n",i+1);
+			printf("%d\n",i);
+            //printf("Mini batch number: %d\n",i+1);
             // Feed forward and backpropagation
-            model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
-            for(j = 0; j < batch_size; j++){
-                derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
-            }
-            model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,output_dimension,ret_err);
-            // sum the partial derivatives in m obtained from backpropagation
-            for(j = 0; j < batch_size; j++){
-                sum_model_partial_derivatives(batch_m[j],m,m);
-            }
+            ff_error_bp_model_multicore(batch_m,1,28,28,&inputs[i*batch_size],batch_size,batch_size,&outputs[i*batch_size],NULL);
+            sum_models_partial_derivatives(m,batch_m,batch_size);
             // update m, reset m and copy the new weights in each instance of m of the batch
-            update_model(m,lr,momentum,batch_size,ADAM,&b1,&b2,NO_REGULARIZATION,ws,lambda,&t);
+            update_model(m,lr,momentum,batch_size,ADAMOD,&b1,&b2,NO_REGULARIZATION,ws,lambda,&t);
             reset_model(m);
             for(j = 0; j < batch_size; j++){
                 paste_model(m,batch_m[j]);
                 set_model_training_gd(batch_m[j]);
                 reset_model(batch_m[j]);
                 set_model_training_edge_popup(batch_m[j],0.5);
-            }            
+                batch_m[j]->fcls[1]->feed_forward_flag = FULLY_FEED_FORWARD;
+				batch_m[j]->fcls[1]->training_mode = FREEZE_TRAINING;
+                batch_m[j]->fcls[0]->feed_forward_flag = FULLY_FEED_FORWARD;
+				batch_m[j]->fcls[0]->training_mode = FREEZE_TRAINING;
+            } 
+                      
         }
         // Saving the model
-        set_model_training_gd(m);
-        model* mm = copy_model(m);
-        set_model_training_edge_popup(mm,0.5);
-        printf("creating subnetwork\n");
-        get_subnetwork_from_edge_popup(mm);
-        save_model(mm,k+1);
-        free_model(mm);
+        //set_model_training_gd(m);
+        save_model(m,k+1);
         set_model_training_edge_popup(m,0.5);
+        m->fcls[1]->feed_forward_flag = FULLY_FEED_FORWARD;
+		m->fcls[1]->training_mode = FREEZE_TRAINING;
+        m->fcls[0]->feed_forward_flag = FULLY_FEED_FORWARD;
+		m->fcls[0]->training_mode = FREEZE_TRAINING;
     }
     
     // Deallocating Training resources
@@ -186,7 +208,7 @@ int main(){
             set_model_training_edge_popup(test_m,0.5);
             model_tensor_input_ff(test_m,input_dimension,1,1,inputs_test[i]);
             for(j = 0; j < output_dimension; j++){
-                error+=cross_entropy(test_m->fcls[1]->post_activation[j],outputs_test[i][j]);
+                error+=focal_loss(test_m->fcls[1]->post_activation[j],outputs_test[i][j],2);
             }
               
             if(!i)
@@ -197,12 +219,12 @@ int main(){
             reset_model(test_m);
         }
         printf("Error: %lf\n",error);
-        /*printf("Accuracy, Precision, Sensitivity, Specificity:\n");
+        printf("Accuracy, Precision, Sensitivity, Specificity:\n");
         print_accuracy(cm,output_dimension);
         print_precision(cm,output_dimension);
         print_sensitivity(cm,output_dimension);
         print_specificity(cm,output_dimension);
-        * */
+        
         for(i = 0; i < output_dimension*2; i++){
             free(cm[i]);
         }

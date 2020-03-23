@@ -104,5 +104,6 @@ float random_general_gaussian_kaiming_init(float mean, float n);
 void dot_float_input(float* input1, int* input2, float* output, int size);
 int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);
+float* float_abs_array_(float* a, int n);
 
 #endif

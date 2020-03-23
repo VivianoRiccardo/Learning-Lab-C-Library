@@ -37,7 +37,10 @@ void* model_thread_bp(void* _args) {
     
     // depacking args
     thread_args_model* args = (thread_args_model*) _args;
+    if(args->returning_error != NULL)
     args->returning_error[0] = model_tensor_input_bp(args->m,args->channels,args->rows,args->cols,args->input,args->error,args->error_dimension);
+    else
+    model_tensor_input_bp(args->m,args->channels,args->rows,args->cols,args->input,args->error,args->error_dimension);
     return _args;
 }
 
@@ -45,7 +48,10 @@ void* model_thread_ff_bp(void* _args) {
     
     // depacking args
     thread_args_model* args = (thread_args_model*) _args;
+    if(args->returning_error != NULL)
     args->returning_error[0] = ff_error_bp_model_once(args->m,args->channels,args->rows,args->cols,args->input,args->error);
+    else
+    ff_error_bp_model_once(args->m,args->channels,args->rows,args->cols,args->input,args->error);
     return _args;
 }
 
@@ -125,7 +131,10 @@ void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, f
             args[j]->input = inputs[i+j];
             args[j]->error = errors[i+j];
             args[j]->error_dimension = error_dimension;
+            if(returning_error[i+j] != NULL)
             args[j]->returning_error = &returning_error[i+j];
+            else
+            args[j]->returning_error = NULL;
             pthread_create(thread+j, NULL, model_thread_bp, args[j]);
             
             }
@@ -170,7 +179,10 @@ void ff_error_bp_model_multicore(model** m, int depth, int rows, int cols, float
             args[j]->cols = cols;
             args[j]->input = inputs[i+j];
             args[j]->error = outputs[i+j];
-            args[j]->returning_error = &returning_error[i+j];
+            if(returning_error != NULL)
+                args[j]->returning_error = &returning_error[i+j];
+            else
+                args[j]->returning_error = NULL;
             pthread_create(thread+j, NULL, model_thread_ff_bp, args[j]);
             
             }

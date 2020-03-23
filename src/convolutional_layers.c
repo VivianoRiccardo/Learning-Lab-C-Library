@@ -1810,19 +1810,19 @@ cl* reset_cl(cl* f){
     
     if(f->training_mode == EDGE_POPUP){
         for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
-            f->indices[i] = i;
             f->d_scores[i] = 0;
+            f->indices[i] = i;
         }
         for(i = 0; i < f->n_kernels; i++){
             f->used_kernels[i] = 0;
         }
         
-        float_abs_array(f->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows-1);
+        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+
+        
         for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
             f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
         }
-        
     }
     return f;
 }
@@ -1981,6 +1981,8 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
              copy->used_kernels[i] = 0;
          }
          quick_sort(copy->scores,copy->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+
+        
          for(i = copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols-copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols*copy->k_percentage; i < copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols; i++){
             copy->used_kernels[(int)(copy->indices[i]/(copy->channels*copy->kernel_rows*copy->kernel_cols))] = 1;
          }
@@ -2217,4 +2219,16 @@ int* get_used_channels(cl* c, int* ch){
     
     return channels;
 
+}
+
+
+void sum_score_cl(cl* input1, cl* input2, cl* output){
+    sum1D(input1->scores,input2->scores,output->scores,input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels);
+}
+
+void dividing_score_cl(cl* c,float value){
+    int i;
+    for(i = 0; i < c->n_kernels*c->kernel_cols*c->kernel_rows*c->channels;i++){
+        c->scores[i]/=value;
+    }
 }

@@ -127,6 +127,9 @@ int read_files(char** name, char* directory){
   int index = 0;
   char* temp = ".";
   char* temp2 = "..";
+  char* temp3 = (char*)malloc(sizeof(char*)*256);
+  temp3[0] = '\0';
+  strcat(temp3,directory);
   d = opendir(directory);
   if(d == NULL)
     return 1;
@@ -135,7 +138,10 @@ int read_files(char** name, char* directory){
     while ((dir = readdir(d)) != NULL)
     {
       if((strcmp(dir->d_name, temp) && strcmp(dir->d_name, temp2))){
-          strcpy(name[count],dir->d_name);
+          strcat(temp3,dir->d_name);
+          strcpy(name[count],temp3);
+          temp3[0] = '\0';
+          strcat(temp3,directory);
           fprintf(stderr,"%s\n", name[count]);
           count++;
       }
@@ -143,7 +149,8 @@ int read_files(char** name, char* directory){
 
     closedir(d);
   }
-
+  
+  free(temp3);
   return(count);
 }
 
@@ -1975,6 +1982,17 @@ void float_abs_array(float* a, int n){
     for(i = 0; i < n; i++){
         a[i] = float_abs(a[i]);
     }
+}
+
+
+/* absolute value of each value of an array*/
+float* float_abs_array_(float* a, int n){
+    float* m = (float*)calloc(n,sizeof(float));
+    int i;
+    for(i = 0; i < n; i++){
+        m[i] = float_abs(a[i]);
+    }
+    return m;
 }
 
 void dot_float_input(float* input1, int* input2, float* output, int size){

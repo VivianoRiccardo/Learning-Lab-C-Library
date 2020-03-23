@@ -47,5 +47,7 @@ int* get_used_channels(cl* c, int* ch);
 void paste_w_cl(cl* f, cl* copy);
 void heavy_save_cl(cl* f, int n);
 cl* heavy_load_cl(FILE* fr);
+void sum_score_cl(cl* input1, cl* input2, cl* output);
+void dividing_score_cl(cl* c,float value);
 
 #endif

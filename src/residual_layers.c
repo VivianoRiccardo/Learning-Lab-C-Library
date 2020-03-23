@@ -34,6 +34,13 @@ SOFTWARE.
  *             @ int n_cl:= number of cls structure in this residual layer
  *             @ cl** cls:= the cls structures of the layer
  * 
+ * PAY ATTENTION IF YOU ARE USING EDGE POPUP ALGORITHM, YOU CAN'T USE SIGMOID FUNCTION (IN RESIDUAL NO LINEAR FUNCTION)
+ * AFTER THE SUM IN THE RESIDUAL LAYER, BECAUSE RESIDUAL LAYER DOESN'T KEEP THE UNUSED
+ * NEURONS FROM INPUT AND LAST CONVOLUTIONAL LAYER. SO IF THE NEURON I IS NOT USED BY LAST CONVOLUTIONAL LAYER
+ * AND BY THE INPUT OF THE RESIDUAL LAYER, ITS OUTPUT IS GONNA BE 0, BUT IN THE RESIDUAL LAYER IF YOU APPLY
+ * SIGMOID ITS OUTPUT IS NOT GONNA BE 0 ANYMORE. INSTEAD YOU CAN USE TANH LEAKY RELU RELU BECAUSE
+ * ITS OUTPUT IS GONNA BE 0 ANYHOW IF ITS INPUT IS 0
+ * 
  * */
 rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     if(!channels || !input_rows || !input_cols || (!n_cl) || (!n_cl && cls != NULL)){
@@ -641,3 +648,18 @@ int* get_used_channels_rl(rl* c, int* used_output){
     return ch;
 }
 
+
+void sum_score_rl(rl* input1, rl* input2, rl* output){
+	int i;
+	for(i = 0; i < input1->n_cl; i++){
+		sum_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
+	}
+}
+
+
+void dividing_score_rl(rl* f, float value){
+	int i;
+	for(i = 0; i < f->n_cl; i++){
+		dividing_score_cl(f->cls[i],value);
+	}
+}

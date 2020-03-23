@@ -91,10 +91,10 @@ void convolutional_feed_forward_edge_popup(float* input, float** kernel, int inp
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
-                output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*kernel_i*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)]*input[(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*input_i*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                output[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj] += kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*kernel_i*kernel_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*kernel_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)]*input[((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*input_i*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*input_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
                 if(!flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj]){
                     flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] = 1;
-                    output[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] += bias[(int)(indices[s]/(channels*kernel_i*kernel_j))];
+                    output[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj] += bias[(int)(indices[s]/(channels*kernel_i*kernel_j))];
                 }
             }
         }
@@ -224,7 +224,7 @@ void convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, i
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
-                kernel_error[(int)(indices[s]/(channels*kernel_i*kernel_j))][(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*kernel_i*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)] += output_error[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj]*input[(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*input_i*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                kernel_error[(int)(indices[s]/(channels*kernel_i*kernel_j))][((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*kernel_i*kernel_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*kernel_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)] += output_error[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj]*input[((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*input_i*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*input_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
             }
         }
     }
@@ -270,7 +270,7 @@ void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, 
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
-                input_error[(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*input_i*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*input_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j] += output_error[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj]*kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][(int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j))*kernel_i*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)*kernel_j + (int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)];
+                input_error[((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*input_i*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j))+(oj-padding)*stride+(oi-padding)*stride*input_j] += output_error[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj]*kernel[((int)(indices[s]/(channels*kernel_i*kernel_j)))][((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*kernel_i*kernel_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*kernel_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)];
             }
         }
     }
@@ -492,6 +492,81 @@ void transposed_convolutional_feed_forward(float* input, float* kernel, int inpu
     }
 }
 
+
+/* This function computes the feed forwad of a feature map using the previous teansposed convolutional layer
+ * 
+ * Input:
+ *             @ float* input:= a tensor of input of 3 dimensions: channels, rows and cols
+ *                              number of feature maps of this layer = number of channels
+ *                              dimensions: channels*input_i*input_j
+ *             @ float* kernel:= is a tensor of weights used to compute the feature map using the previous convolutional layer
+ *                               dimensions: channels*kernel_i*kernel_j
+ *             @ int input_i := the number of rows of each feature map of the previous layer (input)
+ *             @ int input_j:= the number of columns of each feature map of the previous layer (input)
+ *             @ int kernel_i:= the number of rows of each channel of the kernel
+ *             @ int kernel_j:= the number of columns of each channel of the kernel
+ *             @ float bias:= the bias of the feature map of the current layer
+ *             @ int channels:= the depth of the input and the kernel
+ *             @ float* output:= the current feature map computed using the input, kernel and bias
+ *                               dimensions: ((input_i-1)*stride+kernel_i-2*padding)*((input_j-1)*stride+kernel_j-2*padding)
+ *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int padding:= the optional padding added to the output
+ * */
+void transposed_convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride, int padding, int* indices, int n_kernels, int last_n){
+    int oi,oj,i,j,c,s;
+    int output_i = (input_i-1)*stride+kernel_i;
+    int output_j = (input_j-1)*stride+kernel_j;
+    if(!padding){
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    output[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[k][c*kernel_i*kernel_j + i*kernel_j + j];
+                }
+            }
+        }
+        for(i = 0; i < n_kernels; i++){
+            for(oi = 0; oi < output_i*output_j; oi++){
+                output[i*output_i*output_j + oi]+=bias[i];
+            }
+        }
+    }
+    else if(padding){
+        float* temp = (float*)calloc(n_kernels*output_i*output_j,sizeof(float));
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    temp[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[k][c*kernel_i*kernel_j + i*kernel_j + j];       
+                }    
+            }
+        }
+        
+        for(i = 0; i < n_kernels; i++){
+            for(oi = padding; oi < output_i-padding; oi++){
+                for(oj = padding; oj < output_j-padding; oj++){
+                    output[i*(output_i-2*padding)*(output_j-2*padding) + (oi-padding)*(output_j-2*padding)+oj-padding] = temp[i*output_i*output_j + oi*output_j+oj];
+                }
+            }
+        }
+        
+        for(i = 0; i < n_kernels; i++){
+            for(oi = padding; oi < output_i-padding; oi++){
+                for(oj = padding; oj < output_j-padding; oj++){
+                    output[i*(output_i-2*padding)*(output_j-2*padding) + (oi-padding)*(output_j-2*padding)+oj-padding] += bias[i];
+                }
+            }
+        }
+        free(temp);
+    }
+}
+
 /* This function computes the errors using the backpropagation for transposed convolution
  * 
  * Input:
@@ -565,3 +640,217 @@ void transposed_convolutional_back_prop(float* input, float* kernel, int input_i
         free(temp);
     }
 }
+
+
+/* This function computes the errors using the backpropagation for transposed convolution
+ * 
+ * Input:
+ *             @ float* input:= a tensor of input of 3 dimensions: channels, rows and cols
+ *                              number of feature maps of this layer = number of channels
+ *                              dimensions: channels*input_i*input_j
+ *             @ float* kernel:= is a tensor of weights used to compute the feature map using the previous convolutional layer
+ *                               dimensions: channels*kernel_i*kernel_j
+ *             @ int input_i := the number of rows of each feature map of the previous layer (input)
+ *             @ int input_j:= the number of columns of each feature map of the previous layer (input)
+ *             @ int kernel_i:= the number of rows of each channel of the kernel
+ *             @ int kernel_j:= the number of columns of each channel of the kernel
+ *             @ float bias:= the bias of the feature map of the current layer
+ *             @ int channels:= the depth of the input and the kernel
+ *             @ float* output_error:= the current feature map of the errors
+ *                               dimensions: ((input_i-kernel_i)/stride + 1 +2*padding)*((input_j-kernel_j)/stride + 1 +2*padding)
+ *             @ float* input_error:= the error of the previous layer computed using the kernel and the current output_error
+ *                                    dimensions: channels*input_i*input_j
+ *             @ float* kernel_error:= the error of the weights computed using the input and the current output_error
+ *                                    dimensions: channels*kernel_i*kernel_j
+ *             @ float* bias_error:= the error of the bias
+ *                                   dimensions: 1
+ *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int padding:= the optional padding added to the output
+ * */
+void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error){
+    int oi,oj,i,j,c,s;
+    int output_i = (input_i-1)*stride+kernel_i;
+    int output_j = (input_j-1)*stride+kernel_j;
+    if(!padding){
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            score_error[c*kernel_i*kernel_j + i*kernel_j + j]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*output_error[i*output_j + j+oj*stride+oi*stride*output_j];
+                        }
+                    }
+                }    
+            }
+        }
+    }
+    else if(padding){
+        float* temp = (float*)calloc(output_i*output_j,sizeof(float));
+        for(oi = padding; oi < output_i-padding; oi++){
+            for(oj = padding; oj < output_j-padding; oj++){
+                temp[oi*output_j+oj] = output_error[(oi-padding)*(output_j-2*padding)+oj-padding];
+            }
+        }
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            score_error[c*kernel_i*kernel_j + i*kernel_j + j]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*temp[i*output_j + j+oj*stride+oi*stride*output_j];
+                        }
+                    }
+                }    
+            }
+        }
+        
+        free(temp);
+    }
+}
+
+/* This function computes the errors using the backpropagation for transposed convolution
+ * 
+ * Input:
+ *             @ float* input:= a tensor of input of 3 dimensions: channels, rows and cols
+ *                              number of feature maps of this layer = number of channels
+ *                              dimensions: channels*input_i*input_j
+ *             @ float* kernel:= is a tensor of weights used to compute the feature map using the previous convolutional layer
+ *                               dimensions: channels*kernel_i*kernel_j
+ *             @ int input_i := the number of rows of each feature map of the previous layer (input)
+ *             @ int input_j:= the number of columns of each feature map of the previous layer (input)
+ *             @ int kernel_i:= the number of rows of each channel of the kernel
+ *             @ int kernel_j:= the number of columns of each channel of the kernel
+ *             @ float bias:= the bias of the feature map of the current layer
+ *             @ int channels:= the depth of the input and the kernel
+ *             @ float* output_error:= the current feature map of the errors
+ *                               dimensions: ((input_i-kernel_i)/stride + 1 +2*padding)*((input_j-kernel_j)/stride + 1 +2*padding)
+ *             @ float* input_error:= the error of the previous layer computed using the kernel and the current output_error
+ *                                    dimensions: channels*input_i*input_j
+ *             @ float* kernel_error:= the error of the weights computed using the input and the current output_error
+ *                                    dimensions: channels*kernel_i*kernel_j
+ *             @ float* bias_error:= the error of the bias
+ *                                   dimensions: 1
+ *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int padding:= the optional padding added to the output
+ * */
+void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
+    int oi,oj,i,j,c,s;
+    int output_i = (input_i-1)*stride+kernel_i;
+    int output_j = (input_j-1)*stride+kernel_j;
+    if(!padding){
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    kernel_error[k][c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*output_error[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j];
+                }
+            }
+        }
+        for(i = 0; i < n_kernels; i++){
+            for(oi = 0; oi < output_i*output_j; oi++){
+                bias_error[i]+=output_error[i*output_i*output_j + oi];
+            }
+        }
+    }
+    else if(padding){
+        float* temp = (float*)calloc(n_kernels*output_i*output_j,sizeof(float));
+        for(i = 0; i < n_kernels; i++){
+            for(oi = padding; oi < output_i-padding; oi++){
+                for(oj = padding; oj < output_j-padding; oj++){
+                    temp[i*output_i*output_j + oi*output_j+oj] = output_error[i*(output_i-2*padding)*(output_j - 2*padding) + (oi-padding)*(output_j-2*padding)+oj-padding];
+                }
+            }
+        }
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    kernel_error[k][c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*temp[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j];
+                }  
+            }
+        }
+        for(i = 0; i < n_kernels; i++){
+            for(oi = 0; oi < output_i*output_j; oi++){
+                bias_error[i]+=temp[i*output_i*output_j + oi];
+            }
+        }
+        
+        
+        free(temp);
+    }
+}
+
+/* This function computes the errors using the backpropagation for transposed convolution
+ * 
+ * Input:
+ *             @ float* input:= a tensor of input of 3 dimensions: channels, rows and cols
+ *                              number of feature maps of this layer = number of channels
+ *                              dimensions: channels*input_i*input_j
+ *             @ float* kernel:= is a tensor of weights used to compute the feature map using the previous convolutional layer
+ *                               dimensions: channels*kernel_i*kernel_j
+ *             @ int input_i := the number of rows of each feature map of the previous layer (input)
+ *             @ int input_j:= the number of columns of each feature map of the previous layer (input)
+ *             @ int kernel_i:= the number of rows of each channel of the kernel
+ *             @ int kernel_j:= the number of columns of each channel of the kernel
+ *             @ float bias:= the bias of the feature map of the current layer
+ *             @ int channels:= the depth of the input and the kernel
+ *             @ float* output_error:= the current feature map of the errors
+ *                               dimensions: ((input_i-kernel_i)/stride + 1 +2*padding)*((input_j-kernel_j)/stride + 1 +2*padding)
+ *             @ float* input_error:= the error of the previous layer computed using the kernel and the current output_error
+ *                                    dimensions: channels*input_i*input_j
+ *             @ float* kernel_error:= the error of the weights computed using the input and the current output_error
+ *                                    dimensions: channels*kernel_i*kernel_j
+ *             @ float* bias_error:= the error of the bias
+ *                                   dimensions: 1
+ *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int padding:= the optional padding added to the output
+ * */
+void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error, int* indices, int n_kernels, int last_n){
+    int oi,oj,i,j,c,s;
+    int output_i = (input_i-1)*stride+kernel_i;
+    int output_j = (input_j-1)*stride+kernel_j;
+    if(!padding){
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[k][c*kernel_i*kernel_j + i*kernel_j + j]*output_error[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j];
+
+                }
+            }
+        }
+    }
+    else if(padding){
+        float* temp = (float*)calloc(n_kernels*output_i*output_j,sizeof(float));
+        for(i = 0; i < n_kernels; i++){
+            for(oi = padding; oi < output_i-padding; oi++){
+                for(oj = padding; oj < output_j-padding; oj++){
+                    temp[i*output_i*output_j + oi*output_j+oj] = output_error[i*(output_i-2*padding)*(output_j-2*padding) + (oi-padding)*(output_j-2*padding)+oj-padding];
+                }
+            }
+        }
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
+                    int k = (int)((indices[s]/(channels*kernel_i*kernel_j)));
+                    i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j));
+                    j = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j));
+                    c = ((int)(indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j));
+                    input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[k][c*kernel_i*kernel_j + i*kernel_j + j]*temp[k*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j];
+
+                } 
+            }
+        }
+        
+        free(temp);
+    }
+}
+

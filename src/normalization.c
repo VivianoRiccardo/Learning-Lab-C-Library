@@ -44,10 +44,13 @@ SOFTWARE.
   *           @ int* used_kernels:= the kernels used by edge popup algorithm
   * */
 void local_response_normalization_feed_forward(float* tensor,float* output, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k, int* used_kernels){
+    if(!used_kernels[index_ac])
+		return;
     int i,j,c;
     int lower_bound,upper_bound,bound_flag;
     float sum = 0;
     float temp;
+    
     if(index_ac-(int)(n_constant/2) < 0)
         lower_bound = 0;
     else{
@@ -108,6 +111,8 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
   *           @ int* used_kernels:= the effective kernels used
   * */
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k, int* used_kernels){
+    if(!used_kernels[index_ac])
+		return;
     int i,j,c;
     int lower_bound, upper_bound,bound_flag;;
     float sum = 0;
