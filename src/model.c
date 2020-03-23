@@ -1154,7 +1154,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
 
         }
         
-        if(f2->activation_flag && f2->feed_forward_flag == EDGE_POPUP){
+        if(f2->activation_flag == SIGMOID && f2->feed_forward_flag == EDGE_POPUP){
             for(i = 0; i < f2->n_kernels; i++){
                 if(!f2->used_kernels[i]){
                     for(j = 0; j < f2->rows1*f2->cols1; j++){
@@ -1202,7 +1202,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         /* normalization for f2, if there is any normalization*/
         
         
-        if(f2->activation_flag && f2->feed_forward_flag == EDGE_POPUP){
+        if(f2->activation_flag == SIGMOID && f2->feed_forward_flag == EDGE_POPUP){
             for(i = 0; i < f2->n_kernels; i++){
                 if(!f2->used_kernels[i]){
                     for(j = 0; j < f2->rows1*f2->cols1; j++){
@@ -1552,7 +1552,7 @@ void ff_cl_cl(cl* f1, cl* f2){
 
         }
         
-        if(f2->activation_flag && f2->feed_forward_flag == EDGE_POPUP){
+        if(f2->activation_flag == SIGMOID && f2->feed_forward_flag == EDGE_POPUP){
             for(i = 0; i < f2->n_kernels; i++){
                 if(!f2->used_kernels[i]){
                     for(j = 0; j < f2->rows1*f2->cols1; j++){
@@ -1599,7 +1599,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         /* normalization for f2, if there is any normalization*/
         
         
-        if(f2->activation_flag && f2->feed_forward_flag == EDGE_POPUP){
+        if(f2->activation_flag == SIGMOID && f2->feed_forward_flag == EDGE_POPUP){
             for(i = 0; i < f2->n_kernels; i++){
                 if(!f2->used_kernels[i]){
                     for(j = 0; j < f2->rows1*f2->cols1; j++){
