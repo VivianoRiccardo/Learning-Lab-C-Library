@@ -1438,7 +1438,7 @@ void ff_cl_fcl(cl* f1, fcl* f2){
     
     int i;
     
-    if(f1->feed_forward_flag != ONLY_DROPOUT){
+    if(f2->feed_forward_flag != ONLY_DROPOUT){
     /* computing the pre-activation array for f2 from f1*/
     
         /* pooling for f1*/
