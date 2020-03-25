@@ -805,6 +805,10 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     
     int i;
     
+    if(f2->feed_forward_flag == ONLY_DROPOUT){
+        fprintf(stderr,"Error: use the previous fully connected layer also with dropout not create another useless layer!\n");
+        exit(1);
+    }
     /* computing the pre-activation array for f2 from f1*/
     
     /* layer normalization for f1*/
