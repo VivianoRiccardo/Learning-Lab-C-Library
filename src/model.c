@@ -92,13 +92,15 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
                 }
             }
         }
-        /* checking if the convolutional layers of residual layers are sequential*/
+        /*
+         checking if the convolutional layers of residual layers are sequential
         for(count = 1; count < rls[i]->n_cl; count++){
             if(rls[i]->cls[count]->layer - rls[i]->cls[count-1]->layer >= 2){
                 fprintf(stderr,"Error: you have a residual layer with no sequential sub-convolutional-layers\n");
                 exit(1);
             }
         }
+        */
     }
     
     /* sorting residual layers*/
@@ -208,6 +210,8 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     if(sla[i][0] == FCLS){
         if(m->fcls[m->n_fcl-1]->dropout_flag)
             m->output_layer = m->fcls[m->n_fcl-1]->dropout_temp;
+        else if(m->fcls[m->n_fcl-1]->normalization_flag == LAYER_NORMALIZATION)
+            m->output_layer = m->fcls[m->n_fcl-1]->post_normalization;    
         else if(m->fcls[m->n_fcl-1]->activation_flag)
             m->output_layer = m->fcls[m->n_fcl-1]->post_activation;
         else
@@ -794,7 +798,6 @@ model* heavy_load_model(char* file){
  * 
  * */
 void ff_fcl_fcl(fcl* f1, fcl* f2){
-    
     if(f1->output != f2->input){
         fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
         exit(1);
@@ -1431,75 +1434,91 @@ void ff_cl_fcl(cl* f1, fcl* f2){
     
     int i;
     
+    if(f1->feed_forward_flag != ONLY_DROPOUT){
     /* computing the pre-activation array for f2 from f1*/
     
-    /* pooling for f1*/
-    if(f1->pooling_flag){
-        if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
-            fully_connected_feed_forward(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+        /* pooling for f1*/
+        if(f1->pooling_flag){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+                fully_connected_feed_forward(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            else if(f2->feed_forward_flag == EDGE_POPUP)
+                fully_connected_feed_forward_edge_popup(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+        }
+        /* no pooling for f1, but normalization*/
+        else if(f1->normalization_flag){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+                fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            else if(f2->feed_forward_flag == EDGE_POPUP)
+                fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+        }
+        /* no pooling, no normalization for f1, but activation*/
+        else if(f1->activation_flag){
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+                fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            else if(f2->feed_forward_flag == EDGE_POPUP)
+                fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+        }
+        /* no pooling, no normalization, no activation for f1*/
+        else{
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+                fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            else if(f2->feed_forward_flag == EDGE_POPUP)
+                fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+        }
+        /* computing the activation for f2 (if the activation_flag is > 0)*/
+        if(f2->activation_flag == SIGMOID)
+            sigmoid_array(f2->pre_activation,f2->post_activation,f2->output);
+        else if(f2->activation_flag == RELU)
+            relu_array(f2->pre_activation,f2->post_activation,f2->output);
+        else if(f2->activation_flag == SOFTMAX){
+            if(f2->feed_forward_flag == EDGE_POPUP)
+            softmax_array_not_complete(f2->pre_activation,f2->post_activation,f2->active_output_neurons,f2->output);
+            else
+            softmax(f2->pre_activation,f2->post_activation,f2->output);      
+        }
+        else if(f2->activation_flag == TANH)
+            tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
+        else if(f2->activation_flag == LEAKY_RELU)
+            leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
+        if(f2->feed_forward_flag == EDGE_POPUP && f2->activation_flag)
+            dot_float_input(f2->post_activation,f2->active_output_neurons,f2->post_activation,f2->output);
+        
         else if(f2->feed_forward_flag == EDGE_POPUP)
-            fully_connected_feed_forward_edge_popup(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-    }
-    /* no pooling for f1, but normalization*/
-    else if(f1->normalization_flag){
-        if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
-            fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-        else if(f2->feed_forward_flag == EDGE_POPUP)
-            fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-    }
-    /* no pooling, no normalization for f1, but activation*/
-    else if(f1->activation_flag){
-        if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
-            fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-        else if(f2->feed_forward_flag == EDGE_POPUP)
-            fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-    }
-    /* no pooling, no normalization, no activation for f1*/
-    else{
-        if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
-            fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-        else if(f2->feed_forward_flag == EDGE_POPUP)
-            fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-    }
-    /* computing the activation for f2 (if the activation_flag is > 0)*/
-    if(f2->activation_flag == SIGMOID)
-        sigmoid_array(f2->pre_activation,f2->post_activation,f2->output);
-    else if(f2->activation_flag == RELU)
-        relu_array(f2->pre_activation,f2->post_activation,f2->output);
-    else if(f2->activation_flag == SOFTMAX){
-        if(f2->feed_forward_flag == EDGE_POPUP)
-        softmax_array_not_complete(f2->pre_activation,f2->post_activation,f2->active_output_neurons,f2->output);
-        else
-        softmax(f2->pre_activation,f2->post_activation,f2->output);      
-    }
-    else if(f2->activation_flag == TANH)
-        tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
-    else if(f2->activation_flag == LEAKY_RELU)
-        leaky_relu_array(f2->pre_activation,f2->post_activation,f2->output);
-    if(f2->feed_forward_flag == EDGE_POPUP && f2->activation_flag)
-        dot_float_input(f2->post_activation,f2->active_output_neurons,f2->post_activation,f2->output);
-    
-    else if(f2->feed_forward_flag == EDGE_POPUP)
-        dot_float_input(f2->pre_activation,f2->active_output_neurons,f2->pre_activation,f2->output);
+            dot_float_input(f2->pre_activation,f2->active_output_neurons,f2->pre_activation,f2->output);
 
-    
-    /* layer normalization*/
-    if(f2->normalization_flag == LAYER_NORMALIZATION){
-        if(f2->activation_flag == NO_ACTIVATION)
-            channel_normalization_feed_forward(f2->layer_norm->batch_size,f2->pre_activation,f2->layer_norm->temp_vectors, f2->layer_norm->vector_dim, f2->layer_norm->gamma, f2->layer_norm->beta, f2->layer_norm->mean, f2->layer_norm->var, f2->post_normalization,f2->layer_norm->epsilon,0,0,f2->layer_norm->vector_dim,1,NULL);
-        else
-            channel_normalization_feed_forward(f2->layer_norm->batch_size,f2->post_activation,f2->layer_norm->temp_vectors, f2->layer_norm->vector_dim, f2->layer_norm->gamma, f2->layer_norm->beta, f2->layer_norm->mean, f2->layer_norm->var, f2->post_normalization,f2->layer_norm->epsilon,0,0,f2->layer_norm->vector_dim,1,NULL);
+        
+        /* layer normalization*/
+        if(f2->normalization_flag == LAYER_NORMALIZATION){
+            if(f2->activation_flag == NO_ACTIVATION)
+                channel_normalization_feed_forward(f2->layer_norm->batch_size,f2->pre_activation,f2->layer_norm->temp_vectors, f2->layer_norm->vector_dim, f2->layer_norm->gamma, f2->layer_norm->beta, f2->layer_norm->mean, f2->layer_norm->var, f2->post_normalization,f2->layer_norm->epsilon,0,0,f2->layer_norm->vector_dim,1,NULL);
+            else
+                channel_normalization_feed_forward(f2->layer_norm->batch_size,f2->post_activation,f2->layer_norm->temp_vectors, f2->layer_norm->vector_dim, f2->layer_norm->gamma, f2->layer_norm->beta, f2->layer_norm->mean, f2->layer_norm->var, f2->post_normalization,f2->layer_norm->epsilon,0,0,f2->layer_norm->vector_dim,1,NULL);
+        }
     }
+    
     /* setting the dropout mask, if dropout flag is != 0*/
     if(f2->dropout_flag){
         set_dropout_mask(f2->output, f2->dropout_mask, f2->dropout_threshold);
         if(f2->dropout_flag == DROPOUT){
-            if(f2->normalization_flag == LAYER_NORMALIZATION)
-                get_dropout_array(f2->output,f2->dropout_mask,f2->post_normalization,f2->dropout_temp);
-            else if(f2->activation_flag)
-                get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
-            else
-                get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+            if(f1->feed_forward_flag != ONLY_DROPOUT){
+                if(f2->normalization_flag == LAYER_NORMALIZATION)
+                    get_dropout_array(f2->output,f2->dropout_mask,f2->post_normalization,f2->dropout_temp);
+                else if(f2->activation_flag)
+                    get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
+                else
+                    get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+            }
+            
+            else{
+                if(f1->post_pooling)
+                    get_dropout_array(f2->output,f2->dropout_mask,f1->post_pooling,f2->dropout_temp);
+                else if(f1->post_normalization)
+                    get_dropout_array(f2->output,f2->dropout_mask,f1->post_normalization,f2->dropout_temp);
+                else if(f1->post_activation)
+                    get_dropout_array(f2->output,f2->dropout_mask,f1->post_activation,f2->dropout_temp);
+                else
+                    get_dropout_array(f2->output,f2->dropout_mask,f1->pre_activation,f2->dropout_temp);
+            }
         }
     }
     
@@ -1832,7 +1851,6 @@ void ff_cl_cl(cl* f1, cl* f2){
  * */
 float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     int i;
-    
     /*computing the backpropagation for f2*/
     if(f2->dropout_flag){
         dot1D(error,f2->dropout_mask,f2->temp,f2->output);
@@ -2477,7 +2495,6 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
  * */
 float* bp_cl_cl(cl* f1, cl* f2, float* error){
     int i,j,k;
-
     
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
@@ -2933,7 +2950,10 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
  * */
 float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     int i;
-    
+    if(f2->dropout_flag && f2->feed_forward_flag == ONLY_DROPOUT){
+        dot1D(error,f2->dropout_mask,f2->error2,f2->output);
+        return f2->error2;
+    }
     /*computing the backpropagation for f2*/
     if(f2->dropout_flag){
         dot1D(error,f2->dropout_mask,f2->temp,f2->output);
@@ -3192,9 +3212,13 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         }
                         z2--;
                         count2-=m->rls[z2]->n_cl;
-                    
                         
-                        ff_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1]);
+                        if((k3-1-count2) == m->rls[z2]->n_cl-1)
+                            ff_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1]);
+                        else    
+                            ff_cl_fcl(m->rls[z2]->cls[k3-1-count2],m->fcls[k1]);
+                        
+                            
                     }
                     
                     k1++;
@@ -3223,8 +3247,10 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                         z2--;
                         count2-=m->rls[z2]->n_cl;
                     
-                        
-                        ff_cl_cl(m->rls[z2]->cl_output,m->cls[k2]);
+                        if((k3-1-count2) == m->rls[z2]->n_cl-1)
+                            ff_cl_cl(m->rls[z2]->cl_output,m->cls[k2]);
+                        else
+                            ff_cl_cl(m->rls[z2]->cls[k3-1-count2],m->cls[k2]);
                     }
                     k2++;
                 }
@@ -3259,7 +3285,12 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
                                 }
                             }
                             else{
-                                if(m->fcls[k1-1]->activation_flag){
+                                
+                                if(m->fcls[k1-1]->normalization_flag){
+                                    m->rls[z]->input = m->fcls[k1-1]->post_normalization;
+                                }
+                                
+                                else if(m->fcls[k1-1]->activation_flag){
                                     m->rls[z]->input = m->fcls[k1-1]->post_activation;
                                 }
                                 else{
@@ -3494,26 +3525,28 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                             count2+=m->rls[z2]->n_cl;
                         }
                         z2--;
-                        count2-=m->rls[z2]->n_cl;
-                    
-                        
-                        error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
-                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
-                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
-                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
-                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
-                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        
-                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
-                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else
-                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                        count2-=(m->rls[z2]->n_cl + (k3-1));
+                        if(count2 < 0){
+                            error1 = bp_cl_fcl(m->rls[z2]->cl_output,m->fcls[k1],error1);
+                            if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                                derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == RELU)
+                                derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
                             
-                        error1 = m->rls[z2]->cl_output->temp;
+                            if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                                
+                            error1 = m->rls[z2]->cl_output->temp;
+                        }
                         
+                        else
+                            error1 = bp_cl_fcl(m->rls[z2]->cls[count2],m->fcls[k1],error1);
                     }
                     
                     
@@ -3543,24 +3576,28 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
                         }
                         
                         z2--;
-                        count2-=m->rls[z2]->n_cl;
+                        count2-=(m->rls[z2]->n_cl + (k3-1));
                     
-                        
-                        error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
-                        if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
-                            derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == RELU)
-                            derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
-                            derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else if(m->rls[z2]->cl_output->activation_flag == TANH)
-                            derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
-                            dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        else
-                            copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
-                        error1 = m->rls[z2]->cl_output->temp;
+                        if(!count2 < 0){
+                            error1 = bp_cl_cl(m->rls[z2]->cl_output,m->cls[k2],error1);
+                            if(m->rls[z2]->cl_output->activation_flag == LEAKY_RELU)
+                                derivative_leaky_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == RELU)
+                                derivative_relu_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == SIGMOID)
+                                derivative_sigmoid_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else if(m->rls[z2]->cl_output->activation_flag == TANH)
+                                derivative_tanhh_array(m->rls[z2]->cl_output->pre_activation,m->rls[z2]->cl_output->temp3,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            if(m->rls[z2]->cl_output->activation_flag != NO_ACTIVATION)
+                                dot1D(m->rls[z2]->cl_output->temp3,error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            else
+                                copy_array(error1,m->rls[z2]->cl_output->temp,m->rls[z2]->cl_output->n_kernels*m->rls[z2]->cl_output->rows1*m->rls[z2]->cl_output->cols1);
+                            error1 = m->rls[z2]->cl_output->temp;
                         }
+                        else
+                            error1 = bp_cl_cl(m->rls[z2]->cls[count2],m->cls[k2],error1);
+                        
+                    }
                     
                 }
                 
@@ -3665,7 +3702,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
 
     free(temp);
     if(!bool_is_real(error1[0])){
-        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem, or you just found a perfect function that match your data and you should not keep training\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");
         exit(1);
     }
     return error1;

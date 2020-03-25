@@ -1208,7 +1208,7 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
 void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, int mini_batch_size){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
@@ -1219,6 +1219,8 @@ void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, i
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
                 nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
             }
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                update_batch_normalized_layer_nesterov(&m->fcls[i]->layer_norm,1,lr,momentum,mini_batch_size);
         }
     }
 }
@@ -1259,7 +1261,7 @@ void update_batch_normalized_layer_nesterov(bn** bns,int n_bn, float lr, float m
 void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
@@ -1270,6 +1272,9 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
                 adam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
             }
+        
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                update_batch_normalized_layer_adam(&m->fcls[i]->layer_norm,1,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
         }
     }
 }
@@ -1288,7 +1293,7 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
 void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
@@ -1299,6 +1304,9 @@ void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
                 adamod(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_biases[j]);
             }
+        
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                update_batch_normalized_layer_adamod(&m->fcls[i]->layer_norm,1,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
         }
     }
 }
@@ -1316,7 +1324,7 @@ void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size
 void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
@@ -1327,6 +1335,9 @@ void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_ba
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
                 adam_diff_grad_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->ex_d_biases_diff_grad[j]);
             }
+        
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                update_batch_normalized_layer_adam_diff_grad(&m->fcls[i]->layer_norm,1,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
         }
     }
 }
@@ -1344,7 +1355,7 @@ void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_ba
 void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t, float beta1_adam, float beta2_adam){
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
@@ -1356,6 +1367,9 @@ void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size,
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
                 radam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
             }
+            
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                update_batch_normalized_layer_radam(&m->fcls[i]->layer_norm,1,lr,mini_batch_size,b1,b2,t,beta1_adam,beta2_adam);
         }
     }
 }
@@ -1470,6 +1484,8 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
         sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
         sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);    
         sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);    
+        if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+            sum1D(m->fcls[i]->layer_norm->d_gamma,m2->fcls[i]->layer_norm->d_gamma,m3->fcls[i]->layer_norm->d_gamma,m->fcls[i]->layer_norm->vector_dim);
     }
     
         

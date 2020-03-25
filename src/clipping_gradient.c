@@ -310,7 +310,7 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
     int j,k,z;
     float sum = 0,temp;
     for(j = 0; j < n; j++){
-        if(cls[j]->convolutional_flag == CONVOLUTION){
+        if(cls[j]->convolutional_flag == CONVOLUTION || cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(k = 0; k < cls[j]->n_kernels; k++){
                 for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
                     temp = cls[j]->d_kernels[k][z];
@@ -345,9 +345,11 @@ float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n){
     int i,j;
     float sum = 0,temp;
     for(i = 0; i < n; i++){
-        for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
-            temp = fcls[i]->d_weights[j];
-            sum += temp*temp;
+        if(fcls[i]->feed_forward_flag != ONLY_DROPOUT){
+            for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
+                temp = fcls[i]->d_weights[j];
+                sum += temp*temp;
+            }
         }
     }
     

@@ -84,6 +84,8 @@ sh compile_tests.sh
 - Recurrent encoder decoder with global attention mechanism feedforward, back propagation, update (16/03/2020)
 - Edge popup for Transposed convolution (23/3/2020)
 - Layer normalization for fully connected layers (23/3/2020)
+- Fully connected layers only as dropout layers (25/3/2020)
+- Filling residual layers also with fully connected layers (should start and end with convolutional ones) (25/3/2020)
 
 # Tests
 
@@ -109,5 +111,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 
 
 # Future implementations
-- OpenCL implementation....
+- 3D Convolution
+- 3D Transposed Convolution
+
 

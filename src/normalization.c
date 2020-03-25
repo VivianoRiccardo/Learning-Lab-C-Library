@@ -484,7 +484,7 @@ void channel_normalization_feed_forward(int batch_size, float* input_vectors,flo
     }
     
     for(i = 0, ii = 0; ii < batch_size; i++){
-        if(used_kernels[i]){
+        if(used_kernels == NULL ||used_kernels[i]){
             for(j = rows_pad; j < rows-rows_pad; j++){
                 for(k = cols_pad; k < cols-cols_pad; k++){
                     temp_vectors[i][(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad] = (input_vectors[i*rows*cols+j*cols+k]-mean[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad])/(sqrtf(var[(j-rows_pad)*(cols-2*cols_pad)+k-cols_pad]+epsilon));

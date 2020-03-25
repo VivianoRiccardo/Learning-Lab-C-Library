@@ -49,5 +49,6 @@ void heavy_save_fcl(fcl* f, int n);
 fcl* heavy_load_fcl(FILE* fr);
 void sum_score_fcl(fcl* input1, fcl* input2, fcl* output);
 void dividing_score_fcl(fcl* f, float value);
+void set_fcl_only_dropout(fcl* f);
 
 #endif

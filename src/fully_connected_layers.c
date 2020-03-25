@@ -34,8 +34,8 @@ SOFTWARE.
  *             @ int dropout_flag:= is set to 0 if you don't want to apply dropout, NO_DROPOUT (flag)
  *             @ int activation_flag:= is set to 0 if you don't want to apply the activation function else read in llab.h
  *             @ float dropout_threshold:= [0,1]
- * 			   @ int n_groups:= a number that divides the output in tot group for the layer normalization
- * 			   @ int normalization_flag:= either NO_NORMALIZATION or LAYER_NORMALIZATION 
+ *                @ int n_groups:= a number that divides the output in tot group for the layer normalization
+ *                @ int normalization_flag:= either NO_NORMALIZATION or LAYER_NORMALIZATION 
  * */
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag){
     if(!input || !output || layer < 0){
@@ -44,14 +44,14 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     }
     
     if(normalization_flag == GROUP_NORMALIZATION)
-		normalization_flag = LAYER_NORMALIZATION;
-	
-	if(normalization_flag == LAYER_NORMALIZATION){
-		if(output%n_groups || n_groups == 0){
-			fprintf(stderr,"Error: your groups must perfectly divide your output neurons\n");
-			exit(1);
-		}
-	}
+        normalization_flag = LAYER_NORMALIZATION;
+    
+    if(normalization_flag == LAYER_NORMALIZATION){
+        if(n_groups == 0 || output%n_groups){
+            fprintf(stderr,"Error: your groups must perfectly divide your output neurons\n");
+            exit(1);
+        }
+    }
  
     int i,j;
     
@@ -105,11 +105,14 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     }
     
     if(normalization_flag == LAYER_NORMALIZATION){
-		f->layer_norm = batch_normalization(n_groups,output/n_groups,0,0);
-	}
-	else{
-		f->layer_norm = NULL;
-	}
+        f->layer_norm = batch_normalization(n_groups,output/n_groups,0,0);
+    }
+    else{
+        f->layer_norm = NULL;
+    }
+    
+    f->normalization_flag = normalization_flag;
+    f->n_groups = n_groups;
     
     return f;
 }
@@ -297,8 +300,8 @@ void save_fcl(fcl* f, int n){
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		save_bn(f->layer_norm,n);
-	
+        save_bn(f->layer_norm,n);
+    
     free(s);
     
 }
@@ -529,7 +532,7 @@ void heavy_save_fcl(fcl* f, int n){
     free(s);
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		heavy_save_bn(f->layer_norm,n);
+        heavy_save_bn(f->layer_norm,n);
     
 }
 
@@ -787,7 +790,7 @@ fcl* heavy_load_fcl(FILE* fr){
     }
     
     if(normalization_flag == LAYER_NORMALIZATION)
-		layer_norm = heavy_load_bn(fr);
+        layer_norm = heavy_load_bn(fr);
     fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold, n_groups, normalization_flag);
     copy_fcl_params(f,weights,biases);
     copy_array(scores,f->scores,input*output);
@@ -825,8 +828,8 @@ fcl* heavy_load_fcl(FILE* fr){
     free(active_output_neurons);
     free(scores);
     if(layer_norm != NULL)
-		paste_bn(layer_norm,f->layer_norm);
-	free_batch_normalization(layer_norm);
+        paste_bn(layer_norm,f->layer_norm);
+    free_batch_normalization(layer_norm);
     return f;
 }
 
@@ -978,10 +981,10 @@ fcl* load_fcl(FILE* fr){
     free(scores);
     
     if(normalization_flag == LAYER_NORMALIZATION){
-		layer_norm = load_bn(fr);
-		paste_bn(layer_norm,f->layer_norm);
-	}
-	free_batch_normalization(layer_norm);
+        layer_norm = load_bn(fr);
+        paste_bn(layer_norm,f->layer_norm);
+    }
+    free_batch_normalization(layer_norm);
     return f;
 }
 
@@ -1025,8 +1028,8 @@ fcl* copy_fcl(fcl* f){
     copy->training_mode = f->training_mode;
     copy->feed_forward_flag = f->feed_forward_flag;
     if(f->normalization_flag == LAYER_NORMALIZATION){
-		paste_bn(f->layer_norm,copy->layer_norm);
-	}
+        paste_bn(f->layer_norm,copy->layer_norm);
+    }
     return copy;
 }
 
@@ -1077,7 +1080,7 @@ fcl* reset_fcl(fcl* f){
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		reset_bn(f->layer_norm);
+        reset_bn(f->layer_norm);
     return f;
 }
 
@@ -1095,7 +1098,7 @@ unsigned long long int size_of_fcls(fcl* f){
     sum += ((unsigned long long int)(f->output*12*sizeof(float)));
     sum += ((unsigned long long int)(f->input*2*sizeof(float)));
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		sum += size_of_bn(f->layer_norm);
+        sum += size_of_bn(f->layer_norm);
     return sum;
 }
 
@@ -1136,8 +1139,8 @@ void paste_fcl(fcl* f,fcl* copy){
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION){
-		paste_bn(f->layer_norm,copy->layer_norm);
-	}
+        paste_bn(f->layer_norm,copy->layer_norm);
+    }
     return;
 }
 
@@ -1164,7 +1167,7 @@ void paste_w_fcl(fcl* f,fcl* copy){
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		paste_w_bn(f->layer_norm,copy->layer_norm);
+        paste_w_bn(f->layer_norm,copy->layer_norm);
     return;
 }
 
@@ -1215,7 +1218,7 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
-		slow_paste_bn(f->layer_norm,copy->layer_norm,tau);
+        slow_paste_bn(f->layer_norm,copy->layer_norm,tau);
     return;
 }
 
@@ -1442,4 +1445,18 @@ void dividing_score_fcl(fcl* f, float value){
     for(i = 0; i < f->input*f->output; i++){
         f->scores[i]/=value;
     }
+}
+
+void set_fcl_only_dropout(fcl* f){
+    if(!f->dropout_flag){
+        fprintf(stderr,"Error: if you use this layer only for dropout you should set dropou flag!\n");
+        exit(1);
+    }
+    
+    if(f->input!= f->output){
+        fprintf(stderr,"Error: if you use only dropout then your input and output should match!\n");
+        exit(1);
+    }
+    
+    f->feed_forward_flag = ONLY_DROPOUT;
 }

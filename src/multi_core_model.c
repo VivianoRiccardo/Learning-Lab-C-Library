@@ -131,10 +131,10 @@ void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, f
             args[j]->input = inputs[i+j];
             args[j]->error = errors[i+j];
             args[j]->error_dimension = error_dimension;
-            if(returning_error[i+j] != NULL)
-            args[j]->returning_error = &returning_error[i+j];
-            else
+            if(returning_error == NULL)
             args[j]->returning_error = NULL;
+            else
+            args[j]->returning_error = &returning_error[i+j];            
             pthread_create(thread+j, NULL, model_thread_bp, args[j]);
             
             }

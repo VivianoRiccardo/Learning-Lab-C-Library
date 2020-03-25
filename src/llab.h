@@ -103,6 +103,7 @@ SOFTWARE.
 #define EDGE_POPUP 2
 #define FULLY_FEED_FORWARD 3
 #define FREEZE_TRAINING 4
+#define ONLY_DROPOUT 5
 
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
