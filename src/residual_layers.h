@@ -48,5 +48,7 @@ int* get_used_channels_rl(rl* c, int* used_output);
 void paste_w_rl(rl* f, rl* copy);
 void sum_score_rl(rl* input1, rl* input2, rl* output);
 void dividing_score_rl(rl* f, float value);
+void reset_score_rl(rl* f);
+void reinitialize_scores_rl(rl* f, float percentage, float goodness);
 
 #endif

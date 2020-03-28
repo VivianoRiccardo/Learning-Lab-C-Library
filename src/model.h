@@ -75,5 +75,7 @@ void paste_w_model(model* m, model* copy);
 void sum_score_model(model* input1, model* input2, model* output);
 void dividing_score_model(model* m, float value);
 void avaraging_score_model(model* avarage, model** m, int n_model);
+void reset_score_model(model* f);
+void reinitialize_scores_model(model* m, float percentage, float goodness);
 
 #endif

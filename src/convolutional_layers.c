@@ -2221,14 +2221,76 @@ int* get_used_channels(cl* c, int* ch){
 
 }
 
-
+/* this function, given 2 input convolutional layers sum up the scores in he output convolutional layer
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ cl* input1:= the first input convolutional layer
+ *             @ cl* input2:= the second input convolutional layer
+ *             @ cl* output:= the output convolutional layer
+ * */
 void sum_score_cl(cl* input1, cl* input2, cl* output){
     sum1D(input1->scores,input2->scores,output->scores,input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels);
 }
 
+/* This function divides all the scores with value
+ * 
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* c:= the convolutional layer 
+ *                 @ float value:= the value that is gonna divide the scores
+ * 
+ * */
 void dividing_score_cl(cl* c,float value){
     int i;
     for(i = 0; i < c->n_kernels*c->kernel_cols*c->kernel_rows*c->channels;i++){
         c->scores[i]/=value;
+    }
+}
+
+
+/* This function set all the scores to 0
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional input layer
+ * */
+void reset_score_cl(cl* f){
+    if(f->convolutional_flag == NO_CONVOLUTION)
+        return;
+    int i;
+    for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+        f->scores[i] = 0;
+    }
+    
+}
+
+
+/* This function re initialize the weights which scores is < of a goodness (range [0,1])
+ * or the weights are among the worst scores in int thotal_scores*percentage (range percentage [0,1])
+ * 
+ * 
+ * Input:
+ * 
+ *                     @ cl* f:= the convolutional layer
+ *                     @ float percentage:= the percentage
+ *                    @ float goodness:= the goodness value
+ * */
+void reinitialize_scores_cl(cl* f, float percentage, float goodness){
+    if(f->convolutional_flag == NO_CONVOLUTION)
+        return;
+    int i,j;
+    for(i = 0; i < f->n_kernels; i++){
+        for(j = 0; j < f->channels*f->kernel_cols*f->kernel_rows; j++){
+            if(i*f->channels*f->kernel_cols*f->kernel_rows + j >= f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*percentage)
+                return;
+            if(f->scores[f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]] < goodness)
+                f->kernels[(int)f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]/(f->channels*f->kernel_cols*f->kernel_rows)][f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]%(f->channels*f->kernel_cols*f->kernel_rows)] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
+            
+        }
     }
 }

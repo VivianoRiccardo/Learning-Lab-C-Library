@@ -524,6 +524,8 @@ void memcopy_params_to_vector_rl(rl* f, float* vector){
     }
 }
 
+
+
 /* this function paste the dweights and dbiases in a single vector
  * 
  * Inputs:
@@ -649,17 +651,59 @@ int* get_used_channels_rl(rl* c, int* used_output){
 }
 
 
+/* this function sum up all the scores of input1 and input2 of the convolutional layer isnide them
+ * to output
+ * 
+ * 
+ * Input:
+ * 
+ *                 @ rl* input1:= the first input residual layer
+ *                 @ rl* input2:= the second input residual layer
+ *                 @ rl* output:= the output residual layer
+ * */
 void sum_score_rl(rl* input1, rl* input2, rl* output){
-	int i;
-	for(i = 0; i < input1->n_cl; i++){
-		sum_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
-	}
+    int i;
+    for(i = 0; i < input1->n_cl; i++){
+        sum_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
+    }
+}
+
+/* this function divides all the scores of the convolutional layer inside the reisidual one
+ * with vale
+ * 
+ * Input:
+ *             
+ *                 @ rl* f:= the residual layer
+ *                 @ float value:= the value
+ * */
+void dividing_score_rl(rl* f, float value){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        dividing_score_cl(f->cls[i],value);
+    }
 }
 
 
-void dividing_score_rl(rl* f, float value){
-	int i;
-	for(i = 0; i < f->n_cl; i++){
-		dividing_score_cl(f->cls[i],value);
-	}
+/* this function sets all the scores of the convolutional layer inside the residual one to 0
+ * 
+ * Input:
+ * 
+ *                 @ rl* f:= the reisdual layer
+ * */
+void reset_score_rl(rl* f){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_score_cl(f->cls[i]);
+    }
+}
+
+/* this function reinitialize the worst weights inside each cl layer
+ * layer inside the residual one look at reinitialize_scores_cl function in convolutional_layers.c
+ * for more details
+ * */
+void reinitialize_scores_rl(rl* f, float percentage, float goodness){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reinitialize_scores_cl(f->cls[i],percentage,goodness);
+    }
 }

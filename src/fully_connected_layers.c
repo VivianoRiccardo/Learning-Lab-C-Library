@@ -1436,10 +1436,27 @@ int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
 }
 
 
+/* this function sum up the scores in input1 and input2 in output
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* input1:= the first input fcl layer
+ *                 @ fcl* input2:= the second input fcl layer
+ *                 @ fcl* output:= the output fcl layer
+ * */
 void sum_score_fcl(fcl* input1, fcl* input2, fcl* output){
     sum1D(input1->scores,input2->scores,output->scores,input1->input*input1->output);
 }
 
+
+/* this function divides the score with value
+ * 
+ * Input:
+ * 
+ *                 @ fcl* f:= the fcl layer
+ *                 @ float value:= the value that is gonna divide the scores
+ * */
 void dividing_score_fcl(fcl* f, float value){
     int i;
     for(i = 0; i < f->input*f->output; i++){
@@ -1447,6 +1464,14 @@ void dividing_score_fcl(fcl* f, float value){
     }
 }
 
+/* this function set the feed forward flag to only dropout checking the restriction needed
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* f:= the fully connected layer
+ * 
+ * */
 void set_fcl_only_dropout(fcl* f){
     if(!f->dropout_flag){
         fprintf(stderr,"Error: if you use this layer only for dropout you should set dropou flag!\n");
@@ -1459,4 +1484,43 @@ void set_fcl_only_dropout(fcl* f){
     }
     
     f->feed_forward_flag = ONLY_DROPOUT;
+}
+
+
+/* this function reset all the scores of the fcl layer to 0
+ * 
+ * Input:
+ * 
+ *                 @ fcl* f:= the fully connected layer
+ * */
+void reset_score_fcl(fcl* f){
+    if(f->feed_forward_flag == NO_DROPOUT)
+        return;
+    int i;
+    for(i = 0; i < f->input*f->output; i++){
+        f->scores[i] = 0;
+    }
+    
+}
+
+/* thif function reinitialize the weights under the goodness function only if
+ * they are among the f->input*f->output*percentage worst weights according to the scores
+ * percentage and goodness should range in [0,1]
+ * 
+ * Input:
+ * 
+ *                 @ fcl* f:= the fully connected layer
+ *                 @ float percentage:= the percentage of the worst weights
+ *                 @ float goodness:= the goodness function
+ * */
+void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
+    if(f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    int i;
+    for(i = 0; i < f->input*f->output; i++){
+        if(i >= f->input*f->output*percentage)
+            return;
+        if(f->scores[f->indices[i]] < goodness)
+            f->weights[f->indices[i]] = random_general_gaussian(0, (float)f->input);
+    }
 }

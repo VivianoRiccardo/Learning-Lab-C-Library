@@ -45,7 +45,7 @@ SOFTWARE.
   * */
 void local_response_normalization_feed_forward(float* tensor,float* output, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k, int* used_kernels){
     if(!used_kernels[index_ac])
-		return;
+        return;
     int i,j,c;
     int lower_bound,upper_bound,bound_flag;
     float sum = 0;
@@ -112,7 +112,7 @@ void local_response_normalization_feed_forward(float* tensor,float* output, int 
   * */
 void local_response_normalization_back_prop(float* tensor,float* tensor_error,float* output_error, int index_ac,int index_ai,int index_aj, int tensor_depth, int tensor_i, int tensor_j, float n_constant, float beta, float alpha, float k, int* used_kernels){
     if(!used_kernels[index_ac])
-		return;
+        return;
     int i,j,c;
     int lower_bound, upper_bound,bound_flag;;
     float sum = 0;
@@ -531,7 +531,7 @@ void channel_normalization_back_prop(int batch_size, float* input_vectors,float*
                         }
                     }
                     jj++;
-				}
+                }
             }
             ii++;
         }
@@ -635,4 +635,124 @@ void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor
             j--;
         }
     }
+}
+
+
+void normalize_scores_among_fcl_layers(fcl* f){
+    int i;
+    float max = -99999999;
+    float min = 999999999;
+    if(f->feed_forward_flag != ONLY_DROPOUT){
+        for(i = 0; i < f->input*f->output; i++){
+            if(f->scores[i] < min)
+                min = f->scores[i];
+            if(f->scores[i] > max)
+                max = f->scores[i];
+        }
+        
+        for(i = 0; i < f->input*f->output; i++){
+            f->scores[i] = (f->scores[i]-min)/(max-min);
+        }
+	}
+}
+
+void normalize_scores_among_cl_layers(cl* f){
+    int i;
+    float max = -99999999;
+    float min = 999999999;
+    if(f->convolutional_flag != NO_CONVOLUTION){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            if(f->scores[i] < min)
+                min = f->scores[i];
+            if(f->scores[i] > max)
+                max = f->scores[i];
+        }
+        
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            f->scores[i] = (f->scores[i]-min)/(max-min);
+        }
+	}
+}
+
+
+void normalize_scores_among_all_internal_layers(model* m){
+     int i,j;
+    for(i = 0; i < m->n_fcl; i++){
+        normalize_scores_among_fcl_layers(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        normalize_scores_among_cl_layers(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            normalize_scores_among_cl_layers(m->rls[i]->cls[j]);
+        }
+    }
+}
+
+
+void given_max_min_normalize_fcl(fcl* f, float max, float min){
+    int i;
+    if(f->feed_forward_flag != ONLY_DROPOUT){
+        for(i = 0; i < f->input*f->output; i++){
+            f->scores[i] = (f->scores[i]-min)/(max-min);
+        }
+    }
+}
+
+void given_max_min_normalize_cl(cl* f, float max, float min){
+    int i;
+    if(f->convolutional_flag != NO_CONVOLUTION){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            f->scores[i] = (f->scores[i]-min)/(max-min);
+        }
+    }
+}
+
+
+void normalize_among_all_leyers(model* m){
+    float max = -9999999;
+    float min = 9999999;
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        for(j = 0; j < m->fcls[i]->input*m->fcls[i]->output; j++){
+            if(m->fcls[i]->scores[j] < min)
+                min = m->fcls[i]->scores[j];
+            if(m->fcls[i]->scores[j] > max)
+                max = m->fcls[i]->scores[j];
+        }
+    }
+    
+    for(i = 0; i < m->n_cl; i++){
+        for(j = 0; j < m->cls[i]->n_kernels*m->cls[i]->channels*m->cls[i]->kernel_rows*m->cls[i]->kernel_cols; j++){
+            if(m->cls[i]->scores[j] < min)
+                min = m->cls[i]->scores[j];
+            if(m->cls[i]->scores[j] > max)
+                max = m->cls[i]->scores[j];
+        }
+    }
+    
+    for(i = 0; i < m->n_rl; i++){
+        for(k = 0; k < m->rls[i]->n_cl; k++){
+            for(j = 0; j < m->rls[i]->cls[k]->n_kernels*m->rls[i]->cls[k]->channels*m->rls[i]->cls[k]->kernel_rows*m->rls[i]->cls[k]->kernel_cols; j++){
+                if(m->rls[i]->cls[k]->scores[j] < min)
+                    min = m->rls[i]->cls[k]->scores[j];
+                if(m->rls[i]->cls[k]->scores[j] > max)
+                    max = m->rls[i]->cls[k]->scores[j];
+            }
+        }
+    }
+    
+    for(i = 0; i < m->n_fcl; i++){
+        given_max_min_normalize_fcl(m->fcls[i],max,min);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        given_max_min_normalize_cl(m->cls[i],max,min);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            given_max_min_normalize_cl(m->rls[i]->cls[j],max,min);
+        }
+    }
+    
 }

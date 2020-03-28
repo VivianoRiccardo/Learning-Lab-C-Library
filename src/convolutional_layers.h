@@ -49,5 +49,7 @@ void heavy_save_cl(cl* f, int n);
 cl* heavy_load_cl(FILE* fr);
 void sum_score_cl(cl* input1, cl* input2, cl* output);
 void dividing_score_cl(cl* c,float value);
+void reset_score_cl(cl* f);
+void reinitialize_scores_cl(cl* f, float percentage, float goodness);
 
 #endif

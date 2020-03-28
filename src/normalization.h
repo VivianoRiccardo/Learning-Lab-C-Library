@@ -38,5 +38,11 @@ void batch_normalization_feed_forward_first_step(int batch_size, float** input_v
 void batch_normalization_feed_forward_second_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs,float epsilon, int i);
 void batch_normalization_back_prop_first_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon);
 void batch_normalization_back_prop_second_step(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon, int j);
+void normalize_scores_among_fcl_layers(fcl* f);
+void normalize_scores_among_cl_layers(cl* f);
+void normalize_scores_among_all_internal_layers(model* m);
+void given_max_min_normalize_fcl(fcl* f, float max, float min);
+void given_max_min_normalize_cl(cl* f, float max, float min);
+void normalize_among_all_leyers(model* m);
 
 #endif

@@ -329,7 +329,6 @@ void paste_model(model* m, model* copy){
     if(m == NULL)
         return;
     int i;
-    
     for(i = 0; i < m->n_fcl; i++){
         paste_fcl(m->fcls[i],copy->fcls[i]);
     }
@@ -4621,7 +4620,16 @@ void get_subnetwork_from_edge_popup(model* m){
     return;
 }
 
-
+/* this function sum up all the scores in each layer of the input model1 and 2 in the output model
+ * 
+ * 
+ * Input:
+ *     
+ * 
+ *                 @ model* input1:= the first input model
+ *                 @ model* input2:= the second input model
+ *                 @ model* output:= the output model
+ * */
 void sum_score_model(model* input1, model* input2, model* output){
     int i;
     for(i = 0; i < input1->n_fcl; i++){
@@ -4637,7 +4645,16 @@ void sum_score_model(model* input1, model* input2, model* output){
     }
 }
 
-
+/* this function divides all the scores of each layer with value
+ * 
+ * 
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ model* m:= the model
+ *                 @ float value:= the value that is gonna divide all the scores of each layer
+ * */
 void dividing_score_model(model* m, float value){
     int i;
     for(i = 0; i < m->n_fcl; i++){
@@ -4653,7 +4670,15 @@ void dividing_score_model(model* m, float value){
     }
 }
 
-
+/* this function is gonna avarage all the scores among all the models (for each layer)
+ * 
+ * 
+ * Input:
+ * 
+ *             @ model* avarage:= where is gonna stored the avarage result
+ *             @ model** m:= the models
+ *             @ int n_model:= the number of models
+ * */
 void avaraging_score_model(model* avarage, model** m, int n_model){
     int i;
     for(i = 0; i < n_model; i++){
@@ -4662,4 +4687,38 @@ void avaraging_score_model(model* avarage, model** m, int n_model){
     
     dividing_score_model(avarage,n_model);
     
+}
+
+
+/* this function is gonna set all the scores of each layer of the model to 0
+ * 
+ * Input:
+ * 
+ *                 @ model* f:= the model
+ * */
+void reset_score_model(model* f){
+    int i;
+    for(i = 0; i < f->n_fcl; i++){
+        reset_score_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        reset_score_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        reset_score_rl(f->rls[i]);
+    }
+}
+
+/* llook at reinitialize_scores_cl function in convolutional_layers.c formore details*/
+void reinitialize_scores_model(model* m, float percentage, float goodness){
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reinitialize_scores_fcl(m->fcls[i],percentage,goodness);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reinitialize_scores_cl(m->cls[i],percentage,goodness);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reinitialize_scores_rl(m->rls[i],percentage,goodness);
+    }
 }
