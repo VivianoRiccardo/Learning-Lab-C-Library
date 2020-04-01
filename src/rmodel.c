@@ -651,7 +651,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
         for(j = layers-1; j >= 0; j--){
             
             dx = (float*)calloc(lstms[0]->size,sizeof(float));
-            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+            if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
                 sum1D(dx,dz,dx,lstms[0]->size);
                 
             if(j == layers-1 && i == window-1)
@@ -740,8 +740,11 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             copy_array(dx,dz,lstms[0]->size);
             free(dx);
             
-            if(!j && input_error != NULL)
+            if(!j && input_error != NULL){
                 input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+                if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+                    sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+            }
             
         }
         
@@ -752,7 +755,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
     for(j = layers-1; j >= 0; j--){
             
         dx = (float*)calloc(lstms[0]->size,sizeof(float));
-        if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+        if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
             sum1D(dx,dz,dx,lstms[0]->size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
@@ -812,8 +815,11 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
         copy_array(dx,dz,lstms[0]->size);
         free(dx);
         
-        if(!j && input_error != NULL)
-                input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+        if(!j && input_error != NULL){
+            input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+                sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+        }
     }
     
     free(dropout_output);

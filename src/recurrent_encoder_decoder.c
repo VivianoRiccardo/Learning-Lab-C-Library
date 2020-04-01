@@ -526,7 +526,7 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
             if(i < window-1 && j == layers-1)
                 sum1D(dx,&array_now[rec->encoder->window*rec->encoder->lstms[0]->size],dx,rec->encoder->lstms[0]->size);
             
-            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+            if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
                 sum1D(dx,dz,dx,lstms[0]->size);
                 
             if(j == layers-1 && i == window-1)
@@ -618,7 +618,9 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
             
             if(!j && input_error != NULL){
                 input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
-                
+                if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+					sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+			
                 float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
                 float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
                 for(k = 0; k < rec->encoder->window; k++){
@@ -632,13 +634,14 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
                     }
                 }
                 derivative_softmax_array(NULL,temp_prod3,rec->softmax_array[i],temp_prod2,rec->encoder->window);
-                copy_array(lstms[layers-1]->lstm_hidden[i-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
+                copy_array(rec->encoder->lstms[rec->encoder->n_lstm-1]->lstm_hidden[rec->encoder->window-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
                 array_now = model_tensor_input_bp(rec->m[i],(rec->encoder->window+1)*rec->encoder->lstms[0]->size,1,1,rec->flatten_fcl_input,temp_prod3,rec->encoder->window);
                 free(temp_prod2);
                 free(temp_prod3);
                 for(k = 0; k < rec->encoder->window; k++){
                     sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k],rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
                 }
+                sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k-1],rec->output_error_encoder[k-1],rec->encoder->lstms[0]->size);
                 
             }
             
@@ -655,7 +658,7 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
         if(i < window-1 && j == layers-1)
             sum1D(dx,&array_now[rec->encoder->window*rec->encoder->lstms[0]->size],dx,rec->encoder->lstms[0]->size);
         
-        if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+        if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
             sum1D(dx,dz,dx,lstms[0]->size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
@@ -716,27 +719,30 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
         free(dx);
         
         if(!j && input_error != NULL){
-                input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
-                float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
-                float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
-                for(k = 0; k < rec->encoder->window; k++){
-                    float* temp_prod = (float*)calloc(rec->encoder->lstms[0]->size,sizeof(float));
-                    mul_value(input_error[i],rec->softmax_array[i][k],temp_prod,rec->encoder->lstms[0]->size);
-                    sum1D(rec->output_error_encoder[k],temp_prod,rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
-                    free(temp_prod);
-                    
-                    for(z = 0; z < rec->encoder->lstms[0]->size; z++){
-                        temp_prod2[k] += rec->flatten_fcl_input[k*rec->encoder->lstms[0]->size+z]*input_error[i][z];
-                    }
-                }
-                derivative_softmax_array(NULL,temp_prod3,rec->softmax_array[i],temp_prod2,rec->encoder->window);
-                copy_array(lstms[layers-1]->lstm_hidden[i-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
-                array_now = model_tensor_input_bp(rec->m[i],(rec->encoder->window+1)*rec->encoder->lstms[0]->size,1,1,rec->flatten_fcl_input,temp_prod3,rec->encoder->window);
-                free(temp_prod2);
-                free(temp_prod3);
-                for(k = 0; k < rec->encoder->window; k++){
-                    sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k],rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
-                }
+			input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+			if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+				sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+		
+			float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
+			float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
+			for(k = 0; k < rec->encoder->window; k++){
+				float* temp_prod = (float*)calloc(rec->encoder->lstms[0]->size,sizeof(float));
+				mul_value(input_error[i],rec->softmax_array[i][k],temp_prod,rec->encoder->lstms[0]->size);
+				sum1D(rec->output_error_encoder[k],temp_prod,rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
+				free(temp_prod);
+				
+				for(z = 0; z < rec->encoder->lstms[0]->size; z++){
+					temp_prod2[k] += rec->flatten_fcl_input[k*rec->encoder->lstms[0]->size+z]*input_error[i][z];
+				}
+			}
+			derivative_softmax_array(NULL,temp_prod3,rec->softmax_array[i],temp_prod2,rec->encoder->window);
+			copy_array(lstms[layers-1]->lstm_hidden[i-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
+			array_now = model_tensor_input_bp(rec->m[i],(rec->encoder->window+1)*rec->encoder->lstms[0]->size,1,1,rec->flatten_fcl_input,temp_prod3,rec->encoder->window);
+			free(temp_prod2);
+			free(temp_prod3);
+			for(k = 0; k < rec->encoder->window; k++){
+				sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k],rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
+			}
         }
     }
     
@@ -788,7 +794,7 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
         for(j = layers-1; j >= 0; j--){
             
             dx = (float*)calloc(lstms[0]->size,sizeof(float));
-            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+            if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
                 sum1D(dx,dz,dx,lstms[0]->size);
                 
             if(j == layers-1 && i == window-1)
@@ -877,8 +883,13 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
             copy_array(dx,dz,lstms[0]->size);
             free(dx);
             
-            if(!j && input_error != NULL)
+            if(!j && input_error != NULL){
                 input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+                if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+					sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+			}
+			
+			
             
         }
         
@@ -889,7 +900,7 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
     for(j = layers-1; j >= 0; j--){
             
         dx = (float*)calloc(lstms[0]->size,sizeof(float));
-        if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+        if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
             sum1D(dx,dz,dx,lstms[0]->size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
@@ -949,8 +960,11 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
         copy_array(dx,dz,lstms[0]->size);
         free(dx);
         
-        if(!j && input_error != NULL)
-                input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+        if(!j && input_error != NULL){
+			input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+			if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+				sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+		}
     }
     
     free(dropout_output);
@@ -1274,15 +1288,15 @@ void update_recurrent_enc_dec_model(recurrent_enc_dec* m, float lr, float moment
 
 
 void sum_recurrent_enc_dec_partial_derivatives(recurrent_enc_dec* rec1,recurrent_enc_dec* rec2,recurrent_enc_dec* rec3){
-	sum_rmodel_partial_derivatives(rec1->encoder,rec2->encoder,rec3->encoder);
-	sum_rmodel_partial_derivatives(rec1->decoder,rec2->decoder,rec3->decoder);
-	sum_model_partial_derivatives(rec1->m[0],rec2->m[0],rec3->m[0]);
+    sum_rmodel_partial_derivatives(rec1->encoder,rec2->encoder,rec3->encoder);
+    sum_rmodel_partial_derivatives(rec1->decoder,rec2->decoder,rec3->decoder);
+    sum_model_partial_derivatives(rec1->m[0],rec2->m[0],rec3->m[0]);
 }
 
 
 void sum_recurrent_enc_decs_partial_derivatives(recurrent_enc_dec* sum, recurrent_enc_dec** rec, int n_models){
-	int i;
-	for(i = 0; i < n_models; i++){
-		sum_recurrent_enc_dec_partial_derivatives(sum,rec[i],sum);
-	}
+    int i;
+    for(i = 0; i < n_models; i++){
+        sum_recurrent_enc_dec_partial_derivatives(sum,rec[i],sum);
+    }
 }
