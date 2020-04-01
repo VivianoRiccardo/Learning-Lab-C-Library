@@ -47,5 +47,6 @@ float*** bp_recurrent_enc_dec(float** hidden_states, float** cell_states, float*
 void update_recurrent_enc_dec_model(recurrent_enc_dec* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_recurrent_enc_dec_partial_derivatives(recurrent_enc_dec* rec1,recurrent_enc_dec* rec2,recurrent_enc_dec* rec3);
 void sum_recurrent_enc_decs_partial_derivatives(recurrent_enc_dec* sum, recurrent_enc_dec** rec, int n_models);
+float*** bp_recurrent_enc(float** hidden_states, float** cell_states, float** input_model, float** error_model, recurrent_enc_dec* rec, float** input_error, float*** dfioc, float** dropout_mask_dec, lstm** first_dec_orizontal);
 
 #endif

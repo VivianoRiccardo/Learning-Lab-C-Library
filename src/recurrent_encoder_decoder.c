@@ -619,8 +619,8 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
             if(!j && input_error != NULL){
                 input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
                 if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-					sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
-			
+                    sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+            
                 float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
                 float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
                 for(k = 0; k < rec->encoder->window; k++){
@@ -719,30 +719,30 @@ float*** bp_decoder_lstm(float** hidden_states, float** cell_states, float** inp
         free(dx);
         
         if(!j && input_error != NULL){
-			input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
-			if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-				sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
-		
-			float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
-			float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
-			for(k = 0; k < rec->encoder->window; k++){
-				float* temp_prod = (float*)calloc(rec->encoder->lstms[0]->size,sizeof(float));
-				mul_value(input_error[i],rec->softmax_array[i][k],temp_prod,rec->encoder->lstms[0]->size);
-				sum1D(rec->output_error_encoder[k],temp_prod,rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
-				free(temp_prod);
-				
-				for(z = 0; z < rec->encoder->lstms[0]->size; z++){
-					temp_prod2[k] += rec->flatten_fcl_input[k*rec->encoder->lstms[0]->size+z]*input_error[i][z];
-				}
-			}
-			derivative_softmax_array(NULL,temp_prod3,rec->softmax_array[i],temp_prod2,rec->encoder->window);
-			copy_array(lstms[layers-1]->lstm_hidden[i-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
-			array_now = model_tensor_input_bp(rec->m[i],(rec->encoder->window+1)*rec->encoder->lstms[0]->size,1,1,rec->flatten_fcl_input,temp_prod3,rec->encoder->window);
-			free(temp_prod2);
-			free(temp_prod3);
-			for(k = 0; k < rec->encoder->window; k++){
-				sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k],rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
-			}
+            input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+                sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+        
+            float* temp_prod2 = (float*)calloc(rec->encoder->window,sizeof(float));
+            float* temp_prod3 = (float*)calloc(rec->encoder->window,sizeof(float));
+            for(k = 0; k < rec->encoder->window; k++){
+                float* temp_prod = (float*)calloc(rec->encoder->lstms[0]->size,sizeof(float));
+                mul_value(input_error[i],rec->softmax_array[i][k],temp_prod,rec->encoder->lstms[0]->size);
+                sum1D(rec->output_error_encoder[k],temp_prod,rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
+                free(temp_prod);
+                
+                for(z = 0; z < rec->encoder->lstms[0]->size; z++){
+                    temp_prod2[k] += rec->flatten_fcl_input[k*rec->encoder->lstms[0]->size+z]*input_error[i][z];
+                }
+            }
+            derivative_softmax_array(NULL,temp_prod3,rec->softmax_array[i],temp_prod2,rec->encoder->window);
+            copy_array(lstms[layers-1]->lstm_hidden[i-1],&rec->flatten_fcl_input[rec->encoder->window*rec->encoder->lstms[0]->size],rec->encoder->lstms[0]->size);
+            array_now = model_tensor_input_bp(rec->m[i],(rec->encoder->window+1)*rec->encoder->lstms[0]->size,1,1,rec->flatten_fcl_input,temp_prod3,rec->encoder->window);
+            free(temp_prod2);
+            free(temp_prod3);
+            for(k = 0; k < rec->encoder->window; k++){
+                sum1D(&array_now[k*rec->encoder->lstms[0]->size],rec->output_error_encoder[k],rec->output_error_encoder[k],rec->encoder->lstms[0]->size);
+            }
         }
     }
     
@@ -886,10 +886,10 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
             if(!j && input_error != NULL){
                 input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
                 if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-					sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
-			}
-			
-			
+                    sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+            }
+            
+            
             
         }
         
@@ -961,10 +961,10 @@ float*** bp_encoder_lstm(float** hidden_states, float** cell_states, float** inp
         free(dx);
         
         if(!j && input_error != NULL){
-			input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
-			if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-				sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
-		}
+            input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+            if(lstms[j]->residual_flag == LSTM_RESIDUAL)
+                sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+        }
     }
     
     free(dropout_output);
@@ -1116,6 +1116,100 @@ float*** bp_recurrent_dec(float** hidden_states, float** cell_states, float** in
 }
 
 
+/* This function computes the backpropagation of a recurrent_enc_dec with grouped normalization layers (for decoder)
+ * 
+ *  * Inputs:
+ * 
+ * 
+ *             @ float** hidden_states:= the hidden sates passed to each first orizontal cell, dimensions:m->layer*m->size
+ *             @ float** cell_states:= the cell sates passed to each first orizontal cell, dimensions:m->layer*m->size
+ *             @ float** input_model:= the input passed to the model, dimensions: m->window*m->size
+ *             @ float** error_model:= the error of the model, dimensions: m->window*m->size
+ *             @ recurrent_enc_dec* rec:= the recurrent enc dec model
+ *             @ float** input_error:= the error of the inputs of this model, dimensions: m->window*m->size, must be initialized only with m->window
+ * 
+ * */
+float*** bp_recurrent_enc(float** hidden_states, float** cell_states, float** input_model, float** error_model, recurrent_enc_dec* rec, float** input_error, float*** dfioc, float** dropout_mask_dec, lstm** first_dec_orizontal){
+    if(rec->encoder == NULL)
+        return NULL;
+    float*** ret = (float***)malloc(sizeof(float**)*rec->encoder->layers);//Storing all the returned values of bp of lstms
+    float*** ret2;//to handle the returned values of bp of lstms
+    float** input_error3 = (float**)malloc(sizeof(float*)*rec->encoder->window);//input error for lstms
+    float** error2_model = (float**)malloc(sizeof(float*)*rec->encoder->window);//error propagated
+    int i,j,ret_count = rec->encoder->layers-1,z;
+    int flag_time = 1;
+    float** temp = (float**)malloc(sizeof(float*)*rec->encoder->window);// inputs of lstms
+    for(i = 0; i < rec->decoder->window; i++){
+        error2_model[i] = (float*)calloc(rec->encoder->lstms[0]->size,sizeof(float));
+        copy_array(error_model[i],error2_model[i],rec->encoder->lstms[0]->size);
+    }
+    int flagg = 0;
+    int k = 0;
+    while(k > -1){
+        int flag = 0;
+        for(k = ret_count; k >= 0; k--){
+            if(rec->encoder->lstms[k]->norm_flag == GROUP_NORMALIZATION){
+                if(flagg) flagg = 0;
+                else{
+                    flag = 1;
+                    break;
+                }
+            }
+        }
+        if(flag){
+            int n_cells = ret_count-k;
+            flagg = 1;
+            if(n_cells){
+                for(j = 0; j < rec->encoder->lstms[k]->window/rec->encoder->lstms[k]->n_grouped_cell; j++){
+                    for(z = 0; z < rec->encoder->lstms[k]->n_grouped_cell; z++){
+                        temp[j*rec->encoder->lstms[k]->n_grouped_cell+z] = rec->encoder->lstms[k]->bns[j]->outputs[z];
+                    }
+                }
+                ret2 = bp_encoder_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,rec->encoder->window,rec->encoder->lstms[0]->size,n_cells,&rec->encoder->lstms[k+1],input_error3,&dfioc[k+1],&dropout_mask_dec[k+1],&first_dec_orizontal[k+1]);
+                
+                for(j = 0; j < rec->encoder->window; j++){
+                    copy_array(input_error3[j],error2_model[j],rec->encoder->lstms[0]->size);
+                    free(input_error3[j]);
+                }
+                for(j = ret_count; j > ret_count-n_cells; j--){
+                    ret[j] = ret2[n_cells-1-(ret_count-j)];
+                }
+                free(ret2);
+            }
+            for(j = 0; j < rec->encoder->lstms[k]->window/rec->encoder->lstms[k]->n_grouped_cell;j++){
+                batch_normalization_back_prop(rec->encoder->lstms[k]->n_grouped_cell,&rec->encoder->lstms[k]->out_up[j*rec->encoder->lstms[k]->n_grouped_cell],rec->encoder->lstms[k]->bns[j]->temp_vectors,rec->encoder->lstms[k]->bns[j]->vector_dim,rec->encoder->lstms[k]->bns[j]->gamma,rec->encoder->lstms[k]->bns[j]->beta,rec->encoder->lstms[k]->bns[j]->mean,rec->encoder->lstms[k]->bns[j]->var,&error2_model[j*rec->encoder->lstms[k]->n_grouped_cell],rec->encoder->lstms[k]->bns[j]->d_gamma,rec->encoder->lstms[k]->bns[j]->d_beta,rec->encoder->lstms[k]->bns[j]->error2,rec->encoder->lstms[k]->bns[j]->temp1,rec->encoder->lstms[k]->bns[j]->temp2,rec->encoder->lstms[k]->bns[j]->epsilon);
+            }
+            
+            for(j = 0; j < rec->encoder->window/rec->encoder->lstms[k]->n_grouped_cell; j++){
+                for(z = 0; z < rec->encoder->lstms[k]->n_grouped_cell; z++){
+                    copy_array(rec->encoder->lstms[k]->bns[j]->error2[z],error2_model[j*rec->encoder->lstms[k]->n_grouped_cell+z],rec->encoder->lstms[0]->size);
+                }
+            }
+            
+            if(n_cells)
+                ret_count = k;
+        }
+        
+        else{
+            int n_cells = ret_count-k;
+            int k2 = k;
+            if(k < 0) k = 0;
+            ret2 = bp_encoder_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,rec->encoder->window,rec->encoder->lstms[0]->size,n_cells,&rec->encoder->lstms[k],input_error,&dfioc[k],&dropout_mask_dec[k],&first_dec_orizontal[k]);
+            k = k2;
+
+            for(j = ret_count; j > k; j--){
+                ret[j] = ret2[j];
+            }    
+            free(ret2);
+        }
+    }
+    
+    free_matrix(error2_model,rec->encoder->window);
+    free(input_error3);
+    free(temp);
+    return ret;
+    
+}
 
 /* this function computes the toal feedforward of a recurrent enc dec structure
  * 
@@ -1196,12 +1290,12 @@ float*** bp_recurrent_enc_dec(float** hidden_states, float** cell_states, float*
         copy_array(input_model2[i],&input[i][rec->encoder->lstms[0]->size],rec->decoder->lstms[0]->size-rec->encoder->lstms[0]->size);
     }
     
-    float*** dfioc = bp_decoder_lstm(hiddens,cells,input,error_model,rec->decoder->window,rec->decoder->lstms[0]->size,rec->decoder->n_lstm,rec->decoder->lstms,input_error,rec);
+    float*** dfioc = bp_recurrent_dec(hiddens,cells,input,error_model,rec,input_error);
     float** dropout_mask = (float**)malloc(sizeof(float*)*rec->decoder->n_lstm);
     for(i = 0; i < rec->decoder->n_lstm; i++){
         dropout_mask[i] = rec->decoder->lstms[i]->dropout_mask_right;
     }
-    float*** dfioc2 = bp_encoder_lstm(hidden_states,cell_states,input_model1,rec->output_error_encoder,rec->encoder->window,rec->encoder->lstms[0]->size,rec->encoder->n_lstm,rec->encoder->lstms,input_error1,dfioc,dropout_mask,rec->decoder->lstms);
+    float*** dfioc2 = bp_recurrent_enc(hidden_states,cell_states,input_model1,rec->output_error_encoder,rec,input_error1,dfioc,dropout_mask,rec->decoder->lstms);
     
     if(input_error2[i] != NULL)
     for(i = 0; i < rec->decoder->window; i++){
