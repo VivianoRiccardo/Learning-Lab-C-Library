@@ -74,5 +74,9 @@ void derivative_entropy_array(float* y_hat, float* output, int size);
 float abs_sigmoid(float x);
 void abs_sigmoid_array(float* input, float* output, int size);
 void softmax_array_not_complete(float* input, float* output,int* mask, int size);
+float elu(float z, float a);
+void elu_array(float* input, float* output, int size, float a);
+float derivative_elu(float z, float a);
+void derivative_elu_array(float* input, float* output, int size, float a);
 
 #endif

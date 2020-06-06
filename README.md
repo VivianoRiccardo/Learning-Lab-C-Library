@@ -86,7 +86,7 @@ sh compile_tests.sh
 - Layer normalization for fully connected layers (23/3/2020)
 - Fully connected layers only as dropout layers (25/3/2020)
 - Filling residual layers also with fully connected layers (should start and end with convolutional ones) (25/3/2020)
-
+- ELU Activation function (6/6/2020)
 # Tests
 
 Each test has been trained successfully.

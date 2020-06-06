@@ -36,8 +36,7 @@ SOFTWARE.
  * */
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag){
     if(batch_size <= 1 || vector_input_dimension < 1){
-        fprintf(stderr,"Error: remember if you are using online learning (batch_size = 1) batch normalization is useless, and remember also that vector input dimension must be >= 1\n");
-        exit(1);
+        fprintf(stderr,"Warning: remember if you are using online learning (batch_size = 1) batch normalization is useless, and remember also that vector input dimension must be >= 1\n");
     }
     int i;
     bn* b = (bn*)malloc(sizeof(bn));

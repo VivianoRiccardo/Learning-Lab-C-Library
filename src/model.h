@@ -69,7 +69,6 @@ void set_model_biases_to_zero(model* m);
 void set_model_training_edge_popup(model* m, float k_percentage);
 void set_model_training_gd(model* m);
 void set_model_unused_weights_to_zero(model* m);
-int adjust_model_weights_after_edge_popup(model* m);
 void get_subnetwork_from_edge_popup(model* m);
 void paste_w_model(model* m, model* copy);
 void sum_score_model(model* input1, model* input2, model* output);

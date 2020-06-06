@@ -41,12 +41,12 @@ void derivative_softmax_array(int* input, float* output,float* softmax_arr,float
     
     for(j = 0; j < size; j++){
         for(i = 0; i < size; i++){
-			if(input[i] && input[j]){
-				if (i == j)
-					output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
-				else
-					output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
-				}
+            if(input[i] && input[j]){
+                if (i == j)
+                    output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
+                else
+                    output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
+                }
         }
         
     }
@@ -396,12 +396,42 @@ void softmax_array_not_complete(float* input, float* output,int* mask, int size)
     int i;
     float sum = 0;
     for(i = 0; i < size; i++){
-		if(mask[i])
-			sum+=exp(input[i]);
+        if(mask[i])
+            sum+=exp(input[i]);
     }
     
     for(i = 0; i < size; i++){
-		if(mask[i])
+        if(mask[i])
         output[i] = exp(input[i])/sum;
     }
 }
+
+float elu(float z, float a){
+    if (z > 0)
+        return z;
+    return a*(exp(z)-1);
+}
+
+
+void elu_array(float* input, float* output, int size, float a){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = elu(input[i],a);
+    }
+}
+
+float derivative_elu(float z, float a){
+    if (z > 0)
+        return 1;
+    else
+        return a*exp(z);
+}
+
+void derivative_elu_array(float* input, float* output, int size, float a){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_elu(input[i],a);
+    }
+}
+
+

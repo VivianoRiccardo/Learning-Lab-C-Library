@@ -47,11 +47,6 @@ void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float th
     
     for(i = 0; i < n_r; i++){
         sum += (double)sum_all_quadratic_derivative_weights_lstms(r[i]->lstms,r[i]->layers);
-        for(j = 0; j < r[i]->layers; j++){
-            if(r[i]->lstms[j]->norm_flag == GROUP_NORMALIZATION){
-                sum += (double)sum_all_quadratic_derivative_weights_bns(r[i]->lstms[j]->bns,r[i]->lstms[j]->window/r[i]->lstms[j]->n_grouped_cell); 
-            }
-        }
     }
     
     sum = sqrtf(sum);
@@ -64,11 +59,6 @@ void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float th
     }
     for(i = 0; i < n_r; i++){
         clip_lstms(r[i]->lstms,r[i]->layers,threshold,sum);
-        for(j = 0; j < r[i]->layers; j++){
-            if(r[i]->lstms[j]->norm_flag == GROUP_NORMALIZATION){
-                clip_bns(r[i]->lstms[j]->bns,r[i]->lstms[j]->window/r[i]->lstms[j]->n_grouped_cell,threshold,sum);
-            }
-        }
     }
 }
 /* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
@@ -109,21 +99,9 @@ void clipping_gradient_rmodel(rmodel* m, float threshold) {
      float sum = 0;
      int i,j;
      sum += sum_all_quadratic_derivative_weights_lstms(m->lstms,m->layers);
-     for(i = 0; i < m->layers; i++){
-         if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-            sum += sum_all_quadratic_derivative_weights_bns(m->lstms[i]->bns,m->lstms[i]->window/m->lstms[i]->n_grouped_cell); 
-         }
-     }
      sum = sqrtf(sum);
-     if(sum >= threshold){
-         clip_lstms(m->lstms,m->layers,threshold,sum);
-         for(i = 0; i < m->layers; i++){
-             if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-                clip_bns(m->lstms[i]->bns,m->lstms[i]->window/m->lstms[i]->n_grouped_cell,threshold,sum);
-             }
-         }
-     }
-     
+     if(sum >= threshold)
+         clip_lstms(m->lstms,m->layers,threshold,sum);   
 }
 
 
@@ -226,6 +204,9 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm){
         for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
             fcls[i]->d_weights[j]*=(threshold)/(norm);
         }
+        if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+            clip_bns(&fcls[i]->layer_norm,fcls[i]->output/fcls[i]->n_groups,threshold,norm);
+        
     }
     
 }
@@ -244,6 +225,8 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm){
 void clip_lstms(lstm** lstms, int n, float threshold, float norm){
     int i,j;
     for(i = 0; i < n; i++){
+        if(lstms[i]->norm_flag == GROUP_NORMALIZATION)
+            clip_bns(lstms[i]->bns,lstms[i]->window/lstms[i]->n_grouped_cell,threshold,norm);
         for(j = 0; j < lstms[i]->size*lstms[i]->size; j++){
             lstms[i]->d_w[0][j]*=(threshold)/(norm);
             lstms[i]->d_u[0][j]*=(threshold)/(norm);
@@ -351,6 +334,8 @@ float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n){
                 sum += temp*temp;
             }
         }
+        if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+            sum += sum_all_quadratic_derivative_weights_bns(&fcls[i]->layer_norm,1);
     }
     
     return sum;
@@ -369,6 +354,9 @@ float sum_all_quadratic_derivative_weights_lstms(lstm** lstms, int n){
     int i,j;
     float sum = 0,temp;
     for(i = 0; i < n; i++){
+        if(lstms[i]->norm_flag == GROUP_NORMALIZATION)
+            sum += sum_all_quadratic_derivative_weights_bns(lstms[i]->bns,lstms[i]->window/lstms[i]->n_grouped_cell);
+        
         for(j = 0; j < lstms[i]->size*lstms[i]->size; j++){
             temp = lstms[i]->d_w[0][j];
             sum += temp*temp;

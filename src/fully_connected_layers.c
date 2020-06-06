@@ -47,7 +47,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         normalization_flag = LAYER_NORMALIZATION;
     
     if(normalization_flag == LAYER_NORMALIZATION){
-        if(n_groups == 0 || output%n_groups){
+        if(n_groups == 0 || output==n_groups){
             fprintf(stderr,"Error: your groups must perfectly divide your output neurons\n");
             exit(1);
         }

@@ -43,51 +43,67 @@ SOFTWARE.
 #define BETA_NORMALIZATION 0.75
 #define ALPHA_NORMALIZATION 0.0001
 #define K_NORMALIZATION 2
+
 #define NESTEROV 1
 #define ADAM 2
 #define RADAM 3
 #define DIFF_GRAD 4
 #define ADAMOD 5
+
 #define FCLS 1
 #define CLS 2
 #define RLS 3
 #define BNS 4
 #define LSTMS 1
+
 #define NO_ACTIVATION 0
 #define SIGMOID 1
 #define RELU 2
 #define SOFTMAX 3
 #define TANH 4
 #define LEAKY_RELU 5
+#define ELU 6
+
 #define NO_POOLING 0
 #define MAX_POOLING 1
 #define AVARAGE_POOLING 2
+
 #define NO_DROPOUT 0
 #define DROPOUT 1
 #define DROPOUT_TEST 2
+
 #define NO_NORMALIZATION 0
 #define LOCAL_RESPONSE_NORMALIZATION 1
 #define BATCH_NORMALIZATION 2
 #define GROUP_NORMALIZATION 3
 #define LAYER_NORMALIZATION 4
+
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define BETA3_ADAMOD 0.9999
 #define EPSILON_ADAM 0.00000001
 #define EPSILON 0.00000001
 #define RADAM_THRESHOLD 4
+
 #define NO_REGULARIZATION 0
 #define L2_REGULARIZATION 1
+
 #define NO_CONVOLUTION 1
 #define CONVOLUTION 2
 #define TRANSPOSED_CONVOLUTION 3
+
 #define BATCH_NORMALIZATION_TRAINING_MODE 1
 #define BATCH_NORMALIZATION_FINAL_MODE 2
+
 #define STATEFUL 1
 #define STATELESS 2
+
 #define LEAKY_RELU_THRESHOLD 0.1
+#define ELU_THRESHOLD 1
+
 #define LSTM_RESIDUAL  1
 #define LSTM_NO_RESIDUAL 0
+
 #define NO_SET -1
 #define NO_LOSS 0
 #define CROSS_ENTROPY_LOSS 1
@@ -97,12 +113,15 @@ SOFTWARE.
 #define MSE_LOSS 5
 #define KL_DIVERGENCE_LOSS 6
 #define ENTROPY_LOSS 7
+
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10
+
 #define GRADIENT_DESCENT 1
 #define EDGE_POPUP 2
 #define FULLY_FEED_FORWARD 3
 #define FREEZE_TRAINING 4
+
 #define ONLY_DROPOUT 5
 
 // Neat hyperparams
@@ -432,26 +451,6 @@ typedef struct mystruct{
     struct mystruct* son;
     int c;
 }mystruct;
-
-typedef struct modularity_struct{
-    int n_models;
-    model** m;
-    double** k_in_positive_cls;
-    double** k_in_negative_cls;
-    double** k_out_positive_cls;
-    double** k_out_negative_cls;
-    double** k_in_positive_fcls;
-    double** k_in_negative_fcls;
-    double** k_out_positive_fcls;
-    double** k_out_negative_fcls;
-    int* in_size_fcl;
-    int* in_size_cl;
-    int* out_size_fcl;
-    int* out_size_cl;
-    double w_n;
-    double w_p;
-    double modularity;
-}modularity_struct;
 
 typedef struct training{
     model** m;
