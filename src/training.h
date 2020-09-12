@@ -31,5 +31,7 @@ SOFTWARE.
 training* get_training(char** chars, int** ints, float** floats, model** m, rmodel** r,int epochs, int n_char_size, int n_float_size, int n_int_size, int instance, int n_m, int m_r, int n_char, int n_float, int n_int);
 void save_training(training* t,int n);
 training* load_training(int n, int n_files);
+void standard_save_training(training* t, int n);
+training* light_load_training(int n, int n_files);
 
 #endif

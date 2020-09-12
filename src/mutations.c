@@ -761,19 +761,19 @@ genome* crossover(genome* g, genome* g2, int global_inn_numb_connections,int glo
 }
 
 void activate_bias(genome* g){
-	node** n = (node**)malloc(sizeof(node*)*g->number_total_nodes);
-	int i;
-	
-	for(i = 0; i < g->number_total_nodes; i++){
-		n[i] = g->all_nodes[i];
-	}
-	
-	shuffle_node_set(n,g->number_total_nodes);
-	for(i = 0; i < g->number_total_nodes; i++){
-		if(!n[i]->bias_flag){
-			n[i]->bias_flag = 1;
-			break;
-		}
-	}
-	free(n);
+    node** n = (node**)malloc(sizeof(node*)*g->number_total_nodes);
+    int i;
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        n[i] = g->all_nodes[i];
+    }
+    
+    shuffle_node_set(n,g->number_total_nodes);
+    for(i = 0; i < g->number_total_nodes; i++){
+        if(!n[i]->bias_flag){
+            n[i]->bias_flag = 1;
+            break;
+        }
+    }
+    free(n);
 }

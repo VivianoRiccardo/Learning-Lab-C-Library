@@ -51,5 +51,19 @@ void sum_score_cl(cl* input1, cl* input2, cl* output);
 void dividing_score_cl(cl* c,float value);
 void reset_score_cl(cl* f);
 void reinitialize_scores_cl(cl* f, float percentage, float goodness);
+void free_convolutional_for_edge_popup(cl* c);
+cl* light_load_cl(FILE* fr);
+cl* light_reset_cl(cl* f);
+int get_array_size_weights_cl(cl* f);
+void memcopy_scores_to_vector_cl(cl* f, float* vector);
+void memcopy_vector_to_scores_cl(cl* f, float* vector);
+cl* copy_light_cl(cl* f);
+cl* reset_cl_for_edge_popup(cl* f);
+cl* reset_cl_without_dwdb(cl* f);
+void paste_cl_for_edge_popup(cl* f, cl* copy);
+void free_convolutional_complementary_edge_popup(cl* c);
+void memcopy_weights_to_vector_cl(cl* f, float* vector);
+void memcopy_vector_to_weights_cl(cl* f, float* vector);
+void compare_score_cl(cl* input1, cl* input2, cl* output);
 
 #endif

@@ -284,15 +284,15 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
 
 
 int get_oldest_age(species* s, int total_species){
-	int i;
-	int max = -1;
-	for(i = 0; i < total_species; i++){
-		if(s[i].numb_all_other_genomes > 0)
-			if(s[i].age > max)
-			    max = s[i].age;
-		
-	}
-	
-	return max;
+    int i;
+    int max = -1;
+    for(i = 0; i < total_species; i++){
+        if(s[i].numb_all_other_genomes > 0)
+            if(s[i].age > max)
+                max = s[i].age;
+        
+    }
+    
+    return max;
 }
 

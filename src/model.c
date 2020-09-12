@@ -271,6 +271,62 @@ void free_model(model* m){
     free(m);
 }
 
+/* This function frees the space allocated by a model structure
+ * 
+ * Input:
+ *             @ model* m:= the structure
+ * 
+ * */
+void free_model_for_edge_popup(model* m){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_rl; i++){
+        free_residual_for_edge_popup(m->rls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        free_convolutional_for_edge_popup(m->cls[i]);
+    }
+    for(i = 0; i < m->n_fcl; i++){
+        free_fully_connected_for_edge_popup(m->fcls[i]);
+    }
+    for(i = 0; i < m->layers; i++){
+        free(m->sla[i]);
+    }
+}
+
+/* This function frees the space allocated by a model structure
+ * 
+ * Input:
+ *             @ model* m:= the structure
+ * 
+ * */
+void free_model_complementary_edge_popup(model* m){
+    if(m == NULL)
+        return;
+    int i;
+    
+    for(i = 0; i < m->n_rl; i++){
+        free_residual_complementary_edge_popup(m->rls[i]);
+    }
+    free(m->rls);
+    for(i = 0; i < m->n_cl; i++){
+        free_convolutional_complementary_edge_popup(m->cls[i]);
+    }
+    free(m->cls);
+    for(i = 0; i < m->n_fcl; i++){
+        free_fully_connected_complementary_edge_popup(m->fcls[i]);
+    }
+    free(m->fcls);
+    for(i = 0; i < m->layers; i++){
+        free(m->sla[i]);
+    }
+    free(m->sla);
+    free(m->error);
+    free(m->error_alpha);
+    free(m);
+}
 
 /* This function copies a model using the copy function for the layers
  * see layers.c file
@@ -314,6 +370,47 @@ model* copy_model(model* m){
     return copy;
 }
 
+/* This function copies a model using the copy function for the layers
+ * see layers.c file
+ * 
+ * Input:
+ *         
+ *             @ model* m:= the model that must be copied
+ * 
+ * */
+model* copy_light_model(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    
+    fcl** fcls = NULL;
+    if(m->fcls!=NULL)
+        fcls = (fcl**)malloc(sizeof(fcl*)*m->n_fcl);
+    cl** cls = NULL;
+    if(m->cls!=NULL)
+        cls = (cl**)malloc(sizeof(cl*)*m->n_cl);
+        
+    rl** rls = NULL;
+    if(m->rls!=NULL)
+        rls = (rl**)malloc(sizeof(rl*)*m->n_rl);
+    for(i = 0; i < m->n_fcl; i++){
+        fcls[i] = copy_light_fcl(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        cls[i] = copy_light_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        rls[i] = copy_light_rl(m->rls[i]);
+    }
+    model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
+    if(m->error!=NULL)
+        set_model_error(copy,m->error_flag,m->error_threshold1,m->error_threshold2,m->error_gamma,m->error_alpha,m->output_dimension);
+    
+    copy->beta1_adam = m->beta1_adam;
+    copy->beta2_adam = m->beta2_adam;
+    copy->beta3_adamod = m->beta3_adamod;
+    return copy;
+}
 
 
 /* This function copies a model using the paste function for the layers
@@ -341,6 +438,30 @@ void paste_model(model* m, model* copy){
     return;
 }
 
+/* This function copies a model using the paste function for the layers
+ * see layers.c file
+ * 
+ * Input:
+ *         
+ *             @ model* m:= the model that must be copied
+ *             @ model* copy:= the model where m is copied
+ * 
+ * */
+void paste_model_for_edge_popup(model* m, model* copy){
+    if(m == NULL)
+        return;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        paste_fcl_for_edge_popup(m->fcls[i],copy->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        paste_cl_for_edge_popup(m->cls[i],copy->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        paste_rl_for_edge_popup(m->rls[i],copy->rls[i]);
+    }
+    return;
+}
 
 /* This function copies a model using the paste function for the layers
  * see layers.c file
@@ -417,6 +538,79 @@ model* reset_model(model* m){
     return m;
 }
 
+/* This function resets a model
+ * returns a model equal to the one as input but with all resetted except for weights and biases
+ * */
+model* reset_model_without_dwdb(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reset_fcl_without_dwdb(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reset_cl_without_dwdb(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reset_rl_without_dwdb(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
+    }
+    return m;
+}
+
+/* This function resets a model
+ * returns a model equal to the one as input but with all resetted except for weights and biases
+ * */
+model* reset_model_for_edge_popup(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reset_fcl_for_edge_popup(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reset_cl_for_edge_popup(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reset_rl_for_edge_popup(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
+    }
+    return m;
+}
+/* This function resets a model
+ * returns a model equal to the one as input but with all resetted except for weights and biases
+ * */
+model* light_reset_model(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        light_reset_fcl(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        light_reset_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        light_reset_rl(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
+    }
+    return m;
+}
 
 /* this function compute the space allocated by the arrays of m
  * 
@@ -675,6 +869,95 @@ model* load_model(char* file){
     
     for(i = 0; i < n_fcl; i++){
         fcls[i] = load_fcl(fr);
+    }
+    
+    i = fclose(fr);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
+        exit(1);
+    }
+    
+    model* m = network(layers,n_rl,n_cl,n_fcl,rls,cls,fcls);
+    
+    return m;
+    
+}
+
+/* This function loads a network model from a .bin file with name file
+ * 
+ * Input:
+ * 
+ *             @ char* file:= the binary file from which the model will be loaded
+ * 
+ * */
+model* light_load_model(char* file){
+    if(file == NULL)
+        return NULL;
+    int i;
+    FILE* fr = fopen(file,"r");
+    
+    if(fr == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
+        exit(1);
+    }
+    
+    int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
+    
+    i = fread(&layers,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_rl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_cl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_fcl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+
+    rl** rls;
+    cl** cls;
+    fcl** fcls;
+    
+    if(!n_rl)
+        rls = NULL;
+    else
+        rls = (rl**)malloc(sizeof(rl*)*n_rl);
+    if(!n_cl)
+        cls = NULL;
+    else
+        cls = (cl**)malloc(sizeof(cl*)*n_cl);
+    if(!n_fcl)
+        fcls = NULL;
+    else
+        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
+    
+    for(i = 0; i < n_rl; i++){
+        rls[i] = light_load_rl(fr);
+    }
+    
+    for(i = 0; i < n_cl; i++){
+        cls[i] = light_load_cl(fr);
+    }
+    
+    for(i = 0; i < n_fcl; i++){
+        fcls[i] = light_load_fcl(fr);
     }
     
     i = fclose(fr);
@@ -1708,6 +1991,7 @@ void ff_cl_cl(cl* f1, cl* f2){
             }
         }
         else if(f2->activation_flag == ELU){
+            
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->used_kernels[i]){
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
@@ -1822,38 +2106,40 @@ void ff_cl_cl(cl* f1, cl* f2){
     /* pooling for f2, if there is any pooling*/
     if(f2->pooling_flag){
         for(i = 0; i < f2->n_kernels; i++){
-            if(f2->convolutional_flag == NO_CONVOLUTION){
-                if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+            if(f2->used_kernels[i]){
+                if(f2->convolutional_flag == NO_CONVOLUTION){
+                    if(f2->pooling_flag == MAX_POOLING){
+                        max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                    else{
+                        avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
                 }
+                else if(f2->normalization_flag){
+                    if(f2->pooling_flag == MAX_POOLING){
+                        max_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                    else{
+                        avarage_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                }
+                
+                else if(f2->activation_flag){
+                    if(f2->pooling_flag == MAX_POOLING){
+                        max_pooling_feed_forward(&f2->post_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                    else{
+                        avarage_pooling_feed_forward(&f2->post_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                }
+                
                 else{
-                    avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-            }
-            else if(f2->normalization_flag){
-                if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-                else{
-                    avarage_pooling_feed_forward(&f2->post_normalization[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-            }
-            
-            else if(f2->activation_flag){
-                if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&f2->post_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-                else{
-                    avarage_pooling_feed_forward(&f2->post_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-            }
-            
-            else{
-                if(f2->pooling_flag == MAX_POOLING){
-                    max_pooling_feed_forward(&f2->pre_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
-                }
-                else{
-                    avarage_pooling_feed_forward(&f2->pre_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    if(f2->pooling_flag == MAX_POOLING){
+                        max_pooling_feed_forward(&f2->pre_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
+                    else{
+                        avarage_pooling_feed_forward(&f2->pre_activation[i*f2->rows1*f2->cols1], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+                    }
                 }
             }
         }
@@ -2049,14 +2335,16 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     if(f2->pooling_flag == MAX_POOLING){
         if(f2->convolutional_flag == CONVOLUTION || f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(i = 0; i < f2->n_kernels; i++){
-                if(f2->normalization_flag){
-                    max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                }
-                else if(f2->activation_flag){
-                    max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                }
-                else{
-                    max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                if(f2->used_kernels[i]){
+                    if(f2->normalization_flag){
+                        max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    }
+                    else if(f2->activation_flag){
+                        max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    }
+                    else{
+                        max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    }
                 }
             }
         }
@@ -2069,6 +2357,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                     dot1D(f1->pre_activation,f1->dropout_mask,f2->temp2,f1->output);
                 
                 for(i = 0; i < f2->n_kernels; i++){
+                    if(f2->used_kernels[i])
                     max_pooling_back_prop(&f2->temp2[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
                 }            
             }
@@ -2076,12 +2365,14 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
             else{
                 if(f1->activation_flag){
                     for(i = 0; i < f2->n_kernels; i++){
+                        if(f2->used_kernels[i])
                         max_pooling_back_prop(&f1->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
                     }
                 }
                 
                 else{
                     for(i = 0; i < f2->n_kernels; i++){
+                        if(f2->used_kernels[i])
                         max_pooling_back_prop(&f1->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
                     }
                 }
@@ -2091,6 +2382,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
     
     else if(f2->pooling_flag == AVARAGE_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
+            if(f2->used_kernels[i])
             avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
         }
     }
@@ -2566,33 +2858,38 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     if(f2->pooling_flag == MAX_POOLING){
         if(f2->convolutional_flag == CONVOLUTION || f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(i = 0; i < f2->n_kernels; i++){
-                if(f2->normalization_flag)
-                    max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                else if(f2->activation_flag)
-                    max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                else
-                    max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                if(f2->used_kernels[i]){
+                    if(f2->normalization_flag)
+                        max_pooling_back_prop(&f2->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    else if(f2->activation_flag)
+                        max_pooling_back_prop(&f2->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    else
+                        max_pooling_back_prop(&f2->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }
             }
         }
         
         else{
             for(i = 0; i < f2->n_kernels; i++){
-                if(f1->pooling_flag)
-                    max_pooling_back_prop(&f1->post_pooling[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                else if(f1->normalization_flag)
-                    max_pooling_back_prop(&f1->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                else if(f1->activation_flag)
-                    max_pooling_back_prop(&f1->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-                else
-                    max_pooling_back_prop(&f1->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
-            }
+                if(f2->used_kernels[i]){
+                    if(f1->pooling_flag)
+                        max_pooling_back_prop(&f1->post_pooling[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    else if(f1->normalization_flag)
+                        max_pooling_back_prop(&f1->post_normalization[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    else if(f1->activation_flag)
+                        max_pooling_back_prop(&f1->post_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                    else
+                        max_pooling_back_prop(&f1->pre_activation[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows, &f2->temp[i*f2->rows1*f2->cols1]);
+                }
+           }
             
         }
     }
     
     else if(f2->pooling_flag == AVARAGE_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
-            avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
+            if(f2->used_kernels[i])
+                avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->padding2_rows);
         }
     }
     
@@ -2744,21 +3041,17 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else if(f1->normalization_flag){
                 
                 convolutional_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage,f2->d_biases,f2->d_kernels);
-
                 convolutional_back_prop_edge_popup_for_input(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_cols*f2->kernel_rows*f2->k_percentage);
             }
             
             else if(f1->activation_flag){
                 
                 convolutional_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage,f2->d_biases,f2->d_kernels);
-
                 convolutional_back_prop_edge_popup_for_input(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_cols*f2->kernel_rows*f2->k_percentage);
             }
             
             else{
-                
                 convolutional_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_rows*f2->kernel_cols*f2->k_percentage,f2->d_biases,f2->d_kernels);
-
                 convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->channels*f2->kernel_cols*f2->kernel_rows*f2->k_percentage);
             }
         }
@@ -2783,7 +3076,6 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             }
             
             else if(f1->activation_flag){
-                
                 for(i = 0; i < f2->n_kernels; i++){
                     convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows, f2->padding1_rows, &f2->d_scores[i*f2->channels*f2->kernel_rows*f2->kernel_cols]);
                 }
@@ -3143,7 +3435,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
         if(f1->pooling_flag){
-            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD )|| f2->training_mode == FREEZE_TRAINING)
+            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING)
                 fully_connected_back_prop(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP )
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
@@ -3977,6 +4269,30 @@ int get_array_size_params_model(model* f){
     return sum;
 }
 
+
+/* this function gives the number of float params for biases and weights in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+int get_array_size_weights_model(model* f){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        sum+=get_array_size_weights(f->fcls[i]);
+    }
+    
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_weights_cl(f->cls[i]);
+    }
+    
+    for(i = 0; i < f->n_rl; i++){
+        sum+=get_array_size_weights_rl(f->rls[i]);
+    }
+    
+    return sum;
+}
 /* this function paste the weights and biases in a single vector
  * 
  * Inputs:
@@ -3984,6 +4300,8 @@ int get_array_size_params_model(model* f){
  * 
  *                 @ model* f:= the model
  *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
  * */
 void memcopy_vector_to_params_model(model* f, float* vector){
     int sum = 0,i;
@@ -4001,6 +4319,57 @@ void memcopy_vector_to_params_model(model* f, float* vector){
     }
 }
 
+/* this function paste the weights in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_weights_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_weights(f->fcls[i],&vector[sum]);
+        sum += get_array_size_weights(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_weights_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_weights_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_weights_rl(f->rls[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_scores_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_scores(f->fcls[i],&vector[sum]);
+        sum += get_array_size_weights(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_scores_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_scores_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_weights_rl(f->rls[i]);
+    }
+}
 
 /* this function paste the vector in the weights and biases of the model
  * 
@@ -4026,6 +4395,55 @@ void memcopy_params_to_vector_model(model* f, float* vector){
     }
 }
 
+/* this function paste the vector in the weights of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_weights_to_vector(f->fcls[i],&vector[sum]);
+        sum += get_array_size_weights(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_weights_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_weights_to_vector_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_weights_rl(f->rls[i]);
+    }
+}
+
+
+
+/* this function paste the vector in the weights and biases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector_model(model* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_scores_to_vector(f->fcls[i],&vector[sum]);
+        sum += get_array_size_weights(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_scores_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_scores_to_vector_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_weights_rl(f->rls[i]);
+    }
+}
 /* this function paste the dweights and dbiases in a single vector
  * 
  * Inputs:
@@ -4265,8 +4683,13 @@ void compute_model_error(model* m, float* output){
 float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output){
     model_tensor_input_ff(m,tensor_depth,tensor_i,tensor_j,input);
     compute_model_error(m,output);
-    if(m->error_alpha != NULL)
-        dot1D(m->error_alpha,output,output,m->output_dimension);
+    if(m->error_alpha != NULL){
+        int i;
+        for(i = 0; i < m->output_dimension; i++){
+            if(output[i] != (float)(0))
+            output[i]*=m->error_alpha[i];
+        }        
+    }
     return model_tensor_input_bp(m,tensor_depth,tensor_i,tensor_j,input, m->error,m->output_dimension);
 }
 
@@ -4403,6 +4826,29 @@ void sum_score_model(model* input1, model* input2, model* output){
     
     for(i = 0; i < input1->n_rl; i++){
         sum_score_rl(input1->rls[i],input2->rls[i],output->rls[i]);
+    }
+}
+
+/* this function sum up all the scores in each layer of the input model1 and 2 in the output model
+ * 
+ * 
+ * Input:
+ *     
+ * 
+ *                 @ model* input1:= the first input model
+ *                 @ model* input2:= the second input model
+ *                 @ model* output:= the output model
+ * */
+void compare_score_model(model* input1, model* input2, model* output){
+    int i;
+    for(i = 0; i < input1->n_fcl; i++){
+        compare_score_fcl(input1->fcls[i],input2->fcls[i],output->fcls[i]);
+    }
+    for(i = 0; i < input1->n_cl; i++){
+        compare_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
+    }
+    for(i = 0; i < input1->n_rl; i++){
+        compare_score_rl(input1->rls[i],input2->rls[i],output->rls[i]);
     }
 }
 

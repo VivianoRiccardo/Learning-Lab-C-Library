@@ -161,6 +161,61 @@ void free_fully_connected(fcl* f){
     free(f);    
 }
 
+/* Given a fcl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fcl structure that must be deallocated
+ * */
+void free_fully_connected_for_edge_popup(fcl* f){
+    if(f == NULL){
+        return;
+    }
+    
+    free(f->d_weights);
+    free(f->ex_d_weights_diff_grad);
+    free(f->d1_weights);
+    free(f->d2_weights);
+    free(f->d3_weights);
+    free(f->d_biases);
+    free(f->ex_d_biases_diff_grad);
+    free(f->d1_biases);
+    free(f->d2_biases);
+    free(f->d3_biases);
+}
+
+/* Given a fcl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fcl structure that must be deallocated
+ * */
+void free_fully_connected_complementary_edge_popup(fcl* f){
+    if(f == NULL){
+        return;
+    }
+    free(f->weights);
+    free(f->biases);
+    free(f->pre_activation);
+    free(f->post_activation);
+    free(f->post_normalization);
+    free(f->dropout_mask);
+    free(f->dropout_temp);
+    free(f->temp);
+    free(f->temp2);
+    free(f->temp3);
+    free(f->error2);
+    free(f->scores);
+    free(f->d_scores);
+    free(f->ex_d_scores_diff_grad);
+    free(f->d1_scores);
+    free(f->d2_scores);
+    free(f->d3_scores);
+    free(f->indices);
+    free(f->active_output_neurons);
+    free_batch_normalization(f->layer_norm);
+    free(f);
+}
 /* This function saves a fully-connected layer on a .bin file with name n.bin
  * 
  * Input:
@@ -988,6 +1043,18 @@ fcl* load_fcl(FILE* fr){
     return f;
 }
 
+/* This function loads a fully-connected layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
+fcl* light_load_fcl(FILE* fr){
+    fcl* f = load_fcl(fr);
+    free_fully_connected_for_edge_popup(f);
+    return f;
+}
 
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array, and all the arrays used by ff and bp.
@@ -1030,6 +1097,25 @@ fcl* copy_fcl(fcl* f){
     if(f->normalization_flag == LAYER_NORMALIZATION){
         paste_bn(f->layer_norm,copy->layer_norm);
     }
+    return copy;
+}
+
+
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array, and all the arrays used by ff and bp.
+ * You have a fcl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ * 
+ * */
+fcl* copy_light_fcl(fcl* f){
+    fcl* copy = copy_fcl(f);
+    free_fully_connected_for_edge_popup(copy);
     return copy;
 }
 
@@ -1084,6 +1170,145 @@ fcl* reset_fcl(fcl* f){
     return f;
 }
 
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_without_dwdb(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            f->pre_activation[i] = 0;
+            f->post_activation[i] = 0;
+            f->post_normalization[i] = 0;
+            if(f->dropout_flag)
+                f->dropout_mask[i] = 1;
+            f->dropout_temp[i] = 0;
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+    }
+    if(f->training_mode == EDGE_POPUP){
+        quick_sort(f->scores,f->indices,0,f->output*f->input-1);
+        free(f->active_output_neurons);
+        f->active_output_neurons = get_used_outputs(f,NULL,FCLS,f->output);
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+}
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_for_edge_popup(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            f->pre_activation[i] = 0;
+            f->post_activation[i] = 0;
+            f->post_normalization[i] = 0;
+            if(f->dropout_flag)
+                f->dropout_mask[i] = 1;
+            f->dropout_temp[i] = 0;
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->d_scores[i] = 0;
+        }
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+}
+
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation, doesn't care about partial derivatives of weights and biases
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* light_reset_fcl(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            f->pre_activation[i] = 0;
+            f->post_activation[i] = 0;
+            f->post_normalization[i] = 0;
+            if(f->dropout_flag)
+                f->dropout_mask[i] = 1;
+            f->dropout_temp[i] = 0;
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+    }
+    if(f->training_mode == EDGE_POPUP){
+        quick_sort(f->scores,f->indices,0,f->output*f->input-1);
+        free(f->active_output_neurons);
+        f->active_output_neurons = get_used_outputs(f,NULL,FCLS,f->output);
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+}
 /* this function returns the space allocated by the arrays of f (more or less)
  * 
  * Input:
@@ -1115,6 +1340,7 @@ unsigned long long int size_of_fcls(fcl* f){
 void paste_fcl(fcl* f,fcl* copy){
     if(f == NULL)
         return;
+    copy->k_percentage = f->k_percentage;
     copy_array(f->weights,copy->weights,f->output*f->input);
     copy_array(f->d_weights,copy->d_weights,f->output*f->input);
     copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
@@ -1144,6 +1370,36 @@ void paste_fcl(fcl* f,fcl* copy){
     return;
 }
 
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * the edge popup params are pasted only if feedforwardflag or training mode is set to edge popup
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ *             @ fcl* copy:= the fully-connected layer where f is copied
+ * 
+ * */
+void paste_fcl_for_edge_popup(fcl* f,fcl* copy){
+    if(f == NULL)
+        return;
+    
+    if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
+        copy_array(f->scores,copy->scores,f->input*f->output);
+        copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
+        copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
+        copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+        copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
+        copy_int_array(f->indices,copy->indices,f->input*f->output);
+        copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        paste_bn(f->layer_norm,copy->layer_norm);
+    }
+    return;
+}
 
 /* This function returns a fcl* layer that is the same copy of the input f
  * except for the activation arrays and the dropout mask array
@@ -1231,9 +1487,24 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
  *                 @ flc* f:= the fully-connected layer
  * */
 int get_array_size_params(fcl* f){
-    return f->input*f->output+f->output;
+    int sum = 0;
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        sum += f->layer_norm->vector_dim*2;
+    }
+    return f->input*f->output+f->output+sum;
 }
 
+
+/* this function gives the number of float params for biases and weights in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+int get_array_size_weights(fcl* f){
+    return f->input*f->output;
+}
 /* this function pastes the weights and biases from a vector into in a fcl structure
  * 
  * Inputs:
@@ -1245,8 +1516,23 @@ int get_array_size_params(fcl* f){
 void memcopy_vector_to_params(fcl* f, float* vector){
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
     memcpy(f->biases,&vector[f->input*f->output],f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(f->layer_norm->gamma,&vector[f->input*f->output+f->output],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->beta,&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
+/* this function pastes the weights and biases from a vector into in a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_scores(fcl* f, float* vector){
+    memcpy(f->scores,vector,f->input*f->output*sizeof(float));
+}
 
 /* this function pastes the the weights and biases from a fcl structure into a vector
  * 
@@ -1259,8 +1545,47 @@ void memcopy_vector_to_params(fcl* f, float* vector){
 void memcopy_params_to_vector(fcl* f, float* vector){
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
     memcpy(&vector[f->input*f->output],f->biases,f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(&vector[f->input*f->output+f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
+/* this function pastes the the weights from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector(fcl* f, float* vector){
+    memcpy(vector,f->weights,f->input*f->output*sizeof(float));
+}
+
+/* this function pastes the the weights from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_weights(fcl* f, float* vector){
+    memcpy(f->weights,vector,f->input*f->output*sizeof(float));
+}
+
+/* this function pastes the the weights and biases from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector(fcl* f, float* vector){
+    memcpy(vector,f->scores,f->input*f->output*sizeof(float));
+}
 /* this function pastes the dweights and dbiases from a vector into in a fcl structure
  * 
  * Inputs:
@@ -1272,6 +1597,10 @@ void memcopy_params_to_vector(fcl* f, float* vector){
 void memcopy_vector_to_derivative_params(fcl* f, float* vector){
     memcpy(f->d_weights,vector,f->input*f->output*sizeof(float));
     memcpy(f->d_biases,&vector[f->input*f->output],f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(f->layer_norm->d_gamma,&vector[f->input*f->output+f->output],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->d_beta,&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
 
@@ -1286,6 +1615,10 @@ void memcopy_vector_to_derivative_params(fcl* f, float* vector){
 void memcopy_derivative_params_to_vector(fcl* f, float* vector){
     memcpy(vector,f->d_weights,f->input*f->output*sizeof(float));
     memcpy(&vector[f->input*f->output],f->d_biases,f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(&vector[f->input*f->output+f->output],f->layer_norm->d_gamma,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->d_beta,f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
 /* setting the biases to 0
@@ -1449,6 +1782,24 @@ void sum_score_fcl(fcl* input1, fcl* input2, fcl* output){
     sum1D(input1->scores,input2->scores,output->scores,input1->input*input1->output);
 }
 
+/* this function sum up the scores in input1 and input2 in output
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* input1:= the first input fcl layer
+ *                 @ fcl* input2:= the second input fcl layer
+ *                 @ fcl* output:= the output fcl layer
+ * */
+void compare_score_fcl(fcl* input1, fcl* input2, fcl* output){
+    int i;
+    for(i = 0; i < input1->input*input1->output; i++){
+        if(input1->scores[i] > input2->scores[i])
+            output->scores[i] = input1->scores[i];
+        else
+            output->scores[i] = input2->scores[i];
+    }
+}
 
 /* this function divides the score with value
  * 

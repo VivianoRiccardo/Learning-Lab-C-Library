@@ -302,6 +302,80 @@ void free_convolutional(cl* c){
     free(c);
 }
 
+/* Given a cl* structure this function frees the space allocated by the unused arrays durig edge popup training
+ * 
+ * Input:
+ * 
+ *             @ cl* c:= the convolutional structure
+ * 
+ * */
+void free_convolutional_for_edge_popup(cl* c){
+    if(c == NULL){
+        return;
+    }
+    
+    int i;
+    for(i = 0; i < c->n_kernels; i++){
+        free(c->d_kernels[i]);
+        free(c->ex_d_kernels_diff_grad[i]);
+        free(c->d1_kernels[i]);
+        free(c->d2_kernels[i]);
+        free(c->d3_kernels[i]);
+    }
+    free(c->d_kernels);
+    free(c->ex_d_kernels_diff_grad);
+    free(c->d1_kernels);
+    free(c->d2_kernels);
+    free(c->d_biases);
+    free(c->ex_d_biases_diff_grad);
+    free(c->d1_biases);
+    free(c->d2_biases);
+    free(c->d3_biases);
+}
+
+/* Given a cl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ cl* c:= the convolutional structure
+ * 
+ * */
+void free_convolutional_complementary_edge_popup(cl* c){
+    if(c == NULL){
+        return;
+    }
+    
+    int i;
+    for(i = 0; i < c->n_kernels; i++){
+        free(c->kernels[i]);
+    }
+    free(c->used_kernels);
+    free(c->biases);
+    free(c->pre_activation);
+    free(c->post_activation);
+    free(c->post_normalization);
+    free(c->post_pooling);
+    free(c->temp);
+    free(c->temp2);
+    free(c->temp3);
+    free(c->pooltemp);
+    free(c->error2);
+    free(c->indices);
+    free(c->scores);
+    free(c->d_scores);
+    free(c->ex_d_scores_diff_grad);
+    free(c->d1_scores);
+    free(c->d2_scores);
+    free(c->d3_scores);
+    if(c->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
+            free_batch_normalization(c->group_norm[i]);
+        }
+        free(c->group_norm);
+    }
+    free(c);
+}
+
 /* This function saves a convolutional layer on a .bin file with name n.bin
  * 
  * Input:
@@ -1268,6 +1342,19 @@ cl* load_cl(FILE* fr){
     return f;
 }
 
+/* This function loads a convolutional layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
+cl* light_load_cl(FILE* fr){
+    cl* c = load_cl(fr);
+    free_convolutional_for_edge_popup(c);
+    return c;
+}
+
 
 /* This function loads a convolutional layer from a .bin file from fr
  * 
@@ -1759,6 +1846,26 @@ cl* copy_cl(cl* f){
     return copy;
 }
 
+
+/* This function returns a cl* layer that is the same copy of the input f
+ * except for the activation arrays , the post normalization and post polling arrays
+ * and all the temporary arrays used for the feed forward and back propagation
+ * You have a cl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms 
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ * 
+ * */
+cl* copy_light_cl(cl* f){
+    cl* copy = copy_cl(f);
+    free_convolutional_for_edge_popup(copy);
+    return copy;
+}
+
 /* this function resets all the arrays of a convolutional layer
  * used during the feed forward and backpropagation
  * You have a cl* f structure, this function resets all the arrays used
@@ -1784,6 +1891,175 @@ cl* reset_cl(cl* f){
             f->d_biases[i] = 0;
         }
     }
+    for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+        f->pre_activation[i] = 0;
+        f->post_activation[i] = 0;
+        f->post_normalization[i] = 0;
+        f->temp[i] = 0;
+        f->temp2[i] = 0;
+        f->temp3[i] = 0;
+    }
+    
+    for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+        f->post_pooling[i] = 0;
+    }
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    
+    if(f->training_mode == EDGE_POPUP){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+            f->d_scores[i] = 0;
+            f->indices[i] = i;
+        }
+        for(i = 0; i < f->n_kernels; i++){
+            f->used_kernels[i] = 0;
+        }
+        
+        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+
+        
+        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        }
+    }
+    return f;
+}
+
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change.
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_without_dwdb(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+
+    for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+        f->pre_activation[i] = 0;
+        f->post_activation[i] = 0;
+        f->post_normalization[i] = 0;
+        f->temp[i] = 0;
+        f->temp2[i] = 0;
+        f->temp3[i] = 0;
+    }
+    
+    for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+        f->post_pooling[i] = 0;
+    }
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    
+    if(f->training_mode == EDGE_POPUP){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+            f->d_scores[i] = 0;
+            f->indices[i] = i;
+        }
+        for(i = 0; i < f->n_kernels; i++){
+            f->used_kernels[i] = 0;
+        }
+        
+        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+
+        
+        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        }
+    }
+    return f;
+}
+
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change.
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_for_edge_popup(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+
+    for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+        f->pre_activation[i] = 0;
+        f->post_activation[i] = 0;
+        f->post_normalization[i] = 0;
+        f->temp[i] = 0;
+        f->temp2[i] = 0;
+        f->temp3[i] = 0;
+    }
+    
+    for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+        f->post_pooling[i] = 0;
+    }
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    
+    if(f->training_mode == EDGE_POPUP){
+        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+            f->d_scores[i] = 0;
+        }
+    }
+    return f;
+}
+
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation doesn't care about partial derivative of kernels and biases
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change.
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* light_reset_cl(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+
     for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
         f->pre_activation[i] = 0;
         f->post_activation[i] = 0;
@@ -1898,6 +2174,43 @@ void paste_cl(cl* f, cl* copy){
     return;
 }
 
+
+/* This function returns a cl* layer that is the same copy of the input f
+ * except for the activation arrays , the post normalization and post polling arrays
+ * and all the arrays used by the feed forward and backpropagation.
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ *             @ cl* copy:= the convolutional layer where f is copied
+ * 
+ * */
+void paste_cl_for_edge_popup(cl* f, cl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            paste_bn(f->group_norm[i],copy->group_norm[i]);
+        }
+    }
+
+    if(f->feed_forward_flag == EDGE_POPUP){
+        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
+        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+    }
+    return;
+}
 /* This function returns a cl* layer that is the same copy of the input f
  * except for the activation arrays , the post normalization and post polling arrays
  * and all the arrays used by the feed forward and backpropagation.
@@ -1912,7 +2225,7 @@ void paste_cl(cl* f, cl* copy){
 void paste_w_cl(cl* f, cl* copy){
     if(f == NULL)
         return;
-    
+    copy->k_percentage = f->k_percentage;
     int i;
     for(i = 0; i < f->n_kernels; i++){
         copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
@@ -2010,6 +2323,20 @@ int get_array_size_params_cl(cl* f){
     return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels;
 }
 
+/* this function gives the number of float params for biases and weights in a cl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ * */
+int get_array_size_weights_cl(cl* f){
+    
+    int sum = 0;
+    int i;
+    return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+}
+
 /* this function pastes the weights and biases from a vector in a cl structure
  * 
  * Inputs:
@@ -2062,6 +2389,89 @@ void memcopy_params_to_vector_cl(cl* f, float* vector){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
             memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->beta,f->group_norm[i]->vector_dim*sizeof(float));
         }
+    }
+}
+
+/* this function pastes the weights from a vector in a cl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_weights_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(f->kernels[i],&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->gamma,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(f->group_norm[i]->beta,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+
+/* this function pastes the cl structure weights in a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->kernels[i],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+    
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->gamma,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+        
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->beta,f->group_norm[i]->vector_dim*sizeof(float));
+        }
+    }
+}
+
+/* this function pastes the cl structure weights and biases in a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],&f->scores[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+    }
+}
+
+/* this function pastes the weights and biases from a vector in a cl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_scores_cl(cl* f, float* vector){
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        memcpy(&f->scores[i*f->channels*f->kernel_rows*f->kernel_cols],&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
     }
 }
 
@@ -2234,6 +2644,25 @@ void sum_score_cl(cl* input1, cl* input2, cl* output){
     sum1D(input1->scores,input2->scores,output->scores,input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels);
 }
 
+/* this function sum up the scores in input1 and input2 in output
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* input1:= the first input fcl layer
+ *                 @ fcl* input2:= the second input fcl layer
+ *                 @ fcl* output:= the output fcl layer
+ * */
+void compare_score_cl(cl* input1, cl* input2, cl* output){
+    int i;
+    for(i = 0; i < input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels; i++){
+        if(input1->scores[i] > input2->scores[i])
+            output->scores[i] = input1->scores[i];
+        else
+            output->scores[i] = input2->scores[i];
+    }
+}
+    
 /* This function divides all the scores with value
  * 
  * 

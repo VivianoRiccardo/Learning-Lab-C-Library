@@ -36,6 +36,9 @@ float r2(){
     return (float)rand() / (float)RAND_MAX ;
 }
 
+float generate_from_random_distribution(float lo, float hi){
+	return lo + (float)(rand()) /((float)(RAND_MAX/(hi-lo)));
+}
 float drand (){
   return (rand () + 1.0) / (RAND_MAX + 1.0);
 }
@@ -2038,3 +2041,22 @@ char** get_files(int index1, int n_files){
     
     return files;
 }
+
+/* this function checks if there is some nan in a matrix, returns 1 if there is at least 1 nan, 0 otherwise
+ * 
+ * Inputs:
+ * 
+ *             @ float** m:= the matrix that must be checked
+ *             @ int rows:= the rows of matrix that must be checked
+ *             @ int cols:= the cols matrix that must be checked
+ * */
+ int check_nans_matrix(float** m, int rows, int cols){
+     int i,j;
+     for(i = 0; i < rows; i++){
+         for(j = 0; j < cols; j++){
+             if(!bool_is_real(m[i][j]))
+                return 1;
+         }
+     }
+     return 0;
+ }

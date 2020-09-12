@@ -39,12 +39,65 @@ SOFTWARE.
  * */
 void contact_server(int sockfd, int buffer_size, int reading_pipe, int writing_pipe) { 
     float* buff = (float*)calloc(buffer_size,sizeof(float));
-    int ret;
-    while(1){   
-        while(read(sockfd, buff, sizeof(float)*buffer_size) == 0);// waiting for server
+    int ret = 0;
+    while(1){
+        ret = 0;   
+        while(ret == 0){
+            if(sizeof(float)*buffer_size <= 4096){
+                ret = read(sockfd, buff, sizeof(float)*buffer_size);
+                if(ret == -1){
+                    printf("1- (from server) Error description is: %s\n",strerror(errno));
+                    exit(0);
+                }
+            }
+            else{
+                long long unsigned int sum = 0;
+                char buffer[buffer_size*sizeof(float)];
+                ret = read(sockfd, buffer, 4096);
+                if(ret == -1){
+                    printf("2- (from server) Error description is : %s\n",strerror(errno));
+                    exit(0);
+                }
+                sum+=ret;
+                int count;
+                for(; sum < sizeof(float)*buffer_size; sum+=ret){
+                    ret = 0;
+                    if(sizeof(float)*buffer_size-sum < 4096){
+                        ret = read(sockfd, &buffer[sum], sizeof(float)*buffer_size-sum);
+                        if(ret == -1){
+                            printf("3- (from server) Error description is : %s\n",strerror(errno));
+                            exit(0);
+                        }
+                    }
+                    else{
+                        ret = read(sockfd, &buffer[sum], 4096);
+                        if(ret == -1){
+                            printf("4- (from server) Error description is : %s\n",strerror(errno));
+                            exit(0);
+                        }
+                    }
+                }
+                memcpy(buff,buffer,buffer_size*sizeof(float));
+            }
+        }// waiting for server
         ret = write(writing_pipe,buff, sizeof(float)*buffer_size);// writing to parent process
-        while(read(reading_pipe, buff, sizeof(float)*buffer_size) == 0);// waiting for parent process
+        if(ret == -1){
+            printf("(to parent) Error description is : %s\n",strerror(errno));
+            exit(0);
+        }
+        ret = 0;
+        while(ret == 0){
+            ret = read(reading_pipe, buff, sizeof(float)*buffer_size);
+            if(ret == -1){
+                printf("(from parent) Error description is : %s\n",strerror(errno));
+                exit(0);
+            }
+        }// waiting for parent process
         ret = write(sockfd,buff, sizeof(float)*buffer_size);// writing to server
+        if(ret == -1){
+            printf("(to server) Error description is : %s\n",strerror(errno));
+            exit(0);
+        }
         
     }
     free(buff);

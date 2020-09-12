@@ -30,10 +30,64 @@ void* server_thread(void* _args) {
     float* buff = (float*)calloc(args->buffer_size,sizeof(float));
     int ret;
     while(1){
-        while(read(args->reading_pipe, buff, sizeof(float)*args->buffer_size) == 0);// waiting for parent process
+        ret = 0;
+        while(ret == 0){
+            ret = read(args->reading_pipe, buff, sizeof(float)*args->buffer_size);
+            if(ret == -1){
+                printf("Error description is : %s\n",strerror(errno));
+                exit(0);
+            }
+        }// waiting for parent process
         ret = write(args->client_desc,buff, sizeof(float)*args->buffer_size);// writing to client
-        while(read(args->client_desc, buff, sizeof(float)*args->buffer_size) == 0);// waiting for client
+        if(ret == -1){
+            printf("Error description is : %s\n",strerror(errno));
+            exit(0);
+        }
+        ret = 0;
+        
+        while(ret == 0){
+            if(sizeof(float)*args->buffer_size <= 4096){
+                ret = read(args->client_desc, buff, sizeof(float)*args->buffer_size);
+                if(ret == -1){
+                    printf("Error description is : %s\n",strerror(errno));
+                    exit(0);
+                }
+            }
+            else{
+                long long unsigned int sum = 0;
+                char buffer[sizeof(float)*args->buffer_size];
+                ret = read(args->client_desc, buffer, 4096);
+                if(ret == -1){
+                    printf("Error description is : %s\n",strerror(errno));
+                    exit(0);
+                }
+                sum+=ret;
+                long long unsigned int count;
+                for(;sum < sizeof(float)*args->buffer_size;  sum+=ret){
+                    ret = 0;
+                    if(sizeof(float)*args->buffer_size-sum < 4096){
+                        ret = read(args->client_desc, &buffer[sum], sizeof(float)*args->buffer_size-sum);
+                        if(ret == -1){
+                            printf("Error description is : %s\n",strerror(errno));
+                            exit(0);
+                        }
+                    }
+                    else{
+                        ret = read(args->client_desc, &buffer[sum], 4096);
+                        if(ret == -1){
+                            printf("Error description is : %s\n",strerror(errno));
+                            exit(0);
+                        }
+                    }
+                }
+                memcpy(buff,buffer,args->buffer_size*sizeof(float));
+            }
+        }// waiting for client
         ret = write(args->writing_pipe,buff, sizeof(float)*args->buffer_size);// writing to parent process
+        if(ret == -1){
+            printf("Error description is : %s\n",strerror(errno));
+            exit(0);
+        }
     }
     
     free(buff);

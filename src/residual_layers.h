@@ -50,5 +50,19 @@ void sum_score_rl(rl* input1, rl* input2, rl* output);
 void dividing_score_rl(rl* f, float value);
 void reset_score_rl(rl* f);
 void reinitialize_scores_rl(rl* f, float percentage, float goodness);
+void free_residual_for_edge_popup(rl* r);
+rl* light_load_rl(FILE* fr);
+rl* light_reset_rl(rl* f);
+int get_array_size_weights_rl(rl* f);
+void memcopy_vector_to_scores_rl(rl* f, float* vector);
+void memcopy_scores_to_vector_rl(rl* f, float* vector);
+rl* copy_light_rl(rl* f);
+rl* reset_rl_for_edge_popup(rl* f);
+rl* reset_rl_without_dwdb(rl* f);
+void paste_rl_for_edge_popup(rl* f, rl* copy);
+void free_residual_complementary_edge_popup(rl* r);
+void memcopy_weights_to_vector_rl(rl* f, float* vector);
+void memcopy_vector_to_weights_rl(rl* f, float* vector);
+void compare_score_rl(rl* input1, rl* input2, rl* output);
 
 #endif

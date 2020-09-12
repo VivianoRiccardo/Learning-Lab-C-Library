@@ -105,5 +105,7 @@ void dot_float_input(float* input1, int* input2, float* output, int size);
 int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);
 float* float_abs_array_(float* a, int n);
+int check_nans_matrix(float** m, int rows, int cols);
+float generate_from_random_distribution(float lo, float hi);
 
 #endif

@@ -76,5 +76,20 @@ void dividing_score_model(model* m, float value);
 void avaraging_score_model(model* avarage, model** m, int n_model);
 void reset_score_model(model* f);
 void reinitialize_scores_model(model* m, float percentage, float goodness);
+void free_model_for_edge_popup(model* m);
+model* light_load_model(char* file);
+model* light_reset_model(model* m);
+int get_array_size_weights_model(model* f);
+void memcopy_vector_to_scores_model(model* f, float* vector);
+void memcopy_scores_to_vector_model(model* f, float* vector);
+model* copy_light_model(model* m);
+model* reset_model_for_edge_popup(model* m);
+model* reset_model_without_dwdb(model* m);
+void paste_model_for_edge_popup(model* m, model* copy);
+void free_model_complementary_edge_popup(model* m);
+void memcopy_weights_to_vector_model(model* f, float* vector);
+void memcopy_vector_to_weights_model(model* f, float* vector);
+void memcopy_weights_to_vector_model(model* f, float* vector);
+void compare_score_model(model* input1, model* input2, model* output);
 
 #endif

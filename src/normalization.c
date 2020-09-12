@@ -653,7 +653,7 @@ void normalize_scores_among_fcl_layers(fcl* f){
         for(i = 0; i < f->input*f->output; i++){
             f->scores[i] = (f->scores[i]-min)/(max-min);
         }
-	}
+    }
 }
 
 void normalize_scores_among_cl_layers(cl* f){
@@ -671,7 +671,7 @@ void normalize_scores_among_cl_layers(cl* f){
         for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
             f->scores[i] = (f->scores[i]-min)/(max-min);
         }
-	}
+    }
 }
 
 

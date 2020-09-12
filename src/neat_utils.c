@@ -27,8 +27,8 @@ SOFTWARE.
 
 
 int round_up(float num) { 
-	if(num!=(int)num)
-		return (int)((int)num+1);
+    if(num!=(int)num)
+        return (int)((int)num+1);
     return num; 
 }
 

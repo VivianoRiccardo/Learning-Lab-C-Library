@@ -52,5 +52,19 @@ void dividing_score_fcl(fcl* f, float value);
 void set_fcl_only_dropout(fcl* f);
 void reset_score_fcl(fcl* f);
 void reinitialize_scores_fcl(fcl* f, float percentage, float goodness);
+void free_fully_connected_for_edge_popup(fcl* f);
+fcl* light_load_fcl(FILE* fr);
+fcl* light_reset_fcl(fcl* f);
+int get_array_size_weights(fcl* f);
+void memcopy_scores_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_scores(fcl* f, float* vector);
+fcl* copy_light_fcl(fcl* f);
+fcl* reset_fcl_for_edge_popup(fcl* f);
+fcl* reset_fcl_without_dwdb(fcl* f);
+void paste_fcl_for_edge_popup(fcl* f,fcl* copy);
+void free_fully_connected_complementary_edge_popup(fcl* f);
+void memcopy_weights_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_weights(fcl* f, float* vector);
+void compare_score_fcl(fcl* input1, fcl* input2, fcl* output);
 
 #endif

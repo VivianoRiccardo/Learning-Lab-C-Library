@@ -91,10 +91,14 @@ void convolutional_feed_forward_edge_popup(float* input, float** kernel, int inp
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
-                output[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj] += kernel[(int)(indices[s]/(channels*kernel_i*kernel_j))][((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*kernel_i*kernel_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*kernel_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)]*input[((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*input_i*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*input_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)+(oj-padding)*stride+(oi-padding)*stride*input_j];
-                if(!flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj]){
+				int k = ((int)(indices[s]/(channels*kernel_i*kernel_j)));// kernel index
+				c = ((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)));// channel index
+				i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)); // row index
+				j = (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j); // column index
+                output[k*output_i*output_j+oi*output_j+oj] += kernel[k][c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + i*input_j + j +(oj-padding)*stride+(oi-padding)*stride*input_j];
+                if(!flags[k*output_i*output_j+oi*output_j+oj]){
                     flags[(int)(indices[s]/(channels*kernel_i*kernel_j))*output_i*output_j+oi*output_j+oj] = 1;
-                    output[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj] += bias[(int)(indices[s]/(channels*kernel_i*kernel_j))];
+                    output[k*output_i*output_j+oi*output_j+oj] += bias[k];
                 }
             }
         }
@@ -270,7 +274,11 @@ void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, 
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(s = n_kernels*channels*kernel_i*kernel_j-last_n; s < n_kernels*channels*kernel_i*kernel_j; s++){
-                input_error[((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*input_i*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*input_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j))+(oj-padding)*stride+(oi-padding)*stride*input_j] += output_error[((int)(indices[s]/(channels*kernel_i*kernel_j)))*output_i*output_j+oi*output_j+oj]*kernel[((int)(indices[s]/(channels*kernel_i*kernel_j)))][((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)))*kernel_i*kernel_j + ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j))*kernel_j + (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j)];
+				int k = ((int)(indices[s]/(channels*kernel_i*kernel_j)));// kernel index
+				c = ((int)((indices[s]%(channels*kernel_i*kernel_j))/(kernel_i*kernel_j)));// channel index
+				i = ((int)(((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))/kernel_j)); // row index
+				j = (((indices[s]%(channels*kernel_i*kernel_j))%(kernel_i*kernel_j))%kernel_j); // column index
+                input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j] += output_error[k*output_i*output_j+oi*output_j+oj]*kernel[k][c*kernel_i*kernel_j + i*kernel_j + j];
             }
         }
     }

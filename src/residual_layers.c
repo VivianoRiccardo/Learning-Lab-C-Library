@@ -70,6 +70,27 @@ void free_residual(rl* r){
     free(r);
 }
 
+/* Given a rl* structure this function frees the space useless for edge popup training*/
+void free_residual_for_edge_popup(rl* r){
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        free_convolutional_for_edge_popup(r->cls[i]);
+    }
+    
+    free_convolutional_for_edge_popup(r->cl_output);
+}
+
+/* Given a rl* structure this function frees the space allocated by this structure*/
+void free_residual_complementary_edge_popup(rl* r){
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        free_convolutional_complementary_edge_popup(r->cls[i]);
+    }
+    
+    free(r->cls);
+    free_convolutional_complementary_edge_popup(r->cl_output);
+    free(r);
+}
 /* This function saves a residual layer on a .bin file with name n.bin
  * 
  * Input:
@@ -284,6 +305,19 @@ rl* load_rl(FILE* fr){
  *             @ FILE* fr:= a pointer to a file already opened
  * 
  * */
+rl* light_load_rl(FILE* fr){
+    rl* f = load_rl(fr);
+    free_residual_for_edge_popup(f);
+    return f;
+}
+
+/* This function loads a residual layer from a .bin file from fr
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= a pointer to a file already opened
+ * 
+ * */
 rl* heavy_load_rl(FILE* fr){
     if(fr == NULL)
         return NULL;
@@ -364,6 +398,34 @@ rl* copy_rl(rl* f){
     return copy;
 }
 
+
+/* This function returns a rl* layer that is the same copy of the input f
+ * except for the input array
+ * You have a rl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the residual layer that must be copied
+ * 
+ * */
+rl* copy_light_rl(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    cl** cls = (cl**)malloc(sizeof(cl*)*f->n_cl);
+    for(i = 0; i < f->n_cl; i++){
+        cls[i] = copy_light_cl(f->cls[i]);
+    }
+    
+    rl* copy = residual(f->channels, f->input_rows, f->input_cols, f->n_cl, cls);
+    copy->cl_output->activation_flag = f->cl_output->activation_flag;
+    return copy;
+}
+
 /* this function reset all the arrays of a residual layer
  * used during the feed forward and backpropagation
  * You have a rl* f structure, this function resets all the arrays used
@@ -389,7 +451,80 @@ rl* reset_rl(rl* f){
     return f;
 }
 
+/* this function reset all the arrays of a residual layer
+ * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= a rl* f layer
+ * 
+ * */
+rl* reset_rl_without_dwdb(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_cl_without_dwdb(f->cls[i]);
+    }
+    
+    reset_cl_without_dwdb(f->cl_output);
 
+    return f;
+}
+
+/* this function reset all the arrays of a residual layer
+ * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= a rl* f layer
+ * 
+ * */
+rl* reset_rl_for_edge_popup(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_cl_for_edge_popup(f->cls[i]);
+    }
+    
+    reset_cl_for_edge_popup(f->cl_output);
+
+    return f;
+}
+
+/* this function reset all the arrays of a residual layer
+ * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used doesn't care about kernels and biases (partial derivatives)
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= a rl* f layer
+ * 
+ * */
+rl* light_reset_rl(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        light_reset_cl(f->cls[i]);
+    }
+    
+    light_reset_cl(f->cl_output);
+
+    return f;
+}
 /* this function compute the space allocated by the arrays of f
  * 
  * Input:
@@ -426,6 +561,28 @@ void paste_rl(rl* f, rl* copy){
     int i;
     for(i = 0; i < f->n_cl; i++){
         paste_cl(f->cls[i],copy->cls[i]);
+    }
+    
+    return;
+}
+
+/* This function returns a rl* layer that is the same copy of the input f
+ * except for the input array
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= the residual layer that must be copied
+ *             @ rl* copy:= the residual layer where f is copied
+ * 
+ * */
+void paste_rl_for_edge_popup(rl* f, rl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        paste_cl_for_edge_popup(f->cls[i],copy->cls[i]);
     }
     
     return;
@@ -491,6 +648,21 @@ int get_array_size_params_rl(rl* f){
     return sum;
 }
 
+/* this function gives the number of float params for biases and weights in a rl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+int get_array_size_weights_rl(rl* f){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_weights_cl(f->cls[i]);
+    }
+    
+    return sum;
+}
 /* this function paste the weights and biases in a single vector
  * 
  * Inputs:
@@ -507,7 +679,37 @@ void memcopy_vector_to_params_rl(rl* f, float* vector){
     }
 }
 
+/* this function paste the weights in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_weights_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_weights_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+}
 
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_scores_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_scores_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+}
 /* this function paste the vector in the weights and biases of the rl
  * 
  * Inputs:
@@ -524,7 +726,37 @@ void memcopy_params_to_vector_rl(rl* f, float* vector){
     }
 }
 
+/* this function paste the vector in the weights of the rl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_weights_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+}
 
+/* this function paste the vector in the weights and biases of the rl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector_rl(rl* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_scores_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_weights_cl(f->cls[i]);
+    }
+}
 
 /* this function paste the dweights and dbiases in a single vector
  * 
@@ -665,6 +897,22 @@ void sum_score_rl(rl* input1, rl* input2, rl* output){
     int i;
     for(i = 0; i < input1->n_cl; i++){
         sum_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
+    }
+}
+/* this function sum up all the scores of input1 and input2 of the convolutional layer isnide them
+ * to output
+ * 
+ * 
+ * Input:
+ * 
+ *                 @ rl* input1:= the first input residual layer
+ *                 @ rl* input2:= the second input residual layer
+ *                 @ rl* output:= the output residual layer
+ * */
+void compare_score_rl(rl* input1, rl* input2, rl* output){
+    int i;
+    for(i = 0; i < input1->n_cl; i++){
+        compare_score_cl(input1->cls[i],input2->cls[i],output->cls[i]);
     }
 }
 
