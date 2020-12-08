@@ -88,6 +88,7 @@ sh compile_tests.sh
 - Filling residual layers also with fully connected layers (should start and end with convolutional ones) (25/3/2020)
 - ELU Activation function (6/6/2020)
 - Sin - Cos positional encoding (8/12/2020)
+- Scaled L2 normalization layer (8/12/2020)
 # Tests
 
 Each test has been trained successfully.
