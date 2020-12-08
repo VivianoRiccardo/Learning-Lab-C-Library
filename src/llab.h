@@ -485,6 +485,7 @@ typedef struct training{
 #include "recurrent_layers.h"
 #include "residual_layers.h"
 #include "rmodel.h"
+#include "positional_encoding.h"
 #include "server.h"
 #include "training.h"
 #include "utils.h"

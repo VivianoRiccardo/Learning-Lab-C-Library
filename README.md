@@ -111,7 +111,6 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 
 
 # Future implementations
-- 3D Convolution
-- 3D Transposed Convolution
+- transformer (autobot and desepticon)
 
 
