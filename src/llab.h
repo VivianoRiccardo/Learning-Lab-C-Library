@@ -445,6 +445,24 @@ typedef struct oustrategy {
     float* action_space;
 } oustrategy;
 
+typedef struct scaled_l2_norm{
+    int input_dimension;
+    float* output;
+    float norm;
+    float learned_g;
+    float d_learned_g;
+    float d1_learned_g;
+    float d2_learned_g;
+    float d3_learned_g;
+    float ex_d_learned_g_diff_grad;
+}scaled_l2_norm;
+
+typedef struct attention{
+    int d_k,d_v;//d_k must be = to d_v (is not specified in the paper, but to do the dot product
+    fcl** fcls;// must be 3, query, keys, values
+    
+}attention;
+
 // Generic dictionary for int vectors
 typedef struct mystruct{
     struct mystruct* brother;

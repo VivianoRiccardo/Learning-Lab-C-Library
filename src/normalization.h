@@ -44,5 +44,7 @@ void normalize_scores_among_all_internal_layers(model* m);
 void given_max_min_normalize_fcl(fcl* f, float max, float min);
 void given_max_min_normalize_cl(cl* f, float max, float min);
 void normalize_among_all_leyers(model* m);
+void feed_forward_scaled_l2_norm(int input_dimension, float learned_g, float* norm, float* input, float* output);
+void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float d_learned_g, float norm,float* input, float* output_error, float* input_error);
 
 #endif

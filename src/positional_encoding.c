@@ -28,7 +28,7 @@ SOFTWARE.
 
 /*
  * This function returns a vector that must be summed up with the embeddings of the input for the new input in a transformer.
- * Is based on the positional encoding described in the paper attention is all you need
+ * Is based on the positional encoding described in the papre attention is all you need
  * 
  * Inputs:
  * 

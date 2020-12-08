@@ -756,3 +756,59 @@ void normalize_among_all_leyers(model* m){
     }
     
 }
+
+
+/* This function computes the feed forward for the scaled l2 norm according to the formula
+ * output = g*x/||x||, where g is an hyperparameter to learn x is the vector of the input
+ * and ||x|| is its norm
+ * 
+ * Inputs:
+ * 
+ *                 @ int input_dimension:= the dimension of the input as well as the output
+ *                 @ float learned_g:= the g parameter of the formula above
+ *                 @ float* norm:= where we are gonna store the norm
+ *                 @ float input:= the input, dimension: input_dimension
+ *                 @ float* output:= the dimension of the output, dimension: input_dimension
+ * 
+ * */
+void feed_forward_scaled_l2_norm(int input_dimension, float learned_g, float* norm, float* input, float* output){
+    int i;
+    double sum = 0;
+    for(i = 0; i < input_dimension; i++){
+        sum+=(double)(input[i]*input[i]);
+    }
+    
+    (*norm) = (float)sqrtl(sum);
+    
+    for(i = 0; i < input_dimension; i++){
+        output[i] = input[i]*learned_g/(*norm);
+    }
+}
+
+/* this function computes the back propagation for a scaled l2 normalization
+ * 
+ * 
+ * Inputs:
+ * 
+ *             @ int input_dimension:= the dimension of the input as well as the output
+ *             @ float learned_g:= the g parameter used during the ff
+ *             @ fkiat d_learned_g:= where we store the partial derivatives for g
+ *             @ float norm:= the normalization value computed during the feed forward
+ *             @ float* input:= the inputs used during the ff
+ *             @ float* output_error:= the partial derivative of the loss repsect the output
+ *             @ float* input_error:= where we store the propagation of the error to the previous layer
+ * */
+void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float d_learned_g, float norm,float* input, float* output_error, float* input_error){
+    int i,j;
+    float quadratic_norm = norm*norm;
+    float cubic_norm = norm*norm*norm;
+    for(i = 0; i < input_dimension; i++){
+        d_learned_g += output_error[i]*input[i]/norm;
+        for(j = 0; j < input_dimension; j++){
+            if (i == j)
+                input_error[i] += learned_g*output_error[i]*(quadratic_norm - input[i]*input[i])/cubic_norm;
+            else
+                input_error[i] += learned_g*output_error[j]*(input[i]*input[j])/cubic_norm;
+        }
+    }
+}
