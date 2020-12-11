@@ -89,6 +89,7 @@ sh compile_tests.sh
 - ELU Activation function (6/6/2020)
 - Sin - Cos positional encoding (8/12/2020)
 - Scaled L2 normalization layer (8/12/2020)
+- Self-Attention and Multi-Head-Attention (11/12/2020)
 # Tests
 
 Each test has been trained successfully.
