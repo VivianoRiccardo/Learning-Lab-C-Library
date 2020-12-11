@@ -64,5 +64,6 @@ void free_residual_complementary_edge_popup(rl* r);
 void memcopy_weights_to_vector_rl(rl* f, float* vector);
 void memcopy_vector_to_weights_rl(rl* f, float* vector);
 void compare_score_rl(rl* input1, rl* input2, rl* output);
+int get_array_size_scores_rl(rl* f);
 
 #endif

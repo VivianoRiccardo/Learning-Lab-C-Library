@@ -133,13 +133,13 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     c->pooltemp = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
     c->training_mode = GRADIENT_DESCENT;
     c->feed_forward_flag = FULLY_FEED_FORWARD;
-    c->scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->d_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->ex_d_scores_diff_grad = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->d1_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->d2_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->d3_scores = (float*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(float));
-    c->indices = (int*)calloc(n_kernels*channels*kernel_rows*kernel_cols,sizeof(int));
+    c->scores = (float*)calloc(n_kernels,sizeof(float));
+    c->d_scores = (float*)calloc(n_kernels,sizeof(float));
+    c->ex_d_scores_diff_grad = (float*)calloc(n_kernels,sizeof(float));
+    c->d1_scores = (float*)calloc(n_kernels,sizeof(float));
+    c->d2_scores = (float*)calloc(n_kernels,sizeof(float));
+    c->d3_scores = (float*)calloc(n_kernels,sizeof(float));
+    c->indices = (int*)calloc(n_kernels,sizeof(int));
     c->used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
         if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
@@ -221,9 +221,9 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->d1_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->d2_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->d3_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
+        c->indices[i] = i;
         for(j = 0; j < channels*kernel_rows*kernel_cols; j++){
             c->kernels[i][j] = random_general_gaussian(0, (float)channels*input_rows*input_cols);
-            c->indices[i*channels*kernel_rows*kernel_cols+j] = i*channels*kernel_rows*kernel_cols+j;
         }
     }
     
@@ -615,14 +615,14 @@ void save_cl(cl* f, int n){
         exit(1);
     }
     
-    i = fwrite(f->scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->scores,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
-    i = fwrite(f->indices,sizeof(int)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->indices,sizeof(int)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
@@ -950,41 +950,41 @@ void heavy_save_cl(cl* f, int n){
         exit(1);
     }
     
-    i = fwrite(f->scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->scores,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
-    i = fwrite(f->d1_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->d1_scores,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
-    i = fwrite(f->d2_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->d2_scores,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
-    i = fwrite(f->d3_scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->d3_scores,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    i = fwrite(f->ex_d_scores_diff_grad,sizeof(float)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->ex_d_scores_diff_grad,sizeof(float)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
     
-    i = fwrite(f->indices,sizeof(int)*f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows,1,fw);
+    i = fwrite(f->indices,sizeof(int)*f->n_kernels,1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
@@ -1266,8 +1266,8 @@ cl* load_cl(FILE* fr){
     
     kernels = (float**)malloc(sizeof(float*)*n_kernels);
     biases = (float*)malloc(sizeof(float)*n_kernels);
-    scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    indices = (int*)malloc(sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows);
+    scores = (float*)malloc(sizeof(float)*n_kernels);
+    indices = (int*)malloc(sizeof(int)*n_kernels);
     used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     
     for(k = 0; k < n_kernels; k++){
@@ -1287,14 +1287,14 @@ cl* load_cl(FILE* fr){
         exit(1);
     }
     
-    i = fread(scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(scores,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(indices,sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(indices,sizeof(int)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
@@ -1329,8 +1329,8 @@ cl* load_cl(FILE* fr){
     for(i= 0; i < n_kernels; i++){
         free(kernels[i]);
     }
-    copy_array(scores,f->scores,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_int_array(indices,f->indices,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(scores,f->scores,n_kernels);
+    copy_int_array(indices,f->indices,n_kernels);
     copy_int_array(used_kernels,f->used_kernels,n_kernels);
     f->training_mode = training_mode;
     f->feed_forward_flag = feed_forward_flag;
@@ -1602,12 +1602,12 @@ cl* heavy_load_cl(FILE* fr){
     d2_biases = (float*)malloc(sizeof(float)*n_kernels);
     d3_biases = (float*)malloc(sizeof(float)*n_kernels);
     ex_d_biases_diff_grad = (float*)malloc(sizeof(float)*n_kernels);
-    scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    d1_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    d2_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    d3_scores = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    ex_d_scores_diff_grad = (float*)malloc(sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows);
-    indices = (int*)malloc(sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows);
+    scores = (float*)malloc(sizeof(float)*n_kernels);
+    d1_scores = (float*)malloc(sizeof(float)*n_kernels);
+    d2_scores = (float*)malloc(sizeof(float)*n_kernels);
+    d3_scores = (float*)malloc(sizeof(float)*n_kernels);
+    ex_d_scores_diff_grad = (float*)malloc(sizeof(float)*n_kernels);
+    indices = (int*)malloc(sizeof(int)*n_kernels);
     used_kernels = (int*)malloc(sizeof(int)*n_kernels);
     
     for(k = 0; k < n_kernels; k++){
@@ -1683,42 +1683,42 @@ cl* heavy_load_cl(FILE* fr){
         exit(1);
     }
     
-    i = fread(scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(scores,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(d1_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(d1_scores,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(d2_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(d2_scores,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(d3_scores,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(d3_scores,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(ex_d_scores_diff_grad,sizeof(float)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(ex_d_scores_diff_grad,sizeof(float)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
-    i = fread(indices,sizeof(int)*n_kernels*channels*kernel_cols*kernel_rows,1,fr);
+    i = fread(indices,sizeof(int)*n_kernels,1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
@@ -1765,12 +1765,12 @@ cl* heavy_load_cl(FILE* fr){
     copy_array(d2_biases,f->d2_biases,n_kernels);
     copy_array(d3_biases,f->d3_biases,n_kernels);
     copy_array(ex_d_biases_diff_grad,f->ex_d_biases_diff_grad,n_kernels);
-    copy_array(scores,f->scores,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_array(d1_scores,f->d1_scores,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_array(d2_scores,f->d2_scores,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_array(d3_scores,f->d3_scores,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_array(ex_d_scores_diff_grad,f->ex_d_scores_diff_grad,n_kernels*channels*kernel_cols*kernel_rows);
-    copy_int_array(indices,f->indices,n_kernels*channels*kernel_cols*kernel_rows);
+    copy_array(scores,f->scores,n_kernels);
+    copy_array(d1_scores,f->d1_scores,n_kernels);
+    copy_array(d2_scores,f->d2_scores,n_kernels);
+    copy_array(d3_scores,f->d3_scores,n_kernels);
+    copy_array(ex_d_scores_diff_grad,f->ex_d_scores_diff_grad,n_kernels);
+    copy_int_array(indices,f->indices,n_kernels);
     copy_int_array(used_kernels,f->used_kernels,n_kernels);
     f->training_mode = training_mode;
     f->feed_forward_flag = feed_forward_flag;
@@ -1833,13 +1833,13 @@ cl* copy_cl(cl* f){
     copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
     copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
-    copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
-    copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows);
+    copy_array(f->scores,copy->scores,f->n_kernels);
+    copy_array(f->d_scores,copy->d_scores,f->n_kernels);
+    copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels);
+    copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
+    copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
+    copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
+    copy_int_array(f->indices,copy->indices,f->n_kernels);
     copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
     copy->feed_forward_flag = f->feed_forward_flag;
     copy->training_mode = f->training_mode;
@@ -1916,7 +1916,7 @@ cl* reset_cl(cl* f){
     }
     
     if(f->training_mode == EDGE_POPUP){
-        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+        for(i = 0; i < f->n_kernels; i++){
             f->d_scores[i] = 0;
             f->indices[i] = i;
         }
@@ -1924,11 +1924,11 @@ cl* reset_cl(cl* f){
             f->used_kernels[i] = 0;
         }
         
-        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+        quick_sort(f->scores,f->indices,0,f->n_kernels-1);
 
         
-        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
-            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        for(i = f->n_kernels-f->n_kernels*f->k_percentage; i < f->n_kernels; i++){
+            f->used_kernels[(int)(f->indices[i])] = 1;
         }
     }
     return f;
@@ -1976,7 +1976,7 @@ cl* reset_cl_without_dwdb(cl* f){
     }
     
     if(f->training_mode == EDGE_POPUP){
-        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+        for(i = 0; i < f->n_kernels; i++){
             f->d_scores[i] = 0;
             f->indices[i] = i;
         }
@@ -1984,11 +1984,11 @@ cl* reset_cl_without_dwdb(cl* f){
             f->used_kernels[i] = 0;
         }
         
-        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+        quick_sort(f->scores,f->indices,0,f->n_kernels-1);
 
         
-        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
-            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        for(i = f->n_kernels-f->n_kernels*f->k_percentage; i < f->n_kernels; i++){
+            f->used_kernels[(int)(f->indices[i])] = 1;
         }
     }
     return f;
@@ -2036,7 +2036,7 @@ cl* reset_cl_for_edge_popup(cl* f){
     }
     
     if(f->training_mode == EDGE_POPUP){
-        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+        for(i = 0; i < f->n_kernels; i++){
             f->d_scores[i] = 0;
         }
     }
@@ -2085,7 +2085,7 @@ cl* light_reset_cl(cl* f){
     }
     
     if(f->training_mode == EDGE_POPUP){
-        for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+        for(i = 0; i < f->n_kernels; i++){
             f->d_scores[i] = 0;
             f->indices[i] = i;
         }
@@ -2093,11 +2093,11 @@ cl* light_reset_cl(cl* f){
             f->used_kernels[i] = 0;
         }
         
-        quick_sort(f->scores,f->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+        quick_sort(f->scores,f->indices,0,f->n_kernels-1);
 
         
-        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
-            f->used_kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))] = 1;
+        for(i = f->n_kernels-f->n_kernels*f->k_percentage; i < f->n_kernels; i++){
+            f->used_kernels[(int)(f->indices[i])] = 1;
         }
     }
     return f;
@@ -2162,14 +2162,14 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
     copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
     if(f->feed_forward_flag == EDGE_POPUP){
-        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->indices,copy->indices,f->n_kernels);
         copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
-        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->scores,copy->scores,f->n_kernels);
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels);
+        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels);
+        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
+        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
+        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
     }
     return;
 }
@@ -2200,14 +2200,14 @@ void paste_cl_for_edge_popup(cl* f, cl* copy){
     }
 
     if(f->feed_forward_flag == EDGE_POPUP){
-        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->indices,copy->indices,f->n_kernels);
         copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
-        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d_scores,copy->d_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
-        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->scores,copy->scores,f->n_kernels);
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels);
+        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels);
+        copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
+        copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
+        copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
     }
     return;
 }
@@ -2238,9 +2238,9 @@ void paste_w_cl(cl* f, cl* copy){
     }
     copy_array(f->biases,copy->biases,f->n_kernels);
     if(f->feed_forward_flag == EDGE_POPUP){
-        copy_int_array(f->indices,copy->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_int_array(f->indices,copy->indices,f->n_kernels);
         copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
-        copy_array(f->scores,copy->scores,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
+        copy_array(f->scores,copy->scores,f->n_kernels);
     }
     return;
 }
@@ -2282,7 +2282,7 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
     }
     
      if(f->feed_forward_flag == EDGE_POPUP){
-         for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
+         for(i = 0; i < f->n_kernels; i++){
              copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
              copy->d1_scores[i] = tau*f->d1_scores[i] + (1-tau)*copy->d1_scores[i];
              copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
@@ -2293,11 +2293,11 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
          for(i = 0; i < f->n_kernels; i++){
              copy->used_kernels[i] = 0;
          }
-         quick_sort(copy->scores,copy->indices,0,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1);
+         quick_sort(copy->scores,copy->indices,0,f->n_kernels-1);
 
         
-         for(i = copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols-copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols*copy->k_percentage; i < copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols; i++){
-            copy->used_kernels[(int)(copy->indices[i]/(copy->channels*copy->kernel_rows*copy->kernel_cols))] = 1;
+         for(i = copy->n_kernels-copy->n_kernels*copy->k_percentage; i < copy->n_kernels; i++){
+            copy->used_kernels[(int)(copy->indices[i])] = 1;
          }
      }
     return;
@@ -2331,10 +2331,10 @@ int get_array_size_params_cl(cl* f){
  *                 @ cl* f:= the convolutional layer
  * */
 int get_array_size_weights_cl(cl* f){
-    
-    int sum = 0;
-    int i;
-    return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+    return f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+}
+int get_array_size_scores_cl(cl* f){
+    return f->n_kernels;
 }
 
 /* this function pastes the weights and biases from a vector in a cl structure
@@ -2454,10 +2454,8 @@ void memcopy_weights_to_vector_cl(cl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_scores_to_vector_cl(cl* f, float* vector){
-    int i;
-    for(i = 0; i < f->n_kernels; i++){
-        memcpy(&vector[i*f->channels*f->kernel_rows*f->kernel_cols],&f->scores[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
-    }
+    memcpy(vector,f->scores,f->n_kernels*sizeof(float));    
+    
 }
 
 /* this function pastes the weights and biases from a vector in a cl structure
@@ -2469,10 +2467,7 @@ void memcopy_scores_to_vector_cl(cl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_scores_cl(cl* f, float* vector){
-    int i;
-    for(i = 0; i < f->n_kernels; i++){
-        memcpy(&f->scores[i*f->channels*f->kernel_rows*f->kernel_cols],&vector[i*f->channels*f->kernel_rows*f->kernel_cols],f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
-    }
+    memcpy(f->scores,vector,f->n_kernels*sizeof(float));    
 }
 
 /* this function pastes the vector in the the dweights and dbiases of a cl structure
@@ -2548,88 +2543,14 @@ void set_convolutional_biases_to_zero(cl* c){
  *             @ cl* c:= the convolutional layer
  * */
 void set_convolutional_unused_weights_to_zero(cl* c){
-    int i;
-    for(i = 0; i < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; i++){
-        c->kernels[(int)(c->indices[i]/c->channels*c->kernel_rows*c->kernel_cols)][(c->indices[i]%c->channels*c->kernel_rows*c->kernel_cols)] = 0;
-    }
-}
-
-
-/* Given the inputs that will be surely used and those not used, and giving the output neurons
- * attached to some used weights in the next layers, the convolutional layer looks at the
- * weights used and if some weight is used where there is no input or active output neuron, then the weight is cut off.
- * pay attention, this mechanism works with convolutional/residual input layer before this convolutional layer and
- * convolutional/residual/fully connected output layer. so it doesn't work perfectly with fully connected input layer, 
- * because to simplify i m going to look to the feature maps not all neurons for the used input. so there could be some cases
- * where if you have a fcl layer as input, some weights are not cut off even if they are not attached to some active input neuron
- * and could be seen as further biases.
- * however is rare that such a thing happens. returns 1 if some weight has been cut off, 0 otherwise,
- * this function even modifies the used_output of the channel looking at the kernels if you decomment the commented part
- * 
- * Inputs:
- * 
- *             cl* c:= the convolutional layer
- *             int* used_input:= the input used dimensions: (channels)
- *                int* used_output:= the output attached to some output weight dimensions: (n_kernels)
- * */
-int cl_adjusting_weights_after_edge_popup(cl* c, int* used_input, int* used_output){
-    int flag = 0,i,j,z, lower = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage;
-    for(i = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; i < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols; i++){
-            if(!used_input[((int)(c->indices[i]%(c->channels*c->kernel_rows*c->kernel_cols)))/(c->kernel_rows*c->kernel_cols)] || !used_output[((int)(c->indices[i]/(c->channels*c->kernel_rows*c->kernel_cols)))]){
-                flag = 1;
-                for(z = i; z > lower; z--){
-                    int temp = c->indices[z-1];
-                    c->indices[z-1] = c->indices[z];
-                    c->indices[z] = temp;
-                }
-                lower++; 
-            }
-    }
-    
-    c->k_percentage = (float)(1-(float)(((double)(lower))/((double)(c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols))));
-    cl* copy = c;
-    for(i = 0; i < copy->n_kernels; i++){
-        copy->used_kernels[i] = 0;
-    }
-    for(i = copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols-copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols*copy->k_percentage; i < copy->n_kernels*copy->channels*copy->kernel_rows*copy->kernel_cols; i++){
-        copy->used_kernels[(int)(copy->indices[i]/(copy->channels*copy->kernel_rows*copy->kernel_cols))] = 1;
-    }
-    /*
-    for(i = 0; i < c->n_kernels; i++){
-        if(!c->used_kernels[i])
-            used_output[i] = 0;
-    }
-    * */
-    return flag;
-}
-
-
-/* This function gives you an array of channel dimensions saying wich channels is used and which not
- * 
- * Inputs:
- * 
- *             @ cl* c:= the convolutional layer
- *             @ int* ch:= the channel array, can be null and this function is going to allocate
- * */
-int* get_used_channels(cl* c, int* ch){
-    int* channels;
-    if(ch == NULL)
-        channels = (int*)calloc(c->channels,sizeof(int));
-    else
-        channels = ch;
-    
     int i,j;
-    for(i = 0; i < c->channels; i++){
-        channels[i] = 0;
+    for(i = 0; i < c->n_kernels-c->n_kernels*c->k_percentage; i++){
+        for(j = 0; j < c->channels*c->kernel_rows*c->kernel_cols; j++){
+            c->kernels[(c->indices[i])][j] = 0;
+        }
     }
-    
-    for(j = c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols-c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols*c->k_percentage; j < c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols; j++){
-        channels[((int)(c->indices[i]%(c->channels*c->kernel_rows*c->kernel_cols)))/(c->kernel_rows*c->kernel_cols)] = 1;
-    }
-    
-    return channels;
-
 }
+
 
 /* this function, given 2 input convolutional layers sum up the scores in he output convolutional layer
  * 
@@ -2641,7 +2562,7 @@ int* get_used_channels(cl* c, int* ch){
  *             @ cl* output:= the output convolutional layer
  * */
 void sum_score_cl(cl* input1, cl* input2, cl* output){
-    sum1D(input1->scores,input2->scores,output->scores,input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels);
+    sum1D(input1->scores,input2->scores,output->scores,input1->n_kernels);
 }
 
 /* this function sum up the scores in input1 and input2 in output
@@ -2655,7 +2576,7 @@ void sum_score_cl(cl* input1, cl* input2, cl* output){
  * */
 void compare_score_cl(cl* input1, cl* input2, cl* output){
     int i;
-    for(i = 0; i < input1->n_kernels*input1->kernel_cols*input1->kernel_rows*input1->channels; i++){
+    for(i = 0; i < input1->n_kernels; i++){
         if(input1->scores[i] > input2->scores[i])
             output->scores[i] = input1->scores[i];
         else
@@ -2675,7 +2596,7 @@ void compare_score_cl(cl* input1, cl* input2, cl* output){
  * */
 void dividing_score_cl(cl* c,float value){
     int i;
-    for(i = 0; i < c->n_kernels*c->kernel_cols*c->kernel_rows*c->channels;i++){
+    for(i = 0; i < c->n_kernels;i++){
         c->scores[i]/=value;
     }
 }
@@ -2692,7 +2613,7 @@ void reset_score_cl(cl* f){
     if(f->convolutional_flag == NO_CONVOLUTION)
         return;
     int i;
-    for(i = 0; i < f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows; i++){
+    for(i = 0; i < f->n_kernels; i++){
         f->scores[i] = 0;
     }
     
@@ -2714,12 +2635,12 @@ void reinitialize_scores_cl(cl* f, float percentage, float goodness){
         return;
     int i,j;
     for(i = 0; i < f->n_kernels; i++){
-        for(j = 0; j < f->channels*f->kernel_cols*f->kernel_rows; j++){
-            if(i*f->channels*f->kernel_cols*f->kernel_rows + j >= f->n_kernels*f->channels*f->kernel_cols*f->kernel_rows*percentage)
-                return;
-            if(f->scores[f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]] < goodness)
-                f->kernels[(int)f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]/(f->channels*f->kernel_cols*f->kernel_rows)][f->indices[i*f->channels*f->kernel_cols*f->kernel_rows + j]%(f->channels*f->kernel_cols*f->kernel_rows)] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
-            
-        }
+        if(i >= f->n_kernels*percentage)
+            return;
+        if(f->scores[f->indices[i]] < goodness){
+            for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
+                f->kernels[f->indices[i]][j] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
+            }
+        } 
     }
 }

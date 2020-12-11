@@ -37,7 +37,7 @@ float r2(){
 }
 
 float generate_from_random_distribution(float lo, float hi){
-	return lo + (float)(rand()) /((float)(RAND_MAX/(hi-lo)));
+    return lo + (float)(rand()) /((float)(RAND_MAX/(hi-lo)));
 }
 float drand (){
   return (rand () + 1.0) / (RAND_MAX + 1.0);
@@ -667,13 +667,9 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                                        nesterov_momentum(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
-                                    }
-                                }
-                            }
+                            
+                            nesterov_momentum(&m->rls[i]->cls[j]->scores[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_scores[k],&m->rls[i]->cls[j]->d1_scores[k]);
+                                    
                         }
                     }
                 }
@@ -719,13 +715,9 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                                        adam_algorithm(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-                                    }
-                                }
-                            }
+                            
+                            adam_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                             
                         }
                     }
                 }
@@ -768,13 +760,9 @@ void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                                        adamod(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->rls[i]->cls[j]->d3_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
-                                    }
-                                }
-                            }
+                            
+                            adamod(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->rls[i]->cls[j]->d3_scores[k]);
+                                    
                         }
                     }
                 }
@@ -817,13 +805,8 @@ void update_residual_layer_adam_diff_grad(model* m, float lr, int mini_batch_siz
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                                        adam_diff_grad_algorithm(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->rls[i]->cls[j]->ex_d_scores_diff_grad[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w]);
-                                    }
-                                }
-                            }
+                            adam_diff_grad_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->rls[i]->cls[j]->ex_d_scores_diff_grad[k]);
+                                    
                         }
                     }
                 }
@@ -866,13 +849,8 @@ void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float 
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                            for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
-                                for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
-                                    for(w = 0; w < m->rls[i]->cls[j]->kernel_cols; w++){
-                                        radam_algorithm(&m->rls[i]->cls[j]->scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d1_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],&m->rls[i]->cls[j]->d2_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],m->rls[i]->cls[j]->d_scores[k*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols*m->rls[i]->cls[j]->channels+u*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols + z*m->rls[i]->cls[j]->kernel_cols + w],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-                                    }
-                                }
-                            }
+                            radam_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                                    
                         }
                     }
                 }
@@ -905,7 +883,7 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
                 }
                 
                 sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
-                sum1D(m->rls[i]->cls[j]->d_scores,m2->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->n_kernels*m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_cols*m3->rls[i]->cls[j]->kernel_rows);
+                sum1D(m->rls[i]->cls[j]->d_scores,m2->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->n_kernels);
 
                 if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                     for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
@@ -950,14 +928,9 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
                 }
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        for(u = 0; u < m->cls[j]->channels; u++){
-                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                                    nesterov_momentum(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr,momentum,mini_batch_size, m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
-                                }
-                                    
-                            }
-                        }
+                        
+                        nesterov_momentum(&m->cls[j]->scores[k],lr,momentum,mini_batch_size, m->cls[j]->d_scores[k],&m->cls[j]->d1_scores[k]);
+                                
                     }
                 }
             }
@@ -1000,14 +973,9 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
                 }
                 else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        for(u = 0; u < m->cls[j]->channels; u++){
-                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                                    adam_algorithm(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-                                }
-                                    
-                            }
-                        }
+                        
+                        adam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                                
                     }
                 }
             }
@@ -1049,14 +1017,9 @@ void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, 
                 }
                 else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        for(u = 0; u < m->cls[j]->channels; u++){
-                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                                    adamod(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->cls[j]->d3_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
-                                }
-                                    
-                            }
-                        }
+                        
+                        adamod(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->cls[j]->d3_scores[k]);
+                               
                     }
                 }
             }
@@ -1098,14 +1061,9 @@ void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batc
                 }
                 else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        for(u = 0; u < m->cls[j]->channels; u++){
-                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                                    adam_diff_grad_algorithm(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->ex_d_scores_diff_grad[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w]);
-                                }
-                                    
-                            }
-                        }
+                       
+                        adam_diff_grad_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->ex_d_scores_diff_grad[k]);
+                                
                     }
                 }
             }
@@ -1147,14 +1105,9 @@ void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, f
                 
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        for(u = 0; u < m->cls[j]->channels; u++){
-                            for(z = 0; z < m->cls[j]->kernel_rows; z++){
-                                for(w = 0; w < m->cls[j]->kernel_cols; w++){
-                                    radam_algorithm(&m->cls[j]->scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], &m->cls[j]->d1_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],&m->cls[j]->d2_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w], m->cls[j]->d_scores[k*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols*m->cls[j]->channels+u*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols + z*m->cls[j]->kernel_cols + w],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-                                }
-                                    
-                            }
-                        }
+                        
+                        radam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                               
                     }
                 }
             }
@@ -1186,7 +1139,7 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
             }
             
             sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
-            sum1D(m->cls[j]->d_scores,m2->cls[j]->d_scores,m3->cls[j]->d_scores,m3->cls[j]->n_kernels*m3->cls[j]->channels*m3->cls[j]->kernel_cols*m3->cls[j]->kernel_rows);
+            sum1D(m->cls[j]->d_scores,m2->cls[j]->d_scores,m3->cls[j]->d_scores,m3->cls[j]->n_kernels);
 
             if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                 for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
@@ -1226,6 +1179,13 @@ void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, i
                 update_batch_normalized_layer_nesterov(&m->fcls[i]->layer_norm,1,lr,momentum,mini_batch_size);
         }
     }
+}
+
+void update_scaled_l2_norm_nesterov(scaled_l2_norm* l, float lr, float momentum, int mini_batch_size){
+    int i,j,k;
+    if (l->training_mode == GRADIENT_DESCENT)
+        nesterov_momentum(&l->learned_g, lr, momentum, mini_batch_size, l->d_learned_g,&l->d1_learned_g);
+    
 }
 
 
@@ -1282,6 +1242,12 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
     }
 }
 
+void update_scaled_l2_norm_adam(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam){
+    int i,j,k;
+    if (l->training_mode == GRADIENT_DESCENT)
+        adam_algorithm(&l->learned_g,&l->d1_learned_g, &l->d2_learned_g, l->d_learned_g, lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+}
+
 /* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
  * 
  * Input:
@@ -1312,6 +1278,12 @@ void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size
                 update_batch_normalized_layer_adamod(&m->fcls[i]->layer_norm,1,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
         }
     }
+}
+
+void update_scaled_l2_norm_adamod(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod){
+    int i,j,k;
+    if (l->training_mode == GRADIENT_DESCENT)
+        adamod(&l->learned_g,&l->d1_learned_g, &l->d2_learned_g, l->d_learned_g,lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&l->d3_learned_g);
 }
 /* Given a model, this function update the params of the fully-connected layers of the model with the adam diff grad optimization algorithm
  * 
@@ -1344,6 +1316,14 @@ void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_ba
         }
     }
 }
+
+void update_scaled_l2_norm_adam_diff_grad(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam){
+    int i,j,k;
+    if (l->training_mode == GRADIENT_DESCENT)
+        adam_diff_grad_algorithm(&l->learned_g,&l->d1_learned_g, &l->d2_learned_g, l->d_learned_g,lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&l->ex_d_learned_g_diff_grad);
+
+}
+
 /* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm
  * 
  * Input:

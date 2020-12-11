@@ -46,6 +46,7 @@ scaled_l2_norm* scaled_l2_normalization_layer(int vector_dimension){
     l2->d2_learned_g = 0;
     l2->d3_learned_g = 0;
     l2->ex_d_learned_g_diff_grad = 0;
+    l2->training_mode = GRADIENT_DESCENT;
     
     return l2;
 }
@@ -94,6 +95,12 @@ void save_scaled_l2_norm(scaled_l2_norm* f, int n){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
+    i = fwrite(&f->training_mode,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
+        exit(1);
+    }
     i = fwrite(&f->learned_g,sizeof(float),1,fw);
     
     if(i != 1){
@@ -125,10 +132,16 @@ scaled_l2_norm* load_scaled_l2_norm(FILE* fr){
         return NULL;
     int i;
     
-    int input_dimension = 0;
+    int input_dimension = 0, training_mode = GRADIENT_DESCENT;
     float learned_g = 0;
     
     i = fread(&input_dimension,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
+    i = fread(&training_mode,sizeof(int),1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
@@ -144,6 +157,7 @@ scaled_l2_norm* load_scaled_l2_norm(FILE* fr){
     
     scaled_l2_norm* l2 =  scaled_l2_normalization_layer(input_dimension);
     l2->learned_g = learned_g;
+    l2->training_mode = training_mode;
   
     return l2;
 }
@@ -165,6 +179,7 @@ scaled_l2_norm* copy_scaled_l2_norm(scaled_l2_norm* f){
     copy->d2_learned_g = f->d2_learned_g;
     copy->d3_learned_g = f->d3_learned_g;
     copy->ex_d_learned_g_diff_grad = f->ex_d_learned_g_diff_grad;
+    copy->training_mode = f->training_mode;
     return copy;
 }
 
@@ -214,6 +229,7 @@ void paste_scaled_l2_norm(scaled_l2_norm* f,scaled_l2_norm* copy){
     copy->d2_learned_g = f->d2_learned_g;
     copy->d3_learned_g = f->d3_learned_g;
     copy->ex_d_learned_g_diff_grad = f->ex_d_learned_g_diff_grad;
+    copy->training_mode = f->training_mode;
 }
 
 
@@ -227,5 +243,6 @@ void slow_paste_scaled_l2_norm(scaled_l2_norm* f,scaled_l2_norm* copy, float tau
     copy->d2_learned_g = tau*f->d2_learned_g + (1-tau)*copy->d2_learned_g;
     copy->d3_learned_g = tau*f->d3_learned_g + (1-tau)*copy->d3_learned_g;
     copy->ex_d_learned_g_diff_grad = tau*f->ex_d_learned_g_diff_grad + (1-tau)*copy->ex_d_learned_g_diff_grad;
+    copy->training_mode = f ->training_mode;
 }
 

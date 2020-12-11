@@ -655,6 +655,21 @@ int get_array_size_params_rl(rl* f){
  * 
  *                 @ rl* f:= the residual layer
  * */
+int get_array_size_scores_rl(rl* f){
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_scores_cl(f->cls[i]);
+    }
+    
+    return sum;
+}
+/* this function gives the number of float params for biases and weights in a rl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
 int get_array_size_weights_rl(rl* f){
     int sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
@@ -803,45 +818,6 @@ void set_residual_biases_to_zero(rl* r){
     }
 }
 
-/* This function adjusts the total weights of all the convolutional layer sinside the residual layer,
- * reducing the number of useless weights still used for the computation but not attached to any active neuron
- * 
- * Inputs:
- * 
- *             @ rl* cl:= the residual layer
- *             @ int* used_input:= the active neuron of the input of the residual layer
- *             @ int* used_output:= the active neuron used by next layers
- * */
-int rl_adjusting_weights_after_edge_popup(rl* c, int* used_input, int* used_output){
-    int** used_inputs = (int**)malloc(sizeof(int*)*c->n_cl);
-    int i,flag = 0;
-    for(i = 0; i < c->n_cl; i++){
-        used_inputs[i] = get_used_channels(c->cls[i],NULL);
-    }
-    for(i = 0; i < c->n_cl; i++){
-        if(!i){
-            if(i == c->n_cl-1)
-                flag+=cl_adjusting_weights_after_edge_popup(c->cls[i],used_input,used_output);
-            else
-                flag+=cl_adjusting_weights_after_edge_popup(c->cls[i],used_input,used_inputs[i+1]);
-        }
-        
-        else{
-            if(i == c->n_cl-1)
-                flag+=cl_adjusting_weights_after_edge_popup(c->cls[i],c->cls[i-1]->used_kernels,used_output);
-            else
-                flag+=cl_adjusting_weights_after_edge_popup(c->cls[i],c->cls[i-1]->used_kernels,used_inputs[i+1]);
-        }
-    }
-    
-    for(i = 0; i < c->n_cl; i++){
-        free(used_inputs[i]);
-    }
-    free(used_inputs);
-    if(flag)
-        return 1;
-    return 0;
-}
 
 /* this function returns an array of the used kernels (output of rl layer) from the input and output layer
  * (we must consider also the end of the layer cause there is an addition)
@@ -863,24 +839,6 @@ int* get_used_kernels_rl(rl* c, int* used_input){
     return ch;
 }
 
-/* this function returns an array of the used channels (input of rl layer) from the output and input layer
- * (we must consider also the end of the layer cause there is an addition)
- * 
- * Inputs:
- *             
- *             @ rl* c:= the residual layer
- *             @ int* used_output:= the used output at the end of the rl layer must be != NULL
- * */
-int* get_used_channels_rl(rl* c, int* used_output){
-    int* ch = get_used_channels(c->cls[0],NULL);
-    int i;
-    for(i = 0; i < c->channels; i++){
-        if(used_output[i])
-            ch[i] = 1;
-    }
-    
-    return ch;
-}
 
 
 /* this function sum up all the scores of input1 and input2 of the convolutional layer isnide them

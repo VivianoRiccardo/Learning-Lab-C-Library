@@ -42,8 +42,6 @@ void memcopy_derivative_params_to_vector_cl(cl* f, float* vector);
 void memcopy_vector_to_derivative_params_cl(cl* f, float* vector);
 void set_convolutional_biases_to_zero(cl* c);
 void set_convolutional_unused_weights_to_zero(cl* c);
-int cl_adjusting_weights_after_edge_popup(cl* c, int* used_input, int* used_output);
-int* get_used_channels(cl* c, int* ch);
 void paste_w_cl(cl* f, cl* copy);
 void heavy_save_cl(cl* f, int n);
 cl* heavy_load_cl(FILE* fr);
@@ -65,5 +63,6 @@ void free_convolutional_complementary_edge_popup(cl* c);
 void memcopy_weights_to_vector_cl(cl* f, float* vector);
 void memcopy_vector_to_weights_cl(cl* f, float* vector);
 void compare_score_cl(cl* input1, cl* input2, cl* output);
+int get_array_size_scores_cl(cl* f);
 
 #endif

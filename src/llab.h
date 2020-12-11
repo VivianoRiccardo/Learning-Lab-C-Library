@@ -73,10 +73,12 @@ SOFTWARE.
 #define DROPOUT_TEST 2
 
 #define NO_NORMALIZATION 0
-#define LOCAL_RESPONSE_NORMALIZATION 1
-#define BATCH_NORMALIZATION 2
-#define GROUP_NORMALIZATION 3
-#define LAYER_NORMALIZATION 4
+#define LOCAL_RESPONSE_NORMALIZATION 1//implemented inside convolutional layer
+#define BATCH_NORMALIZATION 2// not implemented inside any layer 
+#define GROUP_NORMALIZATION 3// implemented only for lstm, convolutional, can be seen as layer_normalization if n_groups = 1
+#define LAYER_NORMALIZATION 4// implemented only for fully connected
+#define SCALED_L2_NORMALIZATION 5 // not implemented inside fully connected and neither convolutional
+#define COSINE_NORMALIZATION 6
 
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
@@ -446,7 +448,7 @@ typedef struct oustrategy {
 } oustrategy;
 
 typedef struct scaled_l2_norm{
-    int input_dimension;
+    int input_dimension, training_mode;
     float* output;
     float norm;
     float learned_g;

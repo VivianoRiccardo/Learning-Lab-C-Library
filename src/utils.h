@@ -107,5 +107,9 @@ char** get_files(int index1, int n_files);
 float* float_abs_array_(float* a, int n);
 int check_nans_matrix(float** m, int rows, int cols);
 float generate_from_random_distribution(float lo, float hi);
+void update_scaled_l2_norm_nesterov(scaled_l2_norm* l, float lr, float momentum, int mini_batch_size);
+void update_scaled_l2_norm_adam(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam);
+void update_scaled_l2_norm_adamod(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
+void update_scaled_l2_norm_adam_diff_grad(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam);
 
 #endif
