@@ -25,9 +25,9 @@ SOFTWARE.
 #ifndef __ATTENTION_H__
 #define __ATTENTION_H__
 
-void self_attention_ff(float* query, float* key, float* value, float* score_matrix,float* score_matrix_softmax,float* output, int dimension);
-void self_attention_bp(float* query, float* key, float* value, float* query_error, float* key_error, float* value_error, float* score_matrix,float* score_matrix_softmax,float* score_matrix_error,float* score_matrix_softmax_error,float* output_error, int dimension);
-void multi_head_attention_ff(float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output, int dimension, int n_heads, int output_dimension);
-void multi_head_attention_bp(float* queries_error, float* keys_error, float* values_error, float* score_matrices_error, float* score_matrices_softmax_error, float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output_error, int dimension, int n_heads, int output_dimension);
+void self_attention_ff(float* query, float* key, float* value, float* score_matrix,float* score_matrix_softmax,float* output, int dimension, int attention_flag);
+void self_attention_bp(float* query, float* key, float* value, float* query_error, float* key_error, float* value_error, float* score_matrix,float* score_matrix_softmax,float* score_matrix_error,float* score_matrix_softmax_error,float* output_error, int dimension, int attention_flag);
+void multi_head_attention_ff(float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output, int dimension, int n_heads, int output_dimension, int attention_flag);
+void multi_head_attention_bp(float* queries_error, float* keys_error, float* values_error, float* score_matrices_error, float* score_matrices_softmax_error, float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output_error, int dimension, int n_heads, int output_dimension, int attention_flag);
 
 #endif

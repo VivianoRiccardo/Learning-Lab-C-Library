@@ -41,14 +41,17 @@ SOFTWARE.
  *             @ float* output:= where we store the final output, dimension: dimension
  *             @ int dimension:= the dimension of q,k,v
  * */
-void self_attention_ff(float* query, float* key, float* value, float* score_matrix,float* score_matrix_softmax,float* output, int dimension){
+void self_attention_ff(float* query, float* key, float* value, float* score_matrix,float* score_matrix_softmax,float* output, int dimension, int attention_flag){
     int i,j;
     float sqrt_dimension = sqrtf(dimension);
     for(i = 0; i < dimension; i++){
         for(j = 0; j < dimension; j++){
             score_matrix[i*dimension+j] = query[i]*key[j]/sqrt_dimension;
         }
-        softmax(&score_matrix[i*dimension],&score_matrix_softmax[i*dimension],dimension);
+        if(attention_flag == STANDARD_ATTENTION)
+            softmax(&score_matrix[i*dimension],&score_matrix_softmax[i*dimension],dimension);
+        else if(attention_flag == MASKED_ATTENTION)
+            softmax(&score_matrix[i*dimension],&score_matrix_softmax[i*dimension],i+1);
     }
     
     for(i = 0; i < dimension; i++){
@@ -81,7 +84,7 @@ void self_attention_ff(float* query, float* key, float* value, float* score_matr
  *             @ int dimension:= the dimension of q,k,v
  * */
  
-void self_attention_bp(float* query, float* key, float* value, float* query_error, float* key_error, float* value_error, float* score_matrix,float* score_matrix_softmax,float* score_matrix_error,float* score_matrix_softmax_error,float* output_error, int dimension){
+void self_attention_bp(float* query, float* key, float* value, float* query_error, float* key_error, float* value_error, float* score_matrix,float* score_matrix_softmax,float* score_matrix_error,float* score_matrix_softmax_error,float* output_error, int dimension, int attention_flag){
     int i,j;
     float sqrt_dimension = sqrtf(dimension);
     for(i = 0; i < dimension; i++){
@@ -92,7 +95,10 @@ void self_attention_bp(float* query, float* key, float* value, float* query_erro
     }
     
     for(i = 0; i < dimension; i++){
+        if(attention_flag == STANDARD_ATTENTION)
         derivative_softmax(&score_matrix_error[i*dimension],&score_matrix_softmax[i*dimension],&score_matrix_softmax_error[i*dimension],dimension);
+        else if(attention_flag == MASKED_ATTENTION)
+        derivative_softmax(&score_matrix_error[i*dimension],&score_matrix_softmax[i*dimension],&score_matrix_softmax_error[i*dimension],i+1);
     }
     for(i = 0; i < dimension; i++){
         for(j = 0; j < dimension; j++){
@@ -119,7 +125,7 @@ void self_attention_bp(float* query, float* key, float* value, float* query_erro
  *             @ int output_dimension:= n_head*dimension
  * 
  * */
-void multi_head_attention_ff(float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output, int dimension, int n_heads, int output_dimension){
+void multi_head_attention_ff(float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output, int dimension, int n_heads, int output_dimension, int attention_flag){
     if (dimension*n_heads != output_dimension){
         fprintf(stderr,"Error: n_heads*dimension (dimension of each value, queries, keys) must be equal to output_dimension\n");
         exit(1);
@@ -127,13 +133,13 @@ void multi_head_attention_ff(float* queries, float* keys, float* values,float* s
     
     int i;
     for(i = 0; i < n_heads; i++){
-        self_attention_ff(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&output[i*dimension],dimension);
+        self_attention_ff(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&output[i*dimension],dimension, attention_flag);
     }
     
 }
 
 /* self-explenaitory, read above*/
-void multi_head_attention_bp(float* queries_error, float* keys_error, float* values_error, float* score_matrices_error, float* score_matrices_softmax_error, float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output_error, int dimension, int n_heads, int output_dimension){
+void multi_head_attention_bp(float* queries_error, float* keys_error, float* values_error, float* score_matrices_error, float* score_matrices_softmax_error, float* queries, float* keys, float* values,float* score_matrices, float* score_matrices_softmax, float* output_error, int dimension, int n_heads, int output_dimension, int attention_flag){
     if (dimension*n_heads != output_dimension){
         fprintf(stderr,"Error: n_heads*dimension (dimension of each value, queries, keys) must be equal to output_dimension\n");
         exit(1);
@@ -141,7 +147,7 @@ void multi_head_attention_bp(float* queries_error, float* keys_error, float* val
     
     int i;
     for(i = 0; i < n_heads; i++){
-        self_attention_bp(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&queries_error[i*dimension],&keys_error[i*dimension],&values_error[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&score_matrices_error[i*dimension],&score_matrices_softmax_error[i*dimension],&output_error[i*dimension],dimension);
+        self_attention_bp(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&queries_error[i*dimension],&keys_error[i*dimension],&values_error[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&score_matrices_error[i*dimension],&score_matrices_softmax_error[i*dimension],&output_error[i*dimension],dimension, attention_flag);
     }
     
 }

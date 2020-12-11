@@ -126,6 +126,9 @@ SOFTWARE.
 
 #define ONLY_DROPOUT 5
 
+#define STANDARD_ATTENTION 1
+#define MASKED_ATTENTION 2
+
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
 #define INITIAL_POPULATION 100
@@ -458,12 +461,6 @@ typedef struct scaled_l2_norm{
     float d3_learned_g;
     float ex_d_learned_g_diff_grad;
 }scaled_l2_norm;
-
-typedef struct attention{
-    int d_k,d_v;//d_k must be = to d_v (is not specified in the paper, but to do the dot product
-    fcl** fcls;// must be 3, query, keys, values
-    
-}attention;
 
 // Generic dictionary for int vectors
 typedef struct mystruct{
