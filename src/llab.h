@@ -481,6 +481,7 @@ typedef struct training{
     float** floats;
 }training;
 
+#include "attention.h"
 #include "batch_norm_layers.h"
 #include "client.h"
 #include "clipping_gradient.h"

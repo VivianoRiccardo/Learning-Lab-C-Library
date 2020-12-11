@@ -51,6 +51,20 @@ void derivative_softmax_array(int* input, float* output,float* softmax_arr,float
         
     }
 }
+void derivative_softmax(float* output,float* softmax_arr,float* error, int size){
+    int i,j;
+    
+    for(j = 0; j < size; j++){
+        for(i = 0; i < size; i++){
+            if (i == j)
+                output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
+            else
+                output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
+            
+        }
+        
+    }
+}
 
 
 float sigmoid(float x){

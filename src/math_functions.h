@@ -78,5 +78,6 @@ float elu(float z, float a);
 void elu_array(float* input, float* output, int size, float a);
 float derivative_elu(float z, float a);
 void derivative_elu_array(float* input, float* output, int size, float a);
+void derivative_softmax(float* output,float* softmax_arr,float* error, int size);
 
 #endif
