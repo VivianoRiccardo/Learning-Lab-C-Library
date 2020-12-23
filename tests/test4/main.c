@@ -46,8 +46,8 @@ int main(){
     cls2[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,2);
     rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,3,NO_DROPOUT,SIGMOID,0);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,4,NO_DROPOUT,SOFTMAX,0);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,3,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,4,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
     model* m = network(n_layers,1,1,2,rls,cls,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);

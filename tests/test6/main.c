@@ -1,5 +1,4 @@
 #include <llab.h>
-#include <math.h>
 
 int main(){
     // 1 CONVOLUTIONAL LAYER:

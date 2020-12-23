@@ -35,8 +35,8 @@ int main(){
     cl** cls = (cl**)malloc(sizeof(cl*));
     cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,LOCAL_RESPONSE_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,1);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(784,784,0,NO_DROPOUT,RELU,0);
-    fcls[1] = fully_connected(14*14*20,output_dimension,2,NO_DROPOUT,SOFTMAX,0);
+    fcls[0] = fully_connected(784,784,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION);
+    fcls[1] = fully_connected(14*14*20,output_dimension,2,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
     model* m = network(n_layers,0,1,2,NULL,cls,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);

@@ -1,5 +1,4 @@
 #include <llab.h>
-#include <math.h>
 
 int main(){
     // 1 CONVOLUTIONAL LAYER:
@@ -39,7 +38,7 @@ int main(){
 
     
     // Model Architecture
-    /*
+    
     cl** cls = (cl**)malloc(sizeof(cl*));
     cl** cls2 = (cl**)malloc(sizeof(cl*)*6);
     cl** cls3 = (cl**)malloc(sizeof(cl*)*6);
@@ -63,9 +62,9 @@ int main(){
     fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,13,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
     fcls[1] = fully_connected(middle_neurons,output_dimension,14,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
     model* m = network(n_layers,2,1,2,rls,cls,fcls);
-    save_model(m,0);
-    exit(0);
-    
+    //save_model(m,0);
+    //exit(0);
+    /*
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*5);
     fcls[0] = fully_connected(input_dimension,200,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION);
     for(i = 1; i <4; i++){
@@ -73,11 +72,12 @@ int main(){
     }
     fcls[i] = fully_connected(200,10,i,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
     model* m = network(5,0,0,5,NULL,NULL,fcls);
-    */
-    model* m = load_model("0.bin");
     
+    model* m = load_model("0.bin");
+    */
     set_model_training_edge_popup(m,0.5);
-    m->fcls[m->n_fcl-1]->k_percentage = 1;
+    m->fcls[0]->k_percentage = 1;
+    m->fcls[1]->k_percentage = 1;
     set_model_error(m,FOCAL_LOSS,0,0,2,NULL,10);
     reset_model(m);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
@@ -104,7 +104,8 @@ int main(){
     }
     /*
     printf("Training phase!\n");
-    //save_model(m,0);
+    
+    save_model(m,0);
     // Training
     
     for(k = 0; k < epochs; k++){
@@ -125,14 +126,15 @@ int main(){
                 set_model_training_gd(batch_m[j]);
                 reset_model(batch_m[j]);
                 set_model_training_edge_popup(batch_m[j],0.5);
-                batch_m[j]->fcls[m->n_fcl-1]->k_percentage = 1;
+                batch_m[j]->fcls[0]->k_percentage = 1;
+                batch_m[j]->fcls[1]->k_percentage = 1;
             } 
                       
         }
         // Saving the model
         save_model(m,k+1);
     }
-    
+    */
     // Deallocating Training resources
     free(ksource[0]);
     free(ksource);
@@ -147,13 +149,13 @@ int main(){
     }
     free(inputs);
     free(outputs);
-    */
+    
     // Initializing Testing resources
     model* test_m;
     char** ksource2 = (char**)malloc(sizeof(char*));
-    char* filename2 = "../data/test.bin";
+    char* filename2 = "../data/train.bin";
     int size2 = 0;
-    int testing_instances = 10000;
+    int testing_instances = 50000;
     char temp2[256];
     read_file_in_char_vector(ksource2,filename2,&size);
     float** inputs_test = (float**)malloc(sizeof(float*)*testing_instances);
@@ -178,7 +180,7 @@ int main(){
     double error = 0;
     // Testing
     for(k = 0; k < epochs+1; k++){
-		int cose = 0;
+        int cose = 0;
         printf("Model N. %d/%d\n",k+1,epochs);
         // Loading the model
         char temp3[5];
