@@ -39,6 +39,7 @@ scaled_l2_norm* scaled_l2_normalization_layer(int vector_dimension){
     scaled_l2_norm* l2 = (scaled_l2_norm*)malloc(sizeof(scaled_l2_norm));
     l2->input_dimension = vector_dimension;
     l2->output = (float*)calloc(l2->input_dimension,sizeof(float));
+    l2->output_error = (float*)calloc(l2->input_dimension,sizeof(float));
     l2->norm = 1;
     l2->learned_g = sqrtf((float)(vector_dimension));
     l2->d_learned_g = 0;
@@ -60,6 +61,7 @@ void free_scaled_l2_normalization_layer(scaled_l2_norm* l2){
     if(l2 == NULL)
         return;
     free(l2->output);
+    free(l2->output_error);
     free(l2);
 }
 
@@ -198,6 +200,7 @@ scaled_l2_norm* reset_scaled_l2_norm(scaled_l2_norm* f){
     f->d_learned_g = 0;
     for(i = 0; i < f->input_dimension; i++){
         f->output[i] = 0;
+        f->output_error[i] = 0;
     }
 }
 
@@ -210,7 +213,7 @@ scaled_l2_norm* reset_scaled_l2_norm(scaled_l2_norm* f){
  * 
  * */
 unsigned long long int size_of_scaled_l2_norm(scaled_l2_norm* f){
-    return f->input_dimension;
+    return f->input_dimension*2;
 }
 
 /* this function copies the g parameter

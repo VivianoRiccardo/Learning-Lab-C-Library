@@ -106,6 +106,9 @@ SOFTWARE.
 #define LSTM_RESIDUAL  1
 #define LSTM_NO_RESIDUAL 0
 
+#define TRANSFORMER_RESIDUAL 1
+#define TRANSFORMER_NO_RESIDUAL 0 
+
 #define NO_SET -1
 #define NO_LOSS 0
 #define CROSS_ENTROPY_LOSS 1
@@ -453,6 +456,7 @@ typedef struct oustrategy {
 typedef struct scaled_l2_norm{
     int input_dimension, training_mode;
     float* output;
+    float* output_error;
     float norm;
     float learned_g;
     float d_learned_g;
@@ -461,6 +465,31 @@ typedef struct scaled_l2_norm{
     float d3_learned_g;
     float ex_d_learned_g_diff_grad;
 }scaled_l2_norm;
+
+typedef struct transformer_encoder{
+    int input_dimension,n_head,attention_flag,residual_flag1,normalization_flag1,dimension; 
+    int residual_flag2,normalization_flag2, feed_forward_flag, training_mode, n_l2; 
+    scaled_l2_norm** l2;//2 or 1 or 0
+    fcl** fcls;// 3*n_head + 2
+    float* incoming_input;//input_dimension
+    float* q;//n_head X dimension
+    float* k;//n_head X dimension
+    float* v;//n_head X dimension
+    float* q_error;//n_head X dimension
+    float* k_error;//n_head X dimension
+    float* v_error;//n_head X dimension
+    float* score_matrix;//n_head X dimension X dimension(input_dimension/n_head)
+    float* score_matrix_error;//n_head X dimension X dimension(input_dimension/n_head)
+    float* score_matrix_softmax;//n_head X dimension X dimension(input_dimension/n_head)
+    float* score_matrix_softmax_error;//n_head X dimension X dimension(input_dimension/n_head)
+    float* attention_output;//input_dimension (n_head*dimension)
+    float* attention_output_error;//input_dimension (n_head*dimension)
+    float* residual1_output;//input_dimension
+    float* residual2_output;//input_dimension
+    float* residual1_output_error;//input_dimension
+    float* residual2_output_error;//input_dimension
+     
+}transformer_encoder;
 
 // Generic dictionary for int vectors
 typedef struct mystruct{
@@ -504,8 +533,10 @@ typedef struct training{
 #include "residual_layers.h"
 #include "rmodel.h"
 #include "positional_encoding.h"
+#include "scaled_l2_norm_layers.h"
 #include "server.h"
 #include "training.h"
+#include "transformer.h"
 #include "utils.h"
 #include "vae_model.h"
 
