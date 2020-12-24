@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __TRANSFORMER_H__
 #define __TRANSFORMER_H__
 
-transformer_encoder* transformer_encoder_layer(fcl** fcls, scaled_l2_norm** l2, int input_dimension, int n_head,int residual_flag1,int normalization_flag1,int residual_flag2,int normalization_flag2);
+transformer_encoder* transformer_encoder_layer(model* m,fcl** fcls, scaled_l2_norm** l2, int input_dimension, int n_head,int residual_flag1,int normalization_flag1,int residual_flag2,int normalization_flag2, int attention_flag);
 void free_transformer_encoder_layer(transformer_encoder* t);
 void free_transformer_encoder_layer_for_edge_popup(transformer_encoder* t);
 void free_transformer_encoder_layer_complementary_edge_popup(transformer_encoder* t);
@@ -37,5 +37,8 @@ void reset_transformer_encoder_for_edge_popup(transformer_encoder* t);
 unsigned long long int size_of_transformer_encoder(transformer_encoder* t);
 void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy);
 void paste_transformer_encoder_for_edge_popup(transformer_encoder* t, transformer_encoder* copy);
+void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dimension);
+float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
+
 
 #endif

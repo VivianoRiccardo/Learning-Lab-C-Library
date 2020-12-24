@@ -94,10 +94,10 @@ float* feed_forward(genome* g1, float* inputs, int global_inn_numb_nodes, int gl
             
             for(k1 = 0; k1 < lists[i][j].size-1; k1++){
                 lists[i][j].list_connections[k1]->flag = -1;
-                }
             }
-            
         }
+            
+    }
     
     
     /*ci sono delle connessioni di alcuni stored node il cui flag va messo a -2, sono quelle

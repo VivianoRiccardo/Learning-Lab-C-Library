@@ -129,7 +129,7 @@ void neat_generation_run(neat* nes, genome** gg){
     if(nes->k == nes->generations)
     return;
     
-    // if the population is more then max_population param then we eliminate the weakest genomes
+    // if the population is higher then max_population param then we eliminate the weakest genomes
     if(nes->actual_genomes > nes->new_max_pop){
         nes->temp_gg1 = sort_genomes_by_fitness(gg,nes->actual_genomes);
         for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){

@@ -882,6 +882,82 @@ model* load_model(char* file){
     return m;
     
 }
+/* This function loads a network model from a .bin file with name file
+ * 
+ * Input:
+ * 
+ *             @ FILE* fr:= the file opened in read mode
+ * 
+ * */
+model* load_model_with_file_already_opened(FILE* fr){
+    if(fr == NULL)
+        return NULL;
+    int i;
+    int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
+    
+    i = fread(&layers,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_rl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_cl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+    i = fread(&n_fcl,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    
+
+    rl** rls;
+    cl** cls;
+    fcl** fcls;
+    
+    if(!n_rl)
+        rls = NULL;
+    else
+        rls = (rl**)malloc(sizeof(rl*)*n_rl);
+    if(!n_cl)
+        cls = NULL;
+    else
+        cls = (cl**)malloc(sizeof(cl*)*n_cl);
+    if(!n_fcl)
+        fcls = NULL;
+    else
+        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
+    
+    for(i = 0; i < n_rl; i++){
+        rls[i] = load_rl(fr);
+    }
+    
+    for(i = 0; i < n_cl; i++){
+        cls[i] = load_cl(fr);
+    }
+    
+    for(i = 0; i < n_fcl; i++){
+        fcls[i] = load_fcl(fr);
+    }
+    
+    
+    model* m = network(layers,n_rl,n_cl,n_fcl,rls,cls,fcls);
+    
+    return m;
+    
+}
 
 /* This function loads a network model from a .bin file with name file
  * 

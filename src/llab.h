@@ -470,7 +470,8 @@ typedef struct transformer_encoder{
     int input_dimension,n_head,attention_flag,residual_flag1,normalization_flag1,dimension; 
     int residual_flag2,normalization_flag2, feed_forward_flag, training_mode, n_l2; 
     scaled_l2_norm** l2;//2 or 1 or 0
-    fcl** fcls;// 3*n_head + 2
+    fcl** fcls;// 3*n_head
+    model* m;//the model after the attention + possible residual and normalization
     float* incoming_input;//input_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension

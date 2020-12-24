@@ -798,12 +798,12 @@ void feed_forward_scaled_l2_norm(int input_dimension, float learned_g, float* no
  *             @ float* output_error:= the partial derivative of the loss repsect the output
  *             @ float* input_error:= where we store the propagation of the error to the previous layer
  * */
-void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float d_learned_g, float norm,float* input, float* output_error, float* input_error){
+void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float* d_learned_g, float norm,float* input, float* output_error, float* input_error){
     int i,j;
     float quadratic_norm = norm*norm;
     float cubic_norm = norm*norm*norm;
     for(i = 0; i < input_dimension; i++){
-        d_learned_g += output_error[i]*input[i]/norm;
+        (*d_learned_g) += output_error[i]*input[i]/norm;
         for(j = 0; j < input_dimension; j++){
             if (i == j)
                 input_error[i] += learned_g*output_error[i]*(quadratic_norm - input[i]*input[i])/cubic_norm;
