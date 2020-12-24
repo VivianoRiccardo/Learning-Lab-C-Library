@@ -90,6 +90,7 @@ sh compile_tests.sh
 - Sin - Cos positional encoding (8/12/2020)
 - Scaled L2 normalization layer (8/12/2020)
 - Self-Attention and Multi-Head-Attention (11/12/2020)
+- Transformer encoder (24/12/2020)
 # Tests
 
 Each test has been trained successfully.
