@@ -3,7 +3,7 @@
 </p>
 
 # Learning-Lab-C-Library:
-The library uses posix call system:
+The library uses Posix calls system:
 
 Creating the library for Linux users:
 
