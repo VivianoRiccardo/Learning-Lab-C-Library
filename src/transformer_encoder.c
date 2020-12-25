@@ -34,7 +34,7 @@ SOFTWARE.
  *             @ fcl** fcls:= the fully connected layers, we should have n_head fully connected layers without any activation function for the queries, the keys, and the values at the
  *                            beginning of the transformer encoder layer, becase each query, value and key must pass through a linear matrix given by the fully connected layers weights
  *                            then the encoder needs 2 other fully connected layer after the self- attention, remember the layer before the last one must have an activation function
- *                            (Relu/Leaky Relu/ Elu / BLEU suggested) and the last one should not have any activation function. Dimensions 3*n_head
+ *                            (Relu/Leaky Relu/ Elu suggested) and the last one should not have any activation function. Dimensions 3*n_head
  *            @ scaled_l2_norm** l2:= this layer is used as normalization layer instead of a layer normalization layer because of this paper: Transformers without Tears:Improving the Normalization of Self-Attention
  *                                     future implementation with fixed normalization too or simply cosine normalization with learnable parameter will be implemented (maybe), dimensions: 0,1 or 2
  *             @ int input_dimension:= the total dimension of the input completly flatten
