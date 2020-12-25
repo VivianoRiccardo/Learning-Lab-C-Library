@@ -3,6 +3,7 @@
 </p>
 
 # Learning-Lab-C-Library:
+The library uses posix call system:
 
 Creating the library for Linux users:
 
@@ -15,7 +16,10 @@ Compiling the tests for Linux users:
 ```
 sh compile_tests.sh
 ```
-
+To create the Library on Windows install first Cygwin with gcc and make
+```
+https://www.cygwin.com/
+```
 # Current Roadmap:
 
 - Fully-connected-layers feed forward (20/11/2018)
