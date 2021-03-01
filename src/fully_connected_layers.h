@@ -66,5 +66,7 @@ void free_fully_connected_complementary_edge_popup(fcl* f);
 void memcopy_weights_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_weights(fcl* f, float* vector);
 void compare_score_fcl(fcl* input1, fcl* input2, fcl* output);
+fcl* reset_edge_popup_d_fcl(fcl* f);
+void set_low_score_fcl(fcl* f);
 
 #endif

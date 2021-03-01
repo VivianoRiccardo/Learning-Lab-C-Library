@@ -64,5 +64,7 @@ void memcopy_weights_to_vector_cl(cl* f, float* vector);
 void memcopy_vector_to_weights_cl(cl* f, float* vector);
 void compare_score_cl(cl* input1, cl* input2, cl* output);
 int get_array_size_scores_cl(cl* f);
+cl* reset_edge_popup_d_cl(cl* f);
+void set_low_score_cl(cl* f);
 
 #endif

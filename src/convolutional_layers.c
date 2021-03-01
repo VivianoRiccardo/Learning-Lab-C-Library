@@ -2644,3 +2644,28 @@ void reinitialize_scores_cl(cl* f, float percentage, float goodness){
         } 
     }
 }
+
+cl* reset_edge_popup_d_cl(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+		f->d_scores[i] = 0;
+		f->d1_scores[i] = 0;
+		f->d2_scores[i] = 0;
+		f->d3_scores[i] = 0;
+		f->ex_d_scores_diff_grad[i] = 0;
+	}
+    return f;
+}
+
+void set_low_score_cl(cl* f){
+    if(f->convolutional_flag == NO_CONVOLUTION)
+        return;
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        f->scores[i] = -99999;
+    }
+    
+}

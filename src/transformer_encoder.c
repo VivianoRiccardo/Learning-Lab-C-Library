@@ -191,6 +191,52 @@ void free_transformer_encoder_layer(transformer_encoder* t){
     
     return;
 }
+/* This function deallocates the space allocated by a transformer encoder wrapped inside a decoder (is not deallocated l2 and fcls
+ * 
+ * Input:
+ *             @ transformer_encoder* t:= the transformer encoder
+ * */
+void free_transformer_wrapped_encoder_layer(transformer_encoder* t){
+    int i;
+    if (t == NULL)
+        return;
+    for(i = 0; i < t->n_head*3; i++){
+        free_fully_connected(t->fcls[i]);
+    }
+    free_model(t->m);
+    int n_l2 = 0;
+    if(t->normalization_flag1 == SCALED_L2_NORMALIZATION)
+        n_l2++;
+    if(t->normalization_flag2 == SCALED_L2_NORMALIZATION)
+        n_l2++;
+    for(i = 0; i < n_l2; i++){
+        free_scaled_l2_normalization_layer(t->l2[i]);
+    }
+    
+    free(t->incoming_input);
+    free(t->q);
+    free(t->q_error);
+    free(t->k);
+    free(t->v);
+    free(t->v_error);
+    free(t->k_error);
+    free(t->score_matrix);
+    free(t->score_matrix_error);
+    free(t->score_matrix_softmax);
+    free(t->score_matrix_softmax_error);
+    free(t->attention_output);
+    free(t->attention_output_error);
+    if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
+        free(t->residual1_output);
+        free(t->residual1_output_error);
+    }
+    if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
+        free(t->residual2_output);
+        free(t->residual2_output_error);
+    }
+    
+    return;
+}
 /* This function deallocates the space allocated by useless arrays for the fully connected layers inside the transformer
  * during the edge popup training and test
  * 
@@ -256,7 +302,55 @@ void free_transformer_encoder_layer_complementary_edge_popup(transformer_encoder
         free(t->residual2_output);
         free(t->residual2_output_error);
     }
+    free(t);
+    return;
+}
+/* This function deallocates the space allocated by a transformer encoder and the arrays used for edge popup for the fully
+ * connected layers insider the encoder. (this + free_transformer_ancoder_layer_for_edge_popup = free_transformer_encoder_layer)
+ * this encoder is considered the encoder inside the decoder, fcls supr pointer and l2 super pointer are not deallocated
+ * 
+ * Input:
+ *             @ transformer_encoder* t:= the transformer encoder
+ * */
+void free_transformer_wrapped_encoder_layer_complementary_edge_popup(transformer_encoder* t){
+    int i;
+    if (t == NULL)
+        return;
+    for(i = 0; i < t->n_head*3 ; i++){
+        free_fully_connected_complementary_edge_popup(t->fcls[i]);
+    }
+    free_model_complementary_edge_popup(t->m);
+    int n_l2 = 0;
+    if(t->normalization_flag1 == SCALED_L2_NORMALIZATION)
+        n_l2++;
+    if(t->normalization_flag2 == SCALED_L2_NORMALIZATION)
+        n_l2++;
+    for(i = 0; i < n_l2; i++){
+        free_scaled_l2_normalization_layer(t->l2[i]);
+    }
     
+    free(t->incoming_input);
+    free(t->q);
+    free(t->q_error);
+    free(t->k);
+    free(t->v);
+    free(t->v_error);
+    free(t->k_error);
+    free(t->score_matrix);
+    free(t->score_matrix_error);
+    free(t->score_matrix_softmax);
+    free(t->score_matrix_softmax_error);
+    free(t->attention_output);
+    free(t->attention_output_error);
+    if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
+        free(t->residual1_output);
+        free(t->residual1_output_error);
+    }
+    if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
+        free(t->residual2_output);
+        free(t->residual2_output_error);
+    }
+    free(t);
     return;
 }
 
@@ -406,7 +500,7 @@ transformer_encoder* load_transformer_encoder(FILE* fr){
         exit(1);
     }
     
-    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*n_head*3+2);
+    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*n_head*3);
     scaled_l2_norm** l2 = NULL;
     int count = 0;
     if(normalization_flag1 == SCALED_L2_NORMALIZATION)
@@ -438,7 +532,7 @@ transformer_encoder* load_transformer_encoder(FILE* fr){
 transformer_encoder* copy_transformer_encoder(transformer_encoder* t){
     if( t == NULL)
         return NULL;
-    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*t->n_head*3+2);
+    fcl** fcls = (fcl**)malloc(sizeof(fcl*)*t->n_head*3);
     scaled_l2_norm** l2 = NULL;
     int i;
     for(i = 0; i < t->n_head*3; i++){
@@ -594,6 +688,25 @@ void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy
     paste_model(t->m,copy->m);
     copy->attention_flag = t->attention_flag;
 }
+/* This function, given 2 structures with the same number of layers will copy
+ * the main features of the first into the second one
+ * 
+ * Inputs:
+ * 
+ *             @transformer_encoder* t:= the transformer encoder that must be copied
+ *             @transformer_encoder* copy:= the transformer encoder structure in which will be copied t
+ * */
+void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau){
+    int i;
+    for(i = 0; i < t->n_head*3; i++){
+        slow_paste_fcl(t->fcls[i],copy->fcls[i],tau);
+    }
+    for(i = 0; i < t->n_l2; i++){
+        slow_paste_scaled_l2_norm(t->l2[i],copy->l2[i],tau);
+    }
+    slow_paste_model(t->m,copy->m,tau);
+    copy->attention_flag = t->attention_flag;
+}
 
 /* This function does exactly what the function above does but for the fully connected layers inside
  * the structure will be copied the main features for the edge popup training
@@ -639,34 +752,46 @@ void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dim
     multi_head_attention_ff(t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->attention_output,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
 
     if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
+        if(input_dimension != t->input_dimension){
+            fprintf(stderr,"Error: the inputs of the transformer don't match the multi headed attention output!\n");
+            exit(1);
+        }
         sum1D(inputs,t->attention_output,t->residual1_output,input_dimension);
         if(t->normalization_flag1 == SCALED_L2_NORMALIZATION){
-            feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual1_output,t->l2[0]->output);
-            model_tensor_input_ff(t->m,1,input_dimension,1,t->l2[0]->output);
+            feed_forward_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual1_output,t->l2[0]->output);
+            model_tensor_input_ff(t->m,1,t->input_dimension,1,t->l2[0]->output);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
-                sum1D(t->l2[0]->output,t->m->output_layer,t->residual2_output,input_dimension);
+                if(t->input_dimension != t->m->output_dimension){
+                    fprintf(stderr,"Error: the dimension of the output coming from the multiheaded attention doesn't match the output of the feed forward layers!\n");
+                    exit(1);
+                }
+                sum1D(t->l2[0]->output,t->m->output_layer,t->residual2_output,t->input_dimension);
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
                 }
             }
             else{
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
                 }
             }
         }
         
         else{
-            model_tensor_input_ff(t->m,1,input_dimension,1,t->residual1_output);
+            model_tensor_input_ff(t->m,1,t->input_dimension,1,t->residual1_output);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
-                sum1D(t->residual1_output,t->m->output_layer,t->residual2_output,input_dimension);
+                if(t->input_dimension != t->m->output_dimension){
+                    fprintf(stderr,"Error: the dimension of the output coming from the multiheaded attention doesn't match the output of the feed forward layers!\n");
+                    exit(1);
+                }
+                sum1D(t->residual1_output,t->m->output_layer,t->residual2_output,t->input_dimension);
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual2_output,t->l2[0]->output);
                 }
             }
             else{
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->m->output_layer,t->l2[0]->output);
                 }
             }
         }
@@ -674,32 +799,40 @@ void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dim
     
     else{
         if(t->normalization_flag1 == SCALED_L2_NORMALIZATION){
-            feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
-            model_tensor_input_ff(t->m,1,input_dimension,1,t->l2[0]->output);
+            feed_forward_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
+            model_tensor_input_ff(t->m,1,t->input_dimension,1,t->l2[0]->output);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
+                if(t->input_dimension != t->m->output_dimension){
+                    fprintf(stderr,"Error: the dimension of the output coming from the multiheaded attention doesn't match the output of the feed forward layers!\n");
+                    exit(1);
+                }
                 sum1D(t->l2[0]->output,t->m->output_layer,t->residual2_output,input_dimension);
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
                 }
             }
             else{
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
                 }
             }
         }
         
         else{
-            model_tensor_input_ff(t->m,1,input_dimension,1,t->attention_output);
+            model_tensor_input_ff(t->m,1,t->input_dimension,1,t->attention_output);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
+                if(t->input_dimension != t->m->output_dimension){
+                    fprintf(stderr,"Error: the dimension of the output coming from the multiheaded attention doesn't match the output of the feed forward layers!\n");
+                    exit(1);
+                }
                 sum1D(t->attention_output,t->m->output_layer,t->residual2_output,input_dimension);
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual2_output,t->l2[0]->output);
                 }
             }
             else{
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(input_dimension,t->l2[0]->learned_g,&t->l2[1]->norm,t->m->output_layer,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->m->output_layer,t->l2[0]->output);
                 }
             }
         }
@@ -736,14 +869,14 @@ float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_d
                 back_propagation_scaled_l2_norm(t->l2[0]->input_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->attention_output,temp,t->l2[0]->output_error);
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->l2[0]->output_error,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->attention_output_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->attention_output_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->attention_output_error,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
+                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->incoming_input,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->incoming_input,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->incoming_input,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                sum1D(t->attention_output_error,t->l2[0]->output_error,t->attention_output_error,t->input_dimension);
-            return t->attention_output_error;
+                sum1D(t->incoming_input,t->l2[0]->output_error,t->incoming_input,input_dimension);
+            return t->incoming_input;
             
         }
         else{
@@ -754,19 +887,17 @@ float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_d
             
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL)
                 sum1D(temp,t->l2[t->n_l2-1]->output_error,temp,t->input_dimension);
-            if(t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                copy_array(t->residual1_output_error,temp,t->input_dimension);
-                            
+                         
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,temp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->attention_output_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->attention_output_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->attention_output_error,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
+                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->incoming_input,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->incoming_input,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->incoming_input,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                sum1D(t->attention_output_error,t->residual1_output_error,t->attention_output_error,t->input_dimension);
-            return t->attention_output_error;
+                sum1D(t->incoming_input,temp,t->incoming_input,t->input_dimension);
+            return t->incoming_input;
         }
         
     }
@@ -775,22 +906,21 @@ float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_d
             temp = model_tensor_input_bp(t->m,1,1,t->input_dimension,t->l2[0]->output,output_error,t->m->output_dimension);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL)
                 sum1D(temp,output_error,temp,t->input_dimension);
-            if(t->residual_flag1 == TRANSFORMER_RESIDUAL)
+            if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
                 back_propagation_scaled_l2_norm(t->l2[0]->input_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->residual1_output,temp,t->l2[0]->output_error);
-            
+            }
             else
                 back_propagation_scaled_l2_norm(t->l2[0]->input_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->attention_output,temp,t->l2[0]->output_error);
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->l2[0]->output_error,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
-
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->attention_output_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->attention_output_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->attention_output_error,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
+                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->incoming_input,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->incoming_input,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->incoming_input,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                sum1D(t->attention_output_error,t->l2[0]->output_error,t->attention_output_error,t->input_dimension);
-            return t->attention_output_error;
+                sum1D(t->incoming_input,t->l2[0]->output_error,t->incoming_input,input_dimension);
+            return t->incoming_input;
             
         }
         else{
@@ -801,19 +931,17 @@ float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_d
             
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL)
                 sum1D(temp,output_error,temp,t->input_dimension);
-            if(t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                copy_array(t->residual1_output_error,temp,t->input_dimension);
+                         
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,temp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
-
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->attention_output_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->attention_output_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->attention_output_error,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
+                fully_connected_back_prop(inputs,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->incoming_input,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->incoming_input,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->incoming_input,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
-                sum1D(t->attention_output_error,t->residual1_output_error,t->attention_output_error,t->input_dimension);
-            return t->attention_output_error;
+                sum1D(t->incoming_input,temp,t->incoming_input,t->input_dimension);
+            return t->incoming_input;
         }
         
     }

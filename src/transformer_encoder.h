@@ -41,5 +41,8 @@ void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dim
 float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
 void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension);
 float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension,float* output_error,float* encoder_error);
+void free_transformer_wrapped_encoder_layer(transformer_encoder* t);
+void free_transformer_wrapped_encoder_layer_complementary_edge_popup(transformer_encoder* t);
+void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 
 #endif

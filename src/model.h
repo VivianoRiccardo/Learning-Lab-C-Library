@@ -92,5 +92,8 @@ void memcopy_vector_to_weights_model(model* f, float* vector);
 void memcopy_weights_to_vector_model(model* f, float* vector);
 void compare_score_model(model* input1, model* input2, model* output);
 model* load_model_with_file_already_opened(FILE* fr);
+model* reset_edge_popup_d_model(model* m);
+int check_model_last_layer(model* m);
+void set_low_score_model(model* f);
 
 #endif

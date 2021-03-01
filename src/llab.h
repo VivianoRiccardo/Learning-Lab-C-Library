@@ -496,9 +496,10 @@ typedef struct transformer_encoder{
 }transformer_encoder;
 
 typedef struct transformer_decoder{
-    int input_dimension,n_head,attention_flag,residual_flag,normalization_flag,dimension; 
-    scaled_l2_norm* l2;//2 or 1 or 0
-    fcl** fcls;// 3*n_head
+    int input_dimension,n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2; 
+    transformer_encoder* e;//1
+    scaled_l2_norm** l2;// 3 or 2 or 1 or 0
+    fcl** fcls;// 3*n_head1 + 3*n_head2
     float* incoming_input;//input_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension

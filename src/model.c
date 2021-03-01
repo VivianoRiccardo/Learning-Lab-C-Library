@@ -5006,3 +5006,54 @@ void reinitialize_scores_model(model* m, float percentage, float goodness){
         reinitialize_scores_rl(m->rls[i],percentage,goodness);
     }
 }
+
+model* reset_edge_popup_d_model(model* m){
+    if (m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reset_edge_popup_d_fcl(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reset_edge_popup_d_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reset_edge_popup_d_rl(m->rls[i]);
+    }
+    return m;
+}
+
+int check_model_last_layer(model* m){
+    int i;
+    for(i = 0; i < m->layers && m->sla[i][0]; i++);
+    
+    if(i == m->layers)
+        i--;
+    
+    if(m->sla[i][0] == FCLS)
+        return FCLS;
+    
+    else if(m->sla[i][0] == CLS)
+        return CLS;
+    
+    return RLS;
+}
+
+/* this function is gonna set all the scores of each layer of the model to 0
+ * 
+ * Input:
+ * 
+ *                 @ model* f:= the model
+ * */
+void set_low_score_model(model* f){
+    int i;
+    for(i = 0; i < f->n_fcl; i++){
+        set_low_score_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        set_low_score_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        set_low_score_rl(f->rls[i]);
+    }
+}

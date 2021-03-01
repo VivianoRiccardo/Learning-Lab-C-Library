@@ -913,3 +913,26 @@ void reinitialize_scores_rl(rl* f, float percentage, float goodness){
         reinitialize_scores_cl(f->cls[i],percentage,goodness);
     }
 }
+
+rl* reset_edge_popup_d_rl(rl* f){
+	if (f == NULL)
+		return NULL;
+	int i;
+	for(i = 0; i < f->n_cl; i++){
+		reset_edge_popup_d_cl(f->cls[i]);
+	}
+	return f;
+}
+
+/* this function sets all the scores of the convolutional layer inside the residual one to 0
+ * 
+ * Input:
+ * 
+ *                 @ rl* f:= the reisdual layer
+ * */
+void set_low_score_rl(rl* f){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        set_low_score_cl(f->cls[i]);
+    }
+}
