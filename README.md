@@ -96,6 +96,7 @@ https://www.cygwin.com/
 - Self-Attention and Multi-Head-Attention (11/12/2020)
 - Transformer encoder (24/12/2020)
 - Transformer decoder (1/03/2021)
+- Transformer feed-forward, back-propagation, update (3/03/2021)
 # Tests
 
 Each test has been trained successfully.
@@ -120,6 +121,6 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 
 
 # Future implementations
-- transformer (autobot and desepticon)
+- Opencl computations
 
 
