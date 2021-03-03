@@ -37,5 +37,6 @@ void slow_paste_bn(bn* f, bn* copy,float tau);
 void paste_w_bn(bn* b1, bn* b2);
 void heavy_save_bn(bn* b, int n);
 bn* heavy_load_bn(FILE* fr);
+bn* reset_bn_except_partial_derivatives(bn* b);
 
 #endif

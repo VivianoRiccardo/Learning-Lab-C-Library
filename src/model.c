@@ -541,6 +541,30 @@ model* reset_model(model* m){
     }
     return m;
 }
+/* This function resets a model
+ * returns a model equal to the one as input but with all resetted except for weights and biases
+ * */
+model* reset_model_except_partial_derivatives(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reset_fcl_except_partial_derivatives(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reset_cl_except_partial_derivatives(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reset_rl_except_partial_derivatives(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
+    }
+    return m;
+}
 
 /* This function resets a model
  * returns a model equal to the one as input but with all resetted except for weights and biases

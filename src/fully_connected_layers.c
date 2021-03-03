@@ -1169,6 +1169,46 @@ fcl* reset_fcl(fcl* f){
         reset_bn(f->layer_norm);
     return f;
 }
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_except_partial_derivatives(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            f->pre_activation[i] = 0;
+            f->post_activation[i] = 0;
+            f->post_normalization[i] = 0;
+            if(f->dropout_flag)
+                f->dropout_mask[i] = 1;
+            f->dropout_temp[i] = 0;
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        
+ 
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn_except_partial_derivatives(f->layer_norm);
+    return f;
+}
 
 /* this function resets all the arrays of a fully-connected layer
  * used during the feed forward and backpropagation

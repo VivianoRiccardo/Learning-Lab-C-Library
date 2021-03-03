@@ -450,6 +450,30 @@ rl* reset_rl(rl* f){
 
     return f;
 }
+/* this function reset all the arrays of a residual layer
+ * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= a rl* f layer
+ * 
+ * */
+rl* reset_rl_except_partial_derivatives(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_cl_except_partial_derivatives(f->cls[i]);
+    }
+    
+    reset_cl_except_partial_derivatives(f->cl_output);
+
+    return f;
+}
 
 /* this function reset all the arrays of a residual layer
  * used during the feed forward and backpropagation

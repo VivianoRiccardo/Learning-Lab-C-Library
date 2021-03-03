@@ -1933,6 +1933,50 @@ cl* reset_cl(cl* f){
     }
     return f;
 }
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change.
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_except_partial_derivatives(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+    
+    for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+        f->pre_activation[i] = 0;
+        f->post_activation[i] = 0;
+        f->post_normalization[i] = 0;
+        f->temp[i] = 0;
+        f->temp2[i] = 0;
+        f->temp3[i] = 0;
+    }
+    
+    for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+        f->post_pooling[i] = 0;
+    }
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn_except_partial_derivatives(f->group_norm[i]);
+        }
+    }
+    
+   
+    return f;
+}
 
 /* this function resets all the arrays of a convolutional layer
  * used during the feed forward and backpropagation

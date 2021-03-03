@@ -460,7 +460,46 @@ void avarage_pooling_back_prop(float* input_error, float* output_error, int inpu
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride, int padding){
-    
+    int oi,oj,i,j,c;
+    int output_i = (input_i-1)*stride+kernel_i;
+    int output_j = (input_j-1)*stride+kernel_j;
+    if(!padding){
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            output[i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
+                        }
+                    }
+                }    
+            }
+        }
+        for(oi = 0; oi < output_i*output_j; oi++){
+            output[oi]+=bias;
+        }
+    }
+    else if(padding){
+        float* temp = (float*)calloc(output_i*output_j,sizeof(float));
+        for(oi = 0; oi < input_i; oi++){
+            for(oj = 0; oj < input_j; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            temp[i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
+                        }
+                    }
+                }    
+            }
+        }
+        
+        for(oi = padding; oi < output_i-padding; oi++){
+            for(oj = padding; oj < output_j-padding; oj++){
+                output[(oi-padding)*(output_j-2*padding)+oj-padding] = temp[oi*output_j+oj]+bias;
+            }
+        }
+        free(temp);
+    }
 }
 
 

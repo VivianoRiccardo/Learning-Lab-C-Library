@@ -713,6 +713,7 @@ bn* copy_bn(bn* b){
     return copy;
 }
 
+
 /* this function resets all the arrays of a batch normalized layer (used by feed forward and back propagation) but it keeps the weights andbiases.
  * 
  * 
@@ -737,6 +738,35 @@ bn* reset_bn(bn* b){
         
         b->d_gamma[i] = 0; 
         b->d_beta[i] = 0; 
+        b->temp2[i] = 0; 
+        b->mean[i] = 0; 
+        b->var[i] = 0; 
+    } 
+    
+    return b;
+}
+/* this function resets all the arrays of a batch normalized layer (used by feed forward and back propagation) but it keeps the weights andbiases.
+ * 
+ * 
+ * Input:
+ * 
+ *             @ bn* b:= a bn* b layer
+ * 
+ * */
+bn* reset_bn_except_partial_derivatives(bn* b){
+    if(b == NULL)
+        return NULL;
+    int i,j;
+    for(i = 0; i < b->vector_dim; i++){
+        for(j = 0; j < b->batch_size; j++){
+            b->input_vectors[j][i] = 0;
+            b->temp_vectors[j][i] = 0;
+            b->outputs[j][i] = 0;
+            b->post_activation[j][i] = 0;
+            b->error2[j][i] = 0;
+            b->temp1[j][i] = 0;
+        }
+        
         b->temp2[i] = 0; 
         b->mean[i] = 0; 
         b->var[i] = 0; 

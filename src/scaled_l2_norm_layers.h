@@ -34,6 +34,7 @@ scaled_l2_norm* reset_scaled_l2_norm(scaled_l2_norm* f);
 unsigned long long int size_of_scaled_l2_norm(scaled_l2_norm* f);
 void paste_scaled_l2_norm(scaled_l2_norm* f,scaled_l2_norm* copy);
 void slow_paste_scaled_l2_norm(scaled_l2_norm* f,scaled_l2_norm* copy, float tau);
+scaled_l2_norm* reset_scaled_l2_norm_except_partial_derivatives(scaled_l2_norm* f);
 
 
 #endif

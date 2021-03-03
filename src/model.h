@@ -95,5 +95,6 @@ model* load_model_with_file_already_opened(FILE* fr);
 model* reset_edge_popup_d_model(model* m);
 int check_model_last_layer(model* m);
 void set_low_score_model(model* f);
+model* reset_model_except_partial_derivatives(model* m);
 
 #endif

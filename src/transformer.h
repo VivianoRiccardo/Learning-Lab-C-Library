@@ -38,8 +38,9 @@ void reset_transf(transformer* t);
 void reset_transf_for_edge_popup(transformer* t);
 unsigned long long int size_of_transformer(transformer* t);
 float* get_output_layer_from_encoder_transf(transformer_encoder* t);
-void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2);
-float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error);
+void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag);
+float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag);
 void update_transformer(transformer* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time);
+void reset_transf_decoders(transformer* t);
 
 #endif

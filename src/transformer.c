@@ -368,6 +368,21 @@ void reset_transf(transformer* t){
     }
     return;
 }
+/* this function resetes all the arrays inside the transformer structure
+ * that are used during the ff and bp of the training
+ * 
+ * Inputs:
+ *             
+ *             @ transformer* t:= the transformer structure that must be reset
+ * */
+void reset_transf_decoders(transformer* t){
+    if(t == NULL) return;
+    int i;
+    for(i = 0; i < t->n_td; i++){
+        reset_transformer_decoder_except_partial_derivatives_and_left_input(t->td[i]);
+    }
+    return;
+}
 
 /* resets only the arrays for the edge popup
  * 
@@ -432,27 +447,29 @@ float* get_output_layer_from_encoder_transf(transformer_encoder* t){
  *             @ int_input_dimension1:= the dimension of inputs_encoder
  *             @ float* inputs_decoder:= the inputs for the first decoder layer
  *             @ int input_dimension2:= the dimension of inputs_decoder
+ *                @ int flag:= if set to RUN_ONLY_DECODER it runs only the decoder, else if it is set to RUN_ALL_TRANSF both encoder and decoder executes the ff
  * */
-void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2){
+void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag){
     int i, in = input_dimension1,j,k;
     float* temp = inputs_encoder;
-    for(i = 0; i < t->n_te; i++){
-        encoder_transformer_ff(temp,t->te[i],in);
-        temp = get_output_layer_from_encoder_transf(t->te[i]);
-        in = t->te[i]->m->output_dimension;
-        
-        for(j = 0; j < t->n_td; j++){
-			int c = 0;
-			if(t->encoder_decoder_connections[i][j]){
-				for(k = 0; k < i; k++){
-					if(t->encoder_decoder_connections[k][j])
-						c += t->te[k]->m->output_dimension;
-				}
-				memcpy(&t->td[j]->incoming_input[c],get_output_layer_from_encoder_transf(t->te[i]),sizeof(float)*t->te[i]->m->output_dimension);
-			}
-		}
-    }
-    
+    if(flag == RUN_ALL_TRANSF){
+        for(i = 0; i < t->n_te; i++){
+            encoder_transformer_ff(temp,t->te[i],in);
+            temp = get_output_layer_from_encoder_transf(t->te[i]);
+            in = t->te[i]->m->output_dimension;
+            
+            for(j = 0; j < t->n_td; j++){
+                int c = 0;
+                if(t->encoder_decoder_connections[i][j]){
+                    for(k = 0; k < i; k++){
+                        if(t->encoder_decoder_connections[k][j])
+                            c += t->te[k]->m->output_dimension;
+                    }
+                    memcpy(&t->td[j]->incoming_input[c],get_output_layer_from_encoder_transf(t->te[i]),sizeof(float)*t->te[i]->m->output_dimension);
+                }
+            }
+        }
+    }    
     in = input_dimension2;
     temp = inputs_decoder;
     for(i = 0; i < t->n_td; i++){
@@ -482,8 +499,9 @@ void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, floa
  *             @ float* inputs_decoder:= the inputs given to the first decoder, dimension: input_dimension2
  *             @ int input_dimension2:= the dimension of inputs_decoder
  *             @ float* output_error:= the error of the last decoder (if you want to add error to the last encoder add it to t->te[t->n_te-1]->encoder_output_error
+ *                @ int flag:= if set to RUN_ONLY_DECODER it runs only the decoder, else if it is set to RUN_ALL_TRANSF both encoder and decoder executes the bp
  * */
-float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error){
+float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag){
     int i,j,k,in;
     float* temp1 = output_error;
     float* temp2 = inputs_decoder;
@@ -508,31 +526,34 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
     
     for(i = t->n_te-1; i > -1; i--){
         for(j = 0; j < t->n_td; j++){
-			int c = 0;
-			if(t->encoder_decoder_connections[i][j]){
-				for(k = 0; k < i; k++){
-					if(t->encoder_decoder_connections[k][j])
-						c += t->te[k]->m->output_dimension;
-				}
-				sum1D(&t->td[j]->incoming_input[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
-			}
-		}
-        
-        if(i){
-            temp2 = get_output_layer_from_encoder_transf(t->te[i-1]);
-            in = t->te[i-1]->m->output_dimension;
+            int c = 0;
+            if(t->encoder_decoder_connections[i][j]){
+                for(k = 0; k < i; k++){
+                    if(t->encoder_decoder_connections[k][j])
+                        c += t->te[k]->m->output_dimension;
+                }
+                sum1D(&t->td[j]->incoming_input[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
+            }
         }
-        
-        else{
-            temp2 = inputs_encoder;
-            in = input_dimension1;
+    }
+    if(flag == RUN_ALL_TRANSF){
+        for(i = t->n_te-1; i > -1; i--){    
+            if(i){
+                temp2 = get_output_layer_from_encoder_transf(t->te[i-1]);
+                in = t->te[i-1]->m->output_dimension;
+            }
+            
+            else{
+                temp2 = inputs_encoder;
+                in = input_dimension1;
+            }
+            
+            if(i < t->n_te-1){
+                sum1D(t->te[i]->encoder_output_error,temp1,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
+            }
+            
+            temp1 = encoder_transformer_bp(temp2,t->te[i],in,t->te[i]->encoder_output_error);
         }
-        
-        if(i < t->n_te-1){
-            sum1D(t->te[i]->encoder_output_error,temp1,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
-        }
-        
-        temp1 = encoder_transformer_bp(temp2,t->te[i],in,t->te[i]->encoder_output_error);
     }
     
     return temp1;
@@ -556,15 +577,15 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
 void update_transformer(transformer* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
-	int i;
-	for(i = 0; i < t->n_te; i++){
-		update_transformer_encoder(t->te[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-	}
-	for(i = 0; i < t->n_td; i++){
-		update_transformer_decoder(t->td[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-	}
-	
-	if(gradient_descent_flag == ADAM){
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        update_transformer_encoder(t->te[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    }
+    for(i = 0; i < t->n_td; i++){
+        update_transformer_decoder(t->td[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    }
+    
+    if(gradient_descent_flag == ADAM){
         (*b1)*=t->beta1_adam;
         (*b2)*=t->beta2_adam;
     }

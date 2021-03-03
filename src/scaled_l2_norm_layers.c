@@ -204,6 +204,24 @@ scaled_l2_norm* reset_scaled_l2_norm(scaled_l2_norm* f){
     }
 }
 
+/* this function resetes the d_learned_g parameter as well as the output array where we store 
+ * the output computed
+ * 
+ * Inputs:
+ * 
+ *                 @ scaled_l2_nor,* f:= the struct we want to reset
+ * 
+ * */
+scaled_l2_norm* reset_scaled_l2_norm_except_partial_derivatives(scaled_l2_norm* f){
+    if (f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->input_dimension; i++){
+        f->output[i] = 0;
+        f->output_error[i] = 0;
+    }
+}
+
 /* returns the dimension occupied by this struct (more or less)
  * 
  * Inputs:

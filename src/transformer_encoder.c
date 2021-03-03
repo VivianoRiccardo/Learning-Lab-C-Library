@@ -600,6 +600,54 @@ void reset_transformer_encoder(transformer_encoder* t){
     reset_model(t->m);
     return;
 }
+/* This function resets the arrays used during the feed forward and backpropagation by the transformer
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @transformer_encoder* t:= the transformer encoder structure that must be rests
+ * */
+void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t){
+    if(t == NULL)
+        return;
+    int i;
+    for(i = 0; i < t->n_head*3; i++){
+        reset_fcl_except_partial_derivatives(t->fcls[i]);
+    }
+    for(i = 0; i < t->n_l2; i++){
+        reset_scaled_l2_norm_except_partial_derivatives(t->l2[i]);
+    }
+    for(i = 0; i < t->m->output_dimension; i++){
+        t->encoder_output_error[i] = 0;
+    }
+    for(i = 0; i < t->input_dimension*t->dimension; i++){
+        if(i < t->input_dimension){
+            
+            t->q[i] = 0;
+            t->q_error[i] = 0;
+            t->k[i] = 0;
+            t->k_error[i] = 0;
+            t->v[i] = 0;
+            t->v_error[i] = 0;
+            t->attention_output[i] = 0;
+            if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
+                t->residual1_output[i] = 0;
+                t->residual1_output_error[i] = 0;
+            }
+            if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
+                t->residual2_output[i] = 0;
+                t->residual2_output_error[i] = 0;
+            }
+        }
+        t->score_matrix[i] = 0;
+        t->score_matrix_error[i] = 0;
+        t->score_matrix_softmax[i] = 0;
+        t->score_matrix_softmax_error[i] = 0;
+    }
+    
+    reset_model_except_partial_derivatives(t->m);
+    return;
+}
 
 /* This function does exactly what the function above does but for the fully connected leyers inside
  * the transformer the reset is for the edge popup

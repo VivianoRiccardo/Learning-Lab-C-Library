@@ -67,5 +67,6 @@ void compare_score_rl(rl* input1, rl* input2, rl* output);
 int get_array_size_scores_rl(rl* f);
 rl* reset_edge_popup_d_rl(rl* f);
 void set_low_score_rl(rl* f);
+rl* reset_rl_except_partial_derivatives(rl* f);
 
 #endif

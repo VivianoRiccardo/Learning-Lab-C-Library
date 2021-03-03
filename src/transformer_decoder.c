@@ -488,6 +488,50 @@ void reset_transformer_decoder(transformer_decoder* t){
     reset_transformer_encoder(t->e);
     return;
 }
+/* This function resets the arrays used during the feed forward and backpropagation by the transformer
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @transformer_decoder* t:= the transformer decoder structure that must be rests
+ * */
+void reset_transformer_decoder_except_partial_derivatives_and_left_input(transformer_decoder* t){
+    if(t == NULL)
+        return;
+    int i;
+    for(i = 0; i < t->n_head*3; i++){
+        reset_fcl_except_partial_derivatives(t->fcls[i]);
+    }
+    for(i = 0; i < t->n_l2; i++){
+        reset_scaled_l2_norm_except_partial_derivatives(t->l2[i]);
+    }
+    for(i = 0; i < t->left_dimension; i++){
+        t->incoming_input_error[i] = 0;
+    }
+    
+
+    for(i = 0; i < t->input_dimension*t->dimension; i++){
+        if(i < t->input_dimension){
+            t->q[i] = 0;
+            t->q_error[i] = 0;
+            t->k[i] = 0;
+            t->k_error[i] = 0;
+            t->v[i] = 0;
+            t->v_error[i] = 0;
+            t->attention_output[i] = 0;
+            if(t->residual_flag == TRANSFORMER_RESIDUAL){
+                t->residual1_output[i] = 0;
+                t->residual1_output_error[i] = 0;
+            }
+        }
+        t->score_matrix[i] = 0;
+        t->score_matrix_error[i] = 0;
+        t->score_matrix_softmax[i] = 0;
+        t->score_matrix_softmax_error[i] = 0;
+    }
+    reset_transformer_encoder_except_partial_derivatives(t->e);
+    return;
+}
 
 
 /* This function does exactly what the function above does but for the fully connected leyers inside
