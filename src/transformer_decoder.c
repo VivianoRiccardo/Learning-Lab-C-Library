@@ -99,6 +99,7 @@ transformer_decoder* transformer_decoder_layer(int input_dimension, int left_dim
     d->score_matrix_error = (float*)calloc(input_dimension*d->dimension,sizeof(float));
     d->attention_output = (float*)calloc(input_dimension,sizeof(float));
     d->incoming_input = (float*)calloc(left_dimension,sizeof(float));
+    d->incoming_input_error = (float*)calloc(left_dimension,sizeof(float));
     if(residual_flag1 == TRANSFORMER_RESIDUAL){
         d->residual1_output = (float*)calloc(input_dimension,sizeof(float));
         d->residual1_output_error = (float*)calloc(input_dimension,sizeof(float));
@@ -140,6 +141,7 @@ void free_transformer_decoder_layer(transformer_decoder* d){
     free(d->score_matrix_error);
     free(d->attention_output);
     free(d->incoming_input);
+    free(d->incoming_input_error);
     if(d->residual_flag == TRANSFORMER_RESIDUAL){
         free(d->residual1_output);
         free(d->residual1_output_error);
@@ -192,6 +194,7 @@ void free_transformer_decoder_layer_complementary_edge_popup(transformer_decoder
     }
     
     free(t->incoming_input);
+    free(t->incoming_input_error);
     free(t->q);
     free(t->q_error);
     free(t->k);
@@ -204,6 +207,7 @@ void free_transformer_decoder_layer_complementary_edge_popup(transformer_decoder
     free(t->score_matrix_softmax_error);
     free(t->attention_output);
     free(t->incoming_input);
+    free(t->incoming_input_error);
     if(t->residual_flag == TRANSFORMER_RESIDUAL){
         free(t->residual1_output);
         free(t->residual1_output_error);
@@ -458,6 +462,7 @@ void reset_transformer_decoder(transformer_decoder* t){
     }
     for(i = 0; i < t->left_dimension; i++){
         t->incoming_input[i] = 0;
+        t->incoming_input_error[i] = 0;
     }
     
 
@@ -505,6 +510,7 @@ void reset_transformer_decoder_for_edge_popup(transformer_decoder* t){
     }
     for(i = 0; i < t->left_dimension; i++){
         t->incoming_input[i] = 0;
+        t->incoming_input_error[i] = 0;
     }
 
     for(i = 0; i < t->input_dimension*t->dimension; i++){
@@ -919,4 +925,92 @@ float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, tr
     }
     
     
+}
+
+
+/* This function can update the model of the encoder transformer using the adam algorithm or the nesterov momentum
+ * 
+ * Input:
+ * 
+ *             @ transformer_encoder* t:= the model that must be updated
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *             @ int mini_batch_size:= the batch used
+ *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
+ *                @ float* b1:= the hyper parameter b1 of adam algorithm
+ *                @ float* b2:= the hyper parameter b2 of adam algorithm
+ *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
+ *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
+ *                @ float lambda:= a float value for l2 regularization
+ *                @ unsigned long long int* t:= the number of time that radam has been used
+ * */
+void update_transformer_decoder(transformer_decoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
+    fcl** fcls = t->e->m->fcls;
+    cl** cls = t->e->m->cls;
+    rl** rls = t->e->m->rls;
+    int n_fcl = t->e->m->n_fcl, n_cl = t->e->m->n_cl, n_rl = t->e->m->n_rl, l = t->e->m->layers;
+    
+    update_model(t->e->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    
+    if(gradient_descent_flag == ADAM){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    else if(gradient_descent_flag == RADAM){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+        (*time)--;
+    }
+    
+    else if(gradient_descent_flag == DIFF_GRAD){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    else if(gradient_descent_flag == ADAMOD){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    t->e->m->fcls = t->fcls;
+    t->e->m->cls = NULL; 
+    t->e->m->rls = NULL;
+    t->e->m->layers = 3*(t->n_head+t->e->n_head);
+    t->e->m->n_cl = 0;
+    t->e->m->n_rl = 0; 
+    t->e->m->n_fcl = t->e->m->layers;
+    
+    update_model(t->e->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    
+    if(gradient_descent_flag == ADAM){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    else if(gradient_descent_flag == RADAM){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+        (*time)--;
+    }
+    
+    else if(gradient_descent_flag == DIFF_GRAD){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    else if(gradient_descent_flag == ADAMOD){
+        (*b1)/=t->e->m->beta1_adam;
+        (*b2)/=t->e->m->beta2_adam;
+    }
+    
+    t->e->m->fcls = fcls;
+    t->e->m->cls = cls; 
+    t->e->m->rls = rls;
+    t->e->m->layers = l;
+    t->e->m->n_cl = n_cl;
+    t->e->m->n_rl = n_rl; 
+    t->e->m->n_fcl = n_fcl;
+    
+    return;
 }

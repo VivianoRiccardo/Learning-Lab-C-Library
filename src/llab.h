@@ -500,6 +500,7 @@ typedef struct transformer_decoder{
     scaled_l2_norm** l2;// 3 or 2 or 1 or 0
     fcl** fcls;// 3*n_head1 + 3*n_head2
     float* incoming_input;//left_dimension
+    float* incoming_input_error;//left_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension
     float* v;//n_head X dimension
