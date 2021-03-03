@@ -1754,7 +1754,7 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
  * 
  * Input:
  * 
- *             @ float** m:= the matrix m
+ *             @ void** m:= the matrix m
  *             @ int n:= number of rows of m
  * 
  * */

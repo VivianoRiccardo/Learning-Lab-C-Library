@@ -25,9 +25,7 @@ SOFTWARE.
 #ifndef __TRANSFORMER_DECODER_H__
 #define __TRANSFORMER_DECODER_H__
 
-transformer_decoder* transformer_decoder_layer(int input_dimension, int n_head1, int n_head2, int residual_flag1, int normalization_flag1, int residual_flag2, int normalization_flag2, int residual_flag3, int normalization_flag3, int attention_flag1, int attention_flag2, int encoder_input_dimension, model* m, fcl** fcls, scaled_l2_norm** l2);
-void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension);
-float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension,float* output_error,float* encoder_error);
+transformer_decoder* transformer_decoder_layer(int input_dimension, int left_dimension, int n_head1, int n_head2, int residual_flag1, int normalization_flag1, int residual_flag2, int normalization_flag2, int residual_flag3, int normalization_flag3, int attention_flag1, int attention_flag2, int encoder_input_dimension, model* m, fcl** fcls, scaled_l2_norm** l2);
 void free_transformer_decoder_layer(transformer_decoder* d);
 void free_transformer_decoder_layer_for_edge_popup(transformer_decoder* t);
 void free_transformer_decoder_layer_complementary_edge_popup(transformer_decoder* t);
@@ -38,7 +36,12 @@ void reset_transformer_decoder(transformer_decoder* t);
 void reset_transformer_decoder_for_edge_popup(transformer_decoder* t);
 unsigned long long int size_of_transformer_decoder(transformer_decoder* t);
 void paste_transformer_decoder(transformer_decoder* t, transformer_decoder* copy);
-void paste_transformer_decoder_for_edge_popup(transformer_decoder* t, transformer_decoder* copy);
 void slow_paste_transformer_decoder(transformer_decoder* t, transformer_decoder* copy, float tau);
+void paste_transformer_decoder_for_edge_popup(transformer_decoder* t, transformer_decoder* copy);
+void decoder_transformer_ff(float* inputs1, float* inputs2, transformer_decoder* t,int input1_dimension, int input2_dimension);
+float* decoder_transformer_bp(float* inputs1, float* inputs2, transformer_decoder* t, int input1_dimension, int input2_dimension, float* output_error, float* inputs2_error);
+void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension2,int input_dimension1);
+float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension2,int input_dimension1,float* output_error,float* encoder_error);
+
 
 #endif

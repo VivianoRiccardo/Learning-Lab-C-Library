@@ -27,8 +27,10 @@ SOFTWARE.
 
 transformer_encoder* transformer_encoder_layer(model* m,fcl** fcls, scaled_l2_norm** l2, int input_dimension, int n_head,int residual_flag1,int normalization_flag1,int residual_flag2,int normalization_flag2, int attention_flag);
 void free_transformer_encoder_layer(transformer_encoder* t);
+void free_transformer_wrapped_encoder_layer(transformer_encoder* t);
 void free_transformer_encoder_layer_for_edge_popup(transformer_encoder* t);
 void free_transformer_encoder_layer_complementary_edge_popup(transformer_encoder* t);
+void free_transformer_wrapped_encoder_layer_complementary_edge_popup(transformer_encoder* t);
 void save_transformer_encoder(transformer_encoder* t, int n);
 transformer_encoder* load_transformer_encoder(FILE* fr);
 transformer_encoder* copy_transformer_encoder(transformer_encoder* t);
@@ -36,13 +38,9 @@ void reset_transformer_encoder(transformer_encoder* t);
 void reset_transformer_encoder_for_edge_popup(transformer_encoder* t);
 unsigned long long int size_of_transformer_encoder(transformer_encoder* t);
 void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy);
+void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 void paste_transformer_encoder_for_edge_popup(transformer_encoder* t, transformer_encoder* copy);
 void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dimension);
 float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
-void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension);
-float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension1,int input_dimension,float* output_error,float* encoder_error);
-void free_transformer_wrapped_encoder_layer(transformer_encoder* t);
-void free_transformer_wrapped_encoder_layer_complementary_edge_popup(transformer_encoder* t);
-void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 
 #endif

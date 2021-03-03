@@ -475,7 +475,7 @@ typedef struct transformer_encoder{
     scaled_l2_norm** l2;//2 or 1 or 0
     fcl** fcls;// 3*n_head
     model* m;//the model after the attention + possible residual and normalization
-    float* incoming_input;//input_dimension
+    float* encoder_output_error;//m->output_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension
     float* v;//n_head X dimension
@@ -487,7 +487,6 @@ typedef struct transformer_encoder{
     float* score_matrix_softmax;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_softmax_error;//n_head X dimension X dimension(input_dimension/n_head)
     float* attention_output;//input_dimension (n_head*dimension)
-    float* attention_output_error;//input_dimension (n_head*dimension)
     float* residual1_output;//input_dimension
     float* residual2_output;//input_dimension
     float* residual1_output_error;//input_dimension
@@ -496,11 +495,11 @@ typedef struct transformer_encoder{
 }transformer_encoder;
 
 typedef struct transformer_decoder{
-    int input_dimension,n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2; 
+    int input_dimension, left_dimension, n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2; 
     transformer_encoder* e;//1
     scaled_l2_norm** l2;// 3 or 2 or 1 or 0
     fcl** fcls;// 3*n_head1 + 3*n_head2
-    float* incoming_input;//input_dimension
+    float* incoming_input;//left_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension
     float* v;//n_head X dimension
@@ -512,11 +511,21 @@ typedef struct transformer_decoder{
     float* score_matrix_softmax;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_softmax_error;//n_head X dimension X dimension(input_dimension/n_head)
     float* attention_output;//input_dimension (n_head*dimension)
-    float* attention_output_error;//input_dimension (n_head*dimension)
     float* residual1_output;//input_dimension
     float* residual1_output_error;//input_dimension
      
 }transformer_decoder;
+
+typedef struct transformer{
+    int n_te, n_td;
+    float beta1_adam;
+    float beta2_adam;
+    float beta3_adamod;
+    int** encoder_decoder_connections;//matrix of dimension: n_te X n_td
+    transformer_encoder** te;
+    transformer_decoder** td;
+     
+}transformer;
 
 // Generic dictionary for int vectors
 typedef struct mystruct{
@@ -563,6 +572,7 @@ typedef struct training{
 #include "scaled_l2_norm_layers.h"
 #include "server.h"
 #include "training.h"
+#include "transformer.h"
 #include "transformer_decoder.h"
 #include "transformer_encoder.h"
 #include "utils.h"

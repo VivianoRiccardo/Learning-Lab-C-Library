@@ -915,13 +915,13 @@ void reinitialize_scores_rl(rl* f, float percentage, float goodness){
 }
 
 rl* reset_edge_popup_d_rl(rl* f){
-	if (f == NULL)
-		return NULL;
-	int i;
-	for(i = 0; i < f->n_cl; i++){
-		reset_edge_popup_d_cl(f->cls[i]);
-	}
-	return f;
+    if (f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_edge_popup_d_cl(f->cls[i]);
+    }
+    return f;
 }
 
 /* this function sets all the scores of the convolutional layer inside the residual one to 0

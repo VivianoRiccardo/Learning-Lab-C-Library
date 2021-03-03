@@ -1877,17 +1877,17 @@ void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
 }
 
 fcl* reset_edge_popup_d_fcl(fcl* f){
-	if (f == NULL)
-		return NULL;
-	int i;
-	for(i = 0; i < f->input*f->output; i++){
-		f->d_scores[i] = 0;
-		f->d1_scores[i] = 0;
-		f->d2_scores[i] = 0;
-		f->d3_scores[i] = 0;
-		f->ex_d_scores_diff_grad[i] = 0;
-	}
-	return f;
+    if (f == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < f->input*f->output; i++){
+        f->d_scores[i] = 0;
+        f->d1_scores[i] = 0;
+        f->d2_scores[i] = 0;
+        f->d3_scores[i] = 0;
+        f->ex_d_scores_diff_grad[i] = 0;
+    }
+    return f;
 }
 
 /* this function reset all the scores of the fcl layer to 0

@@ -216,17 +216,23 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
             m->output_layer = m->fcls[m->n_fcl-1]->post_activation;
         else
             m->output_layer = m->fcls[m->n_fcl-1]->pre_activation;
+        m->output_dimension = m->fcls[m->n_fcl-1]->output;
     }
     
     else if(sla[i][0] == CLS){
-        if(m->cls[m->n_cl-1]->pooling_flag)
+        if(m->cls[m->n_cl-1]->pooling_flag){
             m->output_layer = m->cls[m->n_cl-1]->post_pooling;
-        else if(m->cls[m->n_cl-1]->normalization_flag)
-            m->output_layer = m->cls[m->n_cl-1]->post_normalization;
-        else if(m->cls[m->n_cl-1]->activation_flag)
-            m->output_layer = m->cls[m->n_cl-1]->post_activation;
-        else
-            m->output_layer = m->cls[m->n_cl-1]->pre_activation;
+            m->output_dimension = m->cls[m->n_cl-1]->rows2*m->cls[m->n_cl-1]->cols2*m->cls[m->n_cl-1]->n_kernels;
+        }
+        else{
+            if(m->cls[m->n_cl-1]->normalization_flag)
+                m->output_layer = m->cls[m->n_cl-1]->post_normalization;
+            else if(m->cls[m->n_cl-1]->activation_flag)
+                m->output_layer = m->cls[m->n_cl-1]->post_activation;
+            else
+                m->output_layer = m->cls[m->n_cl-1]->pre_activation;
+            m->output_dimension = m->cls[m->n_cl-1]->rows1*m->cls[m->n_cl-1]->cols1*m->cls[m->n_cl-1]->n_kernels;
+        }
     }
     
     else{
@@ -234,6 +240,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
             m->output_layer = m->rls[m->n_rl-1]->cl_output->post_activation;
         else
             m->output_layer = m->rls[m->n_rl-1]->cl_output->pre_activation;
+        m->output_dimension = m->rls[m->n_rl-1]->channels* m->rls[m->n_rl-1]->input_rows* m->rls[m->n_rl-1]->input_cols;
     }
         
     return m;
@@ -290,9 +297,6 @@ void free_model_for_edge_popup(model* m){
     }
     for(i = 0; i < m->n_fcl; i++){
         free_fully_connected_for_edge_popup(m->fcls[i]);
-    }
-    for(i = 0; i < m->layers; i++){
-        free(m->sla[i]);
     }
 }
 
@@ -662,7 +666,7 @@ void save_model(model* m, int n){
     s = itoa(n,s);
     s = strcat(s,t);
     
-    fw = fopen(s,"w");
+    fw = fopen(s,"a+");
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
@@ -738,7 +742,7 @@ void heavy_save_model(model* m, int n){
     s = itoa(n,s);
     s = strcat(s,t);
     
-    fw = fopen(s,"w");
+    fw = fopen(s,"a+");
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
@@ -2368,8 +2372,10 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else if(f1->activation_flag){
-            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING)
+            
+            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         
@@ -2378,8 +2384,9 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else{
-            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING)
+            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
@@ -3882,7 +3889,6 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     
     /* Setting the input inside a convolutional structure*/
     cl* temp = (cl*)malloc(sizeof(cl));
-    temp->post_activation = (float*)malloc(sizeof(float)*tensor_depth*tensor_i*tensor_j);
     temp->normalization_flag = NO_NORMALIZATION;
     temp->pooling_flag = NO_POOLING;
     temp->activation_flag = SIGMOID;
@@ -4180,7 +4186,6 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
             
         }
     }
-
     free(temp);
     if(!bool_is_real(error1[0])){
         fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");

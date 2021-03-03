@@ -2651,12 +2651,12 @@ cl* reset_edge_popup_d_cl(cl* f){
     
     int i;
     for(i = 0; i < f->n_kernels; i++){
-		f->d_scores[i] = 0;
-		f->d1_scores[i] = 0;
-		f->d2_scores[i] = 0;
-		f->d3_scores[i] = 0;
-		f->ex_d_scores_diff_grad[i] = 0;
-	}
+        f->d_scores[i] = 0;
+        f->d1_scores[i] = 0;
+        f->d2_scores[i] = 0;
+        f->d3_scores[i] = 0;
+        f->ex_d_scores_diff_grad[i] = 0;
+    }
     return f;
 }
 
