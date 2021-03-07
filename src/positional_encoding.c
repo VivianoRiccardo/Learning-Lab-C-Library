@@ -28,14 +28,14 @@ SOFTWARE.
 
 /*
  * This function returns a vector that must be summed up with the embeddings of the input for the new input in a transformer.
- * Is based on the positional encoding described in the papre attention is all you need
+ * Is based on the positional encoding described in the paper attention is all you need
  * 
  * Inputs:
  * 
  *             @ int embedding_dimension:= the dimension of the embedding of each token of your sequence, 
  *                                         for example if the sequence is a sentence and each token is a word,
  *                                         then if each token is rapresented by a k-dimensional array, k is the embedding dimension
- *             @ int sequence_length:= the name of this value is self-explanatory
+ *             @ int sequence_length:= the name of this value is self-explanatory (number of words for example)
  * 
  * */
 float* sin_cos_positional_encoding_vector(int embedding_dimension, int sequence_length){

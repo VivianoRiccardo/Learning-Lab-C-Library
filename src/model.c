@@ -5022,7 +5022,7 @@ void reset_score_model(model* f){
     }
 }
 
-/* llook at reinitialize_scores_cl function in convolutional_layers.c formore details*/
+/* look at reinitialize_scores_cl function in convolutional_layers.c formore details*/
 void reinitialize_scores_model(model* m, float percentage, float goodness){
     int i;
     for(i = 0; i < m->n_fcl; i++){
@@ -5033,6 +5033,20 @@ void reinitialize_scores_model(model* m, float percentage, float goodness){
     }
     for(i = 0; i < m->n_rl; i++){
         reinitialize_scores_rl(m->rls[i],percentage,goodness);
+    }
+}
+
+/* look at reinitialize_w_cl function in convolutional_layers.c formore details*/
+void reinitialize_w_model(model* m){
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reinitialize_w_fcl(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reinitialize_w_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reinitialize_w_rl(m->rls[i]);
     }
 }
 

@@ -505,34 +505,37 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
     int i,j,k,in;
     float* temp1 = output_error;
     float* temp2 = inputs_decoder;
-    for(i = t->n_td-1; i >-1; i--){
-        if(i){
-            temp2 = get_output_layer_from_encoder_transf(t->td[i-1]->e);
-            in = t->td[i-1]->e->m->output_dimension;
+    
+    if(flag != RUN_ONLY_ENCODER){
+        for(i = t->n_td-1; i >-1; i--){
+            if(i){
+                temp2 = get_output_layer_from_encoder_transf(t->td[i-1]->e);
+                in = t->td[i-1]->e->m->output_dimension;
+            }
+            
+            else{
+                temp2 = inputs_decoder;
+                in = input_dimension2;
+            }
+            for(j = 0; j < t->n_te; j++){
+                if (t->encoder_decoder_connections[j][i]){
+                    k = j;
+                    break;
+                }
+            }
+            temp1 = decoder_transformer_bp(temp2,t->td[i]->incoming_input,t->td[i],in,t->te[k]->m->output_dimension,temp1,t->td[i]->incoming_input_error);
         }
         
-        else{
-            temp2 = inputs_decoder;
-            in = input_dimension2;
-        }
-        for(j = 0; j < t->n_te; j++){
-            if (t->encoder_decoder_connections[j][i]){
-                k = j;
-                break;
-            }
-        }
-        temp1 = decoder_transformer_bp(temp2,t->td[i]->incoming_input,t->td[i],in,t->te[k]->m->output_dimension,temp1,t->td[i]->incoming_input_error);
-    }
-    
-    for(i = t->n_te-1; i > -1; i--){
-        for(j = 0; j < t->n_td; j++){
-            int c = 0;
-            if(t->encoder_decoder_connections[i][j]){
-                for(k = 0; k < i; k++){
-                    if(t->encoder_decoder_connections[k][j])
-                        c += t->te[k]->m->output_dimension;
+        for(i = t->n_te-1; i > -1; i--){
+            for(j = 0; j < t->n_td; j++){
+                int c = 0;
+                if(t->encoder_decoder_connections[i][j]){
+                    for(k = 0; k < i; k++){
+                        if(t->encoder_decoder_connections[k][j])
+                            c += t->te[k]->m->output_dimension;
+                    }
+                    sum1D(&t->td[j]->incoming_input[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
                 }
-                sum1D(&t->td[j]->incoming_input[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
             }
         }
     }

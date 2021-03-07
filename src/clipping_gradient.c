@@ -36,7 +36,7 @@ SOFTWARE.
  *             @ float threshold:= the threshold
  * 
  * */
-void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float threshold){
+void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, int n_r, int n_t, float threshold){
     double sum = 0;
     int i,j;
     for(i = 0; i < n_m; i++){
@@ -49,7 +49,22 @@ void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float th
         sum += (double)sum_all_quadratic_derivative_weights_lstms(r[i]->lstms,r[i]->layers);
     }
     
-    sum = sqrtf(sum);
+    for(i = 0; i < n_t; i++){
+		for(j = 0; j < t[i]->n_te; j++){
+			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->m);
+			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3);
+			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->te[j]->l2,t[i]->te[j]->n_l2);
+		 }
+		 for(j = 0; j < t[i]->n_td; j++){
+			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->m);
+			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3);
+			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3);
+			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2);
+			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->l2,t[i]->td[j]->n_l2);
+		 }
+	}
+    sum = sqrtl(sum);
+    
     if(sum >= threshold){
         for(i = 0; i < n_m; i++){
             clip_fcls(m[i]->fcls,m[i]->n_fcl,threshold,sum);
@@ -60,6 +75,26 @@ void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float th
     for(i = 0; i < n_r; i++){
         clip_lstms(r[i]->lstms,r[i]->layers,threshold,sum);
     }
+    
+    for(i = 0; i < n_t; i++){
+		for(j = 0; j < t[i]->n_te; j++){
+			 clip_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3,threshold,sum);
+			 clip_fcls(t[i]->te[j]->m->fcls,t[i]->te[j]->m->n_fcl,threshold,sum);
+			 clip_cls(t[i]->te[j]->m->cls,t[i]->te[j]->m->n_cl,threshold,sum);
+			 clip_rls(t[i]->te[j]->m->rls,t[i]->te[j]->m->n_rl,threshold,sum);
+			 clip_scaled_l2(t[i]->te[j]->l2,t[i]->te[j]->n_l2,threshold,sum);
+		 }
+		 for(j = 0; j < t[i]->n_td; j++){
+			 clip_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3,threshold,sum);
+			 clip_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3,threshold,sum);
+			 clip_fcls(t[i]->td[j]->e->m->fcls,t[i]->td[j]->e->m->n_fcl,threshold,sum);
+			 clip_cls(t[i]->td[j]->e->m->cls,t[i]->td[j]->e->m->n_cl,threshold,sum);
+			 clip_rls(t[i]->td[j]->e->m->rls,t[i]->td[j]->e->m->n_rl,threshold,sum);
+			 clip_scaled_l2(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2,threshold,sum);
+			 clip_scaled_l2(t[i]->td[j]->l2,t[i]->td[j]->n_l2,threshold,sum);
+		 }
+	 }
+    
 }
 /* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
  * in that case DL/Dw_i *= threshold/||DL/Dw||
@@ -85,6 +120,22 @@ void clipping_gradient(model* m, float threshold) {
      }
 }
 
+/* This function, given a threshold, sum all the quadratic derivative weights of the model m
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the model
+ * 
+ * */
+ 
+float sum_all_quadratic_derivative_weights_m(model* m) {
+     float sum = 0;
+     sum += sum_all_quadratic_derivative_weights_fcls(m->fcls, m->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(m->cls, m->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(m->rls, m->n_rl);
+     return sum;
+}
+
 /* This function, given a threshold, clips the gradient of the weights of the rmodel if the ||DL/Dw|| > threshold
  * in that case DL/Dw_i *= threshold/||DL/Dw||
  * 
@@ -102,6 +153,109 @@ void clipping_gradient_rmodel(rmodel* m, float threshold) {
      sum = sqrtf(sum);
      if(sum >= threshold)
          clip_lstms(m->lstms,m->layers,threshold,sum);   
+}
+
+
+/* This function, given a threshold, clips the gradient of the weights of the encoder transformer if the ||DL/Dw|| > threshold
+ * in that case DL/Dw_i *= threshold/||DL/Dw||
+ * 
+ * Input:
+ * 
+ *             @ transformer_encoder* t:= the encoder architecture
+ *             @ float threshold:= the threshold
+ * 
+ * */
+ 
+void clipping_gradient_transf_encoder(transformer_encoder* t, float threshold) {
+     float sum = 0;
+     int i,j;
+     sum += sum_all_quadratic_derivative_weights_m(t->m);
+     sum += sum_all_quadratic_derivative_weights_fcls(t->fcls,t->n_head*3);
+     sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->l2,t->n_l2);
+     sum = sqrtf(sum);
+     if(sum >= threshold){
+         clip_fcls(t->fcls,t->n_head*3,threshold,sum);
+         clip_fcls(t->m->fcls,t->m->n_fcl,threshold,sum);
+         clip_cls(t->m->cls,t->m->n_cl,threshold,sum);
+         clip_rls(t->m->rls,t->m->n_rl,threshold,sum);
+         clip_scaled_l2(t->l2,t->n_l2,threshold,sum);
+     }   
+}
+
+/* This function, given a threshold, clips the gradient of the weights of the decoder transformer if the ||DL/Dw|| > threshold
+ * in that case DL/Dw_i *= threshold/||DL/Dw||
+ * 
+ * Input:
+ * 
+ *             @ transformer_decoder* t:= the decoder architecture
+ *             @ float threshold:= the threshold
+ * 
+ * */
+ 
+void clipping_gradient_transf_decoder(transformer_decoder* t, float threshold) {
+     float sum = 0;
+     int i,j;
+     sum += sum_all_quadratic_derivative_weights_m(t->e->m);
+     sum += sum_all_quadratic_derivative_weights_fcls(t->e->fcls,t->e->n_head*3);
+     sum += sum_all_quadratic_derivative_weights_fcls(t->fcls,t->n_head*3);
+     sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->e->l2,t->e->n_l2);
+     sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->l2,t->n_l2);
+     sum = sqrtf(sum);
+     if(sum >= threshold){
+         clip_fcls(t->fcls,t->n_head*3,threshold,sum);
+         clip_fcls(t->e->fcls,t->e->n_head*3,threshold,sum);
+         clip_fcls(t->e->m->fcls,t->e->m->n_fcl,threshold,sum);
+         clip_cls(t->e->m->cls,t->e->m->n_cl,threshold,sum);
+         clip_rls(t->e->m->rls,t->e->m->n_rl,threshold,sum);
+         clip_scaled_l2(t->e->l2,t->e->n_l2,threshold,sum);
+         clip_scaled_l2(t->l2,t->n_l2,threshold,sum);
+     }   
+}
+
+/* This function, given a threshold, clips the gradient of the weights of the transformer if the ||DL/Dw|| > threshold
+ * in that case DL/Dw_i *= threshold/||DL/Dw||
+ * 
+ * Input:
+ * 
+ *             @ transformer* t:= the transformer architecture
+ *             @ float threshold:= the threshold
+ * 
+ * */
+ 
+void clipping_gradient_transf(transformer* t, float threshold) {
+     float sum = 0;
+     int i,j;
+     for(i = 0; i < t->n_te; i++){
+		 sum += sum_all_quadratic_derivative_weights_m(t->te[i]->m);
+		 sum += sum_all_quadratic_derivative_weights_fcls(t->te[i]->fcls,t->te[i]->n_head*3);
+		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->te[i]->l2,t->te[i]->n_l2);
+	 }
+     for(i = 0; i < t->n_td; i++){
+		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->m);
+		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3);
+		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->fcls,t->td[i]->n_head*3);
+		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->e->l2,t->td[i]->e->n_l2);
+		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->l2,t->td[i]->n_l2);
+	 }
+	 sum = sqrtf(sum);
+	 if(sum >= threshold){
+         for(i = 0; i < t->n_te; i++){
+			 clip_fcls(t->te[i]->fcls,t->te[i]->n_head*3,threshold,sum);
+			 clip_fcls(t->te[i]->m->fcls,t->te[i]->m->n_fcl,threshold,sum);
+			 clip_cls(t->te[i]->m->cls,t->te[i]->m->n_cl,threshold,sum);
+			 clip_rls(t->te[i]->m->rls,t->te[i]->m->n_rl,threshold,sum);
+			 clip_scaled_l2(t->te[i]->l2,t->te[i]->n_l2,threshold,sum);
+		 }
+		 for(i = 0; i < t->n_td; i++){
+			 clip_fcls(t->td[i]->fcls,t->td[i]->n_head*3,threshold,sum);
+			 clip_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3,threshold,sum);
+			 clip_fcls(t->td[i]->e->m->fcls,t->td[i]->e->m->n_fcl,threshold,sum);
+			 clip_cls(t->td[i]->e->m->cls,t->td[i]->e->m->n_cl,threshold,sum);
+			 clip_rls(t->td[i]->e->m->rls,t->td[i]->e->m->n_rl,threshold,sum);
+			 clip_scaled_l2(t->td[i]->e->l2,t->td[i]->e->n_l2,threshold,sum);
+			 clip_scaled_l2(t->td[i]->l2,t->td[i]->n_l2,threshold,sum);
+		 }
+     } 
 }
 
 
@@ -262,6 +416,25 @@ void clip_bns(bn** bns, int n, float threshold, float norm){
     
 }
 
+/* This functions clips the derivative weights according to the clipping_gradient formula
+  * of scaled l2 norm layers
+  * 
+  * Input:
+  * 
+  *             @ bn** bns:= scaled l2 norm layers
+  *             @ int n:= the number of batch normalized layers
+  *             @ float threshold:= the threshold of the clipping gradient formula
+  *             @ float norm:= the ||DL/Dw|| of the entire network
+  * 
+  * */
+void clip_scaled_l2(scaled_l2_norm** l, int n, float threshold, float norm){
+    int i,j;
+    for(i = 0; i < n; i++){
+        l[i]->d_learned_g*=(threshold)/(norm);
+    }
+    
+}
+
 /* This functions returns the derivative of the weights of the residual layers in quadratic form
  * returns Sum for all i (DL/Dw_i^2)    
   * 
@@ -310,6 +483,24 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
                 }
             }
         }
+    }
+    return sum;
+}
+
+/* This functions returns the derivative of the weights of the scaled l2 norm layers in quadratic form
+ * returns Sum for all i (DL/Dw_i^2)    
+  * 
+  * Input:
+  * 
+  *             @ scaled_l2_norm** l:= l2 layers
+  *             @ int n:= the number of l2 layers
+  * 
+  * */
+float sum_all_quadratic_derivative_weights_scaled_l2_norm(scaled_l2_norm** l, int n){
+    int i;
+    float sum = 0;
+    for(i = 0; i < n; i++){
+        sum+=l[i]->d_learned_g*l[i]->d_learned_g;
     }
     return sum;
 }

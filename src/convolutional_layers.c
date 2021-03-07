@@ -2689,6 +2689,23 @@ void reinitialize_scores_cl(cl* f, float percentage, float goodness){
     }
 }
 
+
+/* this function re initializes the weights of a convolutional layers
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ cl* f:= the convolutional layer
+ * */
+void reinitialize_w_cl(cl* f){
+    int i,j;
+    for(i = 0; i < f->n_kernels; i++){
+        for(j = 0; j < f->channels*f->kernel_cols*f->kernel_rows; j++){
+            f->kernels[i][j] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
+        }
+    }
+}
+
 cl* reset_edge_popup_d_cl(cl* f){
     if(f == NULL)
         return NULL;

@@ -67,5 +67,6 @@ int get_array_size_scores_cl(cl* f);
 cl* reset_edge_popup_d_cl(cl* f);
 void set_low_score_cl(cl* f);
 cl* reset_cl_except_partial_derivatives(cl* f);
+void reinitialize_w_cl(cl* f);
 
 #endif

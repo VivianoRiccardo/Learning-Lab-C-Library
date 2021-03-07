@@ -1024,7 +1024,7 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
     fcl** fcls = t->m->fcls;
     cl** cls = t->m->cls;
     rl** rls = t->m->rls;
-    int n_fcl = t->m->n_fcl, n_cl = t->m->n_cl, n_rl = t->m->n_rl, l = t->m->layers;
+    int n_fcl = t->m->n_fcl, n_cl = t->m->n_cl, n_rl = t->m->n_rl, l = t->m->layers,i;
     
     update_model(t->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
     
@@ -1059,23 +1059,41 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
     
     update_model(t->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
     
+    if(gradient_descent_flag == NESTEROV){
+		for(i = 0; i < t->n_l2; i++){
+			update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
+		}
+	}
+    
     if(gradient_descent_flag == ADAM){
+		for(i = 0; i < t->n_l2; i++){
+			update_scaled_l2_norm_adam(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
+		}
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
+        for(i = 0; i < t->n_l2; i++){
+			update_scaled_l2_norm_radam(t->l2[i],lr,mini_batch_size,*b1,*b2,*time,t->m->beta1_adam,t->m->beta2_adam);
+		}
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
         (*time)--;
     }
     
     else if(gradient_descent_flag == DIFF_GRAD){
+		for(i = 0; i < t->n_l2; i++){
+			update_scaled_l2_norm_adam_diff_grad(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
+		}
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == ADAMOD){
+		for(i = 0; i < t->n_l2; i++){
+			update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam,t->m->beta3_adamod);
+		}
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }

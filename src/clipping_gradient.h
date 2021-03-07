@@ -38,6 +38,12 @@ void clipping_gradient_rmodel(rmodel* m, float threshold);
 float sum_all_quadratic_derivative_weights_bns(bn** bns, int n);
 void clip_bns(bn** bns, int n, float threshold, float norm);
 void clipping_gradient_vae_model(vaemodel* m, float threshold);
-void general_clipping_gradient(model** m, rmodel** r, int n_m, int n_r, float threshold);
+void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, int n_r, int n_t, float threshold);
+float sum_all_quadratic_derivative_weights_scaled_l2_norm(scaled_l2_norm** l, int n);
+void clip_scaled_l2(scaled_l2_norm** l, int n, float threshold, float norm);
+float sum_all_quadratic_derivative_weights_m(model* m);
+void clipping_gradient_transf_encoder(transformer_encoder* t, float threshold);
+void clipping_gradient_transf_decoder(transformer_decoder* t, float threshold);
+void clipping_gradient_transf(transformer* t, float threshold);
 
 #endif

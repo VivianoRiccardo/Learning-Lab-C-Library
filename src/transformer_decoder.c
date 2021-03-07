@@ -688,8 +688,8 @@ void decoder_transformer_ff(float* inputs1, float* inputs2, transformer_decoder*
     if(t->residual_flag == TRANSFORMER_RESIDUAL){
         sum1D(inputs1,t->attention_output,t->residual1_output,input1_dimension);
         if(t->normalization_flag == SCALED_L2_NORMALIZATION){
-            feed_forward_scaled_l2_norm(input1_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual1_output,t->l2[0]->output);
-            wrapped_encoder_transformer_decoder_ff(t->l2[0]->output,inputs2,t->e,input2_dimension,input1_dimension);
+            feed_forward_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->residual1_output,t->l2[0]->output);
+            wrapped_encoder_transformer_decoder_ff(t->l2[0]->output,inputs2,t->e,input2_dimension,t->l2[0]->input_dimension);
         }
         
         else
@@ -697,12 +697,12 @@ void decoder_transformer_ff(float* inputs1, float* inputs2, transformer_decoder*
     }
     else{
         if(t->normalization_flag == SCALED_L2_NORMALIZATION){
-            feed_forward_scaled_l2_norm(input1_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
-            wrapped_encoder_transformer_decoder_ff(t->l2[0]->output,inputs2,t->e,input2_dimension,input1_dimension);
+            feed_forward_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
+            wrapped_encoder_transformer_decoder_ff(t->l2[0]->output,inputs2,t->e,input2_dimension,t->l2[0]->input_dimension);
         }
         
         else
-            wrapped_encoder_transformer_decoder_ff(t->attention_output,inputs2,t->e,input2_dimension,input1_dimension);
+            wrapped_encoder_transformer_decoder_ff(t->attention_output,inputs2,t->e,input2_dimension,t->input_dimension);
             
     }    
 }
@@ -710,12 +710,18 @@ void decoder_transformer_ff(float* inputs1, float* inputs2, transformer_decoder*
 
 float* decoder_transformer_bp(float* inputs1, float* inputs2, transformer_decoder* t, int input1_dimension, int input2_dimension, float* output_error, float* inputs2_error){
     int i;
-    float* err = wrapped_encoder_transformer_decoder_bp(inputs1,inputs2,t->e,input2_dimension,input1_dimension,output_error,inputs2_error);
+    float* err;
+    if(t->normalization_flag == SCALED_L2_NORMALIZATION)
+    err  = wrapped_encoder_transformer_decoder_bp(t->l2[0]->output,inputs2,t->e,input2_dimension,t->input_dimension,output_error,inputs2_error);
+    else if(t->residual_flag == TRANSFORMER_RESIDUAL)
+    err  = wrapped_encoder_transformer_decoder_bp(t->residual1_output,inputs2,t->e,input2_dimension,t->input_dimension,output_error,inputs2_error);
+    else
+    err  = wrapped_encoder_transformer_decoder_bp(t->attention_output,inputs2,t->e,input2_dimension,t->input_dimension,output_error,inputs2_error);
     if(t->normalization_flag == SCALED_L2_NORMALIZATION){
         if(t->residual_flag == TRANSFORMER_RESIDUAL)
-            back_propagation_scaled_l2_norm(input1_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->residual1_output,err,t->l2[0]->output_error);
+            back_propagation_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->residual1_output,err,t->l2[0]->output_error);
         else
-            back_propagation_scaled_l2_norm(input1_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->attention_output,err,t->l2[0]->output_error);
+            back_propagation_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->d_learned_g,t->l2[0]->norm,t->attention_output,err,t->l2[0]->output_error);
     
         multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->l2[0]->output_error,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
     
@@ -992,27 +998,45 @@ void update_transformer_decoder(transformer_decoder* t, float lr, float momentum
     fcl** fcls = t->e->m->fcls;
     cl** cls = t->e->m->cls;
     rl** rls = t->e->m->rls;
-    int n_fcl = t->e->m->n_fcl, n_cl = t->e->m->n_cl, n_rl = t->e->m->n_rl, l = t->e->m->layers;
+    int n_fcl = t->e->m->n_fcl, n_cl = t->e->m->n_cl, n_rl = t->e->m->n_rl, l = t->e->m->layers,i;
     
     update_model(t->e->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
     
+    if(gradient_descent_flag == NESTEROV){
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
+        }
+    }
+    
     if(gradient_descent_flag == ADAM){
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adam(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam);
+        }
         (*b1)/=t->e->m->beta1_adam;
         (*b2)/=t->e->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_radam(t->l2[i],lr,mini_batch_size,*b1,*b2,*time,t->e->m->beta1_adam,t->e->m->beta2_adam);
+        }
         (*b1)/=t->e->m->beta1_adam;
         (*b2)/=t->e->m->beta2_adam;
         (*time)--;
     }
     
     else if(gradient_descent_flag == DIFF_GRAD){
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adam_diff_grad(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam);
+        }
         (*b1)/=t->e->m->beta1_adam;
         (*b2)/=t->e->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == ADAMOD){
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam,t->e->m->beta3_adamod);
+        }
         (*b1)/=t->e->m->beta1_adam;
         (*b2)/=t->e->m->beta2_adam;
     }

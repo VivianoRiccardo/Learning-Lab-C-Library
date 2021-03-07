@@ -1916,6 +1916,19 @@ void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
     }
 }
 
+/* this function re initialize the weights and biases of the fully connected layers to get different values
+ * 
+ * Inputs:
+ * 
+ *             @ fcl* f:= the fully connected layers which bias and weights must be re initialized
+ * */
+void reinitialize_w_fcl(fcl* f){
+    int i;
+    for(i = 0; i < f->input*f->output; i++){
+        f->weights[i] = random_general_gaussian(0, (float)f->input);
+    }
+}
+
 fcl* reset_edge_popup_d_fcl(fcl* f){
     if (f == NULL)
         return NULL;

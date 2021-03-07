@@ -938,6 +938,20 @@ void reinitialize_scores_rl(rl* f, float percentage, float goodness){
     }
 }
 
+/* this function re initialize the weights of a residual layer
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ rl* f:= the residual layer
+ * */
+void reinitialize_w_rl(rl* f){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reinitialize_w_cl(f->cls[i]);
+    }
+}
+
 rl* reset_edge_popup_d_rl(rl* f){
     if (f == NULL)
         return NULL;

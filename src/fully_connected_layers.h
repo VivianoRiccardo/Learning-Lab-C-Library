@@ -69,5 +69,6 @@ void compare_score_fcl(fcl* input1, fcl* input2, fcl* output);
 fcl* reset_edge_popup_d_fcl(fcl* f);
 void set_low_score_fcl(fcl* f);
 fcl* reset_fcl_except_partial_derivatives(fcl* f);
+void reinitialize_w_fcl(fcl* f);
 
 #endif

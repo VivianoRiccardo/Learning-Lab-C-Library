@@ -133,7 +133,7 @@ void multi_head_attention_ff(float* queries, float* keys, float* values,float* s
     
     int i;
     for(i = 0; i < n_heads; i++){
-        self_attention_ff(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&output[i*dimension],dimension, attention_flag);
+        self_attention_ff(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&score_matrices[i*dimension*dimension],&score_matrices_softmax[i*dimension*dimension],&output[i*dimension],dimension, attention_flag);
     }
     
 }
@@ -147,7 +147,7 @@ void multi_head_attention_bp(float* queries_error, float* keys_error, float* val
     
     int i;
     for(i = 0; i < n_heads; i++){
-        self_attention_bp(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&queries_error[i*dimension],&keys_error[i*dimension],&values_error[i*dimension],&score_matrices[i*dimension],&score_matrices_softmax[i*dimension],&score_matrices_error[i*dimension],&score_matrices_softmax_error[i*dimension],&output_error[i*dimension],dimension, attention_flag);
+        self_attention_bp(&queries[i*dimension],&keys[i*dimension],&values[i*dimension],&queries_error[i*dimension],&keys_error[i*dimension],&values_error[i*dimension],&score_matrices[i*dimension*dimension],&score_matrices_softmax[i*dimension*dimension],&score_matrices_error[i*dimension*dimension],&score_matrices_softmax_error[i*dimension*dimension],&output_error[i*dimension],dimension, attention_flag);
     }
     
 }

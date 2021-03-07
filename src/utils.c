@@ -114,7 +114,7 @@ void set_dropout_mask(int size, float* mask, float threshold){
  *             @ int n:= the number of total weights in the network
  * */
 void ridge_regression(float *dw, float w, float lambda, int n){
-    (*dw) = (*dw) + (lambda/(float)n)*w;
+    (*dw) = (*dw) + (float)((((double)(lambda))/((double)(n)))*((double)(w)));
 }
 
 /* Function used to read all the files in a directory
@@ -1246,6 +1246,11 @@ void update_scaled_l2_norm_adam(scaled_l2_norm* l, float lr, int mini_batch_size
     int i,j,k;
     if (l->training_mode == GRADIENT_DESCENT)
         adam_algorithm(&l->learned_g,&l->d1_learned_g, &l->d2_learned_g, l->d_learned_g, lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+}
+void update_scaled_l2_norm_radam(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t, float beta1_adam, float beta2_adam){
+    int i,j,k;
+    if (l->training_mode == GRADIENT_DESCENT)
+        radam_algorithm(&l->learned_g,&l->d1_learned_g, &l->d2_learned_g, l->d_learned_g, lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
 }
 
 /* Given a model, this function update the params of the fully-connected layers of the model with the adam optimization algorithm

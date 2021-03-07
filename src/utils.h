@@ -111,5 +111,6 @@ void update_scaled_l2_norm_nesterov(scaled_l2_norm* l, float lr, float momentum,
 void update_scaled_l2_norm_adam(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam);
 void update_scaled_l2_norm_adamod(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam, float beta3_adamod);
 void update_scaled_l2_norm_adam_diff_grad(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, float beta1_adam, float beta2_adam);
+void update_scaled_l2_norm_radam(scaled_l2_norm* l, float lr, int mini_batch_size, float b1, float b2, unsigned long long int t, float beta1_adam, float beta2_adam);
 
 #endif

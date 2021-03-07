@@ -136,7 +136,8 @@ SOFTWARE.
 #define MASKED_ATTENTION 2
 
 #define RUN_ONLY_DECODER 0
-#define RUN_ALL_TRANSF 1
+#define RUN_ONLY_ENCODER 1
+#define RUN_ALL_TRANSF 2
 
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
