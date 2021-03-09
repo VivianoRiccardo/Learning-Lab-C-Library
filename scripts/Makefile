@@ -17,6 +17,7 @@ T10:=test10/
 T11:=test11/
 T12:=test12/
 T13:=test13/
+T15:=test15/
 
 
 SRCS = $(wildcard $(DIR)*.c)
@@ -54,3 +55,4 @@ test: $(DIRTEST)
 	$(CC) -o $(DIRTEST)$(T11)$(EXEC) $(DIRTEST)$(T11)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T12)$(EXEC) $(DIRTEST)$(T12)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T13)$(EXEC) $(DIRTEST)$(T13)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
+	$(CC) -o $(DIRTEST)$(T15)$(EXEC) $(DIRTEST)$(T15)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
