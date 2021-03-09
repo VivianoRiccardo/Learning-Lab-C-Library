@@ -118,7 +118,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
   Pay attention the structure of the genome is different from the structure of the deep learning networks.
   The test 10 can be taken as neat template, you need only to change the compute fitness function.
 - Test 11 is test 6 trained with edge popup algorithm.
-- Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), it works pretty well, but the clipping gradient seems to be needed in the setting training with those settings i gave it (nesterov momentum, learning rate 0.001, no sgd[batch size = 1], momentum 0.9)
+- Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), it works pretty well, but the clipping gradient seems to be needed in the training settings due to other settings i gave it (nesterov momentum, learning rate 0.001, no sgd[batch size = 1], momentum 0.9)
 
 
 # Future implementations
