@@ -5,7 +5,7 @@ int main(){
     
     // transformer treated as an autoencoder, it tries to replicate the input. To the encoder is given batch of the image (batch of 28)
     // and the decoder for each other batch of 28 tries to re imitate the input.
-    // simple transformer with 1 encoder and 1 decoder and 28 logit units (models) at the end for the output
+    // simple transformer with 1 encoder and 1 decoder and 28 logit units (models) at the end for the output, no sgd batch size = 1
     int i,j,k,z;
     srand(time(NULL));
     char** ksource = (char**)malloc(sizeof(char*));
@@ -117,9 +117,9 @@ int main(){
         }
         save_transf(t,i*29+28);
         // shuffling the inputs-outputs
-        shuffle_float_matrices(inputs,inputs2,2);
+        shuffle_float_matrices(inputs,inputs2,training_instances);
         
-        for(j = 0; j < 2; j++){
+        for(j = 0; j < training_instances; j++){
             // preparing the input for the decoder
             float* enc = (float*)calloc(28*28,sizeof(float));
             memcpy(&enc[28],inputs,27*28*sizeof(float));
@@ -142,7 +142,7 @@ int main(){
             }
             // transf bp
             transf_bp(t,inputs2[j],28*28,enc,28*28,err1,RUN_ALL_TRANSF);
-            // clipping gradient for the entire model (can be uncommented
+            // clipping gradient for the entire model (can be commented - not recommended)
             general_clipping_gradient(final_models,NULL,&t,28,0,1,2);
             
             // here comes the update
@@ -196,7 +196,7 @@ int main(){
         fclose(fi);
         
         // let compute the error
-        for(j = 0; j < 2; j++){
+        for(j = 0; j < training_instances; j++){
             
             float* enc = (float*)calloc(28*28,sizeof(float));
             // preparing the input
