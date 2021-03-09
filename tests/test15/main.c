@@ -10,7 +10,7 @@ int main(){
     srand(time(NULL));
     char** ksource = (char**)malloc(sizeof(char*));
     char* filename = "../data/train.bin";
-    int size = 0, training_instances = 50000, input_dimension = 28*28, epochs = 2;
+    int size = 0, training_instances = 50000, input_dimension = 28*28, epochs = 10;
     char temp[2];
     temp[1] = '\0';
     
@@ -35,8 +35,11 @@ int main(){
     // last layer after the decoder
     fcl** model_fcl = (fcl**)malloc(sizeof(fcl*));
     model_fcl[0] = fully_connected(100,28,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
+    //model_fcl[0]->training_mode = FREEZE_TRAINING;
+    // you can freeze the training of the logit units and watch how only the transformer tries to adapt to learn
     model* final_model = network(1,0,0,1,NULL,NULL,model_fcl);
     set_model_error(final_model,FOCAL_LOSS,0,0,2,NULL,28);
+    
     
     
     model** final_models = (model**)malloc(sizeof(model*)*28);
@@ -128,7 +131,7 @@ int main(){
             }
             sum1D(enc,pos_enc,enc,28*28);
             // feed forward transformer
-            printf("Training instance number %d/%d\n",j+1,training_instances);
+            printf("Training instance number %d/%d\n",j+1,100);
             transf_ff(t,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
             // ff and bp for the logits of the transf
             float* err1 = NULL;
@@ -143,7 +146,7 @@ int main(){
             // transf bp
             transf_bp(t,inputs2[j],28*28,enc,28*28,err1,RUN_ALL_TRANSF);
             // clipping gradient for the entire model (can be commented - not recommended)
-            general_clipping_gradient(final_models,NULL,&t,28,0,1,2);
+            general_clipping_gradient(final_models,NULL,&t,28,0,1,5);
             
             // here comes the update
             update_transformer(t,0.001,0.9,1,NESTEROV,NULL,NULL,NO_REGULARIZATION,0,0,NULL);
@@ -176,7 +179,7 @@ int main(){
     temp3[2] = 'i';
     temp3[3] = 'n';
     temp3[4] = '\0';
-    
+    long long unsigned int** cm;
     printf("Testing phase!\n");
     double error = 0;
     // Testing
@@ -205,6 +208,8 @@ int main(){
             }
             
             sum1D(enc,pos_enc,enc,28);
+            
+            
             // transf ff
             transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
             float* err = (float*)calloc(28,sizeof(float));
@@ -215,6 +220,11 @@ int main(){
                     if(mm[k]->output_layer[z] < 0.5) mm[k]->output_layer[z] = 0;
                     else mm[k]->output_layer[z] = 1;
                 }
+                if(!j)
+                    cm = confusion_matrix(mm[k]->output_layer, &inputs[j][k*28],NULL, 28,0.5);
+                else
+                    cm = confusion_matrix(mm[k]->output_layer, &inputs[j][k*28],cm, 28,0.5);
+        
                 sum1D(mm[k]->output_layer,&pos_enc[(k+1)*28],&enc[(k+1)*28],28);
                 reset_transf_decoders(tt);
                 transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ONLY_DECODER);
@@ -227,6 +237,7 @@ int main(){
                 error+=err[k];
                 reset_model(mm[k]);
             }
+            
             reset_transf(tt);
             free(enc);
             free(err);
@@ -240,6 +251,15 @@ int main(){
             free_model(mm[j]);
         }
         free_transf(tt);
+        printf("Accuracy, Precision, Sensitivity, Specificity:\n");
+        print_accuracy(cm,28);
+        print_precision(cm,28);
+        print_sensitivity(cm,28);
+        print_specificity(cm,28);
+        for(j = 0; j < 28*2; j++){
+            free(cm[j]);
+        }
+        free(cm);
     }
     
     // freeing the space allocated
