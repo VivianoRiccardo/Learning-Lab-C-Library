@@ -808,7 +808,7 @@ void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float*
             if (i == j)
                 input_error[i] += learned_g*output_error[i]*(quadratic_norm - input[i]*input[i])/cubic_norm;
             else
-                input_error[i] += learned_g*output_error[j]*(input[i]*input[j])/cubic_norm;
+                input_error[i] -= learned_g*output_error[j]*(input[i]*input[j])/cubic_norm;
         }
     }
 }

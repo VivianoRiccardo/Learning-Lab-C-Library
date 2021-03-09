@@ -190,7 +190,7 @@ typedef struct bn{//batch_normalization layer
     float* final_var;//vector_dim
     int* indeces;// for edge-popup algorithm, vector_dim
     float* scores;//for edge-popup algorithm,vector_dim
-    int training_mode;//GRADIENT_DESCENT, EDGE_POPUP
+    int training_mode;//GRADIENT_DESCENT, EDGE_POPUP, FREEZE_TRAINING
 }bn;
 
 
@@ -198,7 +198,7 @@ typedef struct bn{//batch_normalization layer
 typedef struct fcl { //fully-connected-layers
     int input,output,layer,dropout_flag, normalization_flag;//dropout flag = 1 if dropout must be applied
     int activation_flag; // activation flag = 0 -> no activation, flag = 1 -> sigmoid, = 2 -> relu, = 3 -> softmax, 4->tanhh
-    int training_mode,feed_forward_flag, n_groups;//GRADIENT_DESCENT, EDGE_POPUP
+    int training_mode,feed_forward_flag, n_groups;//GRADIENT_DESCENT, EDGE_POPUP, FREEZE_TRAINING
     float* weights;// output*input
     float* d_weights;// output*input
     float* d1_weights;// output*input
@@ -375,91 +375,6 @@ typedef struct vaemodel{
     model* decoder;
 } vaemodel;
 
-typedef struct thread_args_model {
-    model* m;
-    int rows,cols,channels,error_dimension;
-    float* input;
-    float* error;
-    float** returning_error;
-} thread_args_model;
-
-
-typedef struct thread_args_rmodel {
-    rmodel* m;
-    float** hidden_states;
-    float** cell_states;
-    float** input_model;
-    float** error_model;
-    float**** returning_error;
-    float*** ret_input_error;
-} thread_args_rmodel;
-
-typedef struct thread_args_enc_dec_model {
-    recurrent_enc_dec* m;
-    float** hidden_states;
-    float** cell_states;
-    float** input_model1;
-    float** input_model2;
-    float** error_model;
-    float**** returning_error;
-    float*** ret_input_error1;
-    float*** ret_input_error2;
-} thread_args_enc_dec_model;
-
-typedef struct thread_args_vae_model {
-    vaemodel* vm;
-    int rows,cols,channels,error_dimension;
-    float* input;
-    float* error;
-    float** returning_error;
-} thread_args_vae_model;
-
-typedef struct thread_args_server {
-    int idx,client_desc, reading_pipe, writing_pipe,buffer_size;
-    struct sockaddr_in* client_addr;
-} thread_args_server;
-
-typedef struct ddpg {
-    int batch_size,regularization1,regularization2,n_weights1,n_weights2,index,m1_input,m1_output,m2_output,m3_output;
-    int gradient_descent_flag1, gradient_descent_flag2,threads,max_frames,buff_size;
-    float lr1,lr2,momentum1,momentum2,lambda1,lambda2,epsilon_greedy,lambda,tau;
-    long long unsigned int t1, t2;
-    model* m1;
-    model* m2;
-    model* m3;
-    model* m4;
-    model** tm1;
-    model** tm2;
-    model** tm3;
-    model** tm4;
-    model** bm1;
-    model** bm2;
-    model** bm3;
-    model** bm4;
-    float** buff1;
-    float** buff2;
-    float* rewards;
-    float** actions;
-    int* terminal;
-    float** tm1_output_array;
-    float** tm2_output_array;
-    float** tm3_output_array;
-    float** tm4_output_array;
-    float** bm1_output_array;
-    float** bm2_output_array;
-    float** bm3_output_array;
-} ddpg;
-
-typedef struct oustrategy {
-    int action_dim;
-    float mu,theta,sigma,max_sigma,min_sigma;
-    float* action_max;
-    float* action_min;
-    long long unsigned int decay_period;
-    float* state;
-    float* action_space;
-} oustrategy;
-
 typedef struct scaled_l2_norm{
     int input_dimension, training_mode;
     float* output;
@@ -531,6 +446,120 @@ typedef struct transformer{
     transformer_decoder** td;
      
 }transformer;
+
+typedef struct thread_args_model {
+    model* m;
+    int rows,cols,channels,error_dimension;
+    float* input;
+    float* error;
+    float** returning_error;
+} thread_args_model;
+
+
+typedef struct thread_args_rmodel {
+    rmodel* m;
+    float** hidden_states;
+    float** cell_states;
+    float** input_model;
+    float** error_model;
+    float**** returning_error;
+    float*** ret_input_error;
+} thread_args_rmodel;
+
+typedef struct thread_args_enc_dec_model {
+    recurrent_enc_dec* m;
+    float** hidden_states;
+    float** cell_states;
+    float** input_model1;
+    float** input_model2;
+    float** error_model;
+    float**** returning_error;
+    float*** ret_input_error1;
+    float*** ret_input_error2;
+} thread_args_enc_dec_model;
+
+typedef struct thread_args_vae_model {
+    vaemodel* vm;
+    int rows,cols,channels,error_dimension;
+    float* input;
+    float* error;
+    float** returning_error;
+} thread_args_vae_model;
+
+typedef struct thread_args_transformer_encoder {
+    transformer_encoder* t;
+    float* input;
+    float* error;
+    float** returning_error;
+    int input_size;
+} thread_args_transformer_encoder;
+
+typedef struct thread_args_transformer_decoder {
+    transformer_decoder* t;
+    float* input1;
+    float* input2;
+    float* error;
+    float* returning_error2;
+    float** returning_error1;
+    int input_size1,input_size2;
+} thread_args_transformer_decoder;
+
+typedef struct thread_args_transformer {
+    transformer* t;
+    float* input_encoder;
+    float* input_decoder;
+    float* error;
+    float** returning_error;
+    int input_size1,input_size2, flag;
+} thread_args_transformer;
+
+typedef struct thread_args_server {
+    int idx,client_desc, reading_pipe, writing_pipe,buffer_size;
+    struct sockaddr_in* client_addr;
+} thread_args_server;
+
+typedef struct ddpg {
+    int batch_size,regularization1,regularization2,n_weights1,n_weights2,index,m1_input,m1_output,m2_output,m3_output;
+    int gradient_descent_flag1, gradient_descent_flag2,threads,max_frames,buff_size;
+    float lr1,lr2,momentum1,momentum2,lambda1,lambda2,epsilon_greedy,lambda,tau;
+    long long unsigned int t1, t2;
+    model* m1;
+    model* m2;
+    model* m3;
+    model* m4;
+    model** tm1;
+    model** tm2;
+    model** tm3;
+    model** tm4;
+    model** bm1;
+    model** bm2;
+    model** bm3;
+    model** bm4;
+    float** buff1;
+    float** buff2;
+    float* rewards;
+    float** actions;
+    int* terminal;
+    float** tm1_output_array;
+    float** tm2_output_array;
+    float** tm3_output_array;
+    float** tm4_output_array;
+    float** bm1_output_array;
+    float** bm2_output_array;
+    float** bm3_output_array;
+} ddpg;
+
+typedef struct oustrategy {
+    int action_dim;
+    float mu,theta,sigma,max_sigma,min_sigma;
+    float* action_max;
+    float* action_min;
+    long long unsigned int decay_period;
+    float* state;
+    float* action_space;
+} oustrategy;
+
+
 
 // Generic dictionary for int vectors
 typedef struct mystruct{

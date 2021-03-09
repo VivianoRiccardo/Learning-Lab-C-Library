@@ -712,7 +712,7 @@ float* decoder_transformer_bp(float* inputs1, float* inputs2, transformer_decode
     int i;
     float* err;
     if(t->normalization_flag == SCALED_L2_NORMALIZATION)
-    err  = wrapped_encoder_transformer_decoder_bp(t->l2[0]->output,inputs2,t->e,input2_dimension,t->input_dimension,output_error,inputs2_error);
+    err  = wrapped_encoder_transformer_decoder_bp(t->l2[0]->output,inputs2,t->e,input2_dimension,t->l2[0]->input_dimension,output_error,inputs2_error);
     else if(t->residual_flag == TRANSFORMER_RESIDUAL)
     err  = wrapped_encoder_transformer_decoder_bp(t->residual1_output,inputs2,t->e,input2_dimension,t->input_dimension,output_error,inputs2_error);
     else
@@ -789,7 +789,7 @@ void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, tran
                 }
                 sum1D(t->l2[0]->output,t->m->output_layer,t->residual2_output,t->l2[0]->input_dimension);
                 if(t->normalization_flag2 == SCALED_L2_NORMALIZATION){
-                    feed_forward_scaled_l2_norm(t->input_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
+                    feed_forward_scaled_l2_norm(t->m->output_dimension,t->l2[1]->learned_g,&t->l2[1]->norm,t->residual2_output,t->l2[1]->output);
                 }
             }
             else{

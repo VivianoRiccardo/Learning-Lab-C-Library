@@ -473,13 +473,13 @@ void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, floa
     in = input_dimension2;
     temp = inputs_decoder;
     for(i = 0; i < t->n_td; i++){
+        int c = 0;
         for(j = 0; j < t->n_te; j++){
             if (t->encoder_decoder_connections[j][i]){
-                k = j;
-                break;
+                c += t->te[j]->m->output_dimension;
             }
         }
-        decoder_transformer_ff(temp,t->td[i]->incoming_input,t->td[i],in,t->te[k]->m->output_dimension);
+        decoder_transformer_ff(temp,t->td[i]->incoming_input,t->td[i],in,c);
         temp = get_output_layer_from_encoder_transf(t->td[i]->e);
         in = t->td[i]->e->m->output_dimension;
     }
@@ -508,6 +508,7 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
     
     if(flag != RUN_ONLY_ENCODER){
         for(i = t->n_td-1; i >-1; i--){
+            int c = 0;
             if(i){
                 temp2 = get_output_layer_from_encoder_transf(t->td[i-1]->e);
                 in = t->td[i-1]->e->m->output_dimension;
@@ -519,14 +520,14 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
             }
             for(j = 0; j < t->n_te; j++){
                 if (t->encoder_decoder_connections[j][i]){
-                    k = j;
-                    break;
+                    c+=t->te[j]->m->output_dimension;
                 }
             }
-            temp1 = decoder_transformer_bp(temp2,t->td[i]->incoming_input,t->td[i],in,t->te[k]->m->output_dimension,temp1,t->td[i]->incoming_input_error);
+            temp1 = decoder_transformer_bp(temp2,t->td[i]->incoming_input,t->td[i],in,c,temp1,t->td[i]->incoming_input_error);
         }
         
         for(i = t->n_te-1; i > -1; i--){
+            
             for(j = 0; j < t->n_td; j++){
                 int c = 0;
                 if(t->encoder_decoder_connections[i][j]){
@@ -534,7 +535,7 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
                         if(t->encoder_decoder_connections[k][j])
                             c += t->te[k]->m->output_dimension;
                     }
-                    sum1D(&t->td[j]->incoming_input[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
+                    sum1D(&t->td[j]->incoming_input_error[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
                 }
             }
         }
@@ -554,7 +555,6 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
             if(i < t->n_te-1){
                 sum1D(t->te[i]->encoder_output_error,temp1,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
             }
-            
             temp1 = encoder_transformer_bp(temp2,t->te[i],in,t->te[i]->encoder_output_error);
         }
     }

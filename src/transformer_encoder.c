@@ -853,7 +853,7 @@ void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dim
     
     else{
         if(t->normalization_flag1 == SCALED_L2_NORMALIZATION){
-            feed_forward_scaled_l2_norm(t->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
+            feed_forward_scaled_l2_norm(t->l2[0]->input_dimension,t->l2[0]->learned_g,&t->l2[0]->norm,t->attention_output,t->l2[0]->output);
             model_tensor_input_ff(t->m,1,t->input_dimension,1,t->l2[0]->output);
             if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
                 if(t->input_dimension != t->m->output_dimension){
@@ -1060,40 +1060,40 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
     update_model(t->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
     
     if(gradient_descent_flag == NESTEROV){
-		for(i = 0; i < t->n_l2; i++){
-			update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
-		}
-	}
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
+        }
+    }
     
     if(gradient_descent_flag == ADAM){
-		for(i = 0; i < t->n_l2; i++){
-			update_scaled_l2_norm_adam(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
-		}
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adam(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
+        }
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == RADAM){
         for(i = 0; i < t->n_l2; i++){
-			update_scaled_l2_norm_radam(t->l2[i],lr,mini_batch_size,*b1,*b2,*time,t->m->beta1_adam,t->m->beta2_adam);
-		}
+            update_scaled_l2_norm_radam(t->l2[i],lr,mini_batch_size,*b1,*b2,*time,t->m->beta1_adam,t->m->beta2_adam);
+        }
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
         (*time)--;
     }
     
     else if(gradient_descent_flag == DIFF_GRAD){
-		for(i = 0; i < t->n_l2; i++){
-			update_scaled_l2_norm_adam_diff_grad(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
-		}
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adam_diff_grad(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam);
+        }
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }
     
     else if(gradient_descent_flag == ADAMOD){
-		for(i = 0; i < t->n_l2; i++){
-			update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam,t->m->beta3_adamod);
-		}
+        for(i = 0; i < t->n_l2; i++){
+            update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam,t->m->beta3_adamod);
+        }
         (*b1)/=t->m->beta1_adam;
         (*b2)/=t->m->beta2_adam;
     }
