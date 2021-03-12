@@ -30,7 +30,10 @@ void softmax(float* input, float* output, int size){
     for(i = 0; i < size; i++){
         sum+=exp(input[i]);
     }
-    
+    if(!bool_is_real(sum) || !sum){
+        fprintf(stderr,"Error: not real number appeared in a softmax function!\n");
+        exit(1);
+    }
     for(i = 0; i < size; i++){
         output[i] = exp(input[i])/sum;
     }
@@ -68,11 +71,19 @@ void derivative_softmax(float* output,float* softmax_arr,float* error, int size)
 
 
 float sigmoid(float x){
-    return 1/(1+exp(-x));
+    float t = (1+exp(-x));
+    if(bool_is_real(t) && t)
+    return 1/t;
+    fprintf(stderr,"Error: not real number appeared in a sigmoid function!\n");
+    exit(1);
 }
 
 float abs_sigmoid(float x){
-    return 1/(1+exp(-float_abs(x)));
+    float t = (1+exp(-float_abs(x)));
+    if(bool_is_real(t) && t)
+    return 1/t;
+    fprintf(stderr,"Error: not real number appeared in a abs_sigmoid function!\n");
+    exit(1);
 }
 void sigmoid_array(float* input, float* output, int size){
     int i;
@@ -158,7 +169,10 @@ void derivative_leaky_relu_array(float* input, float* output, int size){
 
 float tanhh(float x){
     float y = exp(2*x);
+    if(bool_is_real(y) && (y+1))
     return (y-1)/(y+1);
+    fprintf(stderr,"Error: not real number appeared in a tanh function!\n");
+    exit(1);
 }
 
 void tanhh_array(float* input, float* output, int size){
@@ -333,13 +347,20 @@ void derivative_modified_huber_loss_array(float* y_hat, float* y, float threshol
 
 
 float focal_loss(float y_hat, float y, float gamma){
-    float temp;
+    float temp,log_one;
     if(y == 1)
         temp = (y_hat);
     else
         temp = (1-y_hat);
     
-    return -pow((double)(1-temp),(double)gamma)*log(temp);
+    if(!temp || temp != temp){
+        temp = 0;
+        log_one = -999999;
+    }
+    else{
+        log_one = log(temp);
+    }
+    return -pow((double)(1-temp),(double)gamma)*log_one;
         
 }
 
@@ -351,12 +372,22 @@ void focal_loss_array(float* y_hat, float* y,float* output, float gamma, int siz
 }
 
 float derivative_focal_loss(float y_hat, float y, float gamma){
-    float temp;
+    float temp,log_one,power;
     if(y == 1)
         temp = (y_hat);
     else
         temp = (1-y_hat);
-    float temp2 = gamma*pow((double)(1-temp),(double)gamma-1)*log(temp)-pow((double)(1-temp),(double)gamma)/temp;
+    if(!temp || temp != temp){
+        temp = 0;
+        log_one = -999999;
+        power = 0;
+    }
+    else{
+        log_one = log(temp);
+        power = pow((double)(1-temp),(double)gamma)/temp;
+    }
+    
+    float temp2 = gamma*pow((double)(1-temp),(double)gamma-1)*log_one-power;
     if(y == 1)
         return temp2;
     else
