@@ -103,7 +103,7 @@ void self_attention_bp(float* query, float* key, float* value, float* query_erro
     for(i = 0; i < dimension; i++){
         for(j = 0; j < dimension; j++){
             query_error[i] += score_matrix_error[i*dimension+j]*key[j]/sqrt_dimension;
-            key_error[i] += score_matrix_error[i*dimension+j]*query[j]/sqrt_dimension;
+            key_error[j] += score_matrix_error[i*dimension+j]*query[i]/sqrt_dimension;
         }
     }
     
