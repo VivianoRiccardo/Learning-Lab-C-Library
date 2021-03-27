@@ -129,6 +129,7 @@ SOFTWARE.
 #define EDGE_POPUP 2
 #define FULLY_FEED_FORWARD 3
 #define FREEZE_TRAINING 4
+#define FREEZE_BIASES 5
 
 #define ONLY_DROPOUT 5
 
@@ -394,6 +395,7 @@ typedef struct transformer_encoder{
     scaled_l2_norm** l2;//2 or 1 or 0
     fcl** fcls;// 3*n_head
     model* m;//the model after the attention + possible residual and normalization
+    model* linear_after_attention;
     float* encoder_output_error;//m->output_dimension
     float* q;//n_head X dimension
     float* k;//n_head X dimension
@@ -416,6 +418,7 @@ typedef struct transformer_encoder{
 typedef struct transformer_decoder{
     int input_dimension, left_dimension, n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2; 
     transformer_encoder* e;//1
+    model* linear_after_attention;
     scaled_l2_norm** l2;// 3 or 2 or 1 or 0
     fcl** fcls;// 3*n_head1 + 3*n_head2
     float* incoming_input;//left_dimension
@@ -588,6 +591,7 @@ typedef struct training{
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
 #include "gd.h"
+#include "initialization.h"
 #include "math_functions.h"
 #include "model.h"
 #include "multi_core_model.h"

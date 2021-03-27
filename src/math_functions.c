@@ -62,7 +62,7 @@ void derivative_softmax(float* output,float* softmax_arr,float* error, int size)
             if (i == j)
                 output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
             else
-                output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
+                output[j] -= softmax_arr[j]*softmax_arr[i]*error[i];
             
         }
         

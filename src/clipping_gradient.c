@@ -52,11 +52,14 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
     for(i = 0; i < n_t; i++){
 		for(j = 0; j < t[i]->n_te; j++){
 			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->m);
+			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->linear_after_attention);
 			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3);
 			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->te[j]->l2,t[i]->te[j]->n_l2);
 		 }
 		 for(j = 0; j < t[i]->n_td; j++){
 			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->m);
+			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->linear_after_attention);
+			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->linear_after_attention);
 			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3);
 			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3);
 			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2);
@@ -82,6 +85,9 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
 			 clip_fcls(t[i]->te[j]->m->fcls,t[i]->te[j]->m->n_fcl,threshold,sum);
 			 clip_cls(t[i]->te[j]->m->cls,t[i]->te[j]->m->n_cl,threshold,sum);
 			 clip_rls(t[i]->te[j]->m->rls,t[i]->te[j]->m->n_rl,threshold,sum);
+			 clip_fcls(t[i]->te[j]->linear_after_attention->fcls,t[i]->te[j]->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t[i]->te[j]->linear_after_attention->cls,t[i]->te[j]->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t[i]->te[j]->linear_after_attention->rls,t[i]->te[j]->linear_after_attention->n_rl,threshold,sum);
 			 clip_scaled_l2(t[i]->te[j]->l2,t[i]->te[j]->n_l2,threshold,sum);
 		 }
 		 for(j = 0; j < t[i]->n_td; j++){
@@ -90,6 +96,12 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
 			 clip_fcls(t[i]->td[j]->e->m->fcls,t[i]->td[j]->e->m->n_fcl,threshold,sum);
 			 clip_cls(t[i]->td[j]->e->m->cls,t[i]->td[j]->e->m->n_cl,threshold,sum);
 			 clip_rls(t[i]->td[j]->e->m->rls,t[i]->td[j]->e->m->n_rl,threshold,sum);
+			 clip_fcls(t[i]->td[j]->e->linear_after_attention->fcls,t[i]->td[j]->e->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t[i]->td[j]->e->linear_after_attention->cls,t[i]->td[j]->e->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t[i]->td[j]->e->linear_after_attention->rls,t[i]->td[j]->e->linear_after_attention->n_rl,threshold,sum);
+			 clip_fcls(t[i]->td[j]->linear_after_attention->fcls,t[i]->td[j]->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t[i]->td[j]->linear_after_attention->cls,t[i]->td[j]->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t[i]->td[j]->linear_after_attention->rls,t[i]->td[j]->linear_after_attention->n_rl,threshold,sum);
 			 clip_scaled_l2(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2,threshold,sum);
 			 clip_scaled_l2(t[i]->td[j]->l2,t[i]->td[j]->n_l2,threshold,sum);
 		 }
@@ -170,6 +182,7 @@ void clipping_gradient_transf_encoder(transformer_encoder* t, float threshold) {
      float sum = 0;
      int i,j;
      sum += sum_all_quadratic_derivative_weights_m(t->m);
+     sum += sum_all_quadratic_derivative_weights_m(t->linear_after_attention);
      sum += sum_all_quadratic_derivative_weights_fcls(t->fcls,t->n_head*3);
      sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->l2,t->n_l2);
      sum = sqrtf(sum);
@@ -178,6 +191,9 @@ void clipping_gradient_transf_encoder(transformer_encoder* t, float threshold) {
          clip_fcls(t->m->fcls,t->m->n_fcl,threshold,sum);
          clip_cls(t->m->cls,t->m->n_cl,threshold,sum);
          clip_rls(t->m->rls,t->m->n_rl,threshold,sum);
+         clip_fcls(t->linear_after_attention->fcls,t->linear_after_attention->n_fcl,threshold,sum);
+         clip_cls(t->linear_after_attention->cls,t->linear_after_attention->n_cl,threshold,sum);
+         clip_rls(t->linear_after_attention->rls,t->linear_after_attention->n_rl,threshold,sum);
          clip_scaled_l2(t->l2,t->n_l2,threshold,sum);
      }   
 }
@@ -196,6 +212,8 @@ void clipping_gradient_transf_decoder(transformer_decoder* t, float threshold) {
      float sum = 0;
      int i,j;
      sum += sum_all_quadratic_derivative_weights_m(t->e->m);
+     sum += sum_all_quadratic_derivative_weights_m(t->e->linear_after_attention);
+     sum += sum_all_quadratic_derivative_weights_m(t->linear_after_attention);
      sum += sum_all_quadratic_derivative_weights_fcls(t->e->fcls,t->e->n_head*3);
      sum += sum_all_quadratic_derivative_weights_fcls(t->fcls,t->n_head*3);
      sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->e->l2,t->e->n_l2);
@@ -207,6 +225,12 @@ void clipping_gradient_transf_decoder(transformer_decoder* t, float threshold) {
          clip_fcls(t->e->m->fcls,t->e->m->n_fcl,threshold,sum);
          clip_cls(t->e->m->cls,t->e->m->n_cl,threshold,sum);
          clip_rls(t->e->m->rls,t->e->m->n_rl,threshold,sum);
+         clip_fcls(t->e->linear_after_attention->fcls,t->e->linear_after_attention->n_fcl,threshold,sum);
+         clip_cls(t->e->linear_after_attention->cls,t->e->linear_after_attention->n_cl,threshold,sum);
+         clip_rls(t->e->linear_after_attention->rls,t->e->linear_after_attention->n_rl,threshold,sum);
+         clip_fcls(t->linear_after_attention->fcls,t->linear_after_attention->n_fcl,threshold,sum);
+         clip_cls(t->linear_after_attention->cls,t->linear_after_attention->n_cl,threshold,sum);
+         clip_rls(t->linear_after_attention->rls,t->linear_after_attention->n_rl,threshold,sum);
          clip_scaled_l2(t->e->l2,t->e->n_l2,threshold,sum);
          clip_scaled_l2(t->l2,t->n_l2,threshold,sum);
      }   
@@ -227,11 +251,14 @@ void clipping_gradient_transf(transformer* t, float threshold) {
      int i,j;
      for(i = 0; i < t->n_te; i++){
 		 sum += sum_all_quadratic_derivative_weights_m(t->te[i]->m);
+		 sum += sum_all_quadratic_derivative_weights_m(t->te[i]->linear_after_attention);
 		 sum += sum_all_quadratic_derivative_weights_fcls(t->te[i]->fcls,t->te[i]->n_head*3);
 		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->te[i]->l2,t->te[i]->n_l2);
 	 }
      for(i = 0; i < t->n_td; i++){
 		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->m);
+		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->linear_after_attention);
+		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->linear_after_attention);
 		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3);
 		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->fcls,t->td[i]->n_head*3);
 		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->e->l2,t->td[i]->e->n_l2);
@@ -244,6 +271,9 @@ void clipping_gradient_transf(transformer* t, float threshold) {
 			 clip_fcls(t->te[i]->m->fcls,t->te[i]->m->n_fcl,threshold,sum);
 			 clip_cls(t->te[i]->m->cls,t->te[i]->m->n_cl,threshold,sum);
 			 clip_rls(t->te[i]->m->rls,t->te[i]->m->n_rl,threshold,sum);
+			 clip_fcls(t->te[i]->linear_after_attention->fcls,t->te[i]->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t->te[i]->linear_after_attention->cls,t->te[i]->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t->te[i]->linear_after_attention->rls,t->te[i]->linear_after_attention->n_rl,threshold,sum);
 			 clip_scaled_l2(t->te[i]->l2,t->te[i]->n_l2,threshold,sum);
 		 }
 		 for(i = 0; i < t->n_td; i++){
@@ -252,6 +282,12 @@ void clipping_gradient_transf(transformer* t, float threshold) {
 			 clip_fcls(t->td[i]->e->m->fcls,t->td[i]->e->m->n_fcl,threshold,sum);
 			 clip_cls(t->td[i]->e->m->cls,t->td[i]->e->m->n_cl,threshold,sum);
 			 clip_rls(t->td[i]->e->m->rls,t->td[i]->e->m->n_rl,threshold,sum);
+			 clip_fcls(t->td[i]->e->linear_after_attention->fcls,t->td[i]->e->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t->td[i]->e->linear_after_attention->cls,t->td[i]->e->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t->td[i]->e->linear_after_attention->rls,t->td[i]->e->linear_after_attention->n_rl,threshold,sum);
+			 clip_fcls(t->td[i]->linear_after_attention->fcls,t->td[i]->linear_after_attention->n_fcl,threshold,sum);
+			 clip_cls(t->td[i]->linear_after_attention->cls,t->td[i]->linear_after_attention->n_cl,threshold,sum);
+			 clip_rls(t->td[i]->linear_after_attention->rls,t->td[i]->linear_after_attention->n_rl,threshold,sum);
 			 clip_scaled_l2(t->td[i]->e->l2,t->td[i]->e->n_l2,threshold,sum);
 			 clip_scaled_l2(t->td[i]->l2,t->td[i]->n_l2,threshold,sum);
 		 }

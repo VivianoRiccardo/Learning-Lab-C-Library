@@ -120,8 +120,8 @@ lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int 
         lstml->w[i] = (float*)calloc(size*size,sizeof(float));
         lstml->u[i] = (float*)calloc(size*size,sizeof(float));
         for(j = 0; j < size*size; j++){
-            lstml->w[i][j] = random_general_gaussian(0,size);
-            lstml->u[i][j] = random_general_gaussian(0,size);
+            lstml->w[i][j] = random_general_gaussian_xavier_init(size);
+            lstml->u[i][j] = random_general_gaussian_xavier_init(size);
         }
         lstml->d_w[i] = (float*)calloc(size*size,sizeof(float));
         lstml->ex_d_w_diff_grad[i] = (float*)calloc(size*size,sizeof(float));

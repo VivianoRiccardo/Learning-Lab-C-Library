@@ -43,16 +43,16 @@ SOFTWARE.
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride, int padding){
+void convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride1, int stride2, int padding){
     int oi,oj,i,j,c;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(c = 0; c < channels; c++){
                 for(i = 0; i < kernel_i; i++){
                     for(j = 0; j < kernel_j; j++){
-                        output[oi*output_j+oj] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                        output[oi*output_j+oj] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
                     }
                 }
             }
@@ -83,18 +83,18 @@ void convolutional_feed_forward(float* input, float* kernel, int input_i, int in
  *                @ int n_kernel:= the number of kernels
  *                @ int last_n:= the last n best indices
  * */
-void convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride, int padding, int* indices, int n_kernels, int last_n){
+void convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride1, int stride2, int padding, int* indices, int n_kernels, int last_n){
     
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(s = n_kernels-last_n; s < n_kernels; s++){
         for(oi = padding; oi < output_i-padding; oi++){
             for(oj = padding; oj < output_j-padding; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            output[indices[s]*output_i*output_j + oi*output_j+oj] += kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                            output[indices[s]*output_i*output_j + oi*output_j+oj] += kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
                         }
                     }
                 }
@@ -129,17 +129,17 @@ void convolutional_feed_forward_edge_popup(float* input, float** kernel, int inp
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding){
+void convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding){
     int oi,oj,i,j,c;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(c = 0; c < channels; c++){
                 for(i = 0; i < kernel_i; i++){
                     for(j = 0; j < kernel_j; j++){
-                        kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j];
-                        input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
+                        kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
+                        input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
                     }
                 }
             }
@@ -175,16 +175,16 @@ void convolutional_back_prop(float* input, float* kernel, int input_i, int input
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
-void convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error){
+void convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error){
     int oi,oj,i,j,c;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(oi = padding; oi < output_i-padding; oi++){
         for(oj = padding; oj < output_j-padding; oj++){
             for(c = 0; c < channels; c++){
                 for(i = 0; i < kernel_i; i++){
                     for(j = 0; j < kernel_j; j++){
-                        (*score_error) += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
+                        (*score_error) += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
                     }
                 }
             }
@@ -218,18 +218,18 @@ void convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
-void convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
+void convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride1, int stride2, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
     
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(s = n_kernels-last_n; s < n_kernels; s++){
         for(oi = padding; oi < output_i-padding; oi++){
             for(oj = padding; oj < output_j-padding; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j] += output_error[indices[s]*output_i*output_j + oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j];
+                            kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j] += output_error[indices[s]*output_i*output_j + oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
                         }
                     }
                 }
@@ -266,18 +266,18 @@ void convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, i
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
-void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error, int* indices, int n_kernels, int last_n){
+void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error, int* indices, int n_kernels, int last_n){
 
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-kernel_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-kernel_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     for(s = n_kernels-last_n; s < n_kernels; s++){
         for(oi = padding; oi < output_i-padding; oi++){
             for(oj = padding; oj < output_j-padding; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride+(oi-padding)*stride*input_j] += output_error[indices[s]*output_i*output_j + oi*output_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
+                            input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += output_error[indices[s]*output_i*output_j + oi*output_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
                         }
                     }
                 }
@@ -299,18 +299,18 @@ void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, 
  *             @ int stride:= the stride used to pool
  *             @ int padding:= the optional padding added to the output
  * */
-void max_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride, int padding){
+void max_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding){
     int i,j,k1,k2;
-    int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-sub_pool_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-sub_pool_j)/stride2 + 1 + 2*padding;
     float max = -999999;
     
     for(i = 0; i < output_i - 2*padding; i++){
         for(j = 0; j < output_j - 2*padding; j++){
             for(k1 = 0; k1 < sub_pool_i; k1++){
                 for(k2 = 0; k2 < sub_pool_j; k2++){                   
-                    if(input[input_j*(i*stride+k1) + j*stride + k2] > max)
-                        max = input[input_j*(i*stride+k1) + j*stride + k2];
+                    if(input[input_j*(i*stride1+k1) + j*stride2 + k2] > max)
+                        max = input[input_j*(i*stride1+k1) + j*stride2 + k2];
                 }
             }
             output[(padding+i)*output_j+padding+j] = max;
@@ -337,10 +337,10 @@ void max_pooling_feed_forward(float* input, float* output, int input_i, int inpu
  *             @ float input_error := the error computed using the output_error
  *                                    dimensions: input_i*input_j
  * */
-void max_pooling_back_prop(float* input, float* output_error, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride, int padding, float* input_error){
+void max_pooling_back_prop(float* input, float* output_error, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding, float* input_error){
     int i,j,k1,k2, index1 = 0, index2 = 0;
-    int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-sub_pool_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-sub_pool_j)/stride2 + 1 + 2*padding;
     float max = -999999;
     
     for(i = 0; i < output_i - 2*padding; i++){
@@ -348,8 +348,8 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
             for(k1 = 0; k1 < sub_pool_i; k1++){
                 for(k2 = 0; k2 < sub_pool_j; k2++){
                     
-                    if(input[input_j*(i*stride+k1) + j*stride + k2] > max){
-                        max = input[input_j*(i*stride+k1) + j*stride + k2];
+                    if(input[input_j*(i*stride1+k1) + j*stride2 + k2] > max){
+                        max = input[input_j*(i*stride1+k1) + j*stride2 + k2];
                         index1 = k1;
                         index2 = k2;
                         
@@ -362,10 +362,10 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
                 for(k2 = 0; k2 < sub_pool_j; k2++){
                     
                     if(index1 == k1 && index2 == k2)
-                        input_error[input_j*(i*stride+k1) + j*stride + k2] = output_error[(padding+i)*output_j+padding+j];
+                        input_error[input_j*(i*stride1+k1) + j*stride2 + k2] = output_error[(padding+i)*output_j+padding+j];
                     
                     else
-                        input_error[input_j*(i*stride+k1) + j*stride + k2] = 0;
+                        input_error[input_j*(i*stride1+k1) + j*stride2 + k2] = 0;
                         
                 
                 }
@@ -389,17 +389,17 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
  *             @ int stride:= the stride used to pool
  *             @ int padding:= the optional padding added to the output
  * */
-void avarage_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride, int padding){
+void avarage_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding){
     int i,j,k1,k2;
-    int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-sub_pool_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-sub_pool_j)/stride2 + 1 + 2*padding;
     float sum = 0;
     
     for(i = 0; i < output_i - 2*padding; i++){
         for(j = 0; j < output_j - 2*padding; j++){
             for(k1 = 0; k1 < sub_pool_i; k1++){
                 for(k2 = 0; k2 < sub_pool_j; k2++){
-                    sum += input[input_j*(i*stride+k1) + j*stride + k2];
+                    sum += input[input_j*(i*stride1+k1) + j*stride2 + k2];
                 }
             }
             output[(padding+i)*output_j+padding+j] = sum/(sub_pool_i*sub_pool_j);
@@ -423,16 +423,16 @@ void avarage_pooling_feed_forward(float* input, float* output, int input_i, int 
  *             @ int padding:= the optional padding added to the output
  *             
  * */
-void avarage_pooling_back_prop(float* input_error, float* output_error, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride, int padding){
+void avarage_pooling_back_prop(float* input_error, float* output_error, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding){
     int i,j,k1,k2;
-    int output_i = (input_i-sub_pool_i)/stride + 1 + 2*padding;
-    int output_j = (input_j-sub_pool_j)/stride + 1 + 2*padding;
+    int output_i = (input_i-sub_pool_i)/stride1 + 1 + 2*padding;
+    int output_j = (input_j-sub_pool_j)/stride2 + 1 + 2*padding;
     
     for(i = 0; i < output_i - 2*padding; i++){
         for(j = 0; j < output_j - 2*padding; j++){
             for(k1 = 0; k1 < sub_pool_i; k1++){
                 for(k2 = 0; k2 < sub_pool_j; k2++){
-                    input_error[input_j*(i*stride+k1) + j*stride + k2] = ((float)1/(sub_pool_i*sub_pool_j))*output_error[(padding+i)*output_j+padding+j];
+                    input_error[input_j*(i*stride1+k1) + j*stride2 + k2] = ((float)1/(sub_pool_i*sub_pool_j))*output_error[(padding+i)*output_j+padding+j];
                 }
             }
         }
@@ -459,17 +459,17 @@ void avarage_pooling_back_prop(float* input_error, float* output_error, int inpu
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride, int padding){
+void transposed_convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride1,int stride2, int padding){
     int oi,oj,i,j,c;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(oi = 0; oi < input_i; oi++){
             for(oj = 0; oj < input_j; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            output[i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
+                            output[i*output_j + j+oj*stride2+oi*stride1*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
                         }
                     }
                 }    
@@ -486,7 +486,7 @@ void transposed_convolutional_feed_forward(float* input, float* kernel, int inpu
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            temp[i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
+                            temp[i*output_j + j+oj*stride2+oi*stride1*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[c*kernel_i*kernel_j + i*kernel_j + j];
                         }
                     }
                 }    
@@ -522,11 +522,11 @@ void transposed_convolutional_feed_forward(float* input, float* kernel, int inpu
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride, int padding, int* indices, int n_kernels, int last_n){
+void transposed_convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride1,int stride2, int padding, int* indices, int n_kernels, int last_n){
     
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(s = n_kernels-last_n; s < n_kernels; s++){
             for(oi = 0; oi < input_i; oi++){
@@ -534,7 +534,7 @@ void transposed_convolutional_feed_forward_edge_popup(float* input, float** kern
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                output[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
+                                output[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
                             }
                         }
                     }    
@@ -553,7 +553,7 @@ void transposed_convolutional_feed_forward_edge_popup(float* input, float** kern
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
+                                temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j]+=input[c*input_i*input_j + oi*input_j+oj]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
                             }
                         }
                     }    
@@ -596,18 +596,18 @@ void transposed_convolutional_feed_forward_edge_popup(float* input, float** kern
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding){
+void transposed_convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding){
     int oi,oj,i,j,c;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(oi = 0; oi < input_i; oi++){
             for(oj = 0; oj < input_j; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[i*output_j + j+oj*stride+oi*stride*output_j];
-                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*output_error[i*output_j + j+oj*stride+oi*stride*output_j];
+                            input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[i*output_j + j+oj*stride2+oi*stride1*output_j];
+                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*output_error[i*output_j + j+oj*stride2+oi*stride1*output_j];
                         }
                     }
                 }    
@@ -629,8 +629,8 @@ void transposed_convolutional_back_prop(float* input, float* kernel, int input_i
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*temp[i*output_j + j+oj*stride+oi*stride*output_j];
-                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*temp[i*output_j + j+oj*stride+oi*stride*output_j];
+                            input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*temp[i*output_j + j+oj*stride2+oi*stride1*output_j];
+                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j]+=input[c*input_i*input_j + oi*input_j+oj]*temp[i*output_j + j+oj*stride2+oi*stride1*output_j];
                         }
                     }
                 }    
@@ -671,17 +671,17 @@ void transposed_convolutional_back_prop(float* input, float* kernel, int input_i
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error){
+void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error){
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(oi = 0; oi < input_i; oi++){
             for(oj = 0; oj < input_j; oj++){
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            (*score_error)+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*output_error[i*output_j + j+oj*stride+oi*stride*output_j];
+                            (*score_error)+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*output_error[i*output_j + j+oj*stride2+oi*stride1*output_j];
                         }
                     }
                 }    
@@ -700,7 +700,7 @@ void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, 
                 for(c = 0; c < channels; c++){
                     for(i = 0; i < kernel_i; i++){
                         for(j = 0; j < kernel_j; j++){
-                            (*score_error)+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*temp[i*output_j + j+oj*stride+oi*stride*output_j];
+                            (*score_error)+=kernel[c*kernel_i*kernel_j + i*kernel_j + j]*input[c*input_i*input_j + oi*input_j+oj]*temp[i*output_j + j+oj*stride2+oi*stride1*output_j];
                         }
                     }
                 }    
@@ -736,10 +736,10 @@ void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, 
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
+void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride1, int stride2, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(s = n_kernels-last_n; s < n_kernels; s++){
             for(oi = 0; oi < input_i; oi++){
@@ -747,7 +747,7 @@ void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float*
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j] += output_error[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]*input[c*input_i*input_j + oi*input_j+oj];
+                                kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j] += output_error[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j]*input[c*input_i*input_j + oi*input_j+oj];
                             }
                         }
                     }    
@@ -775,7 +775,7 @@ void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float*
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]+=temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]*input[c*input_i*input_j + oi*input_j+oj];
+                                kernel_error[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]+=temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j]*input[c*input_i*input_j + oi*input_j+oj];
                             }
                         }
                     }    
@@ -812,10 +812,10 @@ void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float*
  *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
  *             @ int padding:= the optional padding added to the output
  * */
-void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride, int padding, float* score_error, int* indices, int n_kernels, int last_n){
+void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error, int* indices, int n_kernels, int last_n){
     int oi,oj,i,j,c,s;
-    int output_i = (input_i-1)*stride+kernel_i;
-    int output_j = (input_j-1)*stride+kernel_j;
+    int output_i = (input_i-1)*stride1+kernel_i;
+    int output_j = (input_j-1)*stride2+kernel_j;
     if(!padding){
         for(s = n_kernels-last_n; s < n_kernels; s++){
             for(oi = 0; oi < input_i; oi++){
@@ -823,7 +823,7 @@ void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                input_error[c*input_i*input_j + oi*input_j+oj]+=output_error[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
+                                input_error[c*input_i*input_j + oi*input_j+oj]+=output_error[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j]*kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j];
                             }
                         }
                     }    
@@ -848,7 +848,7 @@ void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float
                     for(c = 0; c < channels; c++){
                         for(i = 0; i < kernel_i; i++){
                             for(j = 0; j < kernel_j; j++){
-                                input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]*temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride+oi*stride*output_j];
+                                input_error[c*input_i*input_j + oi*input_j+oj]+=kernel[indices[s]][c*kernel_i*kernel_j + i*kernel_j + j]*temp[indices[s]*output_i*output_j + i*output_j + j+oj*stride2+oi*stride1*output_j];
                             }
                         }
                     }    

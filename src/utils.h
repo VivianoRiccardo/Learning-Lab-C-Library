@@ -26,11 +26,6 @@ SOFTWARE.
 #define __UTILS_H__
 
 char* get_full_path(char* directory, char* filename);
-float r2();
-float drand ();
-float random_normal ();
-float random_general_gaussian(float mean, float n);
-float random_general_gaussian_xavier_init(float mean, float n);
 void get_dropout_array(int size, float* mask, float* input, float* output); 
 void set_dropout_mask(int size, float* mask, float threshold); 
 void ridge_regression(float *dw, float w, float lambda, int n);
@@ -100,7 +95,6 @@ void quick_sort(float A[], int I[], int lo, int hi);
 void copy_int_array(int* input, int* output, int size);
 float float_abs(float a);
 void float_abs_array(float* a, int n);
-float random_general_gaussian_kaiming_init(float mean, float n);
 void dot_float_input(float* input1, int* input2, float* output, int size);
 int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);

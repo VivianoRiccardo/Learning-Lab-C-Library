@@ -59,8 +59,8 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         exit(1);
     }
     
-    if(padding1_rows!=padding1_cols || padding2_rows != padding2_cols || stride1_cols!= stride1_rows || stride2_cols!= stride2_rows){
-        fprintf(stderr,"Error: stride1_rows must be equal to stride1_cols, padding1_rows must be equal to padding1_cols and stride2_rows must be equal to stride2_cols, padding2_rows must be equal to padding2_cols\n");
+    if(padding1_rows!=padding1_cols || padding2_rows != padding2_cols){
+        fprintf(stderr,"Error: padding1_rows must be equal to padding1_cols and padding2_rows must be equal to padding2_cols\n");
         exit(1);
     }
     
@@ -223,7 +223,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->d3_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
         c->indices[i] = i;
         for(j = 0; j < channels*kernel_rows*kernel_cols; j++){
-            c->kernels[i][j] = random_general_gaussian(0, (float)channels*input_rows*input_cols);
+            c->kernels[i][j] = random_general_gaussian_xavier_init(channels*input_rows*input_cols);
         }
     }
     
@@ -2683,7 +2683,7 @@ void reinitialize_scores_cl(cl* f, float percentage, float goodness){
             return;
         if(f->scores[f->indices[i]] < goodness){
             for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
-                f->kernels[f->indices[i]][j] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
+                f->kernels[f->indices[i]][j] = random_general_gaussian_xavier_init( (float)f->channels*f->input_rows*f->input_cols);
             }
         } 
     }
@@ -2701,7 +2701,7 @@ void reinitialize_w_cl(cl* f){
     int i,j;
     for(i = 0; i < f->n_kernels; i++){
         for(j = 0; j < f->channels*f->kernel_cols*f->kernel_rows; j++){
-            f->kernels[i][j] = random_general_gaussian(0, (float)f->channels*f->input_rows*f->input_cols);
+            f->kernels[i][j] = random_general_gaussian_xavier_init((float)f->channels*f->input_rows*f->input_cols);
         }
     }
 }

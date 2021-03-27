@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __TRANSFORMER_DECODER_H__
 #define __TRANSFORMER_DECODER_H__
 
-transformer_decoder* transformer_decoder_layer(int input_dimension, int left_dimension, int n_head1, int n_head2, int residual_flag1, int normalization_flag1, int residual_flag2, int normalization_flag2, int residual_flag3, int normalization_flag3, int attention_flag1, int attention_flag2, int encoder_input_dimension, model* m, fcl** fcls, scaled_l2_norm** l2);
+transformer_decoder* transformer_decoder_layer(int input_dimension, int left_dimension, int n_head1, int n_head2, int residual_flag1, int normalization_flag1, int residual_flag2, int normalization_flag2, int residual_flag3, int normalization_flag3, int attention_flag1, int attention_flag2, int encoder_input_dimension, model* m,model* linear_after_attention1,model* linear_after_attention2, fcl** fcls, scaled_l2_norm** l2);
 void free_transformer_decoder_layer(transformer_decoder* d);
 void free_transformer_decoder_layer_for_edge_popup(transformer_decoder* t);
 void free_transformer_decoder_layer_complementary_edge_popup(transformer_decoder* t);

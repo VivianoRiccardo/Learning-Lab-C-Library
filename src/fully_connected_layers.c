@@ -98,7 +98,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         f->active_output_neurons[i] = 1;
         for(j = 0; j < input; j++){
             f->indices[i*input+j] = i*input+j;
-            f->weights[i*input+j] = random_general_gaussian(0, (float)input);
+            f->weights[i*input+j] = random_general_gaussian_xavier_init(input);
         }
         if(dropout_flag)
             f->dropout_mask[i] = 1;
@@ -1912,7 +1912,7 @@ void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
         if(i >= f->input*f->output*percentage)
             return;
         if(f->scores[f->indices[i]] < goodness)
-            f->weights[f->indices[i]] = random_general_gaussian(0, (float)f->input);
+            f->weights[f->indices[i]] = random_general_gaussian_xavier_init(f->input);
     }
 }
 
@@ -1925,7 +1925,7 @@ void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
 void reinitialize_w_fcl(fcl* f){
     int i;
     for(i = 0; i < f->input*f->output; i++){
-        f->weights[i] = random_general_gaussian(0, (float)f->input);
+        f->weights[i] = random_general_gaussian_xavier_init(f->input);
     }
 }
 

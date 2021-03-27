@@ -31,42 +31,7 @@ char* get_full_path(char* directory, char* filename){
     strcat(temp,filename);
     return temp;
 }
-/*random number between 0 and 1*/
-float r2(){
-    return (float)rand() / (float)RAND_MAX ;
-}
 
-float generate_from_random_distribution(float lo, float hi){
-    return lo + (float)(rand()) /((float)(RAND_MAX/(hi-lo)));
-}
-float drand (){
-  return (rand () + 1.0) / (RAND_MAX + 1.0);
-}
-
-/* a random number from a gaussian distribution with mean 0 and std 1*/
-float random_normal (){
-  return sqrtf(-2 * log (drand ())) * cos (2 * M_PI * drand ());
-  }
-
-/* a random number from a gaussian distribution with mean 0 and std = sqrtf(2/n)
- * where n is the number of neuron of layer l-1*/
-float random_general_gaussian(float mean, float n){
-    return mean + sqrtf(2/(n))*random_normal();
-}
-
-
-
-/* a random number from a gaussian distribution with mean 0 and std = sqrtf(1/n)
- * where n is the number of neuron of layer l-1*/
-float random_general_gaussian_xavier_init(float mean, float n){
-    return mean + sqrtf(1/(n))*random_normal();
-}
-
-/* a random number from a gaussian distribution with mean 0 and std = sqrtf(1/n)
- * where n is the number of neuron of layer l-1*/
-float random_general_gaussian_kaiming_init(float mean, float n){
-    return random_general_gaussian(mean,n);
-}
 /* This function set the output from a given mask already set
  * 
  * Input:
@@ -649,8 +614,8 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
-                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
-                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT || m->rls[i]->cls[j]->training_mode == FREEZE_BIASES){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                             for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                                 for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -659,6 +624,7 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
                                     }
                                 }
                             }
+                            if(m->rls[i]->cls[j]->training_mode != FREEZE_BIASES)
                             nesterov_momentum(&m->rls[i]->cls[j]->biases[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_biases[k],&m->rls[i]->cls[j]->d1_biases[k]);
                             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                                 update_batch_normalized_layer_nesterov(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,momentum,mini_batch_size);
@@ -697,8 +663,8 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
-                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
-                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT || m->rls[i]->cls[j]->training_mode == FREEZE_BIASES){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                             for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                                 for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -707,6 +673,7 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
                                     }
                                 }
                             }
+                            if(m->rls[i]->cls[j]->training_mode != FREEZE_BIASES)
                             adam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                                 update_batch_normalized_layer_adam(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
@@ -742,8 +709,8 @@ void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
-                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
-                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT || m->rls[i]->cls[j]->training_mode == FREEZE_BIASES){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                             for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                                 for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -752,6 +719,7 @@ void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float
                                     }
                                 }
                             }
+                            if(m->rls[i]->cls[j]->training_mode != FREEZE_BIASES)
                             adamod(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod, &m->rls[i]->cls[j]->d3_biases[k]);
                             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                                 update_batch_normalized_layer_adamod(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
@@ -787,8 +755,8 @@ void update_residual_layer_adam_diff_grad(model* m, float lr, int mini_batch_siz
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
-                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
-                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT || m->rls[i]->cls[j]->training_mode == FREEZE_BIASES){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                             for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                                 for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -797,6 +765,7 @@ void update_residual_layer_adam_diff_grad(model* m, float lr, int mini_batch_siz
                                     }
                                 }
                             }
+                            if(m->rls[i]->cls[j]->training_mode != FREEZE_BIASES)
                             adam_diff_grad_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->rls[i]->cls[j]->ex_d_biases_diff_grad[k]);
                             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                                 update_batch_normalized_layer_adam_diff_grad(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
@@ -831,8 +800,8 @@ void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float 
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
-                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
-                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT){
+                if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                    if(m->rls[i]->cls[j]->training_mode == GRADIENT_DESCENT || m->rls[i]->cls[j]->training_mode == FREEZE_BIASES){
                         for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                             for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                                 for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -841,6 +810,7 @@ void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float 
                                     }
                                 }
                             }
+                            if(m->rls[i]->cls[j]->training_mode != FREEZE_BIASES)
                             radam_algorithm(&m->rls[i]->cls[j]->biases[k],&m->rls[i]->cls[j]->d1_biases[k],&m->rls[i]->cls[j]->d2_biases[k],m->rls[i]->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                             if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                                 update_batch_normalized_layer_radam(m->rls[i]->cls[j]->group_norm,m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,t,beta1_adam,beta2_adam);
@@ -877,7 +847,7 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
                 for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                     sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
                 }
@@ -909,8 +879,8 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
         if(m->cls[j]->training_mode != FREEZE_TRAINING){
-            if(m->cls[j]->convolutional_flag == CONVOLUTION){
-                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT || m->cls[j]->training_mode == FREEZE_BIASES){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         for(u = 0; u < m->cls[j]->channels; u++){
                             for(z = 0; z < m->cls[j]->kernel_rows; z++){
@@ -920,6 +890,7 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
                                     
                             }
                         }
+                        if(m->cls[j]->training_mode != FREEZE_BIASES)
                         nesterov_momentum(&m->cls[j]->biases[k],lr,momentum,mini_batch_size, m->cls[j]->d_biases[k],&m->cls[j]->d1_biases[k]);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_nesterov(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,momentum,mini_batch_size);
@@ -954,8 +925,8 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
         if(m->cls[j]->training_mode != FREEZE_TRAINING){
-            if(m->cls[j]->convolutional_flag == CONVOLUTION){
-                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT || m->cls[j]->training_mode == FREEZE_BIASES){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         for(u = 0; u < m->cls[j]->channels; u++){
                             for(z = 0; z < m->cls[j]->kernel_rows; z++){
@@ -965,13 +936,14 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
                                     
                             }
                         }
+                        if(m->cls[j]->training_mode != FREEZE_BIASES)
                         adam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_adam(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
                         }
                     }
                 }
-                else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
+                else if(m->cls[j]->training_mode == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         
                         adam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
@@ -998,8 +970,8 @@ void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, 
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
         if(m->cls[j]->training_mode != FREEZE_TRAINING){
-            if(m->cls[j]->convolutional_flag == CONVOLUTION){
-                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT || m->cls[j]->training_mode == FREEZE_BIASES){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         for(u = 0; u < m->cls[j]->channels; u++){
                             for(z = 0; z < m->cls[j]->kernel_rows; z++){
@@ -1009,13 +981,14 @@ void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, 
                                     
                             }
                         }
+                        if(m->cls[j]->training_mode != FREEZE_BIASES)
                         adamod(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->cls[j]->d3_biases[k]);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_adamod(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam,beta3_adamod);
                         }
                     }
                 }
-                else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
+                else if(m->cls[j]->training_mode == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         
                         adamod(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->cls[j]->d3_scores[k]);
@@ -1042,8 +1015,8 @@ void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batc
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
         if(m->cls[j]->training_mode != FREEZE_TRAINING){
-            if(m->cls[j]->convolutional_flag == CONVOLUTION){
-                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT || m->cls[j]->training_mode == FREEZE_BIASES){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         for(u = 0; u < m->cls[j]->channels; u++){
                             for(z = 0; z < m->cls[j]->kernel_rows; z++){
@@ -1053,13 +1026,14 @@ void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batc
                                     
                             }
                         }
+                        if(m->cls[j]->training_mode != FREEZE_BIASES)
                         adam_diff_grad_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->ex_d_biases_diff_grad[k]);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_adam_diff_grad(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
                         }
                     }
                 }
-                else if(m->cls[j]->convolutional_flag == EDGE_POPUP){
+                else if(m->cls[j]->training_mode == EDGE_POPUP){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                        
                         adam_diff_grad_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->ex_d_scores_diff_grad[k]);
@@ -1085,8 +1059,8 @@ void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, f
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
         if(m->cls[j]->training_mode != FREEZE_TRAINING){
-            if(m->cls[j]->convolutional_flag == CONVOLUTION){
-                if(m->cls[j]->training_mode == GRADIENT_DESCENT){
+            if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
+                if(m->cls[j]->training_mode == GRADIENT_DESCENT  || m->cls[j]->training_mode == FREEZE_BIASES){
                     for(k = 0; k < m->cls[j]->n_kernels; k++){
                         for(u = 0; u < m->cls[j]->channels; u++){
                             for(z = 0; z < m->cls[j]->kernel_rows; z++){
@@ -1096,6 +1070,7 @@ void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, f
                                     
                             }
                         }
+                        if(m->cls[j]->training_mode != FREEZE_BIASES)
                         radam_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_radam(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,t,beta1_adam,beta2_adam);
@@ -1104,10 +1079,8 @@ void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, f
                 }
                 
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){
-                        
-                        radam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-                               
+                    for(k = 0; k < m->cls[j]->n_kernels; k++){             
+                        radam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);                             
                     }
                 }
             }
@@ -1133,7 +1106,7 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
     }
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+        if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(k = 0; k < m->cls[j]->n_kernels; k++){
                 sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
             }
@@ -1167,7 +1140,7 @@ void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, i
         if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
-                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES)
                     nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
                     if(m->fcls[i]->training_mode == EDGE_POPUP)
                     nesterov_momentum(&m->fcls[i]->scores[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k]);
@@ -1227,7 +1200,7 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
         if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
-                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES)
                     adam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adam_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
@@ -1270,7 +1243,7 @@ void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size
         if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
-                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT  || m->fcls[i]->training_mode == FREEZE_BIASES)
                     adamod(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adamod(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_scores[j*m->fcls[i]->input+k]);
@@ -1307,7 +1280,7 @@ void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_ba
         if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
-                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES)
                     adam_diff_grad_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->ex_d_weights_diff_grad[j*m->fcls[i]->input+k]);
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adam_diff_grad_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->ex_d_scores_diff_grad[j*m->fcls[i]->input+k]);
@@ -1346,7 +1319,7 @@ void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size,
         if(m->fcls[i]->training_mode != FREEZE_TRAINING && m->fcls[i]->feed_forward_flag != ONLY_DROPOUT){
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
-                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT)
+                    if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES)
                         radam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                         radam_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
@@ -1495,7 +1468,7 @@ void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION){
+            if(m->rls[i]->cls[j]->convolutional_flag == CONVOLUTION || m->rls[i]->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
                 for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
                     for(u = 0; u < m->rls[i]->cls[j]->channels; u++){
                         for(z = 0; z < m->rls[i]->cls[j]->kernel_rows; z++){
@@ -1531,7 +1504,7 @@ void add_l2_residual_layer(model* m,int total_number_weights,float lambda){
 void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda){
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        if(m->cls[j]->convolutional_flag == CONVOLUTION){
+        if(m->cls[j]->convolutional_flag == CONVOLUTION || m->cls[j]->convolutional_flag == TRANSPOSED_CONVOLUTION){
             for(k = 0; k < m->cls[j]->n_kernels; k++){
                 for(u = 0; u < m->cls[j]->channels; u++){
                     for(z = 0; z < m->cls[j]->kernel_rows; z++){
