@@ -1526,12 +1526,24 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
  * 
  *                 @ flc* f:= the fully-connected layer
  * */
-int get_array_size_params(fcl* f){
-    int sum = 0;
+uint64_t get_array_size_params(fcl* f){
+    uint64_t sum = 0;
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        sum += f->layer_norm->vector_dim*2;
+        sum += (uint64_t)f->layer_norm->vector_dim*2;
     }
-    return f->input*f->output+f->output+sum;
+    return (uint64_t)f->input*f->output+f->output+sum;
+}
+
+
+/* this function gives the number of float params for scores in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+uint64_t get_array_size_scores_fcl(fcl* f){
+    return (uint64_t)f->input*f->output;
 }
 
 
@@ -1542,9 +1554,14 @@ int get_array_size_params(fcl* f){
  * 
  *                 @ flc* f:= the fully-connected layer
  * */
-int get_array_size_weights(fcl* f){
-    return f->input*f->output;
+uint64_t get_array_size_weights(fcl* f){
+    uint64_t sum = 0;
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        sum += (uint64_t)f->layer_norm->vector_dim*2;
+    }
+    return (uint64_t)f->input*f->output+sum;
 }
+
 /* this function pastes the weights and biases from a vector into in a fcl structure
  * 
  * Inputs:
@@ -1562,7 +1579,7 @@ void memcopy_vector_to_params(fcl* f, float* vector){
     }
 }
 
-/* this function pastes the weights and biases from a vector into in a fcl structure
+/* this function pastes the scores stored in a vector inside a fcl structure
  * 
  * Inputs:
  * 
@@ -1591,7 +1608,7 @@ void memcopy_params_to_vector(fcl* f, float* vector){
     }
 }
 
-/* this function pastes the the weights from a fcl structure into a vector
+/* this function pastes the scores from a fcl structure into a vector
  * 
  * Inputs:
  * 
@@ -1601,9 +1618,13 @@ void memcopy_params_to_vector(fcl* f, float* vector){
  * */
 void memcopy_weights_to_vector(fcl* f, float* vector){
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(&vector[f->input*f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
-/* this function pastes the the weights from a fcl structure into a vector
+/* this function pastes the the weights from vector to a fcl structure
  * 
  * Inputs:
  * 
@@ -1613,9 +1634,13 @@ void memcopy_weights_to_vector(fcl* f, float* vector){
  * */
 void memcopy_vector_to_weights(fcl* f, float* vector){
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        memcpy(f->layer_norm->gamma,&vector[f->input*f->output],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->beta,&vector[f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+    }
 }
 
-/* this function pastes the the weights and biases from a fcl structure into a vector
+/* this function pastes the scores from a fcl structure into a vector
  * 
  * Inputs:
  * 
@@ -1683,132 +1708,6 @@ void set_fully_connected_unused_weights_to_zero(fcl* f){
     }
 }
 
-/* This function minimizes k percentage and the used weights if there are some used weights attached to inactive neurons
- * 
- * Input:
- * 
- *             @ fcl* f:= the fully connected layer
- *             @ int* used_input:= an array of the input used, can be dimension (n_feature_maps) if layer_flag = CLS f->input*f->output dimension otherwise
- *             @ int* used_output:= the active neurons of the next layer, f->output dimension
- *             @ int layer_flag:= it says if the previous layer was a convolution/residual (CONVOLUTION) or a fcl layer (FULLY_CONNECTED)
- *             @ int input_size:= the size of used_input array
- * */
-int fcl_adjusting_weights_after_edge_popup(fcl* f, int* used_input, int* used_output, int layer_flag, int input_size){
-    int i,j,z,flag = 0, lower = f->input*f->output-f->input*f->output*f->k_percentage;
-    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
-        if(layer_flag == CLS){
-            int n_per_feature_map = f->input/input_size;
-            for(j = 0; j < input_size; j++){
-                if(((int)(f->indices[i]%f->input)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->input) >= n_per_feature_map*(j)) || (!used_output[(int)(f->indices[i]%f->output)])){
-                    if(!used_input[j]){
-                        flag = 1;
-                        for(z = i; z > lower; z--){
-                            int temp = f->indices[z-1];
-                            f->indices[z-1] = f->indices[z];
-                            f->indices[z] = temp;
-                        }
-                        lower++;
-                    }
-                }
-            }
-            
-        }
-        
-        else{
-            if((!used_input[(int)(f->indices[i]%f->input)]) || (!used_output[(int)(f->indices[i]%f->output)])){
-                flag = 1;
-                for(z = i; z > lower; z--){
-                    int temp = f->indices[z-1];
-                    f->indices[z-1] = f->indices[z];
-                    f->indices[z] = temp;
-                }
-                lower++;
-            }
-        }
-    }
-    
-    f->k_percentage = (float)(1-(float)(((double)(lower))/((double)(f->input*f->output))));
-    return flag;
-}
-
-
-/* This function returns the input surely used by current weights
- * 
- * Inputs:
- *             
- *             @ fcl* f:= the fully-connected layer
- *             @ int* used_input:= the used input
- *             @ int flag == convolution or fully connected
- *             @ int input_size:= the size of the array used_input
- * */
-int* get_used_inputs(fcl* f, int* used_input, int flag, int input_size){
-    int i,j;
-    int* ui;
-    if(used_input == NULL)
-        ui = (int*)calloc(input_size,sizeof(int));
-    else
-        ui = used_input;
-    for(i = 0; i < input_size; i++){
-        ui[i] = 0;
-    }
-    
-    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
-        if(flag == CLS){
-            int n_per_feature_map = f->input/input_size;
-            for(j = 0; j < input_size; j++){
-                if(((int)(f->indices[i]%f->input)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->input) >= n_per_feature_map*(j)))
-                ui[j] = 1;
-            }
-        }
-            
-        else{
-            ui[f->indices[i]%f->input] = 1;
-        }
-    }
-    
-    return ui;    
-}
-
-/* This function returns the output surely used by current weights
- * 
- * Inputs:
- *             
- *             @ fcl* f:= the fully-connected layer
- *             @ int* used_input:= the used output
- *             @ int flag == convolution or fully connected
- *             @ int input_size:= the size of the array used_output
- * */
-int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
-    int i,j;
-    int* uo;
-    if(used_output == NULL)
-        uo= (int*)calloc(output_size,sizeof(int));
-    else
-        uo = used_output;
-    
-    for(i = 0; i < output_size; i++){
-        uo[i] = 0;
-    }
-    
-    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
-        if(flag == CLS){
-            int n_per_feature_map = f->output/output_size;
-            for(j = 0; j < output_size; j++){
-                if(((int)(f->indices[i]%f->output)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->output) >= n_per_feature_map*(j)))
-                uo[j] = 1;
-            }
-        }
-            
-        else{
-            uo[(int)((f->indices[i]/f->input))] = 1;
-        }
-    }
-    
-    return uo;  
-    
-}
-
-
 /* this function sum up the scores in input1 and input2 in output
  * 
  * Input:
@@ -1822,7 +1721,7 @@ void sum_score_fcl(fcl* input1, fcl* input2, fcl* output){
     sum1D(input1->scores,input2->scores,output->scores,input1->input*input1->output);
 }
 
-/* this function sum up the scores in input1 and input2 in output
+/* this function stores in the output the best scores according to input1 and input2
  * 
  * Input:
  * 
@@ -1865,7 +1764,7 @@ void dividing_score_fcl(fcl* f, float value){
  * */
 void set_fcl_only_dropout(fcl* f){
     if(!f->dropout_flag){
-        fprintf(stderr,"Error: if you use this layer only for dropout you should set dropou flag!\n");
+        fprintf(stderr,"Error: if you use this layer only for dropout you should set dropout flag!\n");
         exit(1);
     }
     
@@ -1897,14 +1796,14 @@ void reset_score_fcl(fcl* f){
 /* thif function reinitialize the weights under the goodness function only if
  * they are among the f->input*f->output*percentage worst weights according to the scores
  * percentage and goodness should range in [0,1]
- * 
+ * the re initialization uses the signed kaiming constant (the best one for edge popup according to the paper)
  * Input:
  * 
  *                 @ fcl* f:= the fully connected layer
  *                 @ float percentage:= the percentage of the worst weights
  *                 @ float goodness:= the goodness function
  * */
-void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
+void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, float goodness){
     if(f->feed_forward_flag == ONLY_DROPOUT)
         return;
     int i;
@@ -1912,7 +1811,7 @@ void reinitialize_scores_fcl(fcl* f, float percentage, float goodness){
         if(i >= f->input*f->output*percentage)
             return;
         if(f->scores[f->indices[i]] < goodness)
-            f->weights[f->indices[i]] = random_general_gaussian_xavier_init(f->input);
+            f->weights[f->indices[i]] = signed_kaiming_constant(f->input);
     }
 }
 
@@ -1929,6 +1828,13 @@ void reinitialize_w_fcl(fcl* f){
     }
 }
 
+/* this function sets all the arrays needed for storing the partial derivatives and parameteres for sgd to 0
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @fcl* f:= the fully connected layer which arrays must be set to 0
+ * */
 fcl* reset_edge_popup_d_fcl(fcl* f){
     if (f == NULL)
         return NULL;
@@ -1943,7 +1849,7 @@ fcl* reset_edge_popup_d_fcl(fcl* f){
     return f;
 }
 
-/* this function reset all the scores of the fcl layer to 0
+/* this function set all the scores of the fcl layer to a low value (-99999)
  * 
  * Input:
  * 
@@ -1956,5 +1862,36 @@ void set_low_score_fcl(fcl* f){
     for(i = 0; i < f->input*f->output; i++){
         f->scores[i] = -99999;
     }
+    
+}
+
+/* this function returns an array that gives the used output*/
+int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
+    int i,j;
+    int* uo;
+    if(used_output == NULL)
+        uo= (int*)calloc(output_size,sizeof(int));
+    else
+        uo = used_output;
+    
+    for(i = 0; i < output_size; i++){
+        uo[i] = 0;
+    }
+    
+    for(i = f->input*f->output-f->input*f->output*f->k_percentage; i < f->input*f->output; i++){
+        if(flag == CLS){
+            int n_per_feature_map = f->output/output_size;
+            for(j = 0; j < output_size; j++){
+                if(((int)(f->indices[i]%f->output)< n_per_feature_map*(j+1) && (int)(f->indices[i]%f->output) >= n_per_feature_map*(j)))
+                uo[j] = 1;
+            }
+        }
+            
+        else{
+            uo[(int)((f->indices[i]/f->input))] = 1;
+        }
+    }
+    
+    return uo;  
     
 }

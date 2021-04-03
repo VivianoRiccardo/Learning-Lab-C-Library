@@ -663,10 +663,10 @@ void slow_paste_rl(rl* f, rl* copy,float tau){
  * 
  *                 @ rl* f:= the residual layer
  * */
-int get_array_size_params_rl(rl* f){
-    int sum = 0,i;
+uint64_t get_array_size_params_rl(rl* f){
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
-        sum+=get_array_size_params_cl(f->cls[i]);
+        sum+=(uint64_t)get_array_size_params_cl(f->cls[i]);
     }
     
     return sum;
@@ -679,10 +679,10 @@ int get_array_size_params_rl(rl* f){
  * 
  *                 @ rl* f:= the residual layer
  * */
-int get_array_size_scores_rl(rl* f){
-    int sum = 0,i;
+uint64_t get_array_size_scores_rl(rl* f){
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
-        sum+=get_array_size_scores_cl(f->cls[i]);
+        sum+=(uint64_t)get_array_size_scores_cl(f->cls[i]);
     }
     
     return sum;
@@ -694,10 +694,10 @@ int get_array_size_scores_rl(rl* f){
  * 
  *                 @ rl* f:= the residual layer
  * */
-int get_array_size_weights_rl(rl* f){
-    int sum = 0,i;
+uint64_t get_array_size_weights_rl(rl* f){
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
-        sum+=get_array_size_weights_cl(f->cls[i]);
+        sum+=(uint64_t)get_array_size_weights_cl(f->cls[i]);
     }
     
     return sum;
@@ -746,7 +746,7 @@ void memcopy_vector_to_scores_rl(rl* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
         memcopy_vector_to_scores_cl(f->cls[i],&vector[sum]);
-        sum += get_array_size_weights_cl(f->cls[i]);
+        sum += get_array_size_scores_cl(f->cls[i]);
     }
 }
 /* this function paste the vector in the weights and biases of the rl
@@ -793,7 +793,7 @@ void memcopy_scores_to_vector_rl(rl* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
         memcopy_scores_to_vector_cl(f->cls[i],&vector[sum]);
-        sum += get_array_size_weights_cl(f->cls[i]);
+        sum += get_array_size_scores_cl(f->cls[i]);
     }
 }
 
@@ -931,10 +931,10 @@ void reset_score_rl(rl* f){
  * layer inside the residual one look at reinitialize_scores_cl function in convolutional_layers.c
  * for more details
  * */
-void reinitialize_scores_rl(rl* f, float percentage, float goodness){
+void reinitialize_weights_according_to_scores_rl(rl* f, float percentage, float goodness){
     int i;
     for(i = 0; i < f->n_cl; i++){
-        reinitialize_scores_cl(f->cls[i],percentage,goodness);
+        reinitialize_weights_according_to_scores_cl(f->cls[i],percentage,goodness);
     }
 }
 

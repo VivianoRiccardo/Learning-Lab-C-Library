@@ -703,9 +703,9 @@ void paste_transformer_decoder_for_edge_popup(transformer_decoder* t, transforme
 void decoder_transformer_ff(float* inputs1, float* inputs2, transformer_decoder* t,int input1_dimension, int input2_dimension){
     int i;
     for(i = 0; i < t->n_head; i++){
-        fully_connected_feed_forward(inputs1,&t->q[i*t->dimension],t->fcls[i*3]->weights,t->fcls[i*3]->biases,input1_dimension,t->dimension);
-        fully_connected_feed_forward(inputs1,&t->k[i*t->dimension],t->fcls[i*3+1]->weights,t->fcls[i*3+1]->biases,input1_dimension,t->dimension);
-        fully_connected_feed_forward(inputs1,&t->v[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[i*3+2]->biases,input1_dimension,t->dimension);
+        fully_connected_feed_forward(inputs1,&t->q[i*t->dimension],t->fcls[i*3]->weights,NULL,input1_dimension,t->dimension);
+        fully_connected_feed_forward(inputs1,&t->k[i*t->dimension],t->fcls[i*3+1]->weights,NULL,input1_dimension,t->dimension);
+        fully_connected_feed_forward(inputs1,&t->v[i*t->dimension],t->fcls[i*3+2]->weights,NULL,input1_dimension,t->dimension);
     }
     multi_head_attention_ff(t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->attention_output,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
     model_tensor_input_ff(t->linear_after_attention,1,1,t->input_dimension,t->attention_output);
@@ -757,9 +757,9 @@ float* decoder_transformer_bp(float* inputs1, float* inputs2, transformer_decode
     }
     
     for(i = 0; i < t->n_head; i++){
-        fully_connected_back_prop(inputs1,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->fcls[2]->temp2,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input1_dimension,t->dimension);
-        fully_connected_back_prop(inputs1,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->fcls[2]->temp2,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input1_dimension,t->dimension);
-        fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input1_dimension,t->dimension);   
+        fully_connected_back_prop(inputs1,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,t->fcls[2]->temp2,t->fcls[i*3]->d_weights,NULL,input1_dimension,t->dimension);
+        fully_connected_back_prop(inputs1,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,t->fcls[2]->temp2,t->fcls[i*3+1]->d_weights,NULL,input1_dimension,t->dimension);
+        fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,NULL,input1_dimension,t->dimension);   
     }
     
     if (t->residual_flag == TRANSFORMER_RESIDUAL){
@@ -792,9 +792,9 @@ void wrapped_encoder_transformer_decoder_ff(float* inputs1, float* inputs2, tran
             fprintf(stderr,"Error: your fully connected layers don't match the inputs - inputs given: %d, %d, %d, inputs fcls: %d,%d,%d\n",input_dimension2,input_dimension2,input_dimension1,t->fcls[i*3]->input,t->fcls[i*3+1]->input,t->fcls[i*3+2]->input);
             exit(0);
         }
-        fully_connected_feed_forward(inputs2,&t->q[i*t->dimension],t->fcls[i*3]->weights,t->fcls[i*3]->biases,input_dimension2,t->dimension);
-        fully_connected_feed_forward(inputs2,&t->k[i*t->dimension],t->fcls[i*3+1]->weights,t->fcls[i*3+1]->biases,input_dimension2,t->dimension);
-        fully_connected_feed_forward(inputs1,&t->v[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[i*3+2]->biases,input_dimension1,t->dimension);
+        fully_connected_feed_forward(inputs2,&t->q[i*t->dimension],t->fcls[i*3]->weights,NULL,input_dimension2,t->dimension);
+        fully_connected_feed_forward(inputs2,&t->k[i*t->dimension],t->fcls[i*3+1]->weights,NULL,input_dimension2,t->dimension);
+        fully_connected_feed_forward(inputs1,&t->v[i*t->dimension],t->fcls[i*3+2]->weights,NULL,input_dimension1,t->dimension);
     }
     multi_head_attention_ff(t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->attention_output,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
     model_tensor_input_ff(t->linear_after_attention,1,1,t->input_dimension,t->attention_output);
@@ -924,9 +924,9 @@ float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, tr
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,tempp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension,t->dimension);
-                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension,t->dimension);   
+                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,NULL,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,NULL,input_dimension,t->dimension);
+                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,NULL,input_dimension,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
@@ -945,9 +945,9 @@ float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, tr
             tempp = model_tensor_input_bp(t->linear_after_attention,1,1,t->input_dimension,t->attention_output,temp,t->linear_after_attention->output_dimension);
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,tempp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension1,t->dimension);   
+                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,NULL,input_dimension1,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
@@ -969,9 +969,9 @@ float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, tr
             tempp = model_tensor_input_bp(t->linear_after_attention,1,1,t->input_dimension,t->attention_output,t->l2[0]->output_error,t->linear_after_attention->output_dimension);
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,tempp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension1,t->dimension);   
+                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,NULL,input_dimension1,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)
@@ -991,9 +991,9 @@ float* wrapped_encoder_transformer_decoder_bp(float* inputs1, float* inputs2, tr
             tempp = model_tensor_input_bp(t->linear_after_attention,1,1,t->input_dimension,t->attention_output,temp,t->linear_after_attention->output_dimension);
             multi_head_attention_bp(t->q_error,t->k_error,t->v_error,t->score_matrix_error,t->score_matrix_softmax_error,t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,tempp,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
             for(i = 0; i < t->n_head; i++){
-                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,t->fcls[i*3]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,t->fcls[i*3+1]->d_biases,input_dimension2,t->dimension);
-                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,t->fcls[i*3+2]->d_biases,input_dimension1,t->dimension);   
+                fully_connected_back_prop(inputs2,&t->q_error[i*t->dimension],t->fcls[i*3]->weights,encoder_error,t->fcls[i*3]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs2,&t->k_error[i*t->dimension],t->fcls[i*3+1]->weights,encoder_error,t->fcls[i*3+1]->d_weights,NULL,input_dimension2,t->dimension);
+                fully_connected_back_prop(inputs1,&t->v_error[i*t->dimension],t->fcls[i*3+2]->weights,t->fcls[2]->temp2,t->fcls[i*3+2]->d_weights,NULL,input_dimension1,t->dimension);   
             }
             
             if (t->residual_flag1 == TRANSFORMER_RESIDUAL)

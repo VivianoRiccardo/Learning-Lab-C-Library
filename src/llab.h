@@ -38,6 +38,7 @@ SOFTWARE.
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 
 #define N_NORMALIZATION 5
 #define BETA_NORMALIZATION 0.75

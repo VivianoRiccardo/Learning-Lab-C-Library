@@ -1192,7 +1192,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     int i;
     
     if(f2->feed_forward_flag == ONLY_DROPOUT){
-        fprintf(stderr,"Error: use the previous fully connected layer also with dropout not create another useless layer!\n");
+        fprintf(stderr,"Error: use the previous fully connected layer also with dropout do not create another useless layer!\n");
         exit(1);
     }
     /* computing the pre-activation array for f2 from f1*/
@@ -1260,8 +1260,10 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         }
         else{
             if(f1->dropout_flag == DROPOUT){
-                if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+                if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    //printf("yes fcl4\n");
+				}
                 else if(f2->feed_forward_flag == EDGE_POPUP)
                     fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
             
@@ -1288,10 +1290,12 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     else if(f2->activation_flag == SOFTMAX){
         if(f2->feed_forward_flag == EDGE_POPUP)
         softmax_array_not_complete(f2->pre_activation,f2->post_activation,f2->active_output_neurons,f2->output);
-        else
+        else{
         softmax(f2->pre_activation,f2->post_activation,f2->output);
-        
+        //printf("yes fcl5\n");
+		}
     }
+    
     else if(f2->activation_flag == TANH)
         tanhh_array(f2->pre_activation,f2->post_activation,f2->output);
     else if(f2->activation_flag == LEAKY_RELU)
@@ -1317,9 +1321,9 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
             if(f2->normalization_flag == LAYER_NORMALIZATION)
                 get_dropout_array(f2->output,f2->dropout_mask,f2->post_normalization,f2->dropout_temp);
             else if(f2->activation_flag)
-                get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
-            else
                 get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+            else
+                get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
         }
     }
 
@@ -1847,8 +1851,10 @@ void ff_cl_fcl(cl* f1, fcl* f2){
     
         /* pooling for f1*/
         if(f1->pooling_flag){
-            if(f2->feed_forward_flag == FULLY_FEED_FORWARD)
+            if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                 fully_connected_feed_forward(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                //printf("yes fcl1\n");
+			}
             else if(f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_feed_forward_edge_popup(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
@@ -1874,10 +1880,14 @@ void ff_cl_fcl(cl* f1, fcl* f2){
                 fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
         /* computing the activation for f2 (if the activation_flag is > 0)*/
-        if(f2->activation_flag == SIGMOID)
+        if(f2->activation_flag == SIGMOID){
             sigmoid_array(f2->pre_activation,f2->post_activation,f2->output);
-        else if(f2->activation_flag == RELU)
+            //printf("yes fcl2\n");
+		}
+        else if(f2->activation_flag == RELU){
             relu_array(f2->pre_activation,f2->post_activation,f2->output);
+            
+		}
         else if(f2->activation_flag == ELU)
             elu_array(f2->pre_activation,f2->post_activation,f2->output,ELU_THRESHOLD);
         else if(f2->activation_flag == SOFTMAX){
@@ -1913,10 +1923,12 @@ void ff_cl_fcl(cl* f1, fcl* f2){
             if(f1->feed_forward_flag != ONLY_DROPOUT){
                 if(f2->normalization_flag == LAYER_NORMALIZATION)
                     get_dropout_array(f2->output,f2->dropout_mask,f2->post_normalization,f2->dropout_temp);
-                else if(f2->activation_flag)
-                    get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
-                else
+                else if(f2->activation_flag){
                     get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
+                    //printf("yes fcl3\n");
+				}
+                else
+                    get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
             }
             
             else{
@@ -2017,9 +2029,12 @@ void ff_cl_cl(cl* f1, cl* f2){
     }
     /* no pooling, no normalization for f1, but activation*/
     else if(f1->activation_flag){
+		//printf("yes1\n");
         if(f2->convolutional_flag == CONVOLUTION){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
+				//printf("yes2\n");
                 for(i = 0; i < f2->n_kernels; i++){
+					//printf("yes3\n");
                     convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);
                 }
             }
@@ -2089,8 +2104,9 @@ void ff_cl_cl(cl* f1, cl* f2){
         else if(f2->activation_flag == RELU){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->used_kernels[i]){
+					//printf("yes4\n");
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
-                        relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_rows);
+                        relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_cols);
                     }
                 }
             }
@@ -2126,7 +2142,7 @@ void ff_cl_cl(cl* f1, cl* f2){
 
         }
         
-        if(f2->activation_flag == SIGMOID && f2->feed_forward_flag == EDGE_POPUP){
+        if((f2->activation_flag == SIGMOID || f2->activation_flag == TANH) && f2->feed_forward_flag == EDGE_POPUP){
             for(i = 0; i < f2->n_kernels; i++){
                 if(!f2->used_kernels[i]){
                     for(j = 0; j < f2->rows1*f2->cols1; j++){
@@ -2150,8 +2166,10 @@ void ff_cl_cl(cl* f1, cl* f2){
         }
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
-            if(f2->activation_flag != NO_ACTIVATION)
+            if(f2->activation_flag != NO_ACTIVATION){
+                //printf("yes5\n");
                 group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
+			}
             else
                 group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
         }
@@ -2217,6 +2235,7 @@ void ff_cl_cl(cl* f1, cl* f2){
                         max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
                     }
                     else{
+						//printf("yes6\n");
                         avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
                     }
                 }
@@ -2276,6 +2295,7 @@ void ff_cl_cl(cl* f1, cl* f2){
  * */
 float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     int i;
+    //printf("%f\n",error[0]);
     /*computing the backpropagation for f2*/
     if(f2->dropout_flag){
         dot1D(error,f2->dropout_mask,f2->temp,f2->output);
@@ -2352,6 +2372,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
+			//printf("yes fcl6\n");
             derivative_softmax_array(f2->active_output_neurons,f2->temp,f2->post_activation,error,f2->output);
         }
         
@@ -2375,8 +2396,12 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     }
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
     if(f1->dropout_flag){
-        if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING)
+        if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
             fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            //printf("yes fcl7\n");
+		}
+        else if(f2->training_mode == FREEZE_BIASES)
+            fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output);
         else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
             fully_connected_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         else if(f2->training_mode == EDGE_POPUP)
@@ -2388,6 +2413,8 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING)
                 fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
+            else if(f2->training_mode == FREEZE_BIASES)
+                fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         
@@ -2400,6 +2427,9 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
             }
+            else if(f2->training_mode == FREEZE_BIASES){
+                fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         
@@ -2411,13 +2441,16 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
             }
+            if(f2->training_mode == FREEZE_BIASES){
+                fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
     }
-    
+    //printf("%f\n",f2->error2[0]);
     return f2->error2;
     
 }
@@ -2628,6 +2661,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                     convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                 }
             }
+            else if(f2->training_mode == FREEZE_BIASES){
+                for(i = 0; i < f2->n_kernels; i++){
+                    convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                }
+            }
             
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 convolutional_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->stride1_cols,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage,f2->d_biases,f2->d_kernels);
@@ -2650,6 +2688,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                     for(i = 0; i < f2->n_kernels; i++){
                         convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
                 
@@ -2675,6 +2718,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                         convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
                 
                 else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                     convolutional_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->stride1_cols,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage,f2->d_biases,f2->d_kernels);
@@ -2696,6 +2744,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                     for(i = 0; i < f2->n_kernels; i++){
                         convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
                 
@@ -2845,6 +2898,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                     transposed_convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                 }
             }
+            else if(f2->training_mode == FREEZE_BIASES){
+                for(i = 0; i < f2->n_kernels; i++){
+                    transposed_convolutional_back_prop(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                }
+            }
             
              else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 transposed_convolutional_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->stride1_cols,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage,f2->d_biases,f2->d_kernels);
@@ -2867,6 +2925,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                     for(i = 0; i < f2->n_kernels; i++){
                         transposed_convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
                 
@@ -2893,6 +2956,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                         transposed_convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
                 
                 else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                     transposed_convolutional_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases,f2->channels,f2->temp,f2->stride1_rows,f2->stride1_cols,f2->padding1_rows,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage,f2->d_biases,f2->d_kernels);
@@ -2914,6 +2982,11 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                     for(i = 0; i < f2->n_kernels; i++){
                         transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                    }
+                }
+                else if(f2->training_mode == FREEZE_BIASES){
+                    for(i = 0; i < f2->n_kernels; i++){
+                        transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                     }
                 }
                 
@@ -2961,7 +3034,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
  * */
 float* bp_cl_cl(cl* f1, cl* f2, float* error){
     int i,j,k;
-    
+    //printf("%f\n",error[0]);
     /* computing backpropagation for f2*/
     if(f2->pooling_flag == MAX_POOLING){
         if(f2->convolutional_flag == CONVOLUTION || f2->convolutional_flag == TRANSPOSED_CONVOLUTION){
@@ -2996,8 +3069,10 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     
     else if(f2->pooling_flag == AVARAGE_POOLING){
         for(i = 0; i < f2->n_kernels; i++){
-            if(f2->used_kernels[i])
+            if(f2->used_kernels[i]){
                 avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
+				//printf("yes7\n");
+			}
         }
     }
     
@@ -3052,8 +3127,10 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
-            if(f2->activation_flag)
+            if(f2->activation_flag){
                 group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
+				//printf("yes8\n");
+			}
             else
                 group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
 
@@ -3064,6 +3141,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             }
             
             if(f2->activation_flag == RELU){
+				//printf("yes9\n");
                 derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
                 dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
@@ -3132,10 +3210,24 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                     convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                 else if(f1->normalization_flag)
                     convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
-                else if(f1->activation_flag)
+                else if(f1->activation_flag){
                     convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+					//printf("yes10\n");
+                }
                 else
                     convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+            }
+        }
+        else if(f2->training_mode == FREEZE_BIASES){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f1->pooling_flag)
+                    convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else if(f1->normalization_flag)
+                    convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else if(f1->activation_flag)
+                    convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else
+                    convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
             }
         }
         
@@ -3341,6 +3433,18 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                     transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
             }
         }
+        else if(f2->training_mode == FREEZE_BIASES){
+            for(i = 0; i < f2->n_kernels; i++){
+                if(f1->pooling_flag)
+                    transposed_convolutional_back_prop(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else if(f1->normalization_flag)
+                    transposed_convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else if(f1->activation_flag)
+                    transposed_convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+                else
+                    transposed_convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
+            }
+        }
         
         else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
            if(f1->pooling_flag){
@@ -3410,12 +3514,14 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             
         }
         
-        
+        //printf("%f\n",f2->error2[0]);
         return f2->error2;
     }
     
-    else
+    else{
+        //printf("%f\n",f2->temp[0]);
         return f2->temp;
+	}
     
 }
 
@@ -3440,6 +3546,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
  * */
 float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     int i;
+    //printf("%f\n",error[0]);
     if(f2->dropout_flag && f2->feed_forward_flag == ONLY_DROPOUT){
         dot1D(error,f2->dropout_mask,f2->error2,f2->output);
         return f2->error2;
@@ -3462,6 +3569,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         }
         
         if(f2->activation_flag == SIGMOID){
+			//printf("yes fcl8\n");
             derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
@@ -3543,8 +3651,13 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
         if(f1->pooling_flag){
-            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING)
+            if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
+				//printf("yes fcl9\n");
                 fully_connected_back_prop(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+                
+            }
+            else if(f2->training_mode == FREEZE_BIASES)
+                fully_connected_back_prop(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP )
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
@@ -3553,6 +3666,8 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         else if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING)
                 fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            else if(f2->training_mode == FREEZE_BIASES)
+                fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP )
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
@@ -3561,6 +3676,8 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         else if(f1->activation_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING)
                 fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            else if(f2->training_mode == FREEZE_BIASES)
+                fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP )
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
@@ -3570,12 +3687,14 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         else{
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING)
                 fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
+            else if(f2->training_mode == FREEZE_BIASES)
+                fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output);
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP )
                 fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else if(f2->training_mode == EDGE_POPUP)
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
-    
+    //printf("%f\n",f2->error2[0]);
     return f2->error2;
     
 }
@@ -4358,7 +4477,7 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3){
  * 
  *                 @ rl* f:= the residual layer
  * */
-int get_array_size_params_model(model* f){
+uint64_t get_array_size_params_model(model* f){
     int sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         sum+=get_array_size_params(f->fcls[i]);
@@ -4376,14 +4495,14 @@ int get_array_size_params_model(model* f){
 }
 
 
-/* this function gives the number of float params for biases and weights in a model
+/* this function gives the number of float params for weights in a model
  * 
  * Input:
  * 
  * 
  *                 @ rl* f:= the residual layer
  * */
-int get_array_size_weights_model(model* f){
+uint64_t get_array_size_weights_model(model* f){
     int sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         sum+=get_array_size_weights(f->fcls[i]);
@@ -4395,6 +4514,31 @@ int get_array_size_weights_model(model* f){
     
     for(i = 0; i < f->n_rl; i++){
         sum+=get_array_size_weights_rl(f->rls[i]);
+    }
+    
+    return sum;
+}
+
+
+/* this function gives the number of float params for scores in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+uint64_t get_array_size_scores_model(model* f){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        sum+=get_array_size_scores_fcl(f->fcls[i]);
+    }
+    
+    for(i = 0; i < f->n_cl; i++){
+        sum+=get_array_size_scores_cl(f->cls[i]);
+    }
+    
+    for(i = 0; i < f->n_rl; i++){
+        sum+=get_array_size_scores_rl(f->rls[i]);
     }
     
     return sum;
@@ -4465,7 +4609,7 @@ void memcopy_vector_to_scores_model(model* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_vector_to_scores(f->fcls[i],&vector[sum]);
-        sum += get_array_size_weights(f->fcls[i]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
     }
     for(i = 0; i < f->n_cl; i++){
         memcopy_vector_to_scores_cl(f->cls[i],&vector[sum]);
@@ -4539,7 +4683,7 @@ void memcopy_scores_to_vector_model(model* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_scores_to_vector(f->fcls[i],&vector[sum]);
-        sum += get_array_size_weights(f->fcls[i]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
     }
     for(i = 0; i < f->n_cl; i++){
         memcopy_scores_to_vector_cl(f->cls[i],&vector[sum]);
@@ -5023,16 +5167,16 @@ void reset_score_model(model* f){
 }
 
 /* look at reinitialize_scores_cl function in convolutional_layers.c formore details*/
-void reinitialize_scores_model(model* m, float percentage, float goodness){
+void reinitialize_weights_according_to_scores_model(model* m, float percentage, float goodness){
     int i;
     for(i = 0; i < m->n_fcl; i++){
-        reinitialize_scores_fcl(m->fcls[i],percentage,goodness);
+        reinitialize_weights_according_to_scores_fcl(m->fcls[i],percentage,goodness);
     }
     for(i = 0; i < m->n_cl; i++){
-        reinitialize_scores_cl(m->cls[i],percentage,goodness);
+        reinitialize_weights_according_to_scores_cl(m->cls[i],percentage,goodness);
     }
     for(i = 0; i < m->n_rl; i++){
-        reinitialize_scores_rl(m->rls[i],percentage,goodness);
+        reinitialize_weights_according_to_scores_rl(m->rls[i],percentage,goodness);
     }
 }
 

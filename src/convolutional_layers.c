@@ -2355,30 +2355,44 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
  * 
  *                 @ cl* f:= the convolutional layer
  * */
-int get_array_size_params_cl(cl* f){
+uint64_t get_array_size_params_cl(cl* f){
     
-    int sum = 0;
+    uint64_t sum = 0;
     int i;
     if(f->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            sum+=f->group_norm[i]->vector_dim*2;
+            sum+=(uint64_t)f->group_norm[i]->vector_dim*2;
         }
     }
-    return sum+f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels;
+    return sum+(uint64_t)f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels;
 }
 
-/* this function gives the number of float params for biases and weights in a cl
+/* this function gives the number of float params for weights in a cl
  * 
  * Input:
  * 
  * 
  *                 @ cl* f:= the convolutional layer
  * */
-int get_array_size_weights_cl(cl* f){
-    return f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+uint64_t get_array_size_weights_cl(cl* f){
+    uint64_t sum = 0;
+    int i;
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            sum+=(uint64_t)f->group_norm[i]->vector_dim*2;
+        }
+    }
+    return sum+(uint64_t)f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
 }
-int get_array_size_scores_cl(cl* f){
-    return f->n_kernels;
+/* this function gives the number of scores of the convolutional layer
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ cl* f:= the convolutional layer
+ * */
+uint64_t get_array_size_scores_cl(cl* f){
+    return (uint64_t)f->n_kernels;
 }
 
 /* this function pastes the weights and biases from a vector in a cl structure
@@ -2442,7 +2456,7 @@ void memcopy_params_to_vector_cl(cl* f, float* vector){
  * 
  * 
  *                 @ cl* f:= the convolutional layer
- *                 @ float* vector:= the vector where is copyed everything
+ *                 @ float* vector:= the vector where is copied everything
  * */
 void memcopy_vector_to_weights_cl(cl* f, float* vector){
     int i;
@@ -2453,11 +2467,11 @@ void memcopy_vector_to_weights_cl(cl* f, float* vector){
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            memcpy(f->group_norm[i]->gamma,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+            memcpy(f->group_norm[i]->gamma,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+i*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
         }
         
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            memcpy(f->group_norm[i]->beta,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
+            memcpy(f->group_norm[i]->beta,&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->vector_dim*sizeof(float));
         }
     }
 }
@@ -2480,11 +2494,11 @@ void memcopy_weights_to_vector_cl(cl* f, float* vector){
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+i*f->group_norm[i]->vector_dim],f->group_norm[i]->gamma,f->group_norm[i]->vector_dim*sizeof(float));
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+i*f->group_norm[i]->vector_dim],f->group_norm[i]->gamma,f->group_norm[i]->vector_dim*sizeof(float));
         }
         
         for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
-            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+f->n_kernels+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->beta,f->group_norm[i]->vector_dim*sizeof(float));
+            memcpy(&vector[f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols+(f->n_kernels/f->group_norm_channels+i)*f->group_norm[i]->vector_dim],f->group_norm[i]->beta,f->group_norm[i]->vector_dim*sizeof(float));
         }
     }
 }
@@ -2665,8 +2679,8 @@ void reset_score_cl(cl* f){
 
 
 /* This function re initialize the weights which scores is < of a goodness (range [0,1])
- * or the weights are among the worst scores in int thotal_scores*percentage (range percentage [0,1])
- * 
+ * or the weights are among the worst scores in the total_scores*percentage (range percentage [0,1])
+ * The re initialization happens with the signed kaiming constant (the best initialization for edge-popup according to the paper)
  * 
  * Input:
  * 
@@ -2674,7 +2688,7 @@ void reset_score_cl(cl* f){
  *                     @ float percentage:= the percentage
  *                    @ float goodness:= the goodness value
  * */
-void reinitialize_scores_cl(cl* f, float percentage, float goodness){
+void reinitialize_weights_according_to_scores_cl(cl* f, float percentage, float goodness){
     if(f->convolutional_flag == NO_CONVOLUTION)
         return;
     int i,j;
@@ -2683,14 +2697,14 @@ void reinitialize_scores_cl(cl* f, float percentage, float goodness){
             return;
         if(f->scores[f->indices[i]] < goodness){
             for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
-                f->kernels[f->indices[i]][j] = random_general_gaussian_xavier_init( (float)f->channels*f->input_rows*f->input_cols);
+                f->kernels[f->indices[i]][j] = signed_kaiming_constant((float)f->channels*f->input_rows*f->input_cols);
             }
         } 
     }
 }
 
 
-/* this function re initializes the weights of a convolutional layers
+/* this function re initializes the weights of a convolutional layers (all the weights)
  * 
  * Inputs:
  * 
@@ -2706,6 +2720,12 @@ void reinitialize_w_cl(cl* f){
     }
 }
 
+/* this function reset all the arrays of partial derivatives of the scores
+ * 
+ * Inputs:
+ * 
+ *             @ cl* f:= the convolutional layer which derivative scores must be re initialized
+ * */
 cl* reset_edge_popup_d_cl(cl* f){
     if(f == NULL)
         return NULL;
@@ -2721,6 +2741,12 @@ cl* reset_edge_popup_d_cl(cl* f){
     return f;
 }
 
+/* this function set all the scores to -99999
+ * 
+ * Inputs:
+ * 
+ *             @ cl* f:= the convolutional layer which scores must be set to a low value
+ * */
 void set_low_score_cl(cl* f){
     if(f->convolutional_flag == NO_CONVOLUTION)
         return;

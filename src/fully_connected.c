@@ -40,13 +40,23 @@ SOFTWARE.
  *         @ int output_size:= the size of the float* output vector
  * */
 void fully_connected_feed_forward(float* input, float* output, float* weight,float* bias, int input_size, int output_size){
-    int i,j;
-    for(j = 0; j < output_size; j++){
-        for(i = 0; i < input_size; i++){
-            output[j] += input[i]*weight[j*input_size+i];
-        }
-        output[j] += bias[j];
-    }
+	if(bias != NULL){
+		int i,j;
+		for(j = 0; j < output_size; j++){
+			for(i = 0; i < input_size; i++){
+				output[j] += input[i]*weight[j*input_size+i];
+			}
+			output[j] += bias[j];
+		}
+	}
+	else{
+		int i,j;
+		for(j = 0; j < output_size; j++){
+			for(i = 0; i < input_size; i++){
+				output[j] += input[i]*weight[j*input_size+i];
+			}
+		}
+	}
 }
 
 /* This function computes the output of the current layer using the previous layer output
@@ -96,14 +106,25 @@ void fully_connected_feed_forward_edge_popup(float* input, float* output, float*
  *         @ int output_size:= the size of the float* output_error vector
  * */
 void fully_connected_back_prop(float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size){
-    int i,j;
-    for(j = 0; j < output_size; j++){
-        for(i = 0; i < input_size; i++){
-            weight_error[j*input_size+i] += output_error[j]*input[i];
-            input_error[i] += output_error[j]*weight[j*input_size+i];
-        }
-        bias_error[j] += output_error[j];
-    }
+    if(bias_error != NULL){
+		int i,j;
+		for(j = 0; j < output_size; j++){
+			for(i = 0; i < input_size; i++){
+				weight_error[j*input_size+i] += output_error[j]*input[i];
+				input_error[i] += output_error[j]*weight[j*input_size+i];
+			}
+			bias_error[j] += output_error[j];
+		}
+	}
+	else{
+		int i,j;
+		for(j = 0; j < output_size; j++){
+			for(i = 0; i < input_size; i++){
+				weight_error[j*input_size+i] += output_error[j]*input[i];
+				input_error[i] += output_error[j]*weight[j*input_size+i];
+			}
+		}
+	}
 }
 
 
