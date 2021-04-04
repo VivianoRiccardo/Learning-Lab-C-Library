@@ -898,6 +898,25 @@ void compare_score_rl(rl* input1, rl* input2, rl* output){
     }
 }
 
+/* this function sum up all the scores of input1 and input2 of the convolutional layer isnide them
+ * to output
+ * 
+ * 
+ * Input:
+ * 
+ *                 @ rl* input1:= the first input residual layer
+ *                 @ float* input2:= the vector
+ *                 @ rl* output:= the output residual layer
+ * */
+void compare_score_rl_with_vector(rl* input1, float* input2, rl* output){
+    int i;
+    uint64_t sum = 0;
+    for(i = 0; i < input1->n_cl; i++){
+        compare_score_cl_with_vector(input1->cls[i],&input2[sum],output->cls[i]);
+        sum+=get_array_size_scores_cl(input1->cls[i]);
+    }
+}
+
 /* this function divides all the scores of the convolutional layer inside the reisidual one
  * with vale
  * 

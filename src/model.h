@@ -97,5 +97,7 @@ void set_low_score_model(model* f);
 model* reset_model_except_partial_derivatives(model* m);
 void reinitialize_w_model(model* m);
 uint64_t get_array_size_scores_model(model* f);
+void save_model_given_directory(model* m, int n, char* directory);
+void compare_score_model_with_vector(model* input1, float* input2, model* output);
 
 #endif

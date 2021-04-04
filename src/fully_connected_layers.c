@@ -1739,6 +1739,24 @@ void compare_score_fcl(fcl* input1, fcl* input2, fcl* output){
             output->scores[i] = input2->scores[i];
     }
 }
+/* this function stores in the output the best scores according to input1 and input2
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* input1:= the first input fcl layer
+ *                 @ float* input2:= the vecotr
+ *                 @ fcl* output:= the output fcl layer
+ * */
+void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output){
+    int i;
+    for(i = 0; i < input1->input*input1->output; i++){
+        if(input1->scores[i] > input2[i])
+            output->scores[i] = input1->scores[i];
+        else
+            output->scores[i] = input2[i];
+    }
+}
 
 /* this function divides the score with value
  * 

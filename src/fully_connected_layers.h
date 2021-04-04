@@ -69,5 +69,6 @@ void set_low_score_fcl(fcl* f);
 fcl* reset_fcl_except_partial_derivatives(fcl* f);
 void reinitialize_w_fcl(fcl* f);
 uint64_t get_array_size_scores_fcl(fcl* f);
+void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output);
 
 #endif

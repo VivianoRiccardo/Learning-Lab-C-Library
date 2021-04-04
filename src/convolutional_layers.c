@@ -2641,6 +2641,25 @@ void compare_score_cl(cl* input1, cl* input2, cl* output){
             output->scores[i] = input2->scores[i];
     }
 }
+
+/* this function sum up the scores in input1 and input2 in output
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ fcl* input1:= the first input fcl layer
+ *                 @ float* input2:= the vector
+ *                 @ fcl* output:= the output fcl layer
+ * */
+void compare_score_cl_with_vector(cl* input1, float* input2, cl* output){
+    int i;
+    for(i = 0; i < input1->n_kernels; i++){
+        if(input1->scores[i] > input2[i])
+            output->scores[i] = input1->scores[i];
+        else
+            output->scores[i] = input2[i];
+    }
+}
     
 /* This function divides all the scores with value
  * 

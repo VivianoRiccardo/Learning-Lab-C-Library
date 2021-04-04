@@ -69,5 +69,6 @@ rl* reset_edge_popup_d_rl(rl* f);
 void set_low_score_rl(rl* f);
 rl* reset_rl_except_partial_derivatives(rl* f);
 void reinitialize_w_rl(rl* f);
+void compare_score_rl_with_vector(rl* input1, float* input2, rl* output);
 
 #endif

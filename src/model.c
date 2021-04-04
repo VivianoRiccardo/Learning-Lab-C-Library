@@ -746,6 +746,85 @@ void save_model(model* m, int n){
     free(s);
 }
 
+/* This function saves a model(network) on a .bin file with name n.bin
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the actual network that must be saved
+ *             @ int n:= the name of the bin file where the layer is saved
+ *                @ char* directory:= the directory
+ * 
+ * */
+void save_model_given_directory(model* m, int n, char* directory){
+    if(m == NULL)
+        return;
+    int i;
+    FILE* fw;
+    char* s = (char*)malloc(sizeof(char)*256);
+    char* ss = (char*)malloc(sizeof(char)*256);
+    ss[0] = '\0';
+    char* t = ".bin";
+    s = itoa(n,s);
+    s = strcat(s,t);
+    ss = strcat(ss,directory);
+    ss = strcat(ss,s);
+    fw = fopen(ss,"a+");
+    
+    if(fw == NULL){
+        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
+        exit(1);
+    }
+    
+    i = fwrite(&m->layers,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_rl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_cl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fwrite(&m->n_fcl,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the model\n");
+        exit(1);
+    }
+    
+    i = fclose(fw);
+    if(i!=0){
+        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
+        exit(1);
+    }
+    
+    for(i = 0; i < m->n_rl; i++){
+        save_rl(m->rls[i],n);
+    }
+    
+    for(i = 0; i < m->n_cl; i++){
+        save_cl(m->cls[i],n);
+    }
+    
+    for(i = 0; i < m->n_fcl; i++){
+        save_fcl(m->fcls[i],n);
+    }
+    
+    free(s);
+    free(ss);
+}
+
 
 /* This function saves a model(network) on a .bin file with name n.bin
  * 
@@ -1263,7 +1342,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     //printf("yes fcl4\n");
-				}
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP)
                     fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
             
@@ -1293,7 +1372,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         else{
         softmax(f2->pre_activation,f2->post_activation,f2->output);
         //printf("yes fcl5\n");
-		}
+        }
     }
     
     else if(f2->activation_flag == TANH)
@@ -1854,7 +1933,7 @@ void ff_cl_fcl(cl* f1, fcl* f2){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                 fully_connected_feed_forward(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 //printf("yes fcl1\n");
-			}
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP)
                 fully_connected_feed_forward_edge_popup(f1->post_pooling, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
@@ -1883,11 +1962,11 @@ void ff_cl_fcl(cl* f1, fcl* f2){
         if(f2->activation_flag == SIGMOID){
             sigmoid_array(f2->pre_activation,f2->post_activation,f2->output);
             //printf("yes fcl2\n");
-		}
+        }
         else if(f2->activation_flag == RELU){
             relu_array(f2->pre_activation,f2->post_activation,f2->output);
             
-		}
+        }
         else if(f2->activation_flag == ELU)
             elu_array(f2->pre_activation,f2->post_activation,f2->output,ELU_THRESHOLD);
         else if(f2->activation_flag == SOFTMAX){
@@ -1926,7 +2005,7 @@ void ff_cl_fcl(cl* f1, fcl* f2){
                 else if(f2->activation_flag){
                     get_dropout_array(f2->output,f2->dropout_mask,f2->post_activation,f2->dropout_temp);
                     //printf("yes fcl3\n");
-				}
+                }
                 else
                     get_dropout_array(f2->output,f2->dropout_mask,f2->pre_activation,f2->dropout_temp);
             }
@@ -2029,12 +2108,12 @@ void ff_cl_cl(cl* f1, cl* f2){
     }
     /* no pooling, no normalization for f1, but activation*/
     else if(f1->activation_flag){
-		//printf("yes1\n");
+        //printf("yes1\n");
         if(f2->convolutional_flag == CONVOLUTION){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				//printf("yes2\n");
+                //printf("yes2\n");
                 for(i = 0; i < f2->n_kernels; i++){
-					//printf("yes3\n");
+                    //printf("yes3\n");
                     convolutional_feed_forward(f1->post_activation, f2->kernels[i], f2->input_rows, f2->input_cols, f2->kernel_rows, f2->kernel_cols, f2->biases[i], f2->channels, &f2->pre_activation[i*f2->rows1*f2->cols1], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);
                 }
             }
@@ -2104,7 +2183,7 @@ void ff_cl_cl(cl* f1, cl* f2){
         else if(f2->activation_flag == RELU){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->used_kernels[i]){
-					//printf("yes4\n");
+                    //printf("yes4\n");
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_cols);
                     }
@@ -2169,7 +2248,7 @@ void ff_cl_cl(cl* f1, cl* f2){
             if(f2->activation_flag != NO_ACTIVATION){
                 //printf("yes5\n");
                 group_normalization_feed_forward(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
-			}
+            }
             else
                 group_normalization_feed_forward(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->padding1_rows,f2->padding1_cols,f2->post_normalization, f2->used_kernels);
         }
@@ -2235,7 +2314,7 @@ void ff_cl_cl(cl* f1, cl* f2){
                         max_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
                     }
                     else{
-						//printf("yes6\n");
+                        //printf("yes6\n");
                         avarage_pooling_feed_forward(&f2->pooltemp[i*f2->input_rows*f2->input_cols], &f2->post_pooling[i*f2->rows2*f2->cols2], f2->input_rows, f2->input_cols, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
                     }
                 }
@@ -2372,7 +2451,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         }
         
         else if(f2->activation_flag == SOFTMAX){
-			//printf("yes fcl6\n");
+            //printf("yes fcl6\n");
             derivative_softmax_array(f2->active_output_neurons,f2->temp,f2->post_activation,error,f2->output);
         }
         
@@ -2399,7 +2478,7 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
             fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output);
             //printf("yes fcl7\n");
-		}
+        }
         else if(f2->training_mode == FREEZE_BIASES)
             fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output);
         else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP)
@@ -3071,8 +3150,8 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         for(i = 0; i < f2->n_kernels; i++){
             if(f2->used_kernels[i]){
                 avarage_pooling_back_prop(&f2->temp[i*f2->rows1*f2->cols1], &error[i*f2->rows2*f2->cols2], f2->rows1, f2->cols1, f2->pooling_rows, f2->pooling_cols, f2->stride2_rows, f2->stride2_cols, f2->padding2_rows);
-				//printf("yes7\n");
-			}
+                //printf("yes7\n");
+            }
         }
     }
     
@@ -3129,8 +3208,8 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             
             if(f2->activation_flag){
                 group_normalization_back_propagation(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
-				//printf("yes8\n");
-			}
+                //printf("yes8\n");
+            }
             else
                 group_normalization_back_propagation(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f2->used_kernels);
 
@@ -3141,7 +3220,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             }
             
             if(f2->activation_flag == RELU){
-				//printf("yes9\n");
+                //printf("yes9\n");
                 derivative_relu_array(f2->pre_activation,f2->temp3,f2->n_kernels*f2->rows1*f2->cols1);
                 dot1D(f2->temp3,f2->temp2,f2->temp,f2->n_kernels*f2->rows1*f2->cols1);
             }
@@ -3212,7 +3291,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
                     convolutional_back_prop(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
                 else if(f1->activation_flag){
                     convolutional_back_prop(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
-					//printf("yes10\n");
+                    //printf("yes10\n");
                 }
                 else
                     convolutional_back_prop(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows);                
@@ -3521,7 +3600,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
     else{
         //printf("%f\n",f2->temp[0]);
         return f2->temp;
-	}
+    }
     
 }
 
@@ -3569,7 +3648,7 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         }
         
         if(f2->activation_flag == SIGMOID){
-			//printf("yes fcl8\n");
+            //printf("yes fcl8\n");
             derivative_sigmoid_array(f2->pre_activation,f2->temp3,f2->output);
             dot1D(f2->temp3,f2->temp,f2->temp,f2->output);
         }
@@ -3652,7 +3731,6 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
         if(f1->pooling_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
-				//printf("yes fcl9\n");
                 fully_connected_back_prop(f1->post_pooling, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output);
                 
             }
@@ -5099,6 +5177,33 @@ void compare_score_model(model* input1, model* input2, model* output){
     }
     for(i = 0; i < input1->n_rl; i++){
         compare_score_rl(input1->rls[i],input2->rls[i],output->rls[i]);
+    }
+}
+
+/* this function sum up all the scores in each layer of the input model1 and 2 in the output model
+ * 
+ * 
+ * Input:
+ *     
+ * 
+ *                 @ model* input1:= the first input model
+ *                 @ float* input2:= the vector
+ *                 @ model* output:= the output model
+ * */
+void compare_score_model_with_vector(model* input1, float* input2, model* output){
+    int i;
+    uint64_t sum = 0;
+    for(i = 0; i < input1->n_fcl; i++){
+        compare_score_fcl_with_vector(input1->fcls[i],&input2[sum],output->fcls[i]);
+        sum+=get_array_size_scores_fcl(input1->fcls[i]);
+    }
+    for(i = 0; i < input1->n_cl; i++){
+        compare_score_cl_with_vector(input1->cls[i],&input2[sum],output->cls[i]);
+        sum+=get_array_size_scores_cl(input1->cls[i]);
+    }
+    for(i = 0; i < input1->n_rl; i++){
+        compare_score_rl_with_vector(input1->rls[i],&input2[sum],output->rls[i]);
+        sum+=get_array_size_scores_rl(input1->rls[i]);
     }
 }
 

@@ -68,5 +68,6 @@ cl* reset_edge_popup_d_cl(cl* f);
 void set_low_score_cl(cl* f);
 cl* reset_cl_except_partial_derivatives(cl* f);
 void reinitialize_w_cl(cl* f);
+void compare_score_cl_with_vector(cl* input1, float* input2, cl* output);
 
 #endif
