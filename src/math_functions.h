@@ -79,5 +79,23 @@ void elu_array(float* input, float* output, int size, float a);
 float derivative_elu(float z, float a);
 void derivative_elu_array(float* input, float* output, int size, float a);
 void derivative_softmax(float* output,float* softmax_arr,float* error, int size);
+void dot1D(float* input1, float* input2, float* output, int size);
+void sum1D(float* input1, float* input2, float* output, int size);
+void mul_value(float* input, float value, float* output, int dimension);
+void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3);
+void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3);
+void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3);
+void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
+float float_abs(float a);
+void float_abs_array(float* a, int n);
+float* get_float_abs_array(float* a, int n);
+void dot_float_input(float* input1, int* input2, float* output, int size);
+void sum_model_partial_derivatives(model* m, model* m2, model* m3);
+void sum_models_partial_derivatives(model* sum_m, model** models, int n_models);
+void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
+void sum_rmodels_partial_derivatives(rmodel* m, rmodel** m2, int n_models);
+void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3);
+int min(int x, int y);
+int max(int x, int y);
 
 #endif

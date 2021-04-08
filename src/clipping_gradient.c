@@ -24,15 +24,17 @@ SOFTWARE.
 
 #include "llab.h"
 
-/* This function, given a threshold, clips the gradient of the weights of the whole model given by all the models m and rmodels r if the ||DL/Dw|| > threshold,
+/* This function, given a threshold, clips the gradient of the weights of the whole model given by all the models m and rmodels r as well as the transformers given, if the ||DL/Dw|| > threshold,
  * in that case DL/Dw_i *= threshold/||DL/Dw||
- * 
+ * (sub normalization layers are still considered during the clipping)
  * Input:
  * 
  *             @ model** m:= the models
  *             @ model** r:= the rmodels
+ * 			   @ transformer** t:= the transformers
  *             @ int n_m:= the number of models
  *             @ int n_r:= the number of rmodels
+ *             @ int n_t:= the number of transformers
  *             @ float threshold:= the threshold
  * 
  * */

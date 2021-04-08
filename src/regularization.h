@@ -22,21 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __BATCH_NORM_LAYERS_H__
-#define __BATCH_NORM_LAYERS_H__
+#ifndef __REGULARIZATION_H__
+#define __REGULARIZATION_H__
 
-bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag);
-void free_batch_normalization(bn* b);
-void save_bn(bn* b, int n);
-bn* load_bn(FILE* fr);
-bn* copy_bn(bn* b);
-bn* reset_bn(bn* b);
-uint64_t size_of_bn(bn* b);
-void paste_bn(bn* b1, bn* b2);
-void slow_paste_bn(bn* f, bn* copy,float tau);
-void paste_w_bn(bn* b1, bn* b2);
-void heavy_save_bn(bn* b, int n);
-bn* heavy_load_bn(FILE* fr);
-bn* reset_bn_except_partial_derivatives(bn* b);
+void add_l2_residual_layer(model* m,int total_number_weights,float lambda);
+void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);
+void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);
+void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
 
 #endif

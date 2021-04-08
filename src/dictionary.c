@@ -69,7 +69,7 @@ int check_int_array(int* array, mystruct** ms, int size, int index){
     }
 }
      
-
+/* frees the space allocated by my struct*/
 void free_my_struct(mystruct** ms){
     if((*ms) == NULL)
         return;

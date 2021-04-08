@@ -25,50 +25,54 @@ SOFTWARE.
 #ifndef __FULLY_CONNECTED_LAYERS_H__
 #define __FULLY_CONNECTED_LAYERS_H__
 
-fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag);
+fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag);
+int exists_params_fcl(fcl* f);
+int exists_d_params_fcl(fcl* f);
+int exists_dropout_stuff_fcl(fcl* f);
+int exists_edge_popup_stuff_fcl(fcl* f);
+int exists_activation_fcl(fcl* f);
+int exists_normalization_fcl(fcl* f);
 void free_fully_connected(fcl* f);
+void free_fully_connected_for_edge_popup(fcl* f);
+void free_fully_connected_complementary_edge_popup(fcl* f);
 void save_fcl(fcl* f, int n);
 void copy_fcl_params(fcl* f, float* weights, float* biases);
 fcl* load_fcl(FILE* fr);
 fcl* copy_fcl(fcl* f);
-void paste_fcl(fcl* f, fcl* copy);
+fcl* copy_light_fcl(fcl* f);
 fcl* reset_fcl(fcl* f);
-unsigned long long int size_of_fcls(fcl* f);
+fcl* reset_fcl_except_partial_derivatives(fcl* f);
+fcl* reset_fcl_without_dwdb(fcl* f);
+fcl* reset_fcl_for_edge_popup(fcl* f);
+uint64_t size_of_fcls(fcl* f);
+void paste_fcl(fcl* f,fcl* copy);
+void paste_w_fcl(fcl* f,fcl* copy);
 void slow_paste_fcl(fcl* f,fcl* copy, float tau);
 uint64_t get_array_size_params(fcl* f);
-void memcopy_params_to_vector(fcl* f, float* vector);
+uint64_t get_array_size_scores_fcl(fcl* f);
+uint64_t get_array_size_weights(fcl* f);
 void memcopy_vector_to_params(fcl* f, float* vector);
-void memcopy_derivative_params_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_scores(fcl* f, float* vector);
+void memcopy_params_to_vector(fcl* f, float* vector);
+void memcopy_weights_to_vector(fcl* f, float* vector);
+void memcopy_vector_to_weights(fcl* f, float* vector);
+void memcopy_scores_to_vector(fcl* f, float* vector);
 void memcopy_vector_to_derivative_params(fcl* f, float* vector);
+void memcopy_derivative_params_to_vector(fcl* f, float* vector);
 void set_fully_connected_biases_to_zero(fcl* f);
 void set_fully_connected_unused_weights_to_zero(fcl* f);
-int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size);
-void heavy_save_fcl(fcl* f, int n);
-fcl* heavy_load_fcl(FILE* fr);
 void sum_score_fcl(fcl* input1, fcl* input2, fcl* output);
+void compare_score_fcl(fcl* input1, fcl* input2, fcl* output);
+void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output);
 void dividing_score_fcl(fcl* f, float value);
 void set_fcl_only_dropout(fcl* f);
 void reset_score_fcl(fcl* f);
 void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, float goodness);
-void free_fully_connected_for_edge_popup(fcl* f);
-fcl* light_load_fcl(FILE* fr);
-fcl* light_reset_fcl(fcl* f);
-uint64_t get_array_size_weights(fcl* f);
-void memcopy_scores_to_vector(fcl* f, float* vector);
-void memcopy_vector_to_scores(fcl* f, float* vector);
-fcl* copy_light_fcl(fcl* f);
-fcl* reset_fcl_for_edge_popup(fcl* f);
-fcl* reset_fcl_without_dwdb(fcl* f);
-void paste_fcl_for_edge_popup(fcl* f,fcl* copy);
-void free_fully_connected_complementary_edge_popup(fcl* f);
-void memcopy_weights_to_vector(fcl* f, float* vector);
-void memcopy_vector_to_weights(fcl* f, float* vector);
-void compare_score_fcl(fcl* input1, fcl* input2, fcl* output);
+void reinitialize_w_fcl(fcl* f);
 fcl* reset_edge_popup_d_fcl(fcl* f);
 void set_low_score_fcl(fcl* f);
-fcl* reset_fcl_except_partial_derivatives(fcl* f);
-void reinitialize_w_fcl(fcl* f);
-uint64_t get_array_size_scores_fcl(fcl* f);
-void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output);
+int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size);
+
+	
 
 #endif

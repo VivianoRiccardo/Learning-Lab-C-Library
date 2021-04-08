@@ -27,8 +27,6 @@ SOFTWARE.
 
 transformer* transf(int n_te, int n_td, transformer_encoder** te, transformer_decoder** td, int** encoder_decoder_connections);
 void free_transf(transformer* t);
-void free_transf_for_edge_popup(transformer* t);
-void free_transf_complementary_edge_popup(transformer* t);
 transformer* copy_transf(transformer* t);
 void paste_transformer(transformer* t, transformer* copy);
 void slow_paste_transformer(transformer* t, transformer* copy, float tau);

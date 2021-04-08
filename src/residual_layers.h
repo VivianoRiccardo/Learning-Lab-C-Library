@@ -34,7 +34,7 @@ rl* heavy_load_rl(FILE* fr);
 rl* copy_rl(rl* f);
 void paste_rl(rl* f, rl* copy);
 rl* reset_rl(rl* f);
-unsigned long long int size_of_rls(rl* f);
+uint64_t size_of_rls(rl* f);
 void slow_paste_rl(rl* f, rl* copy,float tau);
 uint64_t get_array_size_params_rl(rl* f);
 void memcopy_vector_to_params_rl(rl* f, float* vector);

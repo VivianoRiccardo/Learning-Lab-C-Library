@@ -39,6 +39,7 @@ SOFTWARE.
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #define N_NORMALIZATION 5
 #define BETA_NORMALIZATION 0.75
@@ -82,13 +83,13 @@ SOFTWARE.
 #define GROUP_NORMALIZATION 3// implemented only for lstm, convolutional, can be seen as layer_normalization if n_groups = 1
 #define LAYER_NORMALIZATION 4// implemented only for fully connected
 #define SCALED_L2_NORMALIZATION 5 // not implemented inside fully connected and neither convolutional
-#define COSINE_NORMALIZATION 6
+#define COSINE_NORMALIZATION 6 // must be added
 
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define BETA3_ADAMOD 0.9999
-#define EPSILON_ADAM 0.00000001
-#define EPSILON 0.00000001
+#define EPSILON_ADAM 1e-7
+#define EPSILON 1e-7
 #define RADAM_THRESHOLD 4
 
 #define NO_REGULARIZATION 0
@@ -126,13 +127,14 @@ SOFTWARE.
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10
 
-#define GRADIENT_DESCENT 1
-#define EDGE_POPUP 2
-#define FULLY_FEED_FORWARD 3
-#define FREEZE_TRAINING 4
-#define FREEZE_BIASES 5
+#define GRADIENT_DESCENT 1 //training_mode
+#define EDGE_POPUP 2//training mode - feed_forward_flag
+#define FULLY_FEED_FORWARD 3//feed_forward_flag
+#define FREEZE_TRAINING 4//training_mode
+#define FREEZE_BIASES 5//training_mode
+#define ONLY_FF 6//feed_forward_flag
 
-#define ONLY_DROPOUT 5
+#define ONLY_DROPOUT 5//feed_forward_flag (only fully-connected)
 
 #define STANDARD_ATTENTION 1
 #define MASKED_ATTENTION 2
@@ -140,6 +142,9 @@ SOFTWARE.
 #define RUN_ONLY_DECODER 0
 #define RUN_ONLY_ENCODER 1
 #define RUN_ALL_TRANSF 2
+
+
+#define SORT_SWITCH_THRESHOLD 1e6// used to sort the scores if > of this threshold bottom up merge sort is used, otherwise quicksort is used
 
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
@@ -596,15 +601,14 @@ typedef struct training{
 #include "math_functions.h"
 #include "model.h"
 #include "multi_core_model.h"
-#include "multi_core_recurrent_enc_dec.h"
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"
 #include "neat_functions.h"
 #include "normalization.h"
 #include "parser.h"
 #include "recurrent.h"
-#include "recurrent_encoder_decoder.h"
 #include "recurrent_layers.h"
+#include "regularization.h"
 #include "residual_layers.h"
 #include "rmodel.h"
 #include "positional_encoding.h"
@@ -614,6 +618,7 @@ typedef struct training{
 #include "transformer.h"
 #include "transformer_decoder.h"
 #include "transformer_encoder.h"
+#include "update.h"
 #include "utils.h"
 #include "vae_model.h"
 

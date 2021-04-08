@@ -24,6 +24,14 @@ SOFTWARE.
 
 #include "llab.h"
 
+int min(int x, int y) {
+    return (x < y) ? x : y;
+}
+
+int max(int x, int y) {
+    return (x > y) ? x : y;
+}
+
 void softmax(float* input, float* output, int size){
     int i;
     float sum = 0;
@@ -479,4 +487,314 @@ void derivative_elu_array(float* input, float* output, int size, float a){
     }
 }
 
+/* This function computes the dot product between 2 array, input and input2
+ * with the same length, and store the result in the output array
+ * 
+ * Input:
+ * 
+ *             @ float* input1:= the first input array
+ *             @ float* input2:= the second input array
+ *             @ float* output:= the output array
+ *             @ int size:= the size of input1, input2, input3
+ * */
+void dot1D(float* input1, float* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input1[i]*input2[i];
+    }
+}
+
+/* This function computes the sum between 2 array, input and input2
+ * with the same length, and store the result in the output array
+ * 
+ * Input:
+ * 
+ *             @ float* input1:= the first input array
+ *             @ float* input2:= the second input array
+ *             @ float* output:= the output array
+ *             @ int size:= the size of input1, input2, input3
+ * */
+void sum1D(float* input1, float* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input1[i]+input2[i];
+    }
+}
+
+
+/* This function computes a dot product between an array and a float value: value
+ * 
+ * Input
+ * 
+ *             @ float* input:= the imput used to compute the output
+ *             @ float value:= the float value that must be multiplied for the inputs
+ *             @ float* output:= the array where you need to store the output
+ *             @ int dimension:= the dimension of input and output
+ * 
+ * */
+void mul_value(float* input, float value, float* output, int dimension){
+    int i;
+    for(i = 0; i < dimension; i++){
+        output[i] = input[i]*value;
+    }
+}
+
+/* This function sum the partial derivatives of the residual layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j,k,u,z,w;
+    for(i = 0; i < m->n_rl; i++){
+        for(j = 0; j < m->rls[i]->n_cl; j++){
+            if(exists_d_kernels_cl(m->rls[i]->cls[j]) || exists_edge_popup_stuff_cl(m->rls[i]->cls[j])){
+                if(exists_d_kernels_cl(m->rls[i]->cls[j])){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+                    }
+                }
+                
+                if(exists_d_biases_cl(m->rls[i]->cls[j]))
+                sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
+                if(exists_edge_popup_stuff_cl(m->rls[i]->cls[j]))
+                sum1D(m->rls[i]->cls[j]->d_scores,m2->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->n_kernels);
+
+                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+/* This function sum the partial derivatives of the convolutional layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int j,k,u,z,w;
+    for(j = 0; j < m->n_cl; j++){
+        if(exists_d_kernels_cl(m->cls[j])){
+            for(k = 0; k < m->cls[j]->n_kernels; k++){
+                sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+            }
+            
+            sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
+            if(exists_edge_popup_stuff_with_only_training_mode_cl(m->cls[j]))
+            sum1D(m->cls[j]->d_scores,m2->cls[j]->d_scores,m3->cls[j]->d_scores,m3->cls[j]->n_kernels);
+
+            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                }
+            }
+        }
+    }
+
+}
+
+
+
+/* This function sum the partial derivatives of the fully-connected layers of a model m and a second model m2 in a third model m3
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the input model
+ *             @ model* m2:= another input model
+ *             @ model* m3:= the output model
+ * 
+ * */
+void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j,k;
+    for(i = 0; i < m->n_fcl; i++){
+        if(exists_d_params_fcl(m->fcls[i])){
+            sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
+            sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);
+        }
+        if(exists_edge_popup_stuff_fcl(m->fcls[i]))
+        sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);    
+        if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+            sum1D(m->fcls[i]->layer_norm->d_gamma,m2->fcls[i]->layer_norm->d_gamma,m3->fcls[i]->layer_norm->d_gamma,m->fcls[i]->layer_norm->vector_dim);
+    }
+    
+        
+}
+
+
+
+
+/* This function sum the partial derivatives of the lstm layers of a rmodel m and a second rmodel m2 in a third rmodel m3
+ * 
+ * Input:
+ * 
+ *             @ rmodel* m:= the input rmodel
+ *             @ rmodel* m2:= another input rmodel
+ *             @ rmodel* m3:= the output rmodel
+ * 
+ * */
+void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: you passed a NULL pointer as argument\n");
+        exit(1);
+    }
+    int i,j;
+    for(i = 0; i < m->n_lstm; i++){
+        for(j = 0; j < 4; j++){
+            sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->size*m->lstms[i]->size);
+            sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->size*m->lstms[i]->size);
+            sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
+        }
+    
+        if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
+            for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
+                sum1D(m->lstms[i]->bns[j]->d_gamma,m2->lstms[i]->bns[j]->d_gamma,m3->lstms[i]->bns[j]->d_gamma,m->lstms[i]->bns[j]->vector_dim);
+                sum1D(m->lstms[i]->bns[j]->d_beta,m2->lstms[i]->bns[j]->d_beta,m3->lstms[i]->bns[j]->d_beta,m->lstms[i]->bns[j]->vector_dim);
+            }
+        }
+    }
+    
+
+}
+
+/* the absolute value of a float number*/
+float float_abs(float a){
+    if(a < 0)
+        return -a;
+    return a;
+}
+
+/* absolute value of each value of an array*/
+void float_abs_array(float* a, int n){
+    int i;
+    for(i = 0; i < n; i++){
+        a[i] = float_abs(a[i]);
+    }
+}
+
+
+/* absolute value of each value of an array*/
+float* get_float_abs_array(float* a, int n){
+    float* m = (float*)calloc(n,sizeof(float));
+    int i;
+    for(i = 0; i < n; i++){
+        m[i] = float_abs(a[i]);
+    }
+    return m;
+}
+
+void dot_float_input(float* input1, int* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = (float)(input1[i]*input2[i]);
+    }
+}
+
+/* This function sum the partial derivatives in model m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ model* m:= first input model
+ *             @ model* m2:= second input model
+ *             @ model* m3:= output model
+ * 
+ * */
+void sum_model_partial_derivatives(model* m, model* m2, model* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_fully_connected_layers_partial_derivatives(m,m2,m3);
+    sum_convolutional_layers_partial_derivatives(m,m2,m3);
+    sum_residual_layers_partial_derivatives(m,m2,m3);
+}
+
+/*sum partial derivatives of batch sizes in 1 unique model
+ * 
+ * input:
+ * 
+ *             @ model* sum_m:= where are summed up the partial derivatives
+ *             @ model** models:= the models (dimension: n_models)
+ *             @ int n_models:= the number of models
+ * 
+ * */
+void sum_models_partial_derivatives(model* sum_m, model** models, int n_models){
+    int i;
+    for(i = 0; i < n_models; i++){
+        sum_model_partial_derivatives(models[i],sum_m,sum_m);
+    }
+}
+
+/* This function sum the partial derivatives in rmodel m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ rmodel* m:= first input rmodel
+ *             @ rmodel* m2:= second input rmodel
+ *             @ rmodel* m3:= output rmodel
+ * 
+ * */
+void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
+    if(m == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_lstm_layers_partial_derivatives(m,m2,m3);
+}
+
+/* This function sum the partial derivatives in rmodel m1 and m2 in m3
+ * 
+ * Input:
+ *     
+ *             @ rmodel* m:= first input rmodel
+ *             @ rmodel* m2:= second input rmodel
+ *             @ rmodel* m3:= output rmodel
+ * 
+ * */
+void sum_rmodels_partial_derivatives(rmodel* m, rmodel** m2, int n_models){
+    if(m == NULL || m2 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
+        exit(1);
+    }
+    int i;
+    for(i = 0; i < n_models; i++){
+        sum_rmodel_partial_derivatives(m,m2[i],m);
+    }
+}
+
+void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3){
+    if(vm == NULL || vm2 == NULL || vm3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_vae_model_partial_derivatives\n");
+        exit(1);
+    }
+    sum_model_partial_derivatives(vm->encoder,vm2->encoder,vm3->encoder);
+    sum_model_partial_derivatives(vm->decoder,vm2->decoder,vm3->decoder);
+}
 

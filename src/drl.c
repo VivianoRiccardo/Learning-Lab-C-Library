@@ -27,7 +27,7 @@ SOFTWARE.
 /* This function initializes a ddpg model with 4 models:
  * model m1 is the policy network, model m2 is the network that is gonna handle the frames from the game, m3 is the model that is gonna handle the actions, model m4 is the final part
  * of the q-function model. so m2,m3,m4 are the q function total model
- * regularization1 can be NO_REGULARIZATION or L2_REGULARIZATION for the policy network, regularization2 is for q-function network. gradient descent flag1 can be NESTEROV, ADAM, RADAM and is for policy network
+ * regularization1 can be NO_REGULARIZATION or L2_REGULARIZATION for the policy network, regularization2 is for q-function network. gradient descent flag1 can be NESTEROV, ADAM, RADAM and others and is for policy network
  * gradient descent flag2 is for q-function network. buff size is the size of the frames passed, it should be = to m1_input. maxframes is the maximum nuber of frames that the ddpg should handle.
  * lr1 is the learning rate of the policy network, lr2 of the q-function network. momentum1 is the momentum for policy network, momentum2 is for the q-function network. 
  * lambda1 is the value of l2 regularization if there is any l2 regularization of policy network, lambda2 of q-function network. tau is the param used by the target networks to copy the original networks

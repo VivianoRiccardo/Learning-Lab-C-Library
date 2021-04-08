@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "llab.h"
 
-/* this function builds a batch normalization layer
+/* this function builds a normalization layer that can be used for batch normalization or group normalization or layer normalization
  * 
  * Input:
  * 
@@ -783,8 +783,8 @@ bn* reset_bn_except_partial_derivatives(bn* b){
  *             bn* b:= the batch normalized layer b
  * 
  * */
-unsigned long long int size_of_bn(bn* b){
-    unsigned long long int sum = 0;
+uint64_t size_of_bn(bn* b){
+    uint64_t sum = 0;
     sum+= (b->batch_size*b->vector_dim*6);
     sum+= (b->vector_dim*17);
     return sum;

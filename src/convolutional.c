@@ -40,7 +40,8 @@ SOFTWARE.
  *             @ int channels:= the depth of the input and the kernel
  *             @ float* output:= the current feature map computed using the input, kernel and bias
  *                               dimensions: ((input_i-kernel_i)/stride + 1 +2*padding)*((input_j-kernel_j)/stride + 1 +2*padding)
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride1, int stride2, int padding){
@@ -77,7 +78,8 @@ void convolutional_feed_forward(float* input, float* kernel, int input_i, int in
  *             @ int channels:= the depth of the input and the kernel
  *             @ float* output:= the current feature map computed using the input, kernel and bias
  *                               dimensions: ((input_i-kernel_i)/stride + 1 +2*padding)*((input_j-kernel_j)/stride + 1 +2*padding)
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  *                @ int* indices:= the array indices of the weights sorted by the score
  *                @ int n_kernel:= the number of kernels
@@ -126,7 +128,8 @@ void convolutional_feed_forward_edge_popup(float* input, float** kernel, int inp
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding){
@@ -187,7 +190,8 @@ void convolutional_back_prop(float* input, float* kernel, int input_i, int input
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
@@ -230,7 +234,8 @@ void convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
@@ -278,7 +283,8 @@ void convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, i
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  *                @ float* score_error:= the error that must be computed
  * */
@@ -312,7 +318,8 @@ void convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, 
  *             @ int input_j:= the number of columns of the feature map output
  *             @ int sub_pool_i:= the number of rows used for each pooling iteration
  *             @ int sub_pool_j:= the number of columns used for each pooling iteration
- *             @ int stride:= the stride used to pool
+ *             @ int stride1:= the stride used to pool for the rows
+ *             @ int stride2:= the stride used to pool for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void max_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding){
@@ -348,7 +355,8 @@ void max_pooling_feed_forward(float* input, float* output, int input_i, int inpu
  *             @ int input_j:= the number of columns of the feature map output
  *             @ int sub_pool_i:= the number of rows used for each pooling iteration
  *             @ int sub_pool_j:= the number of columns used for each pooling iteration
- *             @ int stride:= the stride used to pool
+ *             @ int stride1:= the stride used to pool for the rows
+ *             @ int stride2:= the stride used to pool for the cols
  *             @ int padding:= the optional padding added to the output
  *             @ float input_error := the error computed using the output_error
  *                                    dimensions: input_i*input_j
@@ -402,7 +410,8 @@ void max_pooling_back_prop(float* input, float* output_error, int input_i, int i
  *             @ int input_j:= the number of columns of the feature map output
  *             @ int sub_pool_i:= the number of rows used for each pooling iteration
  *             @ int sub_pool_j:= the number of columns used for each pooling iteration
- *             @ int stride:= the stride used to pool
+ *             @ int stride1:= the stride used to pool for the rows
+ *             @ int stride2:= the stride used to pool for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void avarage_pooling_feed_forward(float* input, float* output, int input_i, int input_j, int sub_pool_i, int sub_pool_j, int stride1, int stride2, int padding){
@@ -435,7 +444,8 @@ void avarage_pooling_feed_forward(float* input, float* output, int input_i, int 
  *             @ int input_j:= the number of columns of the feature map output
  *             @ int sub_pool_i:= the number of rows used for each pooling iteration
  *             @ int sub_pool_j:= the number of columns used for each pooling iteration
- *             @ int stride:= the stride used to pool
+ *             @ int stride1:= the stride used to pool for the rows
+ *             @ int stride2:= the stride used to pool for the cols
  *             @ int padding:= the optional padding added to the output
  *             
  * */
@@ -472,7 +482,8 @@ void avarage_pooling_back_prop(float* input_error, float* output_error, int inpu
  *             @ int channels:= the depth of the input and the kernel
  *             @ float* output:= the current feature map computed using the input, kernel and bias
  *                               dimensions: ((input_i-1)*stride+kernel_i-2*padding)*((input_j-1)*stride+kernel_j-2*padding)
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_feed_forward(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output, int stride1,int stride2, int padding){
@@ -535,7 +546,8 @@ void transposed_convolutional_feed_forward(float* input, float* kernel, int inpu
  *             @ int channels:= the depth of the input and the kernel
  *             @ float* output:= the current feature map computed using the input, kernel and bias
  *                               dimensions: ((input_i-1)*stride+kernel_i-2*padding)*((input_j-1)*stride+kernel_j-2*padding)
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_feed_forward_edge_popup(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output, int stride1,int stride2, int padding, int* indices, int n_kernels, int last_n){
@@ -609,7 +621,8 @@ void transposed_convolutional_feed_forward_edge_popup(float* input, float** kern
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_back_prop(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding){
@@ -684,7 +697,8 @@ void transposed_convolutional_back_prop(float* input, float* kernel, int input_i
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error){
@@ -749,7 +763,8 @@ void transposed_convolutional_back_prop_edge_popup(float* input, float* kernel, 
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float* bias, int channels, float* output_error, int stride1, int stride2, int padding, int* indices, int n_kernels, int last_n, float* bias_error, float** kernel_error){
@@ -825,7 +840,8 @@ void transposed_convolutional_back_prop_edge_popup_ff_gd_bp(float* input, float*
  *                                    dimensions: channels*kernel_i*kernel_j
  *             @ float* bias_error:= the error of the bias
  *                                   dimensions: 1
- *             @ int stride:= the stride used by the kernel on the feature maps of the inputs
+ *             @ int stride1:= the stride used by the kernel on the feature maps of the inputs for the rows
+ *             @ int stride2:= the stride used by the kernel on the feature maps of the inputs for the cols
  *             @ int padding:= the optional padding added to the output
  * */
 void transposed_convolutional_back_prop_edge_popup_for_input(float* input, float** kernel, int input_i, int input_j, int kernel_i, int kernel_j, float bias, int channels, float* output_error,float* input_error, float* kernel_error, float* bias_error, int stride1, int stride2, int padding, float* score_error, int* indices, int n_kernels, int last_n){

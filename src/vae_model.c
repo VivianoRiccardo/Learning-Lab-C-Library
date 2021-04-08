@@ -367,28 +367,7 @@ int count_weights_vae_model(vaemodel* vm){
     return count_weights(vm->encoder) + count_weights(vm->decoder);
 }
 
-void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
-    update_model(vm->encoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
-    if(gradient_descent_flag == ADAM || gradient_descent_flag == DIFF_GRAD || gradient_descent_flag == ADAMOD){
-        (*b1)/=vm->encoder->beta1_adam;;
-        (*b2)/=vm->encoder->beta2_adam;;
-    }
-    
-    else if(gradient_descent_flag == RADAM){
-        (*b1)/=vm->encoder->beta1_adam;;
-        (*b2)/=vm->encoder->beta2_adam;;
-        (*t)--;
-    }
-    update_model(vm->decoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
-}
 
 
-void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3){
-    if(vm == NULL || vm2 == NULL || vm3 == NULL){
-        fprintf(stderr,"Error: passed NULL pointer as values in sum_vae_model_partial_derivatives\n");
-        exit(1);
-    }
-    sum_model_partial_derivatives(vm->encoder,vm2->encoder,vm3->encoder);
-    sum_model_partial_derivatives(vm->decoder,vm2->decoder,vm3->decoder);
-}
+
 

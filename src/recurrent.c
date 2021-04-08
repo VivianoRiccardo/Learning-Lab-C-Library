@@ -74,8 +74,6 @@ void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_stat
         
         
         cell_state[i] = tanhh_zc[i]*i_t[i] + c[i]*f_t[i]; /*cell state of output we calculate c is the previous c state*/
-        
-        
         hidden_state[i] = o_t[i]*tanhh(cell_state[i]); /*hidden state of output we calculate*/
         
         

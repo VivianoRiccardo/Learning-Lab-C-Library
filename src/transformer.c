@@ -93,48 +93,9 @@ void free_transf(transformer* t){
 } 
 
 
-/* this function deallocates the space by useless arrays not used during feed forward for the transformer using edge popup
- * 
- * Inputs:
- * 
- *             @ transformer* t:= the transformer structure that must be deallocated
- * */
-void free_transf_for_edge_popup(transformer* t){
-    int i;
-    for(i = 0; i < t->n_te; i++){
-        free_transformer_encoder_layer_for_edge_popup(t->te[i]);
-    }
-    
-    for(i = 0; i < t->n_td; i++){
-        free_transformer_decoder_layer_for_edge_popup(t->td[i]);
-    }
-}
 
 
-/* this functiond eallocates the rest of the structure(read above)
- * 
- * Inputs:
- * 
- * 
- *             @ transformer* t:= the transformer structure that must be deallocated
- * */
-void free_transf_complementary_edge_popup(transformer* t){
-    int i;
-    for(i = 0; i < t->n_te; i++){
-        free_transformer_encoder_layer_complementary_edge_popup(t->te[i]);
-    }
-    free(t->te);
-    for(i = 0; i < t->n_td; i++){
-        free_transformer_decoder_layer_complementary_edge_popup(t->td[i]);
-    }
-    free(t->td);
-    for(i = 0; i < t->n_te; i++){
-        free(t->encoder_decoder_connections[i]);
-    }
-    free(t->encoder_decoder_connections);
-    free(t);
-    return;
-}
+
 
 /* name is self-explanatory
  * 
@@ -563,52 +524,5 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
     
 }
 
-/* This function can update the model of the transformer using the adam algorithm or the nesterov momentum
- * 
- * Input:
- * 
- *             @ transformer* t:= the model that must be updated
- *             @ float lr:= the learning rate
- *             @ float momentum:= the momentum
- *             @ int mini_batch_size:= the batch used
- *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
- *                @ float* b1:= the hyper parameter b1 of adam algorithm
- *                @ float* b2:= the hyper parameter b2 of adam algorithm
- *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
- *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
- *                @ float lambda:= a float value for l2 regularization
- *                @ unsigned long long int* t:= the number of time that radam has been used
- * */
-void update_transformer(transformer* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
-    int i;
-    for(i = 0; i < t->n_te; i++){
-        update_transformer_encoder(t->te[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    }
-    for(i = 0; i < t->n_td; i++){
-        update_transformer_decoder(t->td[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    }
-    
-    if(gradient_descent_flag == ADAM){
-        (*b1)*=t->beta1_adam;
-        (*b2)*=t->beta2_adam;
-    }
-    
-    else if(gradient_descent_flag == RADAM){
-        (*b1)*=t->beta1_adam;
-        (*b2)*=t->beta2_adam;
-        (*time)++;
-    }
-    
-    else if(gradient_descent_flag == DIFF_GRAD){
-        (*b1)*=t->beta1_adam;
-        (*b2)*=t->beta2_adam;
-    }
-    
-    else if(gradient_descent_flag == ADAMOD){
-        (*b1)*=t->beta1_adam;
-        (*b2)*=t->beta2_adam;
-    }
-    
-    return;
-}
+
 

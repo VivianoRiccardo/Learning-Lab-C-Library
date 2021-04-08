@@ -278,59 +278,9 @@ void free_model(model* m){
     free(m);
 }
 
-/* This function frees the space allocated by a model structure
- * 
- * Input:
- *             @ model* m:= the structure
- * 
- * */
-void free_model_for_edge_popup(model* m){
-    if(m == NULL)
-        return;
-    int i;
-    
-    for(i = 0; i < m->n_rl; i++){
-        free_residual_for_edge_popup(m->rls[i]);
-    }
-    for(i = 0; i < m->n_cl; i++){
-        free_convolutional_for_edge_popup(m->cls[i]);
-    }
-    for(i = 0; i < m->n_fcl; i++){
-        free_fully_connected_for_edge_popup(m->fcls[i]);
-    }
-}
 
-/* This function frees the space allocated by a model structure
- * 
- * Input:
- *             @ model* m:= the structure
- * 
- * */
-void free_model_complementary_edge_popup(model* m){
-    if(m == NULL)
-        return;
-    int i;
-    
-    for(i = 0; i < m->n_rl; i++){
-        free_residual_complementary_edge_popup(m->rls[i]);
-    }
-    free(m->rls);
-    for(i = 0; i < m->n_cl; i++){
-        free_convolutional_complementary_edge_popup(m->cls[i]);
-    }
-    free(m->cls);
-    for(i = 0; i < m->n_fcl; i++){
-        free_fully_connected_complementary_edge_popup(m->fcls[i]);
-    }
-    free(m->fcls);
-    for(i = 0; i < m->layers; i++){
-        free(m->sla[i]);
-    }
-    free(m->sla);
-    free(m->error);
-    free(m->error_alpha);
-    free(m);
-}
+
+
 
 /* This function copies a model using the copy function for the layers
  * see layers.c file
@@ -374,47 +324,7 @@ model* copy_model(model* m){
     return copy;
 }
 
-/* This function copies a model using the copy function for the layers
- * see layers.c file
- * 
- * Input:
- *         
- *             @ model* m:= the model that must be copied
- * 
- * */
-model* copy_light_model(model* m){
-    if(m == NULL)
-        return NULL;
-    int i;
-    
-    fcl** fcls = NULL;
-    if(m->fcls!=NULL)
-        fcls = (fcl**)malloc(sizeof(fcl*)*m->n_fcl);
-    cl** cls = NULL;
-    if(m->cls!=NULL)
-        cls = (cl**)malloc(sizeof(cl*)*m->n_cl);
-        
-    rl** rls = NULL;
-    if(m->rls!=NULL)
-        rls = (rl**)malloc(sizeof(rl*)*m->n_rl);
-    for(i = 0; i < m->n_fcl; i++){
-        fcls[i] = copy_light_fcl(m->fcls[i]);
-    }
-    for(i = 0; i < m->n_cl; i++){
-        cls[i] = copy_light_cl(m->cls[i]);
-    }
-    for(i = 0; i < m->n_rl; i++){
-        rls[i] = copy_light_rl(m->rls[i]);
-    }
-    model* copy = network(m->layers, m->n_rl, m->n_cl, m->n_fcl, rls, cls, fcls);
-    if(m->error!=NULL)
-        set_model_error(copy,m->error_flag,m->error_threshold1,m->error_threshold2,m->error_gamma,m->error_alpha,m->output_dimension);
-    
-    copy->beta1_adam = m->beta1_adam;
-    copy->beta2_adam = m->beta2_adam;
-    copy->beta3_adamod = m->beta3_adamod;
-    return copy;
-}
+
 
 
 /* This function copies a model using the paste function for the layers
@@ -442,30 +352,7 @@ void paste_model(model* m, model* copy){
     return;
 }
 
-/* This function copies a model using the paste function for the layers
- * see layers.c file
- * 
- * Input:
- *         
- *             @ model* m:= the model that must be copied
- *             @ model* copy:= the model where m is copied
- * 
- * */
-void paste_model_for_edge_popup(model* m, model* copy){
-    if(m == NULL)
-        return;
-    int i;
-    for(i = 0; i < m->n_fcl; i++){
-        paste_fcl_for_edge_popup(m->fcls[i],copy->fcls[i]);
-    }
-    for(i = 0; i < m->n_cl; i++){
-        paste_cl_for_edge_popup(m->cls[i],copy->cls[i]);
-    }
-    for(i = 0; i < m->n_rl; i++){
-        paste_rl_for_edge_popup(m->rls[i],copy->rls[i]);
-    }
-    return;
-}
+
 
 /* This function copies a model using the paste function for the layers
  * see layers.c file
@@ -615,30 +502,7 @@ model* reset_model_for_edge_popup(model* m){
     }
     return m;
 }
-/* This function resets a model
- * returns a model equal to the one as input but with all resetted except for weights and biases
- * */
-model* light_reset_model(model* m){
-    if(m == NULL)
-        return NULL;
-    int i;
-    for(i = 0; i < m->n_fcl; i++){
-        light_reset_fcl(m->fcls[i]);
-    }
-    for(i = 0; i < m->n_cl; i++){
-        light_reset_cl(m->cls[i]);
-    }
-    for(i = 0; i < m->n_rl; i++){
-        light_reset_rl(m->rls[i]);
-    }
-    
-    if(m->error != NULL){
-        for(i = 0; i < m->output_dimension; i++){
-            m->error[i] = 0;
-        }
-    }
-    return m;
-}
+
 
 /* this function compute the space allocated by the arrays of m
  * 
@@ -647,7 +511,7 @@ model* light_reset_model(model* m){
  *             model* m:= the structure model
  * 
  * */
-unsigned long long int size_of_model(model* m){
+uint64_t size_of_model(model* m){
     int i;
     unsigned long long int sum = 0;
     for(i = 0; i < m->n_fcl; i++){
@@ -826,80 +690,7 @@ void save_model_given_directory(model* m, int n, char* directory){
 }
 
 
-/* This function saves a model(network) on a .bin file with name n.bin
- * 
- * Input:
- * 
- *             @ model* m:= the actual network that must be saved
- *             @ int n:= the name of the bin file where the layer is saved
- * 
- * 
- * */
-void heavy_save_model(model* m, int n){
-    if(m == NULL)
-        return;
-    int i;
-    FILE* fw;
-    char* s = (char*)malloc(sizeof(char)*256);
-    char* t = ".bin";
-    s = itoa(n,s);
-    s = strcat(s,t);
-    
-    fw = fopen(s,"a+");
-    
-    if(fw == NULL){
-        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
-        exit(1);
-    }
-    
-    i = fwrite(&m->layers,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
-        exit(1);
-    }
-    
-    i = fwrite(&m->n_rl,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
-        exit(1);
-    }
-    
-    i = fwrite(&m->n_cl,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
-        exit(1);
-    }
-    
-    i = fwrite(&m->n_fcl,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving the model\n");
-        exit(1);
-    }
-    
-    i = fclose(fw);
-    if(i!=0){
-        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
-        exit(1);
-    }
-    
-    for(i = 0; i < m->n_rl; i++){
-        heavy_save_rl(m->rls[i],n);
-    }
-    
-    for(i = 0; i < m->n_cl; i++){
-        heavy_save_cl(m->cls[i],n);
-    }
-    
-    for(i = 0; i < m->n_fcl; i++){
-        heavy_save_fcl(m->fcls[i],n);
-    }
-    
-    free(s);
-}
+
 
 /* This function loads a network model from a .bin file with name file
  * 
@@ -1066,184 +857,11 @@ model* load_model_with_file_already_opened(FILE* fr){
     
 }
 
-/* This function loads a network model from a .bin file with name file
- * 
- * Input:
- * 
- *             @ char* file:= the binary file from which the model will be loaded
- * 
- * */
-model* light_load_model(char* file){
-    if(file == NULL)
-        return NULL;
-    int i;
-    FILE* fr = fopen(file,"r");
-    
-    if(fr == NULL){
-        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
-        exit(1);
-    }
-    
-    int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
-    
-    i = fread(&layers,sizeof(int),1,fr);
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_rl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_cl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_fcl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-
-    rl** rls;
-    cl** cls;
-    fcl** fcls;
-    
-    if(!n_rl)
-        rls = NULL;
-    else
-        rls = (rl**)malloc(sizeof(rl*)*n_rl);
-    if(!n_cl)
-        cls = NULL;
-    else
-        cls = (cl**)malloc(sizeof(cl*)*n_cl);
-    if(!n_fcl)
-        fcls = NULL;
-    else
-        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
-    
-    for(i = 0; i < n_rl; i++){
-        rls[i] = light_load_rl(fr);
-    }
-    
-    for(i = 0; i < n_cl; i++){
-        cls[i] = light_load_cl(fr);
-    }
-    
-    for(i = 0; i < n_fcl; i++){
-        fcls[i] = light_load_fcl(fr);
-    }
-    
-    i = fclose(fr);
-    if(i!=0){
-        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
-        exit(1);
-    }
-    
-    model* m = network(layers,n_rl,n_cl,n_fcl,rls,cls,fcls);
-    
-    return m;
-    
-}
 
 
-/* This function loads a network model from a .bin file with name file
- * 
- * Input:
- * 
- *             @ char* file:= the binary file from which the model will be loaded
- * 
- * */
-model* heavy_load_model(char* file){
-    if(file == NULL)
-        return NULL;
-    int i;
-    FILE* fr = fopen(file,"r");
-    
-    if(fr == NULL){
-        fprintf(stderr,"Error: error during the opening of the file %s\n",file);
-        exit(1);
-    }
-    
-    int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
-    
-    i = fread(&layers,sizeof(int),1,fr);
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_rl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_cl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
-    i = fread(&n_fcl,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading the model\n");
-        exit(1);
-    }
-    
 
-    rl** rls;
-    cl** cls;
-    fcl** fcls;
-    
-    if(!n_rl)
-        rls = NULL;
-    else
-        rls = (rl**)malloc(sizeof(rl*)*n_rl);
-    if(!n_cl)
-        cls = NULL;
-    else
-        cls = (cl**)malloc(sizeof(cl*)*n_cl);
-    if(!n_fcl)
-        fcls = NULL;
-    else
-        fcls = (fcl**)malloc(sizeof(fcl*)*n_fcl);
-    
-    for(i = 0; i < n_rl; i++){
-        rls[i] = heavy_load_rl(fr);
-    }
-    
-    for(i = 0; i < n_cl; i++){
-        cls[i] = heavy_load_cl(fr);
-    }
-    
-    for(i = 0; i < n_fcl; i++){
-        fcls[i] = heavy_load_fcl(fr);
-    }
-    
-    i = fclose(fr);
-    if(i!=0){
-        fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
-        exit(1);
-    }
-    
-    model* m = network(layers,n_rl,n_cl,n_fcl,rls,cls,fcls);
-    
-    return m;
-    
-}
+
+
 /* This function compute the feed forward between 2 fully-connected layer
  * 
  * Input:
@@ -2168,7 +1786,6 @@ void ff_cl_cl(cl* f1, cl* f2){
     
     
     if(f2->convolutional_flag == CONVOLUTION){
-        /* activation for f2, if there is any activation*/
         if(f2->activation_flag == SIGMOID){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->used_kernels[i]){
@@ -2183,7 +1800,6 @@ void ff_cl_cl(cl* f1, cl* f2){
         else if(f2->activation_flag == RELU){
             for(i = 0; i < f2->n_kernels; i++){
                 if(f2->used_kernels[i]){
-                    //printf("yes4\n");
                     for(j = f2->padding1_rows; j < f2->rows1-f2->padding1_rows; j++){
                         relu_array(&f2->pre_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_rows],&f2->post_activation[i*f2->rows1*f2->cols1 + j*f2->cols1 + f2->padding1_cols],f2->cols1-2*f2->padding1_cols);
                     }
@@ -2754,7 +2370,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
             
             else if(f2->training_mode == EDGE_POPUP){
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop_edge_popup(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    convolutional_back_prop_edge_popup(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 convolutional_back_prop_edge_popup_for_input(f1->dropout_temp, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -2784,7 +2400,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     convolutional_back_prop_edge_popup_for_input(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -2812,7 +2428,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     convolutional_back_prop_edge_popup_for_input(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -2839,7 +2455,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 } 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -2991,7 +2607,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
             
             else if(f2->training_mode == EDGE_POPUP){
                 for(i = 0; i < f2->n_kernels; i++){
-                    transposed_convolutional_back_prop_edge_popup(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    transposed_convolutional_back_prop_edge_popup(f1->dropout_temp, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 transposed_convolutional_back_prop_edge_popup_for_input(f1->dropout_temp, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3021,7 +2637,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        transposed_convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        transposed_convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     transposed_convolutional_back_prop_edge_popup_for_input(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3050,7 +2666,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        transposed_convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        transposed_convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     transposed_convolutional_back_prop_edge_popup_for_input(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3077,7 +2693,7 @@ float* bp_fcl_cl(fcl* f1, cl* f2, float* error){
                 } 
                 else if(f2->training_mode == EDGE_POPUP){
                     for(i = 0; i < f2->n_kernels; i++){
-                        transposed_convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                        transposed_convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                     }
                     
                     transposed_convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3339,7 +2955,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         else if(f2->training_mode == EDGE_POPUP){
             if(f1->pooling_flag){
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop_edge_popup(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    convolutional_back_prop_edge_popup(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 convolutional_back_prop_edge_popup_for_input(f1->post_pooling, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3348,7 +2964,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else if(f1->normalization_flag){
                 
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 convolutional_back_prop_edge_popup_for_input(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3356,7 +2972,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             
             else if(f1->activation_flag){
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 convolutional_back_prop_edge_popup_for_input(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3365,7 +2981,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else{
                 
                 for(i = 0; i < f2->n_kernels; i++){
-                    convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3558,7 +3174,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
         else if(f2->training_mode == EDGE_POPUP){
             if(f1->pooling_flag){
                 for(i = 0; i < f2->n_kernels; i++){
-                    transposed_convolutional_back_prop_edge_popup(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    transposed_convolutional_back_prop_edge_popup(f1->post_pooling, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 transposed_convolutional_back_prop_edge_popup_for_input(f1->post_pooling, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3567,7 +3183,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else if(f1->normalization_flag){
                 
                 for(i = 0; i < f2->n_kernels; i++){
-                    transposed_convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    transposed_convolutional_back_prop_edge_popup(f1->post_normalization, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 transposed_convolutional_back_prop_edge_popup_for_input(f1->post_normalization, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3576,7 +3192,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else if(f1->activation_flag){
                 
                 for(i = 0; i < f2->n_kernels; i++){
-                    transposed_convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    transposed_convolutional_back_prop_edge_popup(f1->post_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 transposed_convolutional_back_prop_edge_popup_for_input(f1->post_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -3585,7 +3201,7 @@ float* bp_cl_cl(cl* f1, cl* f2, float* error){
             else{
                 
                 for(i = 0; i < f2->n_kernels; i++){
-                    transposed_convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,f2->d_kernels[i], &f2->d_biases[i], f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
+                    transposed_convolutional_back_prop_edge_popup(f1->pre_activation, f2->kernels[i], f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,f2->biases[i],f2->channels,&f2->temp[i*f2->rows1*f2->cols1],f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, &f2->d_scores[i]);
                 }
                 
                 transposed_convolutional_back_prop_edge_popup_for_input(f1->pre_activation, f2->kernels, f2->input_rows,f2->input_cols,f2->kernel_rows,f2->kernel_cols,0,f2->channels,f2->temp,f2->error2,NULL, NULL, f2->stride1_rows,f2->stride1_cols, f2->padding1_rows, f2->d_scores,f2->indices,f2->n_kernels,f2->n_kernels*f2->k_percentage);
@@ -4422,11 +4038,14 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
  *             @ model* m:= the model
  * 
  * */
-int count_weights(model* m){
+uint64_t count_weights(model* m){
     int i,j,z,c;
-    int sum = 0;
+    uint64_t sum = 0;
     for(i = 0; i < m->n_fcl; i++){
         sum+=m->fcls[i]->input*m->fcls[i]->output*m->fcls[i]->k_percentage;
+        if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION){
+			sum+=m->fcls[i]->layer_norm->vector_dim;
+		}	
     }
     
     for(i = 0; i < m->n_cl; i++){
@@ -4457,95 +4076,9 @@ int count_weights(model* m){
     
     return sum;
 }
-/* This function can update the model of the network using the adam algorithm or the nesterov momentum
- * 
- * Input:
- * 
- *             @ model* m:= the model that must be update
- *             @ float lr:= the learning rate
- *             @ float momentum:= the momentum
- *             @ int mini_batch_size:= the batch used
- *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
- *                @ float* b1:= the hyper parameter b1 of adam algorithm
- *                @ float* b2:= the hyper parameter b2 of adam algorithm
- *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
- *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
- *                @ float lambda:= a float value for l2 regularization
- *                @ unsigned long long int* t:= the number of time that radam has been used
- * */
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
-    if(m == NULL)
-        return;
-    
-    lambda*=(float)mini_batch_size;
-    
-    if(regularization == L2_REGULARIZATION){
-        add_l2_residual_layer(m,total_number_weights,lambda);
-        add_l2_convolutional_layer(m,total_number_weights,lambda);
-        add_l2_fully_connected_layer(m,total_number_weights,lambda);
-    }
-    
-    
-    if(gradient_descent_flag == NESTEROV){    
-        update_residual_layer_nesterov(m,lr,momentum,mini_batch_size);
-        update_convolutional_layer_nesterov(m,lr,momentum,mini_batch_size);
-        update_fully_connected_layer_nesterov(m,lr,momentum,mini_batch_size);
-    }
-    
-    else if(gradient_descent_flag == ADAM){
-        update_residual_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        update_convolutional_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        update_fully_connected_layer_adam(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        (*b1)*=m->beta1_adam;
-        (*b2)*=m->beta2_adam;
-    }
-    
-    else if(gradient_descent_flag == RADAM){
-        update_residual_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
-        update_convolutional_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
-        update_fully_connected_layer_radam(m,lr,mini_batch_size, (*b1), (*b2), *t,m->beta1_adam,m->beta2_adam);
-        (*b1)*=m->beta1_adam;
-        (*b2)*=m->beta2_adam;
-        (*t)++;
-    }
-    
-    else if(gradient_descent_flag == DIFF_GRAD){
-        update_residual_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        update_convolutional_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        update_fully_connected_layer_adam_diff_grad(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam);
-        (*b1)*=m->beta1_adam;
-        (*b2)*=m->beta2_adam;
-    }
-    
-    else if(gradient_descent_flag == ADAMOD){
-        update_residual_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
-        update_convolutional_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
-        update_fully_connected_layer_adamod(m,lr,mini_batch_size, (*b1), (*b2),m->beta1_adam,m->beta2_adam,m->beta3_adamod);
-        (*b1)*=m->beta1_adam;
-        (*b2)*=m->beta2_adam;
-    }
-    
 
-}
 
-/* This function sum the partial derivatives in model m1 and m2 in m3
- * 
- * Input:
- *     
- *             @ model* m:= first input model
- *             @ model* m2:= second input model
- *             @ model* m3:= output model
- * 
- * */
-void sum_model_partial_derivatives(model* m, model* m2, model* m3){
-    if(m == NULL || m2 == NULL || m3 == NULL){
-        fprintf(stderr,"Error: passed NULL pointer as values in sum_model_partial_derivatives\n");
-        exit(1);
-    }
-    sum_fully_connected_layers_partial_derivatives(m,m2,m3);
-    sum_convolutional_layers_partial_derivatives(m,m2,m3);
-    sum_residual_layers_partial_derivatives(m,m2,m3);
-}
+
 
 
 /* this function gives the number of float params for biases and weights in a model
@@ -5021,21 +4554,7 @@ float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tens
     return model_tensor_input_bp(m,tensor_depth,tensor_i,tensor_j,input, m->error,m->output_dimension);
 }
 
-/*sum partial derivatives of batch sizes in 1 unique model
- * 
- * input:
- * 
- *             @ model* sum_m:= where are summed up the partial derivatives
- *             @ model** models:= the models (dimension: n_models)
- *             @ int n_models:= the number of models
- * 
- * */
-void sum_models_partial_derivatives(model* sum_m, model** models, int n_models){
-    int i;
-    for(i = 0; i < n_models; i++){
-        sum_model_partial_derivatives(models[i],sum_m,sum_m);
-    }
-}
+
 
 /* setting the biases of network to 0
  * 
@@ -5089,21 +4608,15 @@ void set_model_training_edge_popup(model* m, float k_percentage){
         exit(1);
     }
     for(i = 0; i < m->n_fcl; i++){
-        m->fcls[i]->training_mode = EDGE_POPUP;
-        m->fcls[i]->feed_forward_flag = EDGE_POPUP;
         m->fcls[i]->k_percentage = k_percentage;
     }
     
     for(i = 0; i < m->n_cl; i++){
-        m->cls[i]->training_mode = EDGE_POPUP;
-        m->cls[i]->feed_forward_flag = EDGE_POPUP;
         m->cls[i]->k_percentage = k_percentage;
     }
     
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            m->rls[i]->cls[j]->training_mode = EDGE_POPUP;
-            m->rls[i]->cls[j]->feed_forward_flag = EDGE_POPUP;
             m->rls[i]->cls[j]->k_percentage = k_percentage;
         }
     }
