@@ -1,0 +1,67 @@
+/*
+MIT License
+
+Copyright (c) 2018 Viviano Riccardo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files ((the "LICENSE")), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
+char* get_full_path(char* directory, char* filename);
+void get_dropout_array(int size, float* mask, float* input, float* output); 
+void set_dropout_mask(int size, float* mask, float threshold); 
+void ridge_regression(float *dw, float w, float lambda, int n);
+int read_files(char** name, char* directory);
+char* itoa(int i, char b[]);
+int shuffle_char_matrix(char** m,int n);
+int bool_is_real(float d);
+int shuffle_float_matrix(float** m,int n);
+int shuffle_int_matrix(int** m,int n);
+int shuffle_char_matrices(char** m,char** m1,int n);
+int shuffle_float_matrices(float** m,float** m1,int n);
+int shuffle_int_matrices(int** m,int** m1,int n);
+int read_file_in_char_vector(char** ksource, char* fname, int* size);
+void copy_array(float* input, float* output, int size);
+int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
+void copy_char_array(char* input, char* output, int size);
+int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
+void free_matrix(float** m, int n);
+long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
+double* accuracy_array(long long unsigned int** cm, int size);
+int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n);
+int shuffle_float_matrices_float_int_vectors(float** m,float** m1,float* f, int* v,int n);
+double* precision_array(long long unsigned int** cm, int size);
+double* sensitivity_array(long long unsigned int** cm, int size);
+double* specificity_array(long long unsigned int** cm, int size);
+void print_accuracy(long long unsigned int** cm, int size);
+void print_precision(long long unsigned int** cm, int size);
+void print_sensitivity(long long unsigned int** cm, int size);
+void print_specificity(long long unsigned int** cm, int size);
+void quick_sort(float A[], int I[], int lo, int hi);
+void copy_int_array(int* input, int* output, int size);
+int shuffle_int_array(int* m,int n);
+char** get_files(int index1, int n_files);
+int check_nans_matrix(float** m, int rows, int cols);
+void merge(float* values, int* indices, int temp[], int from, int mid, int to, int length);
+void mergesort(float* values, int* indices, int low, int high);
+void sort(float* values, int* indices, int low, int high);
+
+#endif
