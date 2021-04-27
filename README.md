@@ -97,6 +97,10 @@ https://www.cygwin.com/
 - Transformer encoder (24/12/2020)
 - Transformer decoder (1/03/2021)
 - Transformer feed-forward, back-propagation, update (3/03/2021)
+- Ram optimization for model and rmodel (27/04/2021)
+- Local response normalization for fcl (27/04/2021)
+- Edge popup for lstm (27/04/2021)
+- Adaptive clipping gradient (27/04/2021)
 # Tests
 
 Each test has been trained successfully.
@@ -119,7 +123,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
   The test 10 can be taken as neat template, you need only to change the compute fitness function.
 - Test 11 is test 6 trained with edge popup algorithm.
 - Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), must be reset.
-
+- From test 16 to test 18 there are recurrent networks with normalization, adaptive gradient clipping and also edge popup
 
 # Future implementations
 - Opencl computations
