@@ -32,10 +32,10 @@ int main(){
     }
     // Model Architecture
     cl** cls = (cl**)malloc(sizeof(cl*));
-    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,LOCAL_RESPONSE_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,0);
+    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,LOCAL_RESPONSE_NORMALIZATION,RELU,MAX_POOLING,0,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,0);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(cls[0]->rows2*cls[0]->cols2*cls[0]->n_kernels,middle_neurons,1,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,2,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
+    fcls[0] = fully_connected(cls[0]->rows2*cls[0]->cols2*cls[0]->n_kernels,middle_neurons,1,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,2,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
     model* m = network(n_layers,0,1,2,NULL,cls,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);

@@ -45,16 +45,16 @@ int main(){
     cl** cls2 = (cl**)malloc(sizeof(cl*)*2);
     cl** cls3 = (cl**)malloc(sizeof(cl*)*2);
     rl** rls = (rl**)malloc(sizeof(rl*)*2);
-    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,MAX_POOLING,0,CONVOLUTION,0);
-    cls2[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,10,CONVOLUTION,1);
-    cls3[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,10,CONVOLUTION,3);
-    cls2[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,5,CONVOLUTION,2);
-    cls3[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,5,CONVOLUTION,4);
+    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,MAX_POOLING,0,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,0);
+    cls2[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,10,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,1);
+    cls3[0] = convolutional(20,14,14,3,3,40,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,10,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,3);
+    cls2[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,5,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,2);
+    cls3[1] = convolutional(40,14,14,3,3,20,1,1,1,1,2,2,0,0,2,2,NO_NORMALIZATION,LEAKY_RELU,NO_POOLING,5,CONVOLUTION,GRADIENT_DESCENT,FULLY_FEED_FORWARD,4);
     rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
     rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls3);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
     model* m = network(n_layers,2,1,2,rls,cls,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
@@ -110,6 +110,7 @@ int main(){
                 paste_model(m,batch_m[j]);
                 reset_model(batch_m[j]);
             }
+            update_training_parameters(&b1,&b2,&t,m->beta1_adam,m->beta2_adam);
             
         }
         // Saving the model

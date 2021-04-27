@@ -29,8 +29,8 @@ int main(){
     }
     // Model Architecture
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(input_dimension,middle_neurons,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,1,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
+    fcls[0] = fully_connected(input_dimension,middle_neurons,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,1,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
     model* m = network(n_layers,0,0,2,NULL,NULL,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
@@ -72,7 +72,7 @@ int main(){
             // Feed forward and backpropagation
             model_tensor_input_ff_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads);
             for(j = 0; j < batch_size; j++){
-                derivative_cross_entropy_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],output_dimension);
+                derivative_focal_loss_array(batch_m[j]->fcls[1]->post_activation,outputs[i*batch_size+j],errors[j],2,output_dimension);
             }
             model_tensor_input_bp_multicore(batch_m,input_dimension,1,1,&inputs[i*batch_size],batch_size,threads,errors,output_dimension,ret_err);
             // sum the partial derivatives in m obtained from backpropagation
@@ -156,7 +156,7 @@ int main(){
             
             model_tensor_input_ff(test_m,input_dimension,1,1,inputs_test[i]);
             for(j = 0; j < output_dimension; j++){
-                error+=cross_entropy(test_m->fcls[1]->post_activation[j],outputs_test[i][j]);
+                error+=focal_loss(test_m->fcls[1]->post_activation[j],outputs_test[i][j],2);
             }
               
             if(!i)

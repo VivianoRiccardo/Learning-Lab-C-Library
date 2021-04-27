@@ -19,7 +19,7 @@ int main(){
     int i,j,k,z,training_instances = 50000,input_dimension = 784,output_dimension = 10, middle_neurons = 100;
     int n_layers = 4;
     int batch_size = 10,threads = 4;
-    int epochs = 20;
+    int epochs = 5;
     unsigned long long int t = 1;
 
     char** ksource = (char**)malloc(sizeof(char*));
@@ -37,8 +37,10 @@ int main(){
     cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,0,0,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,0);
     cls[1] = convolutional(20,28,28,1,1,20,1,1,0,0,2,2,0,0,2,2,NO_NORMALIZATION,RELU,AVARAGE_POOLING,0,NO_CONVOLUTION,1);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(cls[1]->rows2*cls[1]->cols2*cls[1]->n_kernels,middle_neurons,2,DROPOUT,SIGMOID,0.3,0,NO_NORMALIZATION);
+    fcls[0] = fully_connected(cls[1]->rows2*cls[1]->cols2*cls[1]->n_kernels,middle_neurons,2,NO_DROPOUT,SIGMOID,0.3,0,NO_NORMALIZATION);
     fcls[1] = fully_connected(middle_neurons,output_dimension,3,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
+    fcls[0]->training_mode = FREEZE_TRAINING;
+    fcls[1]->training_mode = FREEZE_TRAINING;
     model* m = network(n_layers,0,2,2,NULL,cls,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
@@ -46,7 +48,7 @@ int main(){
         batch_m[i] = copy_model(m);
     }
     int ws = count_weights(m);
-    float lr = 0.0003, momentum = 0.9, lambda = 0.0001;
+    float lr = 0.01, momentum = 0.9, lambda = 0.0001;
     // Reading the data in a char** vector
     read_file_in_char_vector(ksource,filename,&size);
     float** inputs = (float**)malloc(sizeof(float*)*training_instances);
@@ -68,10 +70,6 @@ int main(){
     save_model(m,0);
     // Training
     for(k = 0; k < epochs; k++){
-        if(k == 10)
-            lr = 0.0001;
-        else if(k == 15)
-            lr = 0.00005;
         printf("Starting epoch %d/%d\n",k+1,epochs);
         // Shuffling before each epoch
         shuffle_float_matrices(inputs,outputs,training_instances);
@@ -94,6 +92,7 @@ int main(){
                 paste_model(m,batch_m[j]);
                 reset_model(batch_m[j]);
             }
+            //exit(0);
             
         }
         // Saving the model
@@ -121,9 +120,9 @@ int main(){
     // Initializing Testing resources
     model* test_m;
     char** ksource2 = (char**)malloc(sizeof(char*));
-    char* filename2 = "../data/test.bin";
+    char* filename2 = "../data/train.bin";
     int size2 = 0;
-    int testing_instances = 10000;
+    int testing_instances = 50000;
     char temp2[256];
     read_file_in_char_vector(ksource2,filename2,&size);
     float** inputs_test = (float**)malloc(sizeof(float*)*testing_instances);

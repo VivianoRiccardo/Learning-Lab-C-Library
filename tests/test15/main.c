@@ -10,7 +10,7 @@ int main(){
     srand(time(NULL));
     char** ksource = (char**)malloc(sizeof(char*));
     char* filename = "../data/train.bin";
-    int size = 0, training_instances = 50000, input_dimension = 28*28, epochs = 10;
+    int size = 0, training_instances = 100, input_dimension = 28*28, epochs = 10;
     char temp[2];
     temp[1] = '\0';
     
@@ -35,7 +35,7 @@ int main(){
     // last layer after the decoder
     fcl** model_fcl = (fcl**)malloc(sizeof(fcl*));
     model_fcl[0] = fully_connected(100,28,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION);
-    //model_fcl[0]->training_mode = FREEZE_TRAINING;
+    model_fcl[0]->training_mode = FREEZE_TRAINING;
     // you can freeze the training of the logit units and watch how only the transformer tries to adapt to learn
     model* final_model = network(1,0,0,1,NULL,NULL,model_fcl);
     set_model_error(final_model,FOCAL_LOSS,0,0,2,NULL,28);
@@ -51,10 +51,32 @@ int main(){
     
     
     //encoder model
+    /*
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
     fcls[0] = fully_connected(100,100,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION);
     fcls[1] = fully_connected(100,100,1,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
     model* m = network(2,0,0,2,NULL,NULL,fcls);
+    */
+    
+    cl** cls = (cl**)malloc(sizeof(cl*)*2);
+    cls[0] = convolutional(1,100,1,1,1,10,1,1,0,0,1,1,0,0,1,1,NO_NORMALIZATION,RELU,NO_POOLING,0,CONVOLUTION,0);
+    cls[1] = convolutional(1,1,1000,1,10,1,1,10,0,0,1,1,0,0,1,1,NO_NORMALIZATION,NO_ACTIVATION,NO_POOLING,0,CONVOLUTION,1);
+    //cls[0]->training_mode = FREEZE_TRAINING;
+    //cls[1]->training_mode = FREEZE_TRAINING;
+    model* m = network(2,0,2,0,NULL,cls,NULL);
+    
+    fcl** fcl_en = (fcl**)malloc(sizeof(fcl*));
+    fcl_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
+    fcl_en[0]->training_mode = FREEZE_TRAINING;
+    model* m_en = network(1,0,0,1,NULL,NULL,fcl_en);
+    
+    fcl** fcl_de = (fcl**)malloc(sizeof(fcl*));
+    fcl_de[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
+    model* m_de = network(1,0,0,1,NULL,NULL,fcl_de);
+    
+    fcl** fcl_de_en = (fcl**)malloc(sizeof(fcl*));
+    fcl_de_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
+    model* m_de_en = network(1,0,0,1,NULL,NULL,fcl_de_en);
     
     // encoder linear fcls
     fcl** fcls2 = (fcl**)malloc(sizeof(fcl*)*6);
@@ -65,11 +87,20 @@ int main(){
     fcls2[4] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
     fcls2[5] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION);
     
+    fcls2[0]->training_mode = FREEZE_TRAINING;
+    fcls2[1]->training_mode = FREEZE_TRAINING;
+    fcls2[2]->training_mode = FREEZE_TRAINING;
+    fcls2[3]->training_mode = FREEZE_TRAINING;
+    fcls2[4]->training_mode = FREEZE_TRAINING;
+    fcls2[5]->training_mode = FREEZE_TRAINING;
     // encoder normalization
     scaled_l2_norm** l2 = (scaled_l2_norm**)malloc(sizeof(scaled_l2_norm*)*2);
     l2[0] = scaled_l2_normalization_layer(100);
     l2[1] = scaled_l2_normalization_layer(100);
-    
+    l2[0]->training_mode = FREEZE_TRAINING;
+    l2[1]->training_mode = FREEZE_TRAINING;
+    float beta1_adam = m->beta1_adam;
+    float beta2_adam = m->beta2_adam;
     //decoder model
     fcl** fcls4 = (fcl**)malloc(sizeof(fcl*)*2);
     fcls4[0] = fully_connected(100,100,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION);
@@ -99,11 +130,11 @@ int main(){
     
     // initializing the encoder
     transformer_encoder** e = (transformer_encoder**)malloc(sizeof(transformer_encoder*));
-    e[0] = transformer_encoder_layer(m,fcls2,l2,100,2,TRANSFORMER_NO_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,SCALED_L2_NORMALIZATION,STANDARD_ATTENTION);
+    e[0] = transformer_encoder_layer(m,m_en,fcls2,l2,100,2,TRANSFORMER_NO_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,NO_NORMALIZATION,STANDARD_ATTENTION);
     
     // initializing the decoder
     transformer_decoder** d = (transformer_decoder**)malloc(sizeof(transformer_decoder*));
-    d[0] = transformer_decoder_layer(100,100,2,2,TRANSFORMER_NO_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,SCALED_L2_NORMALIZATION,MASKED_ATTENTION,STANDARD_ATTENTION,100,m2,fcls3,l3);
+    d[0] = transformer_decoder_layer(100,100,2,2,TRANSFORMER_NO_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,SCALED_L2_NORMALIZATION,TRANSFORMER_RESIDUAL,SCALED_L2_NORMALIZATION,MASKED_ATTENTION,STANDARD_ATTENTION,100,m2,m_de,m_de_en,fcls3,l3);
     
     // must be specified the conenction encoder decoder
     int** con = (int**)malloc(sizeof(int*));
@@ -112,7 +143,7 @@ int main(){
     
     // initializing the transformer
     transformer* t = transf(1,1,e,d,con);
-    
+    long long unsigned int time = 1;
     // training, remember inputs2 is the input for encoder and decoder, must predict inputs
     for(i = 0; i < epochs; i++){//epochs
         for(j = 0; j < 28; j++){
@@ -132,27 +163,34 @@ int main(){
             sum1D(enc,pos_enc,enc,28*28);
             // feed forward transformer
             printf("Training instance number %d/%d\n",j+1,100);
-            transf_ff(t,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
+            //transf_ff(t,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
+            encoder_transformer_ff(inputs2[j],t->te[0],28*28);
             // ff and bp for the logits of the transf
             float* err1 = NULL;
             for(k = 0; k < 28; k++){
                 if(!k)
-                    err1 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->td[t->n_td-1]->e),&inputs[j][k*28]);
+                    //err1 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->td[t->n_td-1]->e),&inputs[j][k*28]);
+                    err1 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->te[0]),&inputs[j][k*28]);
                 else{
-                    float* err2 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->td[t->n_td-1]->e),&inputs[j][k*28]);
+                    //float* err2 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->td[t->n_td-1]->e),&inputs[j][k*28]);
+                    float* err2 = ff_error_bp_model_once(final_models[k],1,1,100,get_output_layer_from_encoder_transf(t->te[0]),&inputs[j][k*28]);
                     sum1D(err1,err2,err1,100);
                 }
             }
             // transf bp
-            transf_bp(t,inputs2[j],28*28,enc,28*28,err1,RUN_ALL_TRANSF);
+            //transf_bp(t,inputs2[j],28*28,enc,28*28,err1,RUN_ALL_TRANSF);
+            encoder_transformer_bp(inputs2[j],t->te[0],28*28,err1);
             // clipping gradient for the entire model (can be commented - not recommended)
-            general_clipping_gradient(final_models,NULL,&t,28,0,1,5);
-            
+            //general_clipping_gradient(final_models,NULL,&t,28,0,1,5);
+            //clipping_gradient_transf_encoder(t->te[0],10);
             // here comes the update
-            update_transformer(t,0.001,0.9,1,NESTEROV,NULL,NULL,NO_REGULARIZATION,0,0,NULL);
+            update_transformer_encoder(t->te[0],0.001,0.9,1,DIFF_GRAD,&beta1_adam,&beta2_adam,NO_REGULARIZATION,0,0,&time);
             reset_transf(t);
+            beta1_adam*=m->beta1_adam;
+            beta2_adam*=m->beta2_adam;
+            time++;
             for(k = 0; k < 28; k++){
-                update_model(final_models[k],0.001,0.9,1,NESTEROV,NULL,NULL,NO_REGULARIZATION,0,0,NULL);
+            //    update_model(final_models[k],0.001,0.9,1,NESTEROV,NULL,NULL,NO_REGULARIZATION,0,0,NULL);
                 reset_model(final_models[k]);
             }
             free(enc);
@@ -203,18 +241,20 @@ int main(){
             
             float* enc = (float*)calloc(28*28,sizeof(float));
             // preparing the input
+            memcpy(&enc[28],inputs,27*28*sizeof(float));
             for(k = 0; k < 28; k++){
                 enc[k] = 1;
             }
-            
-            sum1D(enc,pos_enc,enc,28);
+            sum1D(enc,pos_enc,enc,28*28);
             
             
             // transf ff
-            transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
+            //transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ALL_TRANSF);
+            encoder_transformer_ff(inputs2[j],tt->te[0],28*28);
             float* err = (float*)calloc(28,sizeof(float));
             for(k = 0; k < 27; k++){
-                model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->td[tt->n_td-1]->e));
+                //model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->td[tt->n_td-1]->e));
+                model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->te[0]));
                 focal_loss_array(mm[k]->output_layer,&inputs[j][k*28],err,2,28);
                 for(z = 0; z < 28; z++){
                     if(mm[k]->output_layer[z] < 0.5) mm[k]->output_layer[z] = 0;
@@ -224,12 +264,14 @@ int main(){
                     cm = confusion_matrix(mm[k]->output_layer, &inputs[j][k*28],NULL, 28,0.5);
                 else
                     cm = confusion_matrix(mm[k]->output_layer, &inputs[j][k*28],cm, 28,0.5);
-        
-                sum1D(mm[k]->output_layer,&pos_enc[(k+1)*28],&enc[(k+1)*28],28);
-                reset_transf_decoders(tt);
-                transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ONLY_DECODER);
+                    
+                //reset_transformer_encoder(tt->te[0]);
+                //sum1D(mm[k]->output_layer,&pos_enc[(k+1)*28],&enc[(k+1)*28],28);
+                //reset_transf_decoders(tt);
+                //transf_ff(tt,inputs2[j],28*28,enc,28*28,RUN_ONLY_DECODER);
             }
-            model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->td[tt->n_td-1]->e));
+            model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->te[0]));
+            //model_tensor_input_ff(mm[k],1,1,100,get_output_layer_from_encoder_transf(tt->td[0]->e));
             focal_loss_array(mm[k]->output_layer,&inputs[j][k*28],err,2,28);
             
             //error
