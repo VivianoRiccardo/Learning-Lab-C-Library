@@ -164,6 +164,20 @@ void local_response_normalization_back_prop(float* tensor,float* tensor_error,fl
     }
 }
 
+
+void local_response_normalization_feed_forward_fcl(float* input,float* output,int size, float n_constant, float beta, float alpha, float k, int* used_outputs){
+    int i;
+    for(i = 0; i < size; i++){
+        local_response_normalization_feed_forward(input,output,i,0,0,size,1,1,n_constant,beta,alpha,k,used_outputs);
+    }
+}
+
+void local_response_normalization_back_prop_fcl(float* input,float* input_error,float* output_error, int size, float n_constant, float beta, float alpha, float k, int* used_outputs){
+    int i;
+    for(i = 0; i < size; i++){
+        local_response_normalization_back_prop(input,input_error,output_error,i,0,0,size,1,1,n_constant,beta,alpha,k,used_outputs);
+    }
+}
 /* This computes the batch normalization across batches
  * 
  * Input:
@@ -301,8 +315,6 @@ void batch_normalization_feed_forward_second_step(int batch_size, float** input_
  * */
 void batch_normalization_back_prop(int batch_size, float** input_vectors,float** temp_vectors, int size_vectors, float* gamma, float* beta, float* mean, float* var, float** outputs_error, float* gamma_error, float* beta_error, float** input_error, float** temp_vectors_error,float* temp_array, float epsilon){
     int i,j,z;
-
-
     /* gamma and beta error*/
     for(i = 0; i < batch_size; i++){
         for(j = 0; j < size_vectors; j++){
@@ -312,16 +324,15 @@ void batch_normalization_back_prop(int batch_size, float** input_vectors,float**
             temp_array[j] += input_vectors[i][j] - mean[j];
         }
     }
-
     /* input_error*/
     for(i = 0; i < batch_size; i++){
         for(j = 0; j < batch_size; j++){
             for(z = 0; z < size_vectors; z++){
+                
                 if(i == j)
                     input_error[j][z] += temp_vectors_error[j][z]*((float)(1-(float)1/batch_size)/(float)sqrtf(var[z]+epsilon)-(float)((input_vectors[j][z]-mean[z])*2*(float)(1-(float)1/batch_size)*(input_vectors[j][z]-mean[z])-(float)(2/batch_size)*(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
                 else
                     input_error[j][z] += temp_vectors_error[j][z]*(-(float)(sqrtf((float)var[z]+epsilon)/(float)batch_size)-(float)((input_vectors[i][z]-mean[z])*2*(float)(1-(float)1/(float)batch_size)*(float)(input_vectors[j][z]-mean[z])-((float)2/(float)batch_size)*(float)(temp_array[z]-input_vectors[j][z]+mean[z]))/(float)((2*batch_size)*(pow((double)var[z]+epsilon,3/2))));
-
             }
         }
     }
@@ -587,6 +598,51 @@ void group_normalization_feed_forward(float* tensor,int tensor_c, int tensor_i, 
     }
     
 } 
+/* This function computes the group normalization feed forward for a convolutional layer
+ * 
+ * Inputs:
+ * 
+ *                 @ float* tensor:= the input of the convolutional layer
+ *                 @ int tensor_c:= the number of channels of the tensor
+ *                 @ int tensor_i:= the number of rows of the tensor
+ *                 @ int tensor_j:= the number of columns of the tensor
+ *                 @ int n_channels:= the grouped channels for the group normalization
+ *                 @ int stride:= the stride between channels for the group normalization
+ *                 @ bn** bns:= the bns layer where is gonne be computed the group normalization
+ *                 @ int pad_i:= the padding for the rows of the tensor
+ *                 @ int pad_j:= tha padding for the columns of the tensor
+ *                 @ float* post_normalization:= where the post normalization output is stored, size = tensor_c*tensor_i*tensor_j
+ * 
+ * */
+void group_normalization_feed_forward_without_learning_parameters(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, int pad_i, int pad_j, float* post_normalization, int* used_kernels, bn** bns2){ 
+    int i,j,k,rows,cols, n_ch,counter;
+    for(k = 0,n_ch = 0; k < tensor_c; k++){
+        if(used_kernels[k])
+            n_ch++;
+    }
+    if(n_ch%n_channels){
+        fprintf(stderr,"Error: your grouped normalization layers doesn't group up a number of channels that perfectly divide the total number of channels you have\n");
+        exit(1);
+    }
+    int n_bns = (n_ch-n_channels)/stride+1;
+    for(i = 0, j = 0; j < n_bns; i+=stride,j++){
+        if(used_kernels[i]){
+            channel_normalization_feed_forward(n_channels,&tensor[i],bns[j]->temp_vectors, bns[j]->vector_dim, bns2[j]->gamma, bns2[j]->beta, bns[j]->mean, bns[j]->var, &post_normalization[i],bns[j]->epsilon,pad_i,pad_j,tensor_i,tensor_j, used_kernels);
+            for(k = i, counter = 0; k < tensor_c, counter < n_channels; k++){
+                if(used_kernels[k])
+                    counter++;
+                else
+                    i++;
+            }
+        }
+        else{
+            i-=stride;
+            i++; 
+            j--;
+        }
+    }
+    
+} 
 
 
 /* This function computes the group normalization back propagation for a convolutional layer
@@ -622,6 +678,53 @@ void group_normalization_back_propagation(float* tensor,int tensor_c, int tensor
     for(i = 0, j = 0; j < n_bns; i+=stride,j++){
         if(used_kernels[i]){
             channel_normalization_back_prop(n_channels,&tensor[i],bns[j]->temp_vectors, bns[j]->vector_dim, bns[j]->gamma, bns[j]->beta, bns[j]->mean, bns[j]->var,&ret_error[i],bns[j]->d_gamma, bns[j]->d_beta,&input_error[i], bns[j]->temp1,bns[j]->temp2, bns[j]->epsilon,pad_i,pad_j,tensor_i,tensor_j, used_kernels);
+            for(k = i, counter = 0; k < tensor_c, counter < n_channels; k++){
+                if(used_kernels[k])
+                    counter++;
+                else
+                    i++;
+            }
+        }
+        else{
+            i-=stride;
+            i++; 
+            j--;
+        }
+    }
+}
+/* This function computes the group normalization back propagation for a convolutional layer
+ * 
+ * Inputs:
+ * 
+ *                 @ float* tensor:= the input of the convolutional layer
+ *                 @ int tensor_c:= the number of channels of the tensor
+ *                 @ int tensor_i:= the number of rows of the tensor
+ *                 @ int tensor_j:= the number of columns of the tensor
+ *                 @ int n_channels:= the grouped channels for the group normalization
+ *                 @ int stride:= the stride between channels for the group normalization
+ *                 @ bn** bns:= the bns layer where is gonne be computed the group normalization
+ *                 @ float* error:= tensor_c*tensor_i*tensor_j
+ *                 @ int pad_i:= the padding for the rows of the tensor
+ *                 @ int pad_j:= tha padding for the columns of the tensor
+ *                 @ float* input_error:= where is stored the error of the input, size = tensor_c*tensor_i*tensor_j
+ *                 @ int* used_kernels:= the kernel used (might there be some kernels not used at all)
+ * 
+ * */
+void group_normalization_back_propagation_without_learning_parameters(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, float* ret_error,int pad_i, int pad_j, float* input_error, int* used_kernels, bn** bns2){
+    int i,j,k,rows,cols, n_ch,counter;
+    
+    for(k = 0,n_ch = 0; k < tensor_c; k++){
+        if(used_kernels[k])
+            n_ch++;
+    }
+    if(n_ch%n_channels){
+        fprintf(stderr,"Error: your grouped normalization layers doesn't group up a number of channls that perfectly divide the total number of channels you have\n");
+        exit(1);
+    }
+    int n_bns = (n_ch-n_channels)/stride+1;
+    for(i = 0, j = 0; j < n_bns; i+=stride,j++){
+        if(used_kernels[i]){
+            channel_normalization_back_prop(n_channels,&tensor[i],bns[j]->temp_vectors, bns[j]->vector_dim, bns2[j]->gamma, bns2[j]->beta, bns[j]->mean, bns[j]->var,&ret_error[i],bns[j]->d_gamma, bns[j]->d_beta,&input_error[i], bns[j]->temp1,bns[j]->temp2, bns[j]->epsilon,pad_i,pad_j,tensor_i,tensor_j, used_kernels);
             for(k = i, counter = 0; k < tensor_c, counter < n_channels; k++){
                 if(used_kernels[k])
                     counter++;

@@ -167,7 +167,7 @@ void save_training(training* t, int n){
         save_model(t->m[i],count);
     }
     for(i = 0;i < t->n_r; i++,count++){
-        heavy_save_rmodel(t->r[i],count);
+        save_rmodel(t->r[i],count);
     }
 }
 

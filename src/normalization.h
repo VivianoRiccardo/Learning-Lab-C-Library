@@ -46,5 +46,9 @@ void given_max_min_normalize_cl(cl* f, float max, float min);
 void normalize_among_all_leyers(model* m);
 void feed_forward_scaled_l2_norm(int input_dimension, float learned_g, float* norm, float* input, float* output);
 void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float* d_learned_g, float norm,float* input, float* output_error, float* input_error);
+void local_response_normalization_feed_forward_fcl(float* input,float* output,int size, float n_constant, float beta, float alpha, float k, int* used_outputs);
+void local_response_normalization_back_prop_fcl(float* input,float* input_error,float* output_error, int size, float n_constant, float beta, float alpha, float k, int* used_kernels);
+void group_normalization_feed_forward_without_learning_parameters(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, int pad_i, int pad_j, float* post_normalization, int* used_kernels, bn** bns2);
+void group_normalization_back_propagation_without_learning_parameters(float* tensor,int tensor_c, int tensor_i, int tensor_j,int n_channels, int stride, bn** bns, float* ret_error,int pad_i, int pad_j, float* input_error, int* used_kernels, bn** bns2);
 
 #endif

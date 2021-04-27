@@ -97,5 +97,8 @@ void sum_rmodels_partial_derivatives(rmodel* m, rmodel** m2, int n_models);
 void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm3);
 int min(int x, int y);
 int max(int x, int y);
+double sum_over_input(float* inputs, int dimension);
+float derivative_sigmoid_given_the_sigmoid(float x);
+void derivative_sigmoid_array_given_the_sigmoid(float* input, float* output, int size);
 
 #endif

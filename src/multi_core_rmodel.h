@@ -29,5 +29,9 @@ void* rmodel_thread_ff(void* _args);
 void* rmodel_thread_bp(void* _args);
 void ff_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads);
 void bp_rmodel_lstm_multicore(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error, float*** returning_input_error);
+void* rmodel_thread_ff_opt(void* _args);
+void* rmodel_thread_bp_opt(void* _args);
+void ff_rmodel_lstm_multicore_opt(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, int mini_batch_size, int threads, rmodel* m2);
+void bp_rmodel_lstm_multicore_opt(float*** hidden_states, float*** cell_states, float*** input_model, rmodel** m, float*** error_model, int mini_batch_size, int threads, float**** returning_error, float*** returning_input_error, rmodel* m2);
 
 #endif

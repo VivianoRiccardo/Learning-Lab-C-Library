@@ -87,6 +87,23 @@ void reinitialize_w_model(model* m);
 model* reset_edge_popup_d_model(model* m);
 int check_model_last_layer(model* m);
 void set_low_score_model(model* f);
+void free_model_without_learning_parameters(model* m);
+model* copy_model_without_learning_parameters(model* m);
+void paste_model_without_learning_parameters(model* m, model* copy);
+model* reset_model_without_learning_parameters(model* m);
+model* reset_model_without_dwdb_without_learning_parameters(model* m);
+uint64_t size_of_model_without_learning_parameters(model* m);
+void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3);
+void ff_fcl_cl_without_learning_parameters(fcl* f1, cl* f2, cl* f3);
+void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3);
+void ff_cl_cl_without_learning_parameters(cl* f1, cl* f2, cl* f3);
+float* bp_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3, float* error);
+float* bp_fcl_cl_without_learning_parameters(fcl* f1, cl* f2,cl* f3, float* error);
+float* bp_cl_cl_without_learning_parameters(cl* f1, cl* f2,cl* f3, float* error);
+float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* error);
+void model_tensor_input_ff_without_learning_parameters(model* m, model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input);
+float* model_tensor_input_bp_without_learning_parameters(model* m, model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
+float* ff_error_bp_model_once_opt(model* m,model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output);
 
 
 

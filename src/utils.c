@@ -394,6 +394,25 @@ int shuffle_float_matrices(float** m,float** m1,int n){
     }
     return 0;
 }
+
+
+int shuffle_float_matrix_float_tensor(float** m,float*** t,int n){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          float* temp = m[j];
+          float** temp2 = t[j];
+          m[j] = m[i];
+          m[i] = temp;
+          t[j] = t[i];
+          t[i] = temp2;
+        }
+    
+    }
+    return 0;
+}
 /* Function used to shuffle randomly the pointers of the matrix m
  * 
  * Input:
@@ -838,15 +857,15 @@ void merge(float* values, int* indices, int temp[], int from, int mid, int to, i
 }
  
 void mergesort(float* values, int* indices, int low, int high){
-	int i,m,from,mid,to,length = high-low + 1;
-	int* temp = (int*)calloc(length,sizeof(int));
-	for(i = 0; i < length; i++){
-		temp[i] = indices[i];
-	}
+    int i,m,from,mid,to,length = high-low + 1;
+    int* temp = (int*)calloc(length,sizeof(int));
+    for(i = 0; i < length; i++){
+        temp[i] = indices[i];
+    }
     for (m = 1; m <= high - low; m = 2*m){
         for (i = low; i < high; i += 2*m){
             from = i;
-			mid = i + m - 1;
+            mid = i + m - 1;
             to = min(i + 2*m - 1, high);
             merge(values,indices, temp, from, mid, to,length);
         }
@@ -856,8 +875,34 @@ void mergesort(float* values, int* indices, int low, int high){
 
 
 void sort(float* values, int* indices, int low, int high){
-	if(high-low > SORT_SWITCH_THRESHOLD)
-		mergesort(values,indices,low,high);
-	else
-		quick_sort(values,indices,low,high);
+    if(high-low > SORT_SWITCH_THRESHOLD)
+        mergesort(values,indices,low,high);
+    else
+        quick_sort(values,indices,low,high);
+}
+
+
+void free_tensor(float*** t, int dim1, int dim2){
+    int i,j;
+    for(i = 0; i < dim1; i++){
+        for(j = 0; j < dim2; j++){
+            free(t[i][j]);
+        }
+        free(t[i]);
+    }
+    free(t);
+}
+
+void free_4D_tensor(float**** t, int dim1, int dim2, int dim3){
+    int i,j,k;
+    for(i = 0; i < dim1; i++){
+        for(j = 0; j < dim2; j++){
+            for(k = 0; k < dim3; k++){
+                free(t[i][j][k]);
+            }
+            free(t[i][j]);
+        }
+        free(t[i]);
+    }
+    free(t);
 }

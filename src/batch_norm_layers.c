@@ -35,9 +35,7 @@ SOFTWARE.
  * 
  * */
 bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, int activation_flag){
-    if(batch_size <= 1 || vector_input_dimension < 1){
-        fprintf(stderr,"Warning: remember if you are using online learning (batch_size = 1) batch normalization is useless, and remember also that vector input dimension must be >= 1\n");
-    }
+
     int i;
     bn* b = (bn*)malloc(sizeof(bn));
     b->layer = layer;
@@ -83,6 +81,67 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     for(i = 0; i < vector_input_dimension; i++){
         b->gamma[i] = 1;
     }
+    
+    b->epsilon = EPSILON;
+    b->training_mode = GRADIENT_DESCENT;
+    
+    return b;
+}
+/* this function builds a normalization layer that can be used for batch normalization or group normalization or layer normalization
+ * 
+ * Input:
+ * 
+ *             @ int batch_size:= the batch size used
+ *             @ int vector_input_dimension:= the dimension of the input of this layer, or the output dimension of the previous layer
+ *                @ int layer:= the layer
+ *                @ int activation_flag:= for the moment is useless
+ * 
+ * */
+bn* batch_normalization_without_learning_parameters(int batch_size, int vector_input_dimension, int layer, int activation_flag){
+    if(batch_size <= 1 || vector_input_dimension < 1){
+        fprintf(stderr,"Warning: remember if you are using online learning (batch_size = 1) batch normalization is useless, and remember also that vector input dimension must be >= 1\n");
+    }
+    int i;
+    bn* b = (bn*)malloc(sizeof(bn));
+    b->layer = layer;
+    b->batch_size = batch_size; 
+    b->vector_dim = vector_input_dimension;
+    b->activation_flag = activation_flag;
+    
+    b->input_vectors = (float**)malloc(sizeof(float*)*batch_size); 
+    b->temp_vectors = (float**)malloc(sizeof(float*)*batch_size); 
+    b->error2 = (float**)malloc(sizeof(float*)*batch_size); 
+    b->temp1 = (float**)malloc(sizeof(float*)*batch_size); 
+    b->outputs = (float**)malloc(sizeof(float*)*batch_size);
+    b->post_activation = (float**)malloc(sizeof(float*)*batch_size);
+    b->gamma = NULL;
+    b->d_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->ex_d_gamma_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->d1_gamma = NULL;
+    b->d2_gamma = NULL;
+    b->d3_gamma = NULL;
+    b->beta = NULL;
+    b->d_beta = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->ex_d_beta_diff_grad = NULL;
+    b->d1_beta = NULL;
+    b->d2_beta = NULL;
+    b->d3_beta = NULL;
+    b->mean = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->var = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->temp2 = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->final_mean = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->final_var = (float*)calloc(vector_input_dimension,sizeof(float));
+    b->mode_flag = BATCH_NORMALIZATION_TRAINING_MODE;
+    
+    for(i = 0; i < batch_size; i++){
+        b->input_vectors[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->temp_vectors[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->error2[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->temp1[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->outputs[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+        b->post_activation[i] = (float*)calloc(vector_input_dimension,sizeof(float));
+    }
+    
     
     b->epsilon = EPSILON;
     
@@ -235,6 +294,7 @@ void save_bn(bn* b, int n){
     
     
 }
+
 
 /* This function saves a batch normalized layer on a .bin file with name n.bin
  * 
@@ -709,6 +769,27 @@ bn* copy_bn(bn* b){
     copy_array(b->final_mean,copy->final_mean,b->vector_dim);
     copy_array(b->final_var,copy->final_var,b->vector_dim);
     copy->mode_flag = b->mode_flag;
+    copy->training_mode = b->training_mode;
+    
+    return copy;
+}
+/* This function returns a bn* layer that is the same copy of the input b.
+ * 
+ * Input:
+ * 
+ *             @ bn* b:= the batch normalized layer that must be copied
+ * 
+ * */ 
+bn* copy_bn_without_learning_parameters(bn* b){
+    if(b == NULL)
+        return NULL;
+    bn* copy = batch_normalization_without_learning_parameters(b->batch_size,b->vector_dim, b->layer, b->activation_flag);
+    copy_array(b->d_gamma,copy->d_gamma,b->vector_dim);
+    copy_array(b->d_beta,copy->d_beta,b->vector_dim);
+    copy_array(b->final_mean,copy->final_mean,b->vector_dim);
+    copy_array(b->final_var,copy->final_var,b->vector_dim);
+    copy->mode_flag = b->mode_flag;
+    copy->training_mode = b->training_mode;
     
     return copy;
 }
@@ -745,6 +826,7 @@ bn* reset_bn(bn* b){
     
     return b;
 }
+
 /* this function resets all the arrays of a batch normalized layer (used by feed forward and back propagation) but it keeps the weights andbiases.
  * 
  * 
@@ -789,6 +871,20 @@ uint64_t size_of_bn(bn* b){
     sum+= (b->vector_dim*17);
     return sum;
 }
+/* this function computes the size of the space allocated by the arrays of a batch normalized layer (more or less)
+ * just to give an idea of the size occupied by this structure
+ * 
+ * Input:
+ * 
+ *             bn* b:= the batch normalized layer b
+ * 
+ * */
+uint64_t size_of_bn_without_learning_parameters(bn* b){
+    uint64_t sum = 0;
+    sum+= (b->batch_size*b->vector_dim*6);
+    sum+= (b->vector_dim*7);
+    return sum;
+}
 
 /* This function returns a bn* layer that is the same copy of the input b1
  * except for temp arrays used for feed forward and backprop 
@@ -815,6 +911,25 @@ void paste_bn(bn* b1, bn* b2){
     copy_array(b1->d2_beta,b2->d2_beta,b1->vector_dim);
     copy_array(b1->d3_beta,b2->d3_beta,b1->vector_dim);
     copy_array(b1->d3_beta,b2->d3_beta,b1->vector_dim);
+    copy_array(b1->final_mean,b2->final_mean,b1->vector_dim);
+    copy_array(b1->final_var,b2->final_var,b1->vector_dim);
+    
+    return;
+}
+/* This function returns a bn* layer that is the same copy of the input b1
+ * except for temp arrays used for feed forward and backprop 
+ * Input:
+ * 
+ *             @ bn* b1:= the batch normalized layer that must be copied
+ *             @ bn* b2:= the batch normalized layer where b1 is copied
+ * 
+ * */
+void paste_bn_without_learning_parameters(bn* b1, bn* b2){
+    if(b1 == NULL || b2 == NULL)
+        return;
+    
+    copy_array(b1->d_gamma,b2->d_gamma,b1->vector_dim);
+    copy_array(b1->d_beta,b2->d_beta,b1->vector_dim);
     copy_array(b1->final_mean,b2->final_mean,b1->vector_dim);
     copy_array(b1->final_var,b2->final_var,b1->vector_dim);
     

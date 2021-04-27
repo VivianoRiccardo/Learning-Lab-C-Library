@@ -184,6 +184,157 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     
     return f;
 }
+/* This function builds a fully-connected layer according to the fcl structure defined in layers.h
+ * 
+ * Input:
+ * 
+ *             @ int input:= number of neurons of the previous layer
+ *             @ int output:= number of neurons of the current layer
+ *             @ int layer:= number of sequential layer [0,∞)
+ *             @ int dropout_flag:= is set to 0 if you don't want to apply dropout, NO_DROPOUT (flag)
+ *             @ int activation_flag:= is set to 0 if you don't want to apply the activation function else read in llab.h
+ *             @ float dropout_threshold:= [0,1]
+ *                @ int n_groups:= a number that divides the output in tot group for the layer normalization
+ *                @ int normalization_flag:= either NO_NORMALIZATION or LAYER_NORMALIZATION 
+ * */
+fcl* fully_connected_without_learning_parameters(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
+    if(!input || !output || layer < 0){
+        fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
+        exit(1);
+    }
+    
+    if(normalization_flag == GROUP_NORMALIZATION)
+        normalization_flag = LAYER_NORMALIZATION;
+    
+    if(normalization_flag == LAYER_NORMALIZATION){
+        if(n_groups == 0 || output==n_groups){
+            fprintf(stderr,"Error: your groups must perfectly divide your output neurons\n");
+            exit(1);
+        }
+    }
+ 
+    int i,j;
+    
+    fcl* f = (fcl*)malloc(sizeof(fcl));
+    f->input = input;
+    f->output = output;
+    f->layer = layer;
+    f->dropout_flag = dropout_flag;
+    f->activation_flag = activation_flag;
+    f->dropout_threshold = dropout_threshold;
+    f->training_mode = training_mode;
+    f->feed_forward_flag = feed_forward_flag;
+    f->normalization_flag = normalization_flag;
+    if(f->feed_forward_flag != ONLY_DROPOUT){
+        f->weights = NULL;
+        f->biases = NULL;
+        f->active_output_neurons = NULL;
+        if(f->training_mode != EDGE_POPUP && f->training_mode != ONLY_FF){
+            f->d_weights = (float*)calloc(output*input,sizeof(float));
+            f->ex_d_weights_diff_grad = NULL;
+            f->d1_weights = NULL;
+            f->d2_weights = NULL;
+            f->d3_weights = NULL;     
+            f->d_biases = (float*)calloc(output,sizeof(float));
+            f->ex_d_biases_diff_grad = NULL;
+            f->d1_biases = NULL;
+            f->d2_biases = NULL;
+            f->d3_biases = NULL;
+        }
+        
+        else{
+            f->d_weights = NULL;
+            f->ex_d_weights_diff_grad = NULL;
+            f->d1_weights = NULL;
+            f->d2_weights = NULL;
+            f->d3_weights = NULL;    
+            f->d_biases = NULL;
+            f->ex_d_biases_diff_grad = NULL;
+            f->d1_biases = NULL;
+            f->d2_biases = NULL;
+            f->d3_biases = NULL;
+        }
+        f->pre_activation = (float*)calloc(output,sizeof(float));
+    }
+    
+    else{
+        f->weights = NULL;
+        f->biases = NULL;
+        f->active_output_neurons = NULL;
+        f->d_weights = NULL;
+        f->ex_d_weights_diff_grad = NULL;
+        f->d1_weights = NULL;
+        f->d2_weights = NULL;
+        f->d3_weights = NULL;    
+        f->d_biases = NULL;
+        f->ex_d_biases_diff_grad = NULL;
+        f->d1_biases = NULL;
+        f->d2_biases = NULL;
+        f->d3_biases = NULL;
+        f->pre_activation = NULL;
+    }
+    if(dropout_flag != NO_DROPOUT){
+        f->dropout_temp = (float*)calloc(output,sizeof(float));
+        f->dropout_mask = (float*)calloc(output,sizeof(float));
+    }
+    else{
+        f->dropout_temp = NULL;
+        f->dropout_mask = NULL;
+    }
+        
+    f->temp = (float*)calloc(output,sizeof(float));
+    f->temp3 = (float*)calloc(output,sizeof(float));
+    f->temp2 = (float*)calloc(input,sizeof(float));
+    f->error2 = (float*)calloc(input,sizeof(float));
+    
+    if(f->feed_forward_flag != ONLY_DROPOUT && (f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP)){
+        f->scores = NULL;
+        f->d_scores = (float*)calloc(output*input,sizeof(float));
+        f->ex_d_scores_diff_grad = NULL;
+        f->d1_scores = NULL;
+        f->d2_scores = NULL;
+        f->d3_scores = NULL;
+        f->indices = NULL;
+    }
+    
+    else{
+        f->scores = NULL;
+        f->d_scores  = NULL;
+        f->ex_d_scores_diff_grad  = NULL;
+        f->d1_scores = NULL;
+        f->d2_scores = NULL;
+        f->d3_scores = NULL;
+        f->indices = NULL;
+    }
+    if(f->activation_flag != NO_ACTIVATION && f->feed_forward_flag != ONLY_DROPOUT)
+        f->post_activation = (float*)calloc(output,sizeof(float));
+    else
+        f->post_activation = NULL;
+    if(f->normalization_flag == LAYER_NORMALIZATION && f->feed_forward_flag != ONLY_DROPOUT)
+        f->post_normalization = (float*)calloc(output,sizeof(float));
+    else
+        f->post_normalization = NULL;
+    f->k_percentage = 1;
+    
+    
+    for(i = 0; i < output; i++){
+        if(dropout_flag)
+            f->dropout_mask[i] = 1;
+    }
+    
+    
+    if(normalization_flag == LAYER_NORMALIZATION){
+        f->layer_norm = batch_normalization_without_learning_parameters(n_groups,output/n_groups,0,0);
+    }
+    else{
+        f->layer_norm = NULL;
+    }
+    
+    
+    f->n_groups = n_groups;
+    
+    return f;
+}
 
 int exists_params_fcl(fcl* f){
     return f->feed_forward_flag != ONLY_DROPOUT;
@@ -333,6 +484,8 @@ void save_fcl(fcl* f, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
+    
+    
     
     i = fwrite(&f->n_groups,sizeof(int),1,fw);
     
@@ -690,6 +843,37 @@ fcl* copy_fcl(fcl* f){
     if(f->normalization_flag == LAYER_NORMALIZATION){
         paste_bn(f->layer_norm,copy->layer_norm);
     }
+    copy->k_percentage = f->k_percentage;
+    return copy;
+}
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array, and all the arrays used by ff and bp.
+ * You have a fcl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure. d1 and d2 weights are used by nesterov and adam algorithms
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ * 
+ * */
+fcl* copy_fcl_without_learning_parameters(fcl* f){
+    if(f == NULL)
+        return NULL;
+    fcl* copy = fully_connected_without_learning_parameters(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold,f->n_groups,f->normalization_flag, f->training_mode,f->feed_forward_flag);
+    if(exists_d_params_fcl(f)){
+        copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+        copy_array(f->d_biases,copy->d_biases,f->output);
+    }
+    
+    if(exists_edge_popup_stuff_fcl(f)){
+        copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+    }
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        paste_bn_without_learning_parameters(f->layer_norm,copy->layer_norm);
+    }
+    copy->k_percentage = f->k_percentage;
     return copy;
 }
 
@@ -728,10 +912,10 @@ fcl* reset_fcl(fcl* f){
     if(f == NULL)
         return NULL;
     int i;
-    
+   
     for(i = 0; i < f->output*f->input; i++){
         if(i < f->output){
-            if(exists_d_params_fcl(f))
+            if(exists_params_fcl(f))
             f->pre_activation[i] = 0;
             if(exists_activation_fcl(f))
             f->post_activation[i] = 0;
@@ -769,6 +953,59 @@ fcl* reset_fcl(fcl* f){
         reset_bn(f->layer_norm);
     return f;
 }
+
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_without_learning_parameters(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+   
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            if(exists_params_fcl(f))
+            f->pre_activation[i] = 0;
+            if(exists_activation_fcl(f))
+            f->post_activation[i] = 0;
+            if(exists_normalization_fcl(f))
+            f->post_normalization[i] = 0;
+            if(exists_d_params_fcl(f))
+            f->d_biases[i] = 0;
+            if(exists_dropout_stuff_fcl(f)){
+                f->dropout_mask[i] = 1;
+                f->dropout_temp[i] = 0;
+            }
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        if(exists_d_params_fcl(f))
+        f->d_weights[i] = 0;
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+}
 /* this function resets all the arrays of a fully-connected layer
  * used during the feed forward and backpropagation
  * You have a fcl* f structure, this function resets all the arrays used
@@ -785,7 +1022,6 @@ fcl* reset_fcl_except_partial_derivatives(fcl* f){
     if(f == NULL)
         return NULL;
     int i;
-    
     for(i = 0; i < f->output*f->input; i++){
         if(i < f->output){
             if(exists_d_params_fcl(f))
@@ -867,7 +1103,6 @@ fcl* reset_fcl_without_dwdb(fcl* f){
     if(f->normalization_flag == LAYER_NORMALIZATION)
         reset_bn(f->layer_norm);
     return f;
-    return f;
 }
 /* this function resets all the arrays of a fully-connected layer
  * used during the feed forward and backpropagation
@@ -881,7 +1116,7 @@ fcl* reset_fcl_without_dwdb(fcl* f){
  *             @ fcl* f:= a fcl* f layer
  * 
  * */
-fcl* reset_fcl_for_edge_popup(fcl* f){
+fcl* reset_fcl_without_dwdb_without_learning_parameters(fcl* f){
     if(f == NULL)
         return NULL;
     int i;
@@ -906,6 +1141,59 @@ fcl* reset_fcl_for_edge_popup(fcl* f){
             f->temp2[i] = 0;
             f->error2[i] = 0;
         }
+        
+        if(f->training_mode == EDGE_POPUP){
+            f->indices[i] = i;
+            f->d_scores[i] = 0;
+        }
+    }
+
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+    return f;
+}
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_for_edge_popup(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    
+    
+    for(i = 0; i < f->output*f->input; i++){
+        if(i < f->output){
+            if(exists_params_fcl(f))
+            f->pre_activation[i] = 0;
+            if(exists_activation_fcl(f))
+            f->post_activation[i] = 0;
+            if(exists_normalization_fcl(f))
+            f->post_normalization[i] = 0;
+            if(exists_dropout_stuff_fcl(f)){
+                f->dropout_mask[i] = 1;
+                f->dropout_temp[i] = 0;
+            }
+            f->temp[i] = 0;
+            f->temp3[i] = 0;
+            
+        }
+        if(i < f->input){
+            f->temp2[i] = 0;
+            f->error2[i] = 0;
+        }
+        if(exists_d_params_fcl(f))
+        f->d_weights[i] = 0;
         
         if(f->training_mode == EDGE_POPUP){
             f->d_scores[i] = 0;
@@ -948,6 +1236,38 @@ uint64_t size_of_fcls(fcl* f){
     if(exists_normalization_fcl(f)){
         sum+=f->output*sizeof(float);
         sum+=size_of_bn(f->layer_norm);
+    }
+    
+    sum+=(f->output+f->input)*2*sizeof(float);
+    
+    return sum;
+}
+/* this function returns the space allocated by the arrays of f (more or less)
+ * 
+ * Input:
+ * 
+ *             fcl* f:= the fully-connected layer f
+ * 
+ * */
+uint64_t size_of_fcls_without_learning_parameters(fcl* f){
+    uint64_t sum = 0;
+
+    if(exists_d_params_fcl(f)){
+        sum+=(f->output*f->input + f->output)*sizeof(float);
+    }
+    if(exists_edge_popup_stuff_fcl(f)){
+        sum+=f->output*f->input*5*sizeof(float);
+    }
+    if(exists_dropout_stuff_fcl(f)){
+        sum+=f->output*2*sizeof(float);
+    }
+    
+    if(exists_activation_fcl(f)){
+        sum+=f->output*sizeof(float);
+    }
+    if(exists_normalization_fcl(f)){
+        sum+=f->output*sizeof(float);
+        sum+=size_of_bn_without_learning_parameters(f->layer_norm);
     }
     
     sum+=(f->output+f->input)*2*sizeof(float);
@@ -999,6 +1319,36 @@ void paste_fcl(fcl* f,fcl* copy){
     
     if(f->normalization_flag == LAYER_NORMALIZATION){
         paste_bn(f->layer_norm,copy->layer_norm);
+    }
+    return;
+}
+
+/* This function returns a fcl* layer that is the same copy of the input f
+ * except for the activation arrays and the dropout mask array
+ * This functions copies the weights and D and D1 and D2 into a another structure
+ * the edge popup params are pasted only if feedforwardflag or training mode is set to edge popup
+ * Input:
+ * 
+ *             @ fcl* f:= the fully-connected layer that must be copied
+ *             @ fcl* copy:= the fully-connected layer where f is copied
+ * 
+ * */
+void paste_fcl_without_learning_parameters(fcl* f,fcl* copy){
+    if(f == NULL)
+        return;
+    copy->k_percentage = f->k_percentage;
+
+    if(exists_d_params_fcl(f)){
+        copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+        
+        copy_array(f->d_biases,copy->d_biases,f->output);
+    }
+    if(exists_edge_popup_stuff_fcl(f)){
+        copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+    }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION){
+        paste_bn_without_learning_parameters(f->layer_norm,copy->layer_norm);
     }
     return;
 }

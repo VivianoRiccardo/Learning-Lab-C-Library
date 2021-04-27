@@ -32,6 +32,18 @@ int max(int x, int y) {
     return (x > y) ? x : y;
 }
 
+
+double sum_over_input(float* inputs, int dimension){
+    double sum = 0;
+    int i;
+    for(i = 0; i < dimension; i++){
+        sum+=inputs[i];
+    }
+    
+    return sum;
+}
+
+
 void softmax(float* input, float* output, int size){
     int i;
     float sum = 0;
@@ -51,13 +63,15 @@ void derivative_softmax_array(int* input, float* output,float* softmax_arr,float
     int i,j;
     
     for(j = 0; j < size; j++){
-        for(i = 0; i < size; i++){
-            if(input[i] && input[j]){
-                if (i == j)
-                    output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
-                else
-                    output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
-                }
+        if(input[j]){
+            for(i = 0; i < size; i++){
+                if(input[i]){
+                    if (i == j)
+                        output[j] += (softmax_arr[i]*(1-softmax_arr[j]))*error[i];
+                    else
+                        output[j] += -softmax_arr[j]*softmax_arr[i]*error[i];
+                    }
+            }
         }
         
     }
@@ -111,11 +125,20 @@ float derivative_sigmoid(float x){
     float y = sigmoid(x);
     return y*(1-y);
 }
+float derivative_sigmoid_given_the_sigmoid(float x){
+    return x*(1-x);
+}
 
 void derivative_sigmoid_array(float* input, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
         output[i] = derivative_sigmoid(input[i]);
+    }
+}
+void derivative_sigmoid_array_given_the_sigmoid(float* input, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_sigmoid_given_the_sigmoid(input[i]);
     }
 }
 
@@ -385,15 +408,10 @@ float derivative_focal_loss(float y_hat, float y, float gamma){
         temp = (y_hat);
     else
         temp = (1-y_hat);
-    if(!temp || temp != temp){
-        temp = 0;
-        log_one = -999999;
-        power = 0;
-    }
-    else{
-        log_one = log(temp);
-        power = pow((double)(1-temp),(double)gamma)/temp;
-    }
+
+    log_one = log(temp);
+    power = pow((double)(1-temp),(double)gamma)/temp;
+
     
     float temp2 = gamma*pow((double)(1-temp),(double)gamma-1)*log_one-power;
     if(y == 1)
@@ -639,8 +657,9 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
             sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
             sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);
         }
-        if(exists_edge_popup_stuff_fcl(m->fcls[i]))
-        sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);    
+        if(exists_edge_popup_stuff_fcl(m->fcls[i])){
+            sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);   
+        } 
         if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
             sum1D(m->fcls[i]->layer_norm->d_gamma,m2->fcls[i]->layer_norm->d_gamma,m3->fcls[i]->layer_norm->d_gamma,m->fcls[i]->layer_norm->vector_dim);
     }
@@ -668,9 +687,16 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
     int i,j;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->size*m->lstms[i]->size);
-            sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->size*m->lstms[i]->size);
-            sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
+            if(m->lstms[i]->training_mode == GRADIENT_DESCENT || m->lstms[i]->training_mode == FREEZE_TRAINING){
+                sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->size*m->lstms[i]->size);
+                sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->size*m->lstms[i]->size);
+                sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
+            }
+            
+            else if(m->lstms[i]->training_mode == EDGE_POPUP){
+                sum1D(m->lstms[i]->d_w_scores[j],m2->lstms[i]->d_w_scores[j],m3->lstms[i]->d_w_scores[j],m->lstms[i]->size*m->lstms[i]->size);
+                sum1D(m->lstms[i]->d_u_scores[j],m2->lstms[i]->d_u_scores[j],m3->lstms[i]->d_u_scores[j],m->lstms[i]->size*m->lstms[i]->size);
+            }
         }
     
         if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){

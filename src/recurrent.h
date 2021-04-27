@@ -27,5 +27,7 @@ SOFTWARE.
 
 void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int size);
 float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus);
+void lstm_ff_edge_popup(int** w_active_weights, int** u_active_weights, int** w_indices,int** u_indices, float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int size, float k_percentage);
+float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus, int** w_active_output_neurons, int** u_active_output_neurons, int** w_indices, int** u_indices, float** d_w_scores, float** d_u_scores, float k_percentage, int** w_active_output_neurons_up, int** u_active_output_neurons_up);
 
 #endif

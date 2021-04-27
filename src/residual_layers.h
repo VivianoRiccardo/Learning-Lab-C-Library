@@ -70,5 +70,12 @@ void set_low_score_rl(rl* f);
 rl* reset_rl_except_partial_derivatives(rl* f);
 void reinitialize_w_rl(rl* f);
 void compare_score_rl_with_vector(rl* input1, float* input2, rl* output);
+rl* copy_rl_without_learning_parameters(rl* f);
+rl* reset_rl_without_learning_parameters(rl* f);
+uint64_t size_of_rls_without_learning_parameters(rl* f);
+void paste_rl_without_learning_parameters(rl* f, rl* copy);
+void free_residual_without_learning_parameters(rl* r);
+rl* reset_rl_without_dwdb_without_learning_patameters(rl* f);
+
 
 #endif

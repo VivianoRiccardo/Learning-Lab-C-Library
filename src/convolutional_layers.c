@@ -151,6 +151,14 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->d2_biases = (float*)calloc(n_kernels,sizeof(float));
         c->d3_biases = (float*)calloc(n_kernels,sizeof(float));
     }
+    
+    else{
+        c->d_biases = NULL;
+        c->ex_d_biases_diff_grad = NULL;
+        c->d1_biases = NULL;
+        c->d2_biases = NULL;
+        c->d3_biases = NULL;
+    }
     c->convolutional_flag = convolutional_flag;
     c->group_norm_channels = group_norm_channels;
     if(convolutional_flag == NO_CONVOLUTION)
@@ -301,6 +309,273 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     }
     return c;
 }
+/* This function builds a convolutional layer according to the cl structure defined in layers.h
+ * 
+ * Input:
+ *             
+ *             @ int channales:= number of channels of the previous layer
+ *             @ int input_rows:= number of rows of each channel of the previous layer
+ *             @ int input_cols:= number of columns of each channel of the previous layer
+ *             @ int kernel_rows:= rows of the kernels of the current layers
+ *             @ int kernel_cols:= columns of the kernels of the current layer
+ *             @ int n_kernels:= number of kernels applied to the trevious layer to create n_kernels feature maps
+ *             @ int stride1_rows:= stride used by the kernels on the rows
+ *             @ int stride1_cols:= stride used by the kernels on the columns
+ *             @ int padding1_rows:= the padding added after activation-normalization to the rows
+ *             @ int padding1_cols:= the padding added after activation-normalization to the columns
+ *             @ int stride2_rows:= the stride used by the pooling on the rows
+ *             @ int stride2_cols:= the stride used by the pooling on the columns
+ *             @ int padding2_rows:= the padding added after pooling on the rows
+ *             @ int padding2_cols:= the padding added after pooling on the columns
+ *             @ int pooling_rows:= the space of the pooling on the rows
+ *             @ int pooling_cols:= the space of the pooling on the columns
+ *             @ int normalization_flag:= is set to 1 if you wan't to apply local response normalization, 0 for no normalization 3 for group normalization
+ *             @ int activation_flag:= is set to 1 if you want to apply activation function
+ *             @ int pooling_flag:= is set to 1 if you want to apply pooling
+ *                @ int group_norm_channels:= the number of the grouped channels during the group normalization if there is anyone
+ *                @ int convolutional_flag:= NO_CONVOLUTION to apply only pooling otherwise CONVOLUTION,TRANSPOSED CONVOLUTION
+ *                   @ int training_mode:= can be FREEZE_TRAINING, ONLY_FF, GRADIENT_DESCENT, EDGE_POPUP
+ *                   @ int feed_forward_flag:= can be FULLY_FEED_FORWARD, EDGE_POPUP
+ *                @ int layer:= the layer index
+ * 
+ * */
+ 
+cl* convolutional_without_learning_parameters(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int group_norm_channels, int convolutional_flag,int training_mode, int feed_forward_flag, int layer){
+    if(!channels || !input_rows || !input_cols || !kernel_rows || !kernel_cols || !n_kernels || !stride1_rows || !stride1_cols || (pooling_flag && (!stride2_rows || !stride2_cols))){
+        fprintf(stderr,"Error: channles, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride2_rows stride2_cols, stride2_rows, stride2_cols params must be > 0\n");
+        exit(1);
+    }
+    
+    if(padding1_rows!=padding1_cols || padding2_rows != padding2_cols){
+        fprintf(stderr,"Error: padding1_rows must be equal to padding1_cols and padding2_rows must be equal to padding2_cols\n");
+        exit(1);
+    }
+    
+    if(padding1_rows && normalization_flag == BATCH_NORMALIZATION){
+        fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
+        exit(1);
+    }
+    
+    if(convolutional_flag == NO_CONVOLUTION && pooling_flag == NO_POOLING){
+        fprintf(stderr,"Error: you don't apply convolution neither pooling\n");
+        exit(1);
+    }
+    
+    if(convolutional_flag == NO_CONVOLUTION && n_kernels != channels){
+        fprintf(stderr,"Error: if you don't apply convolution, your n_kernels param should be equal to channels, 'cause n_kernels indicates the channel of the current_layer\n");
+        exit(1);
+    }
+    
+    if(convolutional_flag != NO_CONVOLUTION && normalization_flag == GROUP_NORMALIZATION){
+        if(n_kernels%group_norm_channels){
+            fprintf(stderr,"Error: your normalization channels doesn't divide perfectly the number of kernels of this layer\n");
+            exit(1);
+        }
+    }
+    
+    if(convolutional_flag == NO_CONVOLUTION && normalization_flag){
+        fprintf(stderr,"Error: you cannot use the convolutional layer only for normalization and pooling, you can use it for only pooling, or only convolution plus activation-normalization-pooling\n");
+        exit(1);
+    }
+    
+    
+    
+    int i,j;
+    cl* c = (cl*)malloc(sizeof(cl));
+    c->layer = layer;
+    c->k_percentage = 1;
+    c->channels = channels;
+    c->input_rows = input_rows;
+    c->input_cols = input_cols;
+    c->kernel_rows = kernel_rows;
+    c->kernel_cols = kernel_cols;
+    c->n_kernels = n_kernels;
+    c->stride1_rows = stride1_rows;
+    c->stride1_cols = stride1_cols;
+    c->padding1_rows = padding1_rows;
+    c->padding1_cols = padding1_cols;
+    c->stride2_rows = stride2_rows;
+    c->stride2_cols = stride2_cols;
+    c->padding2_rows = padding2_rows;
+    c->padding2_cols = padding2_cols;
+    c->pooling_rows = pooling_rows;
+    c->pooling_cols = pooling_cols;
+    c->normalization_flag = normalization_flag;
+    c->activation_flag = activation_flag;
+    c->pooling_flag = pooling_flag;
+
+    c->used_kernels = NULL;
+    c->kernels = NULL;
+
+    if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
+        c->d_kernels = (float**)malloc(sizeof(float*)*n_kernels);
+        c->ex_d_kernels_diff_grad = NULL;
+        c->d1_kernels = NULL;
+        c->d2_kernels = NULL;
+        c->d3_kernels = NULL;
+    }
+    else{
+        c->d_kernels = NULL;
+        c->ex_d_kernels_diff_grad = NULL;
+        c->d1_kernels = NULL;
+        c->d2_kernels = NULL;
+        c->d3_kernels = NULL;
+    }
+
+    c->biases = NULL;
+    if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
+        c->d_biases = (float*)calloc(n_kernels,sizeof(float));
+        c->ex_d_biases_diff_grad = NULL;
+        c->d1_biases = NULL;
+        c->d2_biases = NULL;
+        c->d3_biases = NULL;
+    }
+    
+    else{
+        c->d_biases = NULL;
+        c->ex_d_biases_diff_grad = NULL;
+        c->d1_biases = NULL;
+        c->d2_biases = NULL;
+        c->d3_biases = NULL;
+    }
+    c->convolutional_flag = convolutional_flag;
+    c->group_norm_channels = group_norm_channels;
+    if(convolutional_flag == NO_CONVOLUTION)
+        c->pooltemp = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
+    else
+        c->pooltemp = NULL;
+    c->training_mode = training_mode;
+    c->feed_forward_flag = feed_forward_flag;
+    
+    if(convolutional_flag != NO_CONVOLUTION && (feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP)){
+        c->scores = NULL;
+        c->d_scores = (float*)calloc(n_kernels,sizeof(float));
+        c->ex_d_scores_diff_grad = NULL;
+        c->d1_scores = NULL;
+        c->d2_scores = NULL;
+        c->d3_scores = NULL;
+        c->indices = NULL;
+        
+    }
+    else{
+        c->scores = NULL;
+        c->d_scores = NULL;
+        c->ex_d_scores_diff_grad = NULL;
+        c->d1_scores = NULL;
+        c->d2_scores = NULL;
+        c->d3_scores = NULL;
+        c->indices = NULL;
+    }
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
+        if(!bool_is_real((float)((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)))
+            c->rows1 = 0;
+        else
+            c->rows1 = ((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows);
+    }
+    
+    else if(convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((input_rows-1)*stride1_rows +kernel_rows - 2*padding1_rows)))
+            c->rows1 = 0;
+        else
+            c->rows1 = ((input_rows-1)*stride1_rows +kernel_rows - 2*padding1_rows);
+    }
+    
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((c->rows1 - pooling_rows)/stride2_rows + 1 + 2*padding2_rows)))
+            c->rows2 = 0;
+        else
+            c->rows2 = ((c->rows1 - pooling_rows)/stride2_rows + 1 + 2*padding2_rows);
+        }
+    else{
+        if(!bool_is_real((float)((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows)))
+            c->rows2 = 0;
+        else
+            c->rows2 = ((input_rows-pooling_rows)/stride2_rows +1 + 2*padding2_rows);
+    }
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == NO_CONVOLUTION){
+        if(!bool_is_real((float)((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols)))
+            c->cols1 = 0;
+        else
+            c->cols1 = ((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols);
+    }
+    
+    else if(convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((input_cols-1)*stride1_cols +kernel_cols - 2*padding1_cols)))
+            c->cols1 = 0;
+        else
+            c->cols1 = ((input_cols-1)*stride1_cols +kernel_cols - 2*padding1_cols);
+    }
+    if(convolutional_flag == CONVOLUTION || convolutional_flag == TRANSPOSED_CONVOLUTION){
+        if(!bool_is_real((float)((c->cols1 - pooling_cols)/stride2_cols + 1 + 2*padding2_cols)))
+            c->cols2 = 0;
+        else
+            c->cols2 = ((c->cols1 - pooling_cols)/stride2_cols + 1 + 2*padding2_cols);
+        }
+    else{
+        if(!bool_is_real((float)((input_cols-pooling_cols)/stride2_cols +1 + 2*padding2_cols)))
+            c->cols2 = 0;
+        else
+            c->cols2 = ((input_cols-pooling_cols)/stride2_cols +1 + 2*padding2_cols);
+    }
+    
+    if(training_mode != ONLY_FF){
+        c->temp = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+        c->temp2 = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+        c->temp3 = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+        c->error2 = (float*)calloc(channels*input_rows*input_cols,sizeof(float));
+    }
+    
+    else{
+        c->temp = NULL;
+        c->temp2 = NULL;
+        c->temp3 = NULL;
+        c->error2 = NULL;
+    }
+    
+    if(convolutional_flag != NO_CONVOLUTION)
+    c->pre_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    else
+    c->pre_activation = NULL;
+    
+    if(activation_flag != NO_ACTIVATION)
+    c->post_activation = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    else
+    c->post_activation = NULL;
+    
+    if(normalization_flag != NO_NORMALIZATION)
+    c->post_normalization = (float*)calloc(n_kernels*c->rows1*c->cols1,sizeof(float));
+    else
+    c->post_normalization = NULL;
+
+    if(pooling_flag == MAX_POOLING || pooling_flag == AVARAGE_POOLING)
+    c->post_pooling = (float*)calloc(n_kernels*c->rows2*c->cols2,sizeof(float));
+    else
+    c->post_pooling = NULL;
+    
+    if(convolutional_flag != NO_CONVOLUTION){
+        for(i = 0; i < n_kernels; i++){
+            if(training_mode == GRADIENT_DESCENT || training_mode == FREEZE_TRAINING || training_mode == FREEZE_BIASES){
+                c->d_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
+            }
+        }
+    }
+    
+    if(normalization_flag != GROUP_NORMALIZATION){
+        c->group_norm = NULL;
+        c->group_norm_channels = 0;
+    }
+    
+    else{
+        c->group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
+        for(i = 0; i < n_kernels/group_norm_channels; i++){
+            if(convolutional_flag == CONVOLUTION)
+            c->group_norm[i] = batch_normalization_without_learning_parameters(group_norm_channels,c->rows1*c->cols1-2*padding1_rows-2*padding1_cols,i,NO_ACTIVATION);
+            else if(convolutional_flag == TRANSPOSED_CONVOLUTION)
+            c->group_norm[i] = batch_normalization_without_learning_parameters(group_norm_channels,c->rows1*c->cols1,i,NO_ACTIVATION);
+        }
+    }
+    return c;
+}
 
 /* these functions just give an insight on what is allocated or not*/
 
@@ -370,6 +645,61 @@ void free_convolutional(cl* c){
             free(c->d1_kernels[i]);
             free(c->d2_kernels[i]);
             free(c->d3_kernels[i]);
+        }
+    }
+    
+    free(c->kernels);
+    free(c->used_kernels);
+    free(c->d_kernels);
+    free(c->ex_d_kernels_diff_grad);
+    free(c->d1_kernels);
+    free(c->d2_kernels);
+    free(c->biases);
+    free(c->d_biases);
+    free(c->ex_d_biases_diff_grad);
+    free(c->d1_biases);
+    free(c->d2_biases);
+    free(c->d3_biases);
+    free(c->pre_activation);
+    free(c->post_activation);
+    free(c->post_normalization);
+    free(c->post_pooling);
+    free(c->temp);
+    free(c->temp2);
+    free(c->temp3);
+    free(c->pooltemp);
+    free(c->error2);
+    free(c->indices);
+    free(c->scores);
+    free(c->d_scores);
+    free(c->ex_d_scores_diff_grad);
+    free(c->d1_scores);
+    free(c->d2_scores);
+    free(c->d3_scores);
+    if(c->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < c->n_kernels/c->group_norm_channels; i++){
+            free_batch_normalization(c->group_norm[i]);
+        }
+        free(c->group_norm);
+    }
+    free(c);
+}
+/* Given a cl* structure this function frees the space allocated by this structure
+ * 
+ * Input:
+ * 
+ *             @ cl* c:= the convolutional structure
+ * 
+ * */
+void free_convolutional_without_learning_parameters(cl* c){
+    if(c == NULL){
+        return;
+    }
+    
+    int i;
+    for(i = 0; i < c->n_kernels; i++){
+        if(exists_d_kernels_cl(c)){
+            free(c->d_kernels[i]);
         }
     }
     
@@ -1120,6 +1450,55 @@ cl* copy_cl(cl* f){
         copy_int_array(f->indices,copy->indices,f->n_kernels);
         
     }
+    
+    copy->k_percentage = f->k_percentage;
+    return copy;
+}
+
+/* This function returns a cl* layer that is the same copy of the input f
+ * except for the activation arrays , the post normalization and post pooling arrays
+ * and all the temporary arrays used for the feed forward and back propagation
+ * You have a cl* f structure, this function creates an identical structure
+ * with all the arrays used for the feed forward and back propagation
+ * with all the initial states. and the same weights and derivatives in f are copied
+ * into the new structure.
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ * 
+ * */
+cl* copy_cl_without_learning_parameters(cl* f){
+    if(f == NULL)
+        return NULL;
+    cl* copy = convolutional_without_learning_parameters(f->channels,f->input_rows,f->input_cols,f->kernel_rows,f->kernel_cols,f->n_kernels,f->stride1_rows,f->stride1_cols,f->padding1_rows,f->padding1_cols,f->stride2_rows,f->stride2_cols,f->padding2_rows,f->padding2_cols,f->pooling_rows,f->pooling_cols,f->normalization_flag,f->activation_flag,f->pooling_flag,f->group_norm_channels, f->convolutional_flag,f->training_mode,f->feed_forward_flag,f->layer);
+    
+    int i;
+    for(i = 0; i < f->n_kernels; i++){
+        if(exists_d_kernels_cl(f)){
+            copy_array(f->d_kernels[i],copy->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+            
+        }
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            paste_bn_without_learning_parameters(f->group_norm[i],copy->group_norm[i]);
+        }
+    }
+    
+    if(exists_d_biases_cl(f)){
+        copy_array(f->d_biases,copy->d_biases,f->n_kernels);
+        
+    }
+    
+    if(exists_edge_popup_stuff_cl(f)){
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels);
+        
+        
+    }
+    
+    copy->k_percentage = f->k_percentage;
     return copy;
 }
 
@@ -1204,6 +1583,71 @@ cl* reset_cl(cl* f){
             f->used_kernels[(int)(f->indices[i])] = 1;
         }
     }
+    return f;
+}
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_without_learning_parameters(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+    if(exists_d_kernels_cl(f) || exists_d_biases_cl(f)){
+        for(i = 0; i < f->n_kernels; i++){
+            if(exists_d_kernels_cl(f)){
+                for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
+                    f->d_kernels[i][j] = 0;
+                }
+            }
+            if(exists_d_biases_cl(f))
+            f->d_biases[i] = 0;
+        }
+    }
+    
+    if(exists_bp_handler_arrays(f) || exists_pre_activation_cl(f) || exists_post_activation_cl(f) || exists_normalization_cl(f)){
+        for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+            if(exists_pre_activation_cl(f))
+            f->pre_activation[i] = 0;
+            if(exists_post_activation_cl(f))
+            f->post_activation[i] = 0;
+            if(exists_normalization_cl(f))
+            f->post_normalization[i] = 0;
+            if(exists_bp_handler_arrays(f)){
+                f->temp[i] = 0;
+                f->temp2[i] = 0;
+                f->temp3[i] = 0;
+            }
+        }
+    }
+    
+    if(exists_pooling(f)){
+        for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+            f->post_pooling[i] = 0;
+        }
+    }
+    
+    
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        if(f->convolutional_flag == NO_CONVOLUTION)
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    
     return f;
 }
 /* Is the same as the other resets except fot he partial derivatives (also the scores are not taken in consideration)
@@ -1325,6 +1769,57 @@ cl* reset_cl_without_dwdb(cl* f){
     }
     return f;
 }
+/* as all the others but the derivatives of w and b are not resets
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_without_dwdb_without_learning_parameters(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+    
+    if(exists_bp_handler_arrays(f) || exists_pre_activation_cl(f) || exists_post_activation_cl(f) || exists_normalization_cl(f)){
+        for(i = 0; i < f->n_kernels*f->rows1*f->cols1; i++){
+            if(exists_pre_activation_cl(f))
+            f->pre_activation[i] = 0;
+            if(exists_post_activation_cl(f))
+            f->post_activation[i] = 0;
+            if(exists_normalization_cl(f))
+            f->post_normalization[i] = 0;
+            if(exists_bp_handler_arrays(f)){
+                f->temp[i] = 0;
+                f->temp2[i] = 0;
+                f->temp3[i] = 0;
+            }
+        }
+    }
+    
+    if(exists_pooling(f)){
+        for(i = 0; i < f->n_kernels*f->rows2*f->cols2; i++){
+            f->post_pooling[i] = 0;
+        }
+    }
+    
+    
+    
+    for(i = 0; i < f->channels*f->input_rows*f->input_cols; i++){
+        f->error2[i] = 0;
+        if(f->convolutional_flag == NO_CONVOLUTION)
+        f->pooltemp[i] = 0;
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    
+    return f;
+}
 
 /* This function resets the temop arrays + just partial derivatives of d_Scores
  * 
@@ -1401,9 +1896,40 @@ uint64_t size_of_cls(cl* f){
     if(exists_d_kernels_cl(f))
         sum+=5*f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
     if(exists_edge_popup_stuff_cl(f))
-        sum+=6*f->n_kernels*sizeof(float)*f->n_kernels*sizeof(int);
+        sum+=6*f->n_kernels*sizeof(float) + f->n_kernels*sizeof(int);
     if(exists_kernels_cl(f))
         sum+=f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float) + f->n_kernels*sizeof(int);
+    if(exists_pre_activation_cl(f))
+        sum+=f->n_kernels*f->rows1*f->cols1*sizeof(float);
+    if(exists_post_activation_cl(f))
+        sum+=f->n_kernels*f->rows1*f->cols1*sizeof(float);
+    if(exists_normalization_cl(f))
+        sum+=f->n_kernels*f->rows1*f->cols1*sizeof(float);
+    if(exists_pooling(f))
+        sum+=f->n_kernels*f->rows2*f->cols2*sizeof(float);
+    if(f->normalization_flag == GROUP_NORMALIZATION)
+        sum+=size_of_bn(f->group_norm[0])*f->n_kernels/f->group_norm_channels;
+    
+    return sum;
+}
+/* this function returns the space allocated by the arrays of f (more or less)
+ * 
+ * Input:
+ * 
+ *             cl* f:= the convolutional layer f
+ * 
+ * */
+uint64_t size_of_cls_without_learning_parameters(cl* f){
+    uint64_t sum = 0;
+    
+    if(exists_bp_handler_arrays(f))
+        sum+=(3*f->n_kernels*f->rows1*f->cols1 + f->channels*f->input_rows*f->input_cols)*sizeof(float);
+    if(exists_d_biases_cl(f))
+        sum+=f->n_kernels*sizeof(float);
+    if(exists_d_kernels_cl(f))
+        sum+=f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
+    if(exists_edge_popup_stuff_cl(f))
+        sum+=f->n_kernels*sizeof(float);
     if(exists_pre_activation_cl(f))
         sum+=f->n_kernels*f->rows1*f->cols1*sizeof(float);
     if(exists_post_activation_cl(f))
@@ -1475,6 +2001,48 @@ void paste_cl(cl* f, cl* copy){
         copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
         copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
         copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
+    }
+    return;
+}
+/* This function pastes f in copy
+ * except for the activation arrays , the post normalization and post pooling arrays
+ * and all the arrays used by the feed forward and backpropagation.
+ * the d_arrays are copied
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= the convolutional layer that must be copied
+ *             @ cl* copy:= the convolutional layer where f is copied
+ * 
+ * */
+void paste_cl_without_learning_parameters(cl* f, cl* copy){
+    if(f == NULL)
+        return;
+    
+    int i;
+    copy->k_percentage = f->k_percentage;
+    if(exists_kernels_cl(f) || exists_d_kernels_cl(f)){
+         for(i = 0; i < f->n_kernels; i++){
+            if(exists_d_kernels_cl(f)){
+                copy_array(f->d_kernels[i],copy->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
+                
+            }
+        }
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->n_kernels/f->group_norm_channels; i++){
+            paste_bn_without_learning_parameters(f->group_norm[i],copy->group_norm[i]);
+        }
+    }
+    
+    if(exists_d_biases_cl(f)){
+        copy_array(f->d_biases,copy->d_biases,f->n_kernels);
+        
+    }
+    if(exists_edge_popup_stuff_cl(f)){
+        copy_array(f->d_scores,copy->d_scores,f->n_kernels);
+        
     }
     return;
 }
@@ -1556,7 +2124,7 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
 
         
          for(i = copy->n_kernels-copy->n_kernels*copy->k_percentage; i < copy->n_kernels; i++){
-            copy->used_kernels[(int)(copy->indices[i])] = 1;
+            copy->used_kernels[(copy->indices[i])] = 1;
          }
      }
     return;

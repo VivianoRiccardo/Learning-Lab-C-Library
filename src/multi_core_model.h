@@ -31,5 +31,11 @@ void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, f
 void model_tensor_input_bp_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension, float** returning_error);
 void ff_error_bp_model_multicore(model** m, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** outputs, float** returning_error);
 void* model_thread_ff_bp(void* _args);
+void* model_thread_ff_opt(void* _args);
+void model_tensor_input_ff_multicore_opt(model** m, model* m2, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads);
+void model_tensor_input_bp_multicore_opt(model** m,model*m2, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** errors, int error_dimension, float** returning_error);
+void* model_thread_bp_opt(void* _args);
+void ff_error_bp_model_multicore_opt(model** m, model* m2, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** outputs, float** returning_error);
+void* model_thread_ff_bp_opt(void* _args);
 
 #endif

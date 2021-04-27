@@ -45,5 +45,14 @@ float sum_all_quadratic_derivative_weights_m(model* m);
 void clipping_gradient_transf_encoder(transformer_encoder* t, float threshold);
 void clipping_gradient_transf_decoder(transformer_decoder* t, float threshold);
 void clipping_gradient_transf(transformer* t, float threshold);
+void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon);
+void adaptive_gradient_clipping_fcl(fcl* f ,float threshold, float epsilon);
+void adaptive_gradient_clipping_cl(cl* f ,float threshold, float epsilon);
+void adaptive_gradient_clipping_rl(rl* f ,float threshold, float epsilon);
+void adaptive_gradient_clipping_model(model* m, float threshold, float epsilon);
+void adaptive_gradient_clipping_rmodel(rmodel* r, float threshold, float epsilon);
+void adaptive_gradient_clipping_encoder_transformer(transformer_encoder* e, float threshold, float epsilon);
+void adaptive_gradient_clipping_decoder_transformer(transformer_decoder* t, float threshold, float epsilon);
+void adaptive_gradient_clipping_transformer(transformer* t, float threshold, float epsilon);
 
 #endif

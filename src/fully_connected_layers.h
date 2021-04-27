@@ -72,7 +72,13 @@ void reinitialize_w_fcl(fcl* f);
 fcl* reset_edge_popup_d_fcl(fcl* f);
 void set_low_score_fcl(fcl* f);
 int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size);
+fcl* copy_fcl_without_learning_parameters(fcl* f);
+fcl* fully_connected_without_learning_parameters(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag);
+fcl* reset_fcl_without_learning_parameters(fcl* f);
+uint64_t size_of_fcls_without_learning_parameters(fcl* f);
+void paste_fcl_without_learning_parameters(fcl* f,fcl* copy);
+fcl* reset_fcl_without_dwdb_without_learning_parameters(fcl* f);
 
-	
+    
 
 #endif

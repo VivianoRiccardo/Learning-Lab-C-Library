@@ -43,9 +43,9 @@ SOFTWARE.
  *                 @ int attention_flag2:= for the second attention mechanism (STANDARD_ATTENTION or MASKED_ATTENTION)
  *                 @ int encoder_input_dimension:= the dimension of the encoders(?) or from somewhere else that fed the queries and keys of the second attention mechanism
  *                 @ model* m:= the model after the second attention mechanism (usually 1 feed forward with relu + 1 feedforward with no activation functions)
- *                 @ model* linear_after_activation1:= the linear layer after the first attention 	
- *                 @ model* linear_after_activation2:= the linear layer after the second attention 	
- * 			       @ fcl** fcls:= the fully connected layers just for the first and second attention mechanism (linear processes for queries, keys, values) dimension: (n_head1+n_head2)*3
+ *                 @ model* linear_after_activation1:= the linear layer after the first attention     
+ *                 @ model* linear_after_activation2:= the linear layer after the second attention     
+ *                    @ fcl** fcls:= the fully connected layers just for the first and second attention mechanism (linear processes for queries, keys, values) dimension: (n_head1+n_head2)*3
  *                 @ scaled_l2_norm** l2:= can be 3,2,1 according to the normalization flags
  * */
  

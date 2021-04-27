@@ -37,7 +37,7 @@ rmodel* load_rmodel(char* file);
 rmodel* heavy_load_rmodel(char* file);
 void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms);
 float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error);
-int count_weights_rmodel(rmodel* m);
+uint64_t count_weights_rmodel(rmodel* m);
 void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms);
@@ -46,5 +46,15 @@ void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, 
 float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error);
 void paste_w_rmodel(rmodel* m, rmodel* copy);
 void sum_rmodels_partial_derivatives(rmodel* m, rmodel** m2, int n_models);
+void free_rmodel_without_learning_parameters(rmodel* m);
+rmodel* copy_rmodel_without_learning_parameters(rmodel* m);
+void paste_rmodel_without_learning_parameters(rmodel* m, rmodel* copy);
+rmodel* reset_rmodel_without_learning_parameters(rmodel* m);
+void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms, lstm** lstms2);
+float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error, lstm** lstms2);
+float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lstms, lstm* lstms2);
+float* lstm_dh_opt(int index, int output, float** returning_error, lstm* lstms, lstm* lstms2);
+void ff_rmodel_opt(float** hidden_states, float** cell_states, float** input_model, rmodel* m, rmodel* m2);
+float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error, rmodel* m2);
 
 #endif

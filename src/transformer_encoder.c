@@ -482,17 +482,17 @@ void reset_transformer_encoder(transformer_encoder* t){
         t->score_matrix_softmax_error[i] = 0;
     }
     if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->linear_after_attention->output_dimension; i++){
-				t->residual1_output[i] = 0;
-				t->residual1_output_error[i] = 0;
-		}
-	}
+        for(i = 0; i < t->linear_after_attention->output_dimension; i++){
+                t->residual1_output[i] = 0;
+                t->residual1_output_error[i] = 0;
+        }
+    }
     if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->m->output_dimension; i++){
-				t->residual2_output[i] = 0;
-				t->residual2_output_error[i] = 0;			
-		}
-	}
+        for(i = 0; i < t->m->output_dimension; i++){
+                t->residual2_output[i] = 0;
+                t->residual2_output_error[i] = 0;            
+        }
+    }
     reset_model(t->m);
     reset_model(t->linear_after_attention);
     return;
@@ -534,17 +534,17 @@ void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t
         t->score_matrix_softmax_error[i] = 0;
     }
     if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->linear_after_attention->output_dimension; i++){
-				t->residual1_output[i] = 0;
-				t->residual1_output_error[i] = 0;
-		}
-	}
+        for(i = 0; i < t->linear_after_attention->output_dimension; i++){
+                t->residual1_output[i] = 0;
+                t->residual1_output_error[i] = 0;
+        }
+    }
     if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->m->output_dimension; i++){
-				t->residual2_output[i] = 0;
-				t->residual2_output_error[i] = 0;			
-		}
-	}
+        for(i = 0; i < t->m->output_dimension; i++){
+                t->residual2_output[i] = 0;
+                t->residual2_output_error[i] = 0;            
+        }
+    }
     reset_model_except_partial_derivatives(t->m);
     reset_model_except_partial_derivatives(t->linear_after_attention);
     return;
@@ -588,17 +588,17 @@ void reset_transformer_encoder_for_edge_popup(transformer_encoder* t){
         t->score_matrix_softmax_error[i] = 0;
     }
     if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->linear_after_attention->output_dimension; i++){
-				t->residual1_output[i] = 0;
-				t->residual1_output_error[i] = 0;
-		}
-	}
+        for(i = 0; i < t->linear_after_attention->output_dimension; i++){
+                t->residual1_output[i] = 0;
+                t->residual1_output_error[i] = 0;
+        }
+    }
     if(t->residual_flag2 == TRANSFORMER_RESIDUAL){
-		for(i = 0; i < t->m->output_dimension; i++){
-				t->residual2_output[i] = 0;
-				t->residual2_output_error[i] = 0;			
-		}
-	}
+        for(i = 0; i < t->m->output_dimension; i++){
+                t->residual2_output[i] = 0;
+                t->residual2_output_error[i] = 0;            
+        }
+    }
     reset_model_for_edge_popup(t->m);
     reset_model_for_edge_popup(t->linear_after_attention);
     return;
@@ -692,7 +692,7 @@ void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dim
         fully_connected_feed_forward(inputs,&t->v[i*t->dimension],t->fcls[i*3+2]->weights,NULL,input_dimension,t->dimension);
     }
     multi_head_attention_ff(t->q,t->k,t->v,t->score_matrix,t->score_matrix_softmax,t->attention_output,t->dimension,t->n_head,t->input_dimension,t->attention_flag);
-	model_tensor_input_ff(t->linear_after_attention,1,1,t->input_dimension,t->attention_output);
+    model_tensor_input_ff(t->linear_after_attention,1,1,t->input_dimension,t->attention_output);
     if(t->residual_flag1 == TRANSFORMER_RESIDUAL){
         if(t->linear_after_attention->output_dimension != input_dimension){
             fprintf(stderr,"Error: the inputs of the transformer don't match the multi headed attention output!\n");

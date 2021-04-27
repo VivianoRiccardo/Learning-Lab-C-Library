@@ -31,7 +31,7 @@ SOFTWARE.
  * 
  *             @ model** m:= the models
  *             @ model** r:= the rmodels
- * 			   @ transformer** t:= the transformers
+ *                @ transformer** t:= the transformers
  *             @ int n_m:= the number of models
  *             @ int n_r:= the number of rmodels
  *             @ int n_t:= the number of transformers
@@ -52,22 +52,22 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
     }
     
     for(i = 0; i < n_t; i++){
-		for(j = 0; j < t[i]->n_te; j++){
-			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->m);
-			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->linear_after_attention);
-			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3);
-			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->te[j]->l2,t[i]->te[j]->n_l2);
-		 }
-		 for(j = 0; j < t[i]->n_td; j++){
-			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->m);
-			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->linear_after_attention);
-			 sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->linear_after_attention);
-			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3);
-			 sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3);
-			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2);
-			 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->l2,t[i]->td[j]->n_l2);
-		 }
-	}
+        for(j = 0; j < t[i]->n_te; j++){
+             sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->m);
+             sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->te[j]->linear_after_attention);
+             sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3);
+             sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->te[j]->l2,t[i]->te[j]->n_l2);
+         }
+         for(j = 0; j < t[i]->n_td; j++){
+             sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->m);
+             sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->e->linear_after_attention);
+             sum += (double)sum_all_quadratic_derivative_weights_m(t[i]->td[j]->linear_after_attention);
+             sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3);
+             sum += (double)sum_all_quadratic_derivative_weights_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3);
+             sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2);
+             sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->l2,t[i]->td[j]->n_l2);
+         }
+    }
     sum = sqrtl(sum);
     
     if(sum >= threshold){
@@ -82,32 +82,32 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
     }
     
     for(i = 0; i < n_t; i++){
-		for(j = 0; j < t[i]->n_te; j++){
-			 clip_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3,threshold,sum);
-			 clip_fcls(t[i]->te[j]->m->fcls,t[i]->te[j]->m->n_fcl,threshold,sum);
-			 clip_cls(t[i]->te[j]->m->cls,t[i]->te[j]->m->n_cl,threshold,sum);
-			 clip_rls(t[i]->te[j]->m->rls,t[i]->te[j]->m->n_rl,threshold,sum);
-			 clip_fcls(t[i]->te[j]->linear_after_attention->fcls,t[i]->te[j]->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t[i]->te[j]->linear_after_attention->cls,t[i]->te[j]->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t[i]->te[j]->linear_after_attention->rls,t[i]->te[j]->linear_after_attention->n_rl,threshold,sum);
-			 clip_scaled_l2(t[i]->te[j]->l2,t[i]->te[j]->n_l2,threshold,sum);
-		 }
-		 for(j = 0; j < t[i]->n_td; j++){
-			 clip_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3,threshold,sum);
-			 clip_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3,threshold,sum);
-			 clip_fcls(t[i]->td[j]->e->m->fcls,t[i]->td[j]->e->m->n_fcl,threshold,sum);
-			 clip_cls(t[i]->td[j]->e->m->cls,t[i]->td[j]->e->m->n_cl,threshold,sum);
-			 clip_rls(t[i]->td[j]->e->m->rls,t[i]->td[j]->e->m->n_rl,threshold,sum);
-			 clip_fcls(t[i]->td[j]->e->linear_after_attention->fcls,t[i]->td[j]->e->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t[i]->td[j]->e->linear_after_attention->cls,t[i]->td[j]->e->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t[i]->td[j]->e->linear_after_attention->rls,t[i]->td[j]->e->linear_after_attention->n_rl,threshold,sum);
-			 clip_fcls(t[i]->td[j]->linear_after_attention->fcls,t[i]->td[j]->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t[i]->td[j]->linear_after_attention->cls,t[i]->td[j]->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t[i]->td[j]->linear_after_attention->rls,t[i]->td[j]->linear_after_attention->n_rl,threshold,sum);
-			 clip_scaled_l2(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2,threshold,sum);
-			 clip_scaled_l2(t[i]->td[j]->l2,t[i]->td[j]->n_l2,threshold,sum);
-		 }
-	 }
+        for(j = 0; j < t[i]->n_te; j++){
+             clip_fcls(t[i]->te[j]->fcls,t[i]->te[j]->n_head*3,threshold,sum);
+             clip_fcls(t[i]->te[j]->m->fcls,t[i]->te[j]->m->n_fcl,threshold,sum);
+             clip_cls(t[i]->te[j]->m->cls,t[i]->te[j]->m->n_cl,threshold,sum);
+             clip_rls(t[i]->te[j]->m->rls,t[i]->te[j]->m->n_rl,threshold,sum);
+             clip_fcls(t[i]->te[j]->linear_after_attention->fcls,t[i]->te[j]->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t[i]->te[j]->linear_after_attention->cls,t[i]->te[j]->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t[i]->te[j]->linear_after_attention->rls,t[i]->te[j]->linear_after_attention->n_rl,threshold,sum);
+             clip_scaled_l2(t[i]->te[j]->l2,t[i]->te[j]->n_l2,threshold,sum);
+         }
+         for(j = 0; j < t[i]->n_td; j++){
+             clip_fcls(t[i]->td[j]->fcls,t[i]->td[j]->n_head*3,threshold,sum);
+             clip_fcls(t[i]->td[j]->e->fcls,t[i]->td[j]->e->n_head*3,threshold,sum);
+             clip_fcls(t[i]->td[j]->e->m->fcls,t[i]->td[j]->e->m->n_fcl,threshold,sum);
+             clip_cls(t[i]->td[j]->e->m->cls,t[i]->td[j]->e->m->n_cl,threshold,sum);
+             clip_rls(t[i]->td[j]->e->m->rls,t[i]->td[j]->e->m->n_rl,threshold,sum);
+             clip_fcls(t[i]->td[j]->e->linear_after_attention->fcls,t[i]->td[j]->e->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t[i]->td[j]->e->linear_after_attention->cls,t[i]->td[j]->e->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t[i]->td[j]->e->linear_after_attention->rls,t[i]->td[j]->e->linear_after_attention->n_rl,threshold,sum);
+             clip_fcls(t[i]->td[j]->linear_after_attention->fcls,t[i]->td[j]->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t[i]->td[j]->linear_after_attention->cls,t[i]->td[j]->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t[i]->td[j]->linear_after_attention->rls,t[i]->td[j]->linear_after_attention->n_rl,threshold,sum);
+             clip_scaled_l2(t[i]->td[j]->e->l2,t[i]->td[j]->e->n_l2,threshold,sum);
+             clip_scaled_l2(t[i]->td[j]->l2,t[i]->td[j]->n_l2,threshold,sum);
+         }
+     }
     
 }
 /* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
@@ -252,47 +252,47 @@ void clipping_gradient_transf(transformer* t, float threshold) {
      float sum = 0;
      int i,j;
      for(i = 0; i < t->n_te; i++){
-		 sum += sum_all_quadratic_derivative_weights_m(t->te[i]->m);
-		 sum += sum_all_quadratic_derivative_weights_m(t->te[i]->linear_after_attention);
-		 sum += sum_all_quadratic_derivative_weights_fcls(t->te[i]->fcls,t->te[i]->n_head*3);
-		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->te[i]->l2,t->te[i]->n_l2);
-	 }
+         sum += sum_all_quadratic_derivative_weights_m(t->te[i]->m);
+         sum += sum_all_quadratic_derivative_weights_m(t->te[i]->linear_after_attention);
+         sum += sum_all_quadratic_derivative_weights_fcls(t->te[i]->fcls,t->te[i]->n_head*3);
+         sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->te[i]->l2,t->te[i]->n_l2);
+     }
      for(i = 0; i < t->n_td; i++){
-		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->m);
-		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->linear_after_attention);
-		 sum += sum_all_quadratic_derivative_weights_m(t->td[i]->linear_after_attention);
-		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3);
-		 sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->fcls,t->td[i]->n_head*3);
-		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->e->l2,t->td[i]->e->n_l2);
-		 sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->l2,t->td[i]->n_l2);
-	 }
-	 sum = sqrtf(sum);
-	 if(sum >= threshold){
+         sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->m);
+         sum += sum_all_quadratic_derivative_weights_m(t->td[i]->e->linear_after_attention);
+         sum += sum_all_quadratic_derivative_weights_m(t->td[i]->linear_after_attention);
+         sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3);
+         sum += sum_all_quadratic_derivative_weights_fcls(t->td[i]->fcls,t->td[i]->n_head*3);
+         sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->e->l2,t->td[i]->e->n_l2);
+         sum += sum_all_quadratic_derivative_weights_scaled_l2_norm(t->td[i]->l2,t->td[i]->n_l2);
+     }
+     sum = sqrtf(sum);
+     if(sum >= threshold){
          for(i = 0; i < t->n_te; i++){
-			 clip_fcls(t->te[i]->fcls,t->te[i]->n_head*3,threshold,sum);
-			 clip_fcls(t->te[i]->m->fcls,t->te[i]->m->n_fcl,threshold,sum);
-			 clip_cls(t->te[i]->m->cls,t->te[i]->m->n_cl,threshold,sum);
-			 clip_rls(t->te[i]->m->rls,t->te[i]->m->n_rl,threshold,sum);
-			 clip_fcls(t->te[i]->linear_after_attention->fcls,t->te[i]->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t->te[i]->linear_after_attention->cls,t->te[i]->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t->te[i]->linear_after_attention->rls,t->te[i]->linear_after_attention->n_rl,threshold,sum);
-			 clip_scaled_l2(t->te[i]->l2,t->te[i]->n_l2,threshold,sum);
-		 }
-		 for(i = 0; i < t->n_td; i++){
-			 clip_fcls(t->td[i]->fcls,t->td[i]->n_head*3,threshold,sum);
-			 clip_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3,threshold,sum);
-			 clip_fcls(t->td[i]->e->m->fcls,t->td[i]->e->m->n_fcl,threshold,sum);
-			 clip_cls(t->td[i]->e->m->cls,t->td[i]->e->m->n_cl,threshold,sum);
-			 clip_rls(t->td[i]->e->m->rls,t->td[i]->e->m->n_rl,threshold,sum);
-			 clip_fcls(t->td[i]->e->linear_after_attention->fcls,t->td[i]->e->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t->td[i]->e->linear_after_attention->cls,t->td[i]->e->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t->td[i]->e->linear_after_attention->rls,t->td[i]->e->linear_after_attention->n_rl,threshold,sum);
-			 clip_fcls(t->td[i]->linear_after_attention->fcls,t->td[i]->linear_after_attention->n_fcl,threshold,sum);
-			 clip_cls(t->td[i]->linear_after_attention->cls,t->td[i]->linear_after_attention->n_cl,threshold,sum);
-			 clip_rls(t->td[i]->linear_after_attention->rls,t->td[i]->linear_after_attention->n_rl,threshold,sum);
-			 clip_scaled_l2(t->td[i]->e->l2,t->td[i]->e->n_l2,threshold,sum);
-			 clip_scaled_l2(t->td[i]->l2,t->td[i]->n_l2,threshold,sum);
-		 }
+             clip_fcls(t->te[i]->fcls,t->te[i]->n_head*3,threshold,sum);
+             clip_fcls(t->te[i]->m->fcls,t->te[i]->m->n_fcl,threshold,sum);
+             clip_cls(t->te[i]->m->cls,t->te[i]->m->n_cl,threshold,sum);
+             clip_rls(t->te[i]->m->rls,t->te[i]->m->n_rl,threshold,sum);
+             clip_fcls(t->te[i]->linear_after_attention->fcls,t->te[i]->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t->te[i]->linear_after_attention->cls,t->te[i]->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t->te[i]->linear_after_attention->rls,t->te[i]->linear_after_attention->n_rl,threshold,sum);
+             clip_scaled_l2(t->te[i]->l2,t->te[i]->n_l2,threshold,sum);
+         }
+         for(i = 0; i < t->n_td; i++){
+             clip_fcls(t->td[i]->fcls,t->td[i]->n_head*3,threshold,sum);
+             clip_fcls(t->td[i]->e->fcls,t->td[i]->e->n_head*3,threshold,sum);
+             clip_fcls(t->td[i]->e->m->fcls,t->td[i]->e->m->n_fcl,threshold,sum);
+             clip_cls(t->td[i]->e->m->cls,t->td[i]->e->m->n_cl,threshold,sum);
+             clip_rls(t->td[i]->e->m->rls,t->td[i]->e->m->n_rl,threshold,sum);
+             clip_fcls(t->td[i]->e->linear_after_attention->fcls,t->td[i]->e->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t->td[i]->e->linear_after_attention->cls,t->td[i]->e->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t->td[i]->e->linear_after_attention->rls,t->td[i]->e->linear_after_attention->n_rl,threshold,sum);
+             clip_fcls(t->td[i]->linear_after_attention->fcls,t->td[i]->linear_after_attention->n_fcl,threshold,sum);
+             clip_cls(t->td[i]->linear_after_attention->cls,t->td[i]->linear_after_attention->n_cl,threshold,sum);
+             clip_rls(t->td[i]->linear_after_attention->rls,t->td[i]->linear_after_attention->n_rl,threshold,sum);
+             clip_scaled_l2(t->td[i]->e->l2,t->td[i]->e->n_l2,threshold,sum);
+             clip_scaled_l2(t->td[i]->l2,t->td[i]->n_l2,threshold,sum);
+         }
      } 
 }
 
@@ -630,3 +630,240 @@ float sum_all_quadratic_derivative_weights_bns(bn** bns, int n){
     
     return sum;
 }
+
+
+/* https://arxiv.org/abs/2102.06171 */
+void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
+    int i,j,k;
+    float sum_w;
+    float sum_g;
+    float ratio;
+    if(f->training_mode == GRADIENT_DESCENT){
+        for(k = 0; k < 4; k++){
+            for(i = 0, sum_w = 0, sum_g = 0; i < f->size; i++){
+                for(j = 0; j < f->size; j++){
+                    sum_w+=f->w[k][i*f->size+j]*f->w[k][i*f->size+j];
+                    sum_g+=f->d_w[k][i*f->size+j]*f->d_w[k][i*f->size+j];
+                }
+                sum_w = sqrtf(sum_w);
+                sum_g = sqrtf(sum_g);
+                sum_w = max(sum_w,epsilon);
+                ratio = sum_w/sum_g;
+                if(ratio > threshold){
+                    ratio*=threshold;
+                    for(j = 0; j < f->size; j++){
+                        f->d_w[k][i*f->size+j]*=ratio;
+                    }    
+                }
+            }
+            for(i = 0, sum_w = 0, sum_g = 0; i < f->size; i++){
+                for(j = 0; j < f->size; j++){
+                    sum_w+=f->u[k][i*f->size+j]*f->u[k][i*f->size+j];
+                    sum_g+=f->d_u[k][i*f->size+j]*f->d_u[k][i*f->size+j];
+                }
+                sum_w = sqrtf(sum_w);
+                sum_g = sqrtf(sum_g);
+                sum_w = max(sum_w,epsilon);
+                ratio = sum_w/sum_g;
+                if(ratio > threshold){
+                    ratio*=threshold;
+                    for(j = 0; j < f->size; j++){
+                        f->d_u[k][i*f->size+j]*=ratio;
+                    }    
+                }
+            }
+        }
+    }
+    if(f->training_mode == EDGE_POPUP){
+        for(k = 0; k < 4; k++){
+            for(i = 0, sum_w = 0, sum_g = 0; i < f->size; i++){
+                for(j = 0; j < f->size; j++){
+                    sum_w+=f->w_scores[k][i*f->size+j]*f->w_scores[k][i*f->size+j];
+                    sum_g+=f->d_w_scores[k][i*f->size+j]*f->d_w_scores[k][i*f->size+j];
+                }
+                sum_w = sqrtf(sum_w);
+                sum_g = sqrtf(sum_g);
+                sum_w = max(sum_w,epsilon);
+                ratio = sum_w/sum_g;
+                if(ratio > threshold){
+                    ratio*=threshold;
+                    for(j = 0; j < f->size; j++){
+                        f->d_w_scores[k][i*f->size+j]*=ratio;
+                    }    
+                }
+            }
+            for(i = 0, sum_w = 0, sum_g = 0; i < f->size; i++){
+                for(j = 0; j < f->size; j++){
+                    sum_w+=f->u_scores[k][i*f->size+j]*f->u_scores[k][i*f->size+j];
+                    sum_g+=f->d_u_scores[k][i*f->size+j]*f->d_u_scores[k][i*f->size+j];
+                }
+                sum_w = sqrtf(sum_w);
+                sum_g = sqrtf(sum_g);
+                sum_w = max(sum_w,epsilon);
+                ratio = sum_w/sum_g;
+                if(ratio > threshold){
+                    ratio*=threshold;
+                    for(j = 0; j < f->size; j++){
+                        f->d_u_scores[k][i*f->size+j]*=ratio;
+                    }    
+                }
+            }
+        }
+    }
+    
+    
+    else
+        return;
+}
+
+/* https://arxiv.org/abs/2102.06171 */
+void adaptive_gradient_clipping_fcl(fcl* f ,float threshold, float epsilon){
+    int i,j;
+    float sum_w;
+    float sum_g;
+    float ratio;
+    if(f->training_mode == GRADIENT_DESCENT){
+        for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
+            for(j = 0; j < f->input; j++){
+                sum_w+=f->weights[i*f->input+j]*f->weights[i*f->input+j];
+                sum_g+=f->d_weights[i*f->input+j]*f->d_weights[i*f->input+j];
+            }
+            sum_w = sqrtf(sum_w);
+            sum_g = sqrtf(sum_g);
+            sum_w = max(sum_w,epsilon);
+            ratio = sum_w/sum_g;
+            if(ratio > threshold){
+                ratio*=threshold;
+                for(j = 0; j < f->input; j++){
+                    f->d_weights[i*f->input+j]*=ratio;
+                }    
+            }
+        }
+    }
+    else if(f->training_mode == EDGE_POPUP){
+        for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
+            for(j = 0; j < f->input; j++){
+                sum_w+=f->scores[i*f->input+j]*f->scores[i*f->input+j];
+                sum_g+=f->d_scores[i*f->input+j]*f->d_scores[i*f->input+j];
+            }
+            sum_w = sqrtf(sum_w);
+            sum_g = sqrtf(sum_g);
+            sum_w = max(sum_w,epsilon);
+            ratio = sum_w/sum_g;
+            if(ratio > threshold){
+                ratio*=threshold;
+                for(j = 0; j < f->input; j++){
+                    f->d_scores[i*f->input+j]*=ratio;
+                }    
+            }
+        }
+    }
+    
+    else
+        return;
+}
+/* https://arxiv.org/abs/2102.06171 */
+void adaptive_gradient_clipping_cl(cl* f ,float threshold, float epsilon){
+    int i,j;
+    float sum_w;
+    float sum_g;
+    float ratio;
+    if(f->training_mode == GRADIENT_DESCENT){
+        for(i = 0, sum_w = 0, sum_g = 0; i < f->n_kernels; i++){
+            for(j = 0; j < f->kernel_rows*f->kernel_cols*f->channels; j++){
+                sum_w+=f->kernels[i][j]*f->kernels[i][j];
+                sum_g+=f->d_kernels[i][j]*f->d_kernels[i][j];
+            }
+            sum_w = sqrtf(sum_w);
+            sum_g = sqrtf(sum_g);
+            sum_w = max(sum_w,epsilon);
+            ratio = sum_w/sum_g;
+            if(ratio > threshold){
+                ratio*=threshold;
+                for(j = 0; j < f->kernel_rows*f->kernel_cols*f->channels; j++){
+                    f->d_kernels[i][j]*=ratio;
+                }    
+            }
+        }
+    }
+    else if(f->training_mode == EDGE_POPUP){
+        for(i = 0, sum_w = 0, sum_g = 0; i < f->n_kernels; i++){
+            
+            sum_w+=f->scores[i]*f->scores[i];
+            sum_g+=f->d_scores[i]*f->d_scores[i];
+            
+            sum_w = sqrtf(sum_w);
+            sum_g = sqrtf(sum_g);
+            sum_w = max(sum_w,epsilon);
+            ratio = sum_w/sum_g;
+            if(ratio > threshold){
+                ratio*=threshold;
+                f->d_scores[i]*=ratio;
+            }
+        }
+    }
+    
+    else
+        return;
+}
+/* https://arxiv.org/abs/2102.06171 */
+void adaptive_gradient_clipping_rl(rl* f ,float threshold, float epsilon){
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        adaptive_gradient_clipping_cl(f->cls[i],threshold,epsilon);
+    }
+}
+
+
+void adaptive_gradient_clipping_model(model* m, float threshold, float epsilon){
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        adaptive_gradient_clipping_fcl(m->fcls[i],threshold,epsilon);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        adaptive_gradient_clipping_cl(m->cls[i],threshold,epsilon);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        adaptive_gradient_clipping_rl(m->rls[i],threshold,epsilon);
+    }
+}
+
+void adaptive_gradient_clipping_rmodel(rmodel* r, float threshold, float epsilon){
+    int i;
+    for(i = 0; i < r->n_lstm; i++){
+        adaptive_gradient_clipping_lstm(r->lstms[i],threshold,epsilon);
+    }
+}
+
+
+void adaptive_gradient_clipping_encoder_transformer(transformer_encoder* e, float threshold, float epsilon){
+    int i;
+    for(i = 0; i < e->n_head*3; i++){
+        adaptive_gradient_clipping_fcl(e->fcls[i],threshold,epsilon);
+    }
+    adaptive_gradient_clipping_model(e->m,threshold,epsilon);
+    adaptive_gradient_clipping_model(e->linear_after_attention,threshold,epsilon);
+    
+}
+
+
+void adaptive_gradient_clipping_decoder_transformer(transformer_decoder* t, float threshold, float epsilon){
+    adaptive_gradient_clipping_encoder_transformer(t->e,threshold,epsilon);
+    int i;
+    for(i = 0; i < t->n_head; i++){
+        adaptive_gradient_clipping_fcl(t->fcls[i],threshold,epsilon);
+    }
+    adaptive_gradient_clipping_model(t->linear_after_attention,threshold,epsilon);
+}
+
+
+void adaptive_gradient_clipping_transformer(transformer* t, float threshold, float epsilon){
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        adaptive_gradient_clipping_encoder_transformer(t->te[i],threshold,epsilon);
+    }
+    for(i = 0; i < t->n_td; i++){
+        adaptive_gradient_clipping_decoder_transformer(t->td[i],threshold,epsilon);
+    }
+}
+

@@ -38,5 +38,9 @@ void paste_w_bn(bn* b1, bn* b2);
 void heavy_save_bn(bn* b, int n);
 bn* heavy_load_bn(FILE* fr);
 bn* reset_bn_except_partial_derivatives(bn* b);
+bn* batch_normalization_without_learning_parameters(int batch_size, int vector_input_dimension, int layer, int activation_flag);
+bn* copy_bn_without_learning_parameters(bn* b);
+uint64_t size_of_bn_without_learning_parameters(bn* b);
+void paste_bn_without_learning_parameters(bn* b1, bn* b2);
 
 #endif

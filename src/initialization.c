@@ -30,9 +30,9 @@ float r2(){
 }
 
 float signed_r2(float n){
-	if (r2() >= 0.5)
-			return r2()*n;
-	return -r2()*n;
+    if (r2() >= 0.5)
+            return r2()*n;
+    return -r2()*n;
 }
 
 float generate_from_random_distribution(float lo, float hi){
@@ -67,11 +67,11 @@ float random_general_gaussian_xavier_init2(float n1,float n2){
 
 // n is the number of input neurons
 float random_general_gaussian_kaiming_init(float n){
-	return random_general_gaussian(0, sqrtf(2.0/n));
+    return random_general_gaussian(0, sqrtf(2.0/n));
 }
 
 // n is the number of input neurons
 float signed_kaiming_constant(float n){
-	return signed_r2(sqrtf(2.0/n));
+    return signed_r2(sqrtf(2.0/n));
 }
 

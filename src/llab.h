@@ -297,7 +297,10 @@ typedef struct rl { //residual-layers
 } rl;
 
 typedef struct lstm { //long short term memory layers
-    int size,layer,dropout_flag_up, dropout_flag_right, window, residual_flag, norm_flag, n_grouped_cell;//dropout flag = 1 if dropout must be applied
+    int size,layer,dropout_flag_up;
+    int dropout_flag_right, window, residual_flag; 
+    int norm_flag, n_grouped_cell;//dropout flag = 1 if dropout must be applied
+    int training_mode, feed_forward_flag;
     float** w;// 4 x size*size
     float** u;// 4 x size*size
     float** d_w;// 4 x size*size
@@ -316,6 +319,22 @@ typedef struct lstm { //long short term memory layers
     float** d1_biases; //4 x size
     float** d2_biases; //4 x size
     float** d3_biases; //4 x size
+    int** w_active_output_neurons;// for edge-popup algorithm, output, 4 x size
+    int** u_active_output_neurons;// for edge-popup algorithm, output, 4 x size
+    int** w_indices;//4 x size*size
+    int** u_indices;//4 x size*size
+    float** w_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** u_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** ex_d_w_scores_diff_grad;//for edge-popup algorithm,output*input, 4 x size*size
+    float** ex_d_u_scores_diff_grad;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d1_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d1_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d2_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d2_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d3_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
+    float** d3_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
     float*** lstm_z; //window x 4 x size
     float** lstm_hidden; //window x size
     float** lstm_cell; //window x size
@@ -324,6 +343,7 @@ typedef struct lstm { //long short term memory layers
     float** out_up;//window x size
     float dropout_threshold_up;
     float dropout_threshold_right;
+    float k_percentage;
     bn** bns;//window/n_grouped_cell
 } lstm;
 
@@ -458,6 +478,7 @@ typedef struct transformer{
 
 typedef struct thread_args_model {
     model* m;
+    model* real_m;
     int rows,cols,channels,error_dimension;
     float* input;
     float* error;
@@ -467,6 +488,7 @@ typedef struct thread_args_model {
 
 typedef struct thread_args_rmodel {
     rmodel* m;
+    rmodel* m2;
     float** hidden_states;
     float** cell_states;
     float** input_model;

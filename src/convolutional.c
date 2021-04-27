@@ -137,34 +137,34 @@ void convolutional_back_prop(float* input, float* kernel, int input_i, int input
     int output_i = (input_i-kernel_i)/stride1 + 1 + 2*padding;
     int output_j = (input_j-kernel_j)/stride2 + 1 + 2*padding;
     if(bias_error != NULL){
-		for(oi = padding; oi < output_i-padding; oi++){
-			for(oj = padding; oj < output_j-padding; oj++){
-				for(c = 0; c < channels; c++){
-					for(i = 0; i < kernel_i; i++){
-						for(j = 0; j < kernel_j; j++){
-							kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
-							input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
-						}
-					}
-				}
-				(*bias_error) += output_error[oi*output_j+oj];
-			}
-		}
-	}
-	else{
-		for(oi = padding; oi < output_i-padding; oi++){
-			for(oj = padding; oj < output_j-padding; oj++){
-				for(c = 0; c < channels; c++){
-					for(i = 0; i < kernel_i; i++){
-						for(j = 0; j < kernel_j; j++){
-							kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
-							input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
-						}
-					}
-				}
-			}
-		}
-	}
+        for(oi = padding; oi < output_i-padding; oi++){
+            for(oj = padding; oj < output_j-padding; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
+                            input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
+                        }
+                    }
+                }
+                (*bias_error) += output_error[oi*output_j+oj];
+            }
+        }
+    }
+    else{
+        for(oi = padding; oi < output_i-padding; oi++){
+            for(oj = padding; oj < output_j-padding; oj++){
+                for(c = 0; c < channels; c++){
+                    for(i = 0; i < kernel_i; i++){
+                        for(j = 0; j < kernel_j; j++){
+                            kernel_error[c*kernel_i*kernel_j + i*kernel_j + j] += output_error[oi*output_j+oj]*input[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j];
+                            input_error[c*input_i*input_j + i*input_j + j+(oj-padding)*stride2+(oi-padding)*stride1*input_j] += kernel[c*kernel_i*kernel_j + i*kernel_j + j]*output_error[oi*output_j+oj];
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 
