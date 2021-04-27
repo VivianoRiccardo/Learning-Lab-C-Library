@@ -4369,9 +4369,9 @@ float* bp_fcl_cl_without_learning_parameters(fcl* f1, cl* f2,cl* f3, float* erro
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f3->group_norm);
             else
-                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f3->group_norm);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -4607,9 +4607,9 @@ float* bp_fcl_cl_without_learning_parameters(fcl* f1, cl* f2,cl* f3, float* erro
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f3->group_norm);
             else
-                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f3->group_norm);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -5421,10 +5421,10 @@ float* bp_cl_cl_without_learning_parameters(cl* f1, cl* f2,cl* f3, float* error)
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag){
-                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f3->group_norm);
             }
             else
-                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,f2->padding1_rows,f2->padding1_cols,f2->temp2,f3->used_kernels,f3->group_norm);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -5639,9 +5639,9 @@ float* bp_cl_cl_without_learning_parameters(cl* f1, cl* f2,cl* f3, float* error)
         else if(f2->normalization_flag == GROUP_NORMALIZATION){
             
             if(f2->activation_flag)
-                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->post_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f3->group_norm);
             else
-                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f2->group_norm);
+                group_normalization_back_propagation_without_learning_parameters(f2->pre_activation,f2->n_kernels,f2->rows1,f2->cols1,f2->group_norm_channels,f2->group_norm_channels,f2->group_norm,f2->temp,0,0,f2->temp2,f3->used_kernels,f3->group_norm);
 
             
             if(f2->activation_flag == SIGMOID){
@@ -7966,19 +7966,19 @@ void entropy_model_error(model* m, float* output){
 void compute_model_error(model* m, float* output){
     if(m->error_flag == NO_LOSS)
         copy_array(output,m->error,m->output_dimension);
-    if(m->error_flag & m->error_flag== MSE_LOSS)
+    else if(m->error_flag== MSE_LOSS)
         mse_model_error(m,output);
-    if(m->error_flag & m->error_flag == CROSS_ENTROPY_LOSS)
+    else if(m->error_flag == CROSS_ENTROPY_LOSS)
         cross_entropy_model_error(m,output);
-    if(m->error_flag & m->error_flag == FOCAL_LOSS)
+    else if(m->error_flag == FOCAL_LOSS)
         focal_model_error(m,output);
-    if(m->error_flag & m->error_flag == HUBER1_LOSS)
+    else if(m->error_flag == HUBER1_LOSS)
         huber_one_model_error(m,output);
-    if(m->error_flag & m->error_flag == HUBER2_LOSS)
+    else if(m->error_flag == HUBER2_LOSS)
         huber_two_model_error(m,output);
-    if(m->error_flag & m->error_flag == KL_DIVERGENCE_LOSS)
+    else if(m->error_flag == KL_DIVERGENCE_LOSS)
         kl_model_error(m,output);
-    if(m->error_flag & m->error_flag == ENTROPY_LOSS)
+    else if(m->error_flag == ENTROPY_LOSS)
         entropy_model_error(m,output);            
 }
 

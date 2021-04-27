@@ -650,6 +650,7 @@ void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
                 sum_w = max(sum_w,epsilon);
                 ratio = sum_w/sum_g;
                 if(ratio > threshold){
+					ratio = 1.0/ratio;
                     ratio*=threshold;
                     for(j = 0; j < f->size; j++){
                         f->d_w[k][i*f->size+j]*=ratio;
@@ -666,6 +667,7 @@ void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
                 sum_w = max(sum_w,epsilon);
                 ratio = sum_w/sum_g;
                 if(ratio > threshold){
+					ratio = 1.0/ratio;
                     ratio*=threshold;
                     for(j = 0; j < f->size; j++){
                         f->d_u[k][i*f->size+j]*=ratio;
@@ -686,6 +688,7 @@ void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
                 sum_w = max(sum_w,epsilon);
                 ratio = sum_w/sum_g;
                 if(ratio > threshold){
+					ratio = 1.0/ratio;
                     ratio*=threshold;
                     for(j = 0; j < f->size; j++){
                         f->d_w_scores[k][i*f->size+j]*=ratio;
@@ -702,6 +705,7 @@ void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
                 sum_w = max(sum_w,epsilon);
                 ratio = sum_w/sum_g;
                 if(ratio > threshold){
+					ratio = 1.0/ratio;
                     ratio*=threshold;
                     for(j = 0; j < f->size; j++){
                         f->d_u_scores[k][i*f->size+j]*=ratio;
@@ -733,6 +737,7 @@ void adaptive_gradient_clipping_fcl(fcl* f ,float threshold, float epsilon){
             sum_w = max(sum_w,epsilon);
             ratio = sum_w/sum_g;
             if(ratio > threshold){
+				ratio = 1.0/ratio;
                 ratio*=threshold;
                 for(j = 0; j < f->input; j++){
                     f->d_weights[i*f->input+j]*=ratio;
@@ -751,6 +756,7 @@ void adaptive_gradient_clipping_fcl(fcl* f ,float threshold, float epsilon){
             sum_w = max(sum_w,epsilon);
             ratio = sum_w/sum_g;
             if(ratio > threshold){
+				ratio = 1.0/ratio;
                 ratio*=threshold;
                 for(j = 0; j < f->input; j++){
                     f->d_scores[i*f->input+j]*=ratio;
@@ -779,6 +785,7 @@ void adaptive_gradient_clipping_cl(cl* f ,float threshold, float epsilon){
             sum_w = max(sum_w,epsilon);
             ratio = sum_w/sum_g;
             if(ratio > threshold){
+				ratio = 1.0/ratio;
                 ratio*=threshold;
                 for(j = 0; j < f->kernel_rows*f->kernel_cols*f->channels; j++){
                     f->d_kernels[i][j]*=ratio;
@@ -797,6 +804,7 @@ void adaptive_gradient_clipping_cl(cl* f ,float threshold, float epsilon){
             sum_w = max(sum_w,epsilon);
             ratio = sum_w/sum_g;
             if(ratio > threshold){
+				ratio = 1.0/ratio;
                 ratio*=threshold;
                 f->d_scores[i]*=ratio;
             }
