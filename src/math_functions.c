@@ -305,6 +305,45 @@ void derivative_cross_entropy_reduced_form_with_softmax_array(float* y_hat, floa
     }
 }
 
+float total_variation_loss_2d(float* y, int rows, int cols){
+    int i,j;
+    float sum;
+    for(i = 0; i < rows-1; i++){
+        for(j = 0; j < cols-1; j++){
+            sum += float_abs(y[(i+1)*cols + j] - y[i*cols + j]) + float_abs(y[i*cols + j + 1] - y[i*cols + j]);
+        }
+        sum += float_abs(y[(i+1)*cols + j] - y[i*cols + j]);
+    }
+    for(j = 0; j < cols-1; j++){
+        sum += float_abs(y[i*cols + j + 1] - y[i*cols + j]);
+    }
+    
+    return sum;
+}
+
+void derivative_total_variation_loss_2d(float* y, float* output, int rows, int cols){
+    int i,j;
+    for(i = 0; i < rows-1; i++){
+        for(j = 0; j < cols-1; j++){
+            float ratio1 = (y[(i+1)*cols + j] - y[i*cols + j])/float_abs(y[(i+1)*cols + j] - y[i*cols + j]);
+            float ratio2 = (y[i*cols + j + 1] - y[i*cols + j])/float_abs(y[i*cols + j + 1] - y[i*cols + j]);
+            output[(i+1)*cols + j] += ratio1;
+            output[i*cols + j] += ratio1 + ratio2;
+            output[i*cols+j+1] += ratio2;
+        }
+        float ratio1 = (y[(i+1)*cols + j] - y[i*cols + j])/float_abs(y[(i+1)*cols + j] - y[i*cols + j]); 
+        output[(i+1)*cols + j] += ratio1;
+        output[i*cols + j] += ratio1;
+    }
+    for(j = 0; j < cols-1; j++){
+        float ratio2 = (y[i*cols + j + 1] - y[i*cols + j])/float_abs(y[i*cols + j + 1] - y[i*cols + j]);
+        output[i*cols + j] += ratio2;
+        output[i*cols+j+1] += ratio2;
+    }
+    
+    return;
+}
+
 float huber_loss(float y_hat, float y, float threshold){
     if(y_hat >= y){
         if((y_hat - y) <= threshold)
@@ -712,9 +751,7 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
 
 /* the absolute value of a float number*/
 float float_abs(float a){
-    if(a < 0)
-        return -a;
-    return a;
+    return (a > 0) ? a : -a;
 }
 
 /* absolute value of each value of an array*/

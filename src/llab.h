@@ -116,13 +116,14 @@ SOFTWARE.
 
 #define NO_SET -1
 #define NO_LOSS 0
-#define CROSS_ENTROPY_LOSS 1
-#define FOCAL_LOSS 2
-#define HUBER1_LOSS 3
-#define HUBER2_LOSS 4
-#define MSE_LOSS 5
-#define KL_DIVERGENCE_LOSS 6
-#define ENTROPY_LOSS 7
+#define CROSS_ENTROPY_LOSS 1 << 0
+#define FOCAL_LOSS 1 << 1
+#define HUBER1_LOSS 1 << 2
+#define HUBER2_LOSS 1 << 3
+#define MSE_LOSS 1 << 4
+#define KL_DIVERGENCE_LOSS 1 << 5
+#define ENTROPY_LOSS 1 << 6
+#define TOTAL_VARIATION_LOSS_2D 1 << 7
 
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10

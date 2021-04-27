@@ -7966,19 +7966,19 @@ void entropy_model_error(model* m, float* output){
 void compute_model_error(model* m, float* output){
     if(m->error_flag == NO_LOSS)
         copy_array(output,m->error,m->output_dimension);
-    else if(m->error_flag == MSE_LOSS)
+    if(m->error_flag & m->error_flag== MSE_LOSS)
         mse_model_error(m,output);
-    else if(m->error_flag == CROSS_ENTROPY_LOSS)
+    if(m->error_flag & m->error_flag == CROSS_ENTROPY_LOSS)
         cross_entropy_model_error(m,output);
-    else if(m->error_flag == FOCAL_LOSS)
+    if(m->error_flag & m->error_flag == FOCAL_LOSS)
         focal_model_error(m,output);
-    else if(m->error_flag == HUBER1_LOSS)
+    if(m->error_flag & m->error_flag == HUBER1_LOSS)
         huber_one_model_error(m,output);
-    else if(m->error_flag == HUBER2_LOSS)
+    if(m->error_flag & m->error_flag == HUBER2_LOSS)
         huber_two_model_error(m,output);
-    else if(m->error_flag == KL_DIVERGENCE_LOSS)
+    if(m->error_flag & m->error_flag == KL_DIVERGENCE_LOSS)
         kl_model_error(m,output);
-    else if(m->error_flag == ENTROPY_LOSS)
+    if(m->error_flag & m->error_flag == ENTROPY_LOSS)
         entropy_model_error(m,output);            
 }
 

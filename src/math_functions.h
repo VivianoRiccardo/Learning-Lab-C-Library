@@ -100,5 +100,7 @@ int max(int x, int y);
 double sum_over_input(float* inputs, int dimension);
 float derivative_sigmoid_given_the_sigmoid(float x);
 void derivative_sigmoid_array_given_the_sigmoid(float* input, float* output, int size);
+float total_variation_loss_2d(float* y, int rows, int cols);
+void derivative_total_variation_loss_2d(float* y, float* output, int rows, int cols);
 
 #endif
