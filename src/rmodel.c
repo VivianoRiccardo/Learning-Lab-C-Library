@@ -483,7 +483,8 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
     
     for(i = 0; i < window; i++){
         for(j = 0; j < layers; j++){
-            
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
             if(j == 0){ //j = 0 means that we are at the first lstm_cell in vertical
                 if(i == 0){//i = 0 means we are at the first lstm in orizontal
                     //in this case the h-1 and c-1 come from the last mini_batch
@@ -523,7 +524,9 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
-                   
+					
+					int zz;
+
                     get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
@@ -567,8 +570,7 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                 sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->output_size);
                 
             copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->output_size);
-            free(dropout_output2);
-            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+            
             
         }
     }
@@ -606,7 +608,8 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
     
     for(i = 0; i < window; i++){
         for(j = 0; j < layers; j++){
-            
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
             if(j == 0){ //j = 0 means that we are at the first lstm_cell in vertical
                 if(i == 0){//i = 0 means we are at the first lstm in orizontal
                     //in this case the h-1 and c-1 come from the last mini_batch
@@ -646,7 +649,8 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
-                   
+					
+					
                     get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
@@ -688,8 +692,7 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
                 sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->output_size);
                 
             copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->output_size);
-            free(dropout_output2);
-            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+            
         }
     }
     
