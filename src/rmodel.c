@@ -524,8 +524,8 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
-					
-					int zz;
+                    
+                    int zz;
 
                     get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
@@ -649,8 +649,8 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
                         set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
-					
-					
+                    
+                    
                     get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
@@ -2009,8 +2009,8 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
                 }
                 ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3);
                 for(j = 0; j < m->window; j++){
-					free(error2_model[j]);
-					error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
+                    free(error2_model[j]);
+                    error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
                     copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
@@ -2025,8 +2025,8 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
             }
             for(j = 0; j < m->window/m->lstms[k]->n_grouped_cell; j++){
                 for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
-					free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
-					error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
+                    free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
+                    error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
                     copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[k]->output_size);
                 }
             }
@@ -2106,8 +2106,8 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
                 }
                 ret2 = bp_rmodel_lstm_opt(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3,&m2->lstms[k+1]);
                 for(j = 0; j < m->window; j++){
-					free(error2_model[j]);
-					error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
+                    free(error2_model[j]);
+                    error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
                     copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
@@ -2122,8 +2122,8 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
             }
             for(j = 0; j < m->window/m->lstms[k]->n_grouped_cell; j++){
                 for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
-					free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
-					error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
+                    free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
+                    error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
                     copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[k]->output_size);
                 }
             }

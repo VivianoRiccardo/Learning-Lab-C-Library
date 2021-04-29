@@ -1009,12 +1009,12 @@ void save_cl(cl* f, int n){
     }
     
     
-	i = fwrite(f->used_kernels,sizeof(int)*f->n_kernels,1,fw);
-	
-	if(i != 1){
-		fprintf(stderr,"Error: an error occurred saving a cl layer\n");
-		exit(1);
-	}
+    i = fwrite(f->used_kernels,sizeof(int)*f->n_kernels,1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a cl layer\n");
+        exit(1);
+    }
     
     i = fclose(fw);
     
@@ -1347,11 +1347,11 @@ cl* load_cl(FILE* fr){
     
     i = fread(used_kernels,sizeof(int)*n_kernels,1,fr);
         
-	if(i != 1){
-		fprintf(stderr,"Error: an error occurred loading a cl layer\n");
-		exit(1);
-	}
-	
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a cl layer\n");
+        exit(1);
+    }
+    
     if(normalization_flag == GROUP_NORMALIZATION){
         group_norm = (bn**)malloc(sizeof(bn*)*n_kernels/group_norm_channels);
         for(k = 0; k < n_kernels/group_norm_channels; k++){
@@ -1414,7 +1414,7 @@ cl* copy_cl(cl* f){
     
     int i;
     for(i = 0; i < f->n_kernels; i++){
-		copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
+        copy_int_array(f->used_kernels,copy->used_kernels,f->n_kernels);
         if(exists_kernels_cl(f)){
             copy_array(f->kernels[i],copy->kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
             
@@ -2107,10 +2107,22 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
             if(exists_kernels_cl(f)){
                 for(j = 0; j < f->channels*f->kernel_rows*f->kernel_cols; j++){
                     copy->kernels[i][j] = tau*f->kernels[i][j] + (1-tau)*copy->kernels[i][j];
+                    copy->d_kernels[i][j] = tau*f->d_kernels[i][j] + (1-tau)*copy->d_kernels[i][j];
+                    copy->d1_kernels[i][j] = tau*f->d1_kernels[i][j] + (1-tau)*copy->d1_kernels[i][j];
+                    copy->d2_kernels[i][j] = tau*f->d2_kernels[i][j] + (1-tau)*copy->d2_kernels[i][j];
+                    copy->d3_kernels[i][j] = tau*f->d3_kernels[i][j] + (1-tau)*copy->d3_kernels[i][j];
+                    copy->ex_d_kernels_diff_grad[i][j] = tau*f->ex_d_kernels_diff_grad[i][j] + (1-tau)*copy->ex_d_kernels_diff_grad[i][j];
                 }
             }
-            if(exists_biases_cl(f))
-            copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+            if(exists_biases_cl(f)){
+                copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
+                copy->d_biases[i] = tau*f->d_biases[i] + (1-tau)*copy->d_biases[i];
+                copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
+                copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
+                copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
+                copy->ex_d_biases_diff_grad[i] = tau*f->ex_d_biases_diff_grad[i] + (1-tau)*copy->ex_d_biases_diff_grad[i];
+            
+            }
         }
     }
     
@@ -2123,6 +2135,11 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
      if(exists_edge_popup_stuff_cl(f)){
          for(i = 0; i < f->n_kernels; i++){
              copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+             copy->d_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d_scores[i];
+             copy->d1_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d1_scores[i];
+             copy->d2_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d2_scores[i];
+             copy->d3_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d3_scores[i];
+             copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
              copy->indices[i] = i;
              copy->used_kernels[i] = 0;
          }

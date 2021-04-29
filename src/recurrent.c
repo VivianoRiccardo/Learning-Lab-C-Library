@@ -487,8 +487,8 @@ float** lstm_bp(int flag, int input_size, int output_size, int output_size_up, f
                 
                 
             }
-		}
-		for(i = 0; i < output_size_up; i++){
+        }
+        for(i = 0; i < output_size_up; i++){
             for(j = 0; j < output_size; j++){
 
                 if(w_up != NULL){

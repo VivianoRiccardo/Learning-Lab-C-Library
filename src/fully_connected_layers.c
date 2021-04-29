@@ -1314,7 +1314,7 @@ void paste_fcl(fcl* f,fcl* copy){
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
         copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
-        copy_int_array(f->indices,copy->indices,f->input*f->output);    
+        copy_int_array(f->indices,copy->indices,f->input*f->output);
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1420,7 +1420,6 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
             copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
             copy->d3_scores[i] = tau*f->d3_scores[i] + (1-tau)*copy->d3_scores[i];
             copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
-            copy->indices[i] = i;
         }
         
     }
@@ -1429,11 +1428,11 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
         for(i = 0; i < f->input*f->output; i++){
             copy->indices[i] = i;
         }
-        if(f->training_mode == EDGE_POPUP || f->feed_forward_flag == EDGE_POPUP){
-            sort(copy->scores,copy->indices,0,f->output*f->input-1);
-            free(copy->active_output_neurons);
-            copy->active_output_neurons = get_used_outputs(copy,NULL,FCLS,copy->output);
-        }
+        
+        sort(copy->scores,copy->indices,0,f->output*f->input-1);
+        free(copy->active_output_neurons);
+        copy->active_output_neurons = get_used_outputs(copy,NULL,FCLS,copy->output);
+        
     }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)

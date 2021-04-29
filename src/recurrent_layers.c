@@ -57,9 +57,9 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     }
     
     if(residual_flag == LSTM_RESIDUAL && input_size != output_size){
-		fprintf(stderr,"Error: if have set the residual for this lstm cell, but your input size does not match your output size!\n");
-		exit(1);
-	}
+        fprintf(stderr,"Error: if have set the residual for this lstm cell, but your input size does not match your output size!\n");
+        exit(1);
+    }
     int i,j;
     lstm* lstml = (lstm*)malloc(sizeof(lstm));
     lstml->layer = layer;
@@ -1262,6 +1262,8 @@ void paste_lstm(lstm* l,lstm* copy){
     for(i = 0; i < 4; i++){
         copy_array(l->w[i],copy->w[i],l->output_size*l->input_size);
         copy_array(l->u[i],copy->u[i],l->output_size*l->output_size);
+        copy_int_array(l->w_active_output_neurons[i],copy->w_active_output_neurons[i],l->output_size*l->input_size);
+        copy_int_array(l->u_active_output_neurons[i],copy->u_active_output_neurons[i],l->output_size*l->output_size);
         copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_d_params_lstm(l)){
             copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
@@ -1297,6 +1299,7 @@ void paste_lstm(lstm* l,lstm* copy){
             copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
             copy_int_array(l->u_indices[i],copy->u_indices[i],l->output_size*l->output_size);
             copy_int_array(l->w_indices[i],copy->w_indices[i],l->output_size*l->input_size);
+            
         }
     }
     
@@ -1402,6 +1405,12 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
             
             if(exists_edge_popup_stuff_lstm(l)){
                 copy->w_scores[i][j] = tau*l->w_scores[i][j] + (1-tau)*copy->w_scores[i][j];
+                copy->d_w_scores[i][j] = tau*l->d_w_scores[i][j] + (1-tau)*copy->d_w_scores[i][j];
+                copy->d1_w_scores[i][j] = tau*l->d1_w_scores[i][j] + (1-tau)*copy->d1_w_scores[i][j];
+                copy->d2_w_scores[i][j] = tau*l->d2_w_scores[i][j] + (1-tau)*copy->d2_w_scores[i][j];
+                copy->d3_w_scores[i][j] = tau*l->d3_w_scores[i][j] + (1-tau)*copy->d3_w_scores[i][j];
+                copy->ex_d_w_scores_diff_grad[i][j] = tau*l->ex_d_w_scores_diff_grad[i][j] + (1-tau)*copy->ex_d_w_scores_diff_grad[i][j];
+                copy->w_indices[i][j] = j;
             }
         }
         for(j = 0; j < l->output_size*l->output_size; j++){
@@ -1425,6 +1434,12 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
             
             if(exists_edge_popup_stuff_lstm(l)){
                 copy->u_scores[i][j] = tau*l->u_scores[i][j] + (1-tau)*copy->u_scores[i][j];
+                copy->d_u_scores[i][j] = tau*l->d_u_scores[i][j] + (1-tau)*copy->d_u_scores[i][j];
+                copy->d1_u_scores[i][j] = tau*l->d1_u_scores[i][j] + (1-tau)*copy->d1_u_scores[i][j];
+                copy->d2_u_scores[i][j] = tau*l->d2_u_scores[i][j] + (1-tau)*copy->d2_u_scores[i][j];
+                copy->d3_u_scores[i][j] = tau*l->d3_u_scores[i][j] + (1-tau)*copy->d3_u_scores[i][j];
+                copy->ex_d_u_scores_diff_grad[i][j] = tau*l->ex_d_u_scores_diff_grad[i][j] + (1-tau)*copy->ex_d_u_scores_diff_grad[i][j];
+                copy->u_indices[i][j] = j;
             }
         }
         
@@ -1468,7 +1483,7 @@ lstm* reset_lstm(lstm* f){
             }
         }
         for(j = 0; j < f->output_size*f->output_size; j++){
-			if(exists_d_params_lstm(f)){
+            if(exists_d_params_lstm(f)){
                 f->d_u[i][j] = 0;
             }
             if(j < f->output_size){
@@ -1766,7 +1781,7 @@ uint64_t get_array_size_params_lstm(lstm* f){
 
 
 uint64_t size_of_lstm(lstm* l){
-	/*
+    /*
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1787,7 +1802,7 @@ uint64_t size_of_lstm(lstm* l){
     return 0;
 }
 uint64_t size_of_lstm_without_learning_parameters(lstm* l){
-	/*
+    /*
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
