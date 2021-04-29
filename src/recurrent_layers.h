@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __RECURRENT_LAYERS_H__
 #define __RECURRENT_LAYERS_H__
 
-lstm* recurrent_lstm(int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag);
+lstm* recurrent_lstm(int input_size, int output_size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag);
 void free_recurrent_lstm(lstm* rlstm);
 void save_lstm(lstm* rlstm, int n);
 lstm* load_lstm(FILE* fr);
@@ -42,7 +42,7 @@ void paste_w_lstm(lstm* l,lstm* copy);
 void heavy_save_lstm(lstm* rlstm, int n);
 lstm* heavy_load_lstm(FILE* fr);
 void get_used_outputs_lstm(int* arr, int input, int output, int* indices, float k_percentage);
-lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag);
+lstm* recurrent_lstm_without_learning_parameters (int input_size,int output_size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag);
 void free_recurrent_lstm_without_learning_parameters(lstm* rlstm);
 lstm* copy_lstm_without_learning_parameters(lstm* l);
 lstm* reset_lstm_without_learning_parameters(lstm* f);

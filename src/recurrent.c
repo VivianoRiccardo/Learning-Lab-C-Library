@@ -42,21 +42,27 @@ SOFTWARE.
  * 
  * */
 
-void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int size){
+void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int input_size, int output_size){
     
     int i,j;
     
-    float* f_t = (float*)malloc(sizeof(float)*size);
-    float* i_t = (float*)malloc(sizeof(float)*size);
-    float* o_t = (float*)malloc(sizeof(float)*size);
-    float* tanhh_zc = (float*)malloc(sizeof(float)*size);
+    float* f_t = (float*)malloc(sizeof(float)*output_size);
+    float* i_t = (float*)malloc(sizeof(float)*output_size);
+    float* o_t = (float*)malloc(sizeof(float)*output_size);
+    float* tanhh_zc = (float*)malloc(sizeof(float)*output_size);
     
-    for(i = 0; i < size; i++){
-        for(j = 0; j < size; j++){
-            z[0][i] += w[0][i*size+j]*x[j] + u[0][i*size+j]*h[j]; //z_f
-            z[1][i] += w[1][i*size+j]*x[j] + u[1][i*size+j]*h[j]; //z_i
-            z[2][i] += w[2][i*size+j]*x[j] + u[2][i*size+j]*h[j]; //z_o
-            z[3][i] += w[3][i*size+j]*x[j] + u[3][i*size+j]*h[j]; //z_c
+    for(i = 0; i < output_size; i++){
+        for(j = 0; j < input_size; j++){
+            z[0][i] += w[0][i*input_size+j]*x[j]; //z_f
+            z[1][i] += w[1][i*input_size+j]*x[j]; //z_i
+            z[2][i] += w[2][i*input_size+j]*x[j]; //z_o
+            z[3][i] += w[3][i*input_size+j]*x[j]; //z_c
+        }
+        for(j = 0; j < output_size; j++){
+            z[0][i] += u[0][i*output_size+j]*h[j]; //z_f
+            z[1][i] += u[1][i*output_size+j]*h[j]; //z_i
+            z[2][i] += u[2][i*output_size+j]*h[j]; //z_o
+            z[3][i] +=u[3][i*output_size+j]*h[j]; //z_c
         }
         
         z[0][i] += b[0][i];
@@ -103,29 +109,30 @@ void lstm_ff(float* x, float* h, float* c, float* cell_state, float* hidden_stat
  * 
  * */
 
-void lstm_ff_edge_popup(int** w_active_output_neurons, int** u_active_output_neurons, int** w_indices,int** u_indices, float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int size, float k_percentage){
+void lstm_ff_edge_popup(int** w_active_output_neurons, int** u_active_output_neurons, int** w_indices,int** u_indices, float* x, float* h, float* c, float* cell_state, float* hidden_state, float** w, float** u, float** b, float** z, int input_size, int output_size, float k_percentage){
     
-    int i,j, size2 = size*size;
+    int i,j, size2 = input_size*output_size;
+    int size3 = output_size*output_size;
     
-    float* f_t = (float*)malloc(sizeof(float)*size);
-    float* i_t = (float*)malloc(sizeof(float)*size);
-    float* o_t = (float*)malloc(sizeof(float)*size);
-    float* tanhh_zc = (float*)malloc(sizeof(float)*size);
+    float* f_t = (float*)malloc(sizeof(float)*output_size);
+    float* i_t = (float*)malloc(sizeof(float)*output_size);
+    float* o_t = (float*)malloc(sizeof(float)*output_size);
+    float* tanhh_zc = (float*)malloc(sizeof(float)*output_size);
     
     for(i = size2-k_percentage*size2; i < size2; i++){
-        z[0][(int)(w_indices[0][i]/size)] += w[0][w_indices[0][i]]*x[(w_indices[0][i]%size)]; //z_f
-        z[1][(int)(w_indices[1][i]/size)] += w[1][w_indices[1][i]]*x[(w_indices[1][i]%size)]; //z_i
-        z[2][(int)(w_indices[2][i]/size)] += w[2][w_indices[2][i]]*x[(w_indices[2][i]%size)]; //z_o
-        z[3][(int)(w_indices[3][i]/size)] += w[3][w_indices[3][i]]*x[(w_indices[3][i]%size)]; //z_c
+        z[0][(int)(w_indices[0][i]/input_size)] += w[0][w_indices[0][i]]*x[(w_indices[0][i]%input_size)]; //z_f
+        z[1][(int)(w_indices[1][i]/input_size)] += w[1][w_indices[1][i]]*x[(w_indices[1][i]%input_size)]; //z_i
+        z[2][(int)(w_indices[2][i]/input_size)] += w[2][w_indices[2][i]]*x[(w_indices[2][i]%input_size)]; //z_o
+        z[3][(int)(w_indices[3][i]/input_size)] += w[3][w_indices[3][i]]*x[(w_indices[3][i]%input_size)]; //z_c
     }
-    for(i = size2-k_percentage*size2; i < size2; i++){
-        z[0][(int)(u_indices[0][i]/size)] += u[0][u_indices[0][i]]*h[(u_indices[0][i]%size)]; //z_f
-        z[1][(int)(u_indices[1][i]/size)] += u[1][u_indices[1][i]]*h[(u_indices[1][i]%size)]; //z_i
-        z[2][(int)(u_indices[2][i]/size)] += u[2][u_indices[2][i]]*h[(u_indices[2][i]%size)]; //z_o
-        z[3][(int)(u_indices[3][i]/size)] += u[3][u_indices[3][i]]*h[(u_indices[3][i]%size)]; //z_c
+    for(i = size3-k_percentage*size3; i < size3; i++){
+        z[0][(int)(u_indices[0][i]/output_size)] += u[0][u_indices[0][i]]*h[(u_indices[0][i]%output_size)]; //z_f
+        z[1][(int)(u_indices[1][i]/output_size)] += u[1][u_indices[1][i]]*h[(u_indices[1][i]%output_size)]; //z_i
+        z[2][(int)(u_indices[2][i]/output_size)] += u[2][u_indices[2][i]]*h[(u_indices[2][i]%output_size)]; //z_o
+        z[3][(int)(u_indices[3][i]/output_size)] += u[3][u_indices[3][i]]*h[(u_indices[3][i]%output_size)]; //z_c
     }
     
-    for(i = 0; i < size; i++){
+    for(i = 0; i < output_size; i++){
         
         if(w_active_output_neurons[0][i] || u_active_output_neurons[0][i])
             f_t[i] = sigmoid(z[0][i]); //f_t
@@ -173,7 +180,7 @@ void lstm_ff_edge_popup(int** w_active_output_neurons, int** u_active_output_neu
  
  /* dparams should be initialized with all 0s*/
  /* dparams should be initialized with all 0s*/
-float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus){
+float** lstm_bp(int flag, int input_size, int output_size, int output_size_up, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus){
     
     /* different cases for:
      * last cell in orizontal and vertical
@@ -287,15 +294,15 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
     float* u_o = u[2];
     float* u_c = u[3];
     
-    float* do_t = (float*)malloc(sizeof(float)*size);
-    float* dc_t = (float*)malloc(sizeof(float)*size);
-    float* di_t = (float*)malloc(sizeof(float)*size);
-    float* df_t = (float*)malloc(sizeof(float)*size);
+    float* do_t = (float*)malloc(sizeof(float)*output_size);
+    float* dc_t = (float*)malloc(sizeof(float)*output_size);
+    float* di_t = (float*)malloc(sizeof(float)*output_size);
+    float* df_t = (float*)malloc(sizeof(float)*output_size);
      
     /*last cell in orizontal and vertical*/ 
     if( flag == 0){
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             
             
             do_t[i] = dy[i]*tanhh(c_t[i]);    
@@ -311,19 +318,25 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
             df_t[i] = dc_t[i]*c_minus[i];
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                dw_o[i*size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
-                du_o[i*size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                dw_o[i*input_size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                dw_c[i*size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                du_c[i*size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                dw_c[i*input_size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                dw_i[i*size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                du_i[i*size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                dw_i[i*input_size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                dw_f[i*size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                du_f[i*size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                dw_f[i*input_size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            for(j = 0; j < output_size; j++){
+                
+                du_o[i*output_size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                du_c[i*output_size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                
+                du_i[i*output_size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                du_f[i*output_size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             db_o[i] += do_t[i]*temp; //db_o_i
@@ -339,19 +352,19 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
     else if(flag == 1){
         /* we must recalculate y that corresponds to dh*/
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size_up; i++){
             
             if(w_up != NULL){
-                for(j = 0; j < size; j++){
-                    dy[j] +=  df_up[i]*derivative_sigmoid(z_f_up[i])*w_f_up[i*size+j];
-                    dy[j] +=  di_up[i]*derivative_sigmoid(z_i_up[i])*w_i_up[i*size+j];
-                    dy[j] +=  do_up[i]*derivative_sigmoid(z_o_up[i])*w_o_up[i*size+j];
-                    dy[j] +=  dc_up[i]*sigmoid(z_i_up[i])*derivative_tanhh(z_c_up[i])*w_c_up[i*size+j];
+                for(j = 0; j < output_size; j++){
+                    dy[j] +=  df_up[i]*derivative_sigmoid(z_f_up[i])*w_f_up[i*output_size+j];
+                    dy[j] +=  di_up[i]*derivative_sigmoid(z_i_up[i])*w_i_up[i*output_size+j];
+                    dy[j] +=  do_up[i]*derivative_sigmoid(z_o_up[i])*w_o_up[i*output_size+j];
+                    dy[j] +=  dc_up[i]*sigmoid(z_i_up[i])*derivative_tanhh(z_c_up[i])*w_c_up[i*output_size+j];
                 }
             }
         }
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             
         
             
@@ -371,19 +384,25 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
             df_t[i] = dc_t[i]*c_minus[i];
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                dw_o[i*size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
-                du_o[i*size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                dw_o[i*input_size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                dw_c[i*size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                du_c[i*size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                dw_c[i*input_size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                dw_i[i*size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                du_i[i*size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                dw_i[i*input_size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                dw_f[i*size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                du_f[i*size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                dw_f[i*input_size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            for(j = 0; j < output_size; j++){
+                
+                du_o[i*output_size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                du_c[i*output_size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                
+                du_i[i*output_size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                du_f[i*output_size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             db_o[i] += do_t[i]*temp; //db_o_i
@@ -397,17 +416,17 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
     else if(flag == 2){
         /* we must recalculate y that corresponds to dh*/
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             
-            for(j = 0; j < size; j++){
-                dy[j] +=  df_plus[i]*derivative_sigmoid(z_f_plus[i])*u_f[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  di_plus[i]*derivative_sigmoid(z_i_plus[i])*u_i[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  do_plus[i]*derivative_sigmoid(z_o_plus[i])*u_o[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  dc_plus[i]*sigmoid(z_i_plus[i])*derivative_tanhh(z_c_plus[i])*u_c[i*size+j]*dropout_mask_plus[j];
+            for(j = 0; j < output_size; j++){
+                dy[j] +=  df_plus[i]*derivative_sigmoid(z_f_plus[i])*u_f[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  di_plus[i]*derivative_sigmoid(z_i_plus[i])*u_i[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  do_plus[i]*derivative_sigmoid(z_o_plus[i])*u_o[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  dc_plus[i]*sigmoid(z_i_plus[i])*derivative_tanhh(z_c_plus[i])*u_c[i*output_size+j]*dropout_mask_plus[j];
             }
         }
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
                 
             /* and then we can compute what we computed before*/
             
@@ -424,19 +443,26 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
             df_t[i] = dc_t[i]*c_minus[i];
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                dw_o[i*size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
-                du_o[i*size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                dw_o[i*input_size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                dw_c[i*size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                du_c[i*size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                dw_c[i*input_size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                dw_i[i*size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                du_i[i*size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                dw_i[i*input_size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                dw_f[i*size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                du_f[i*size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                dw_f[i*input_size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                du_o[i*output_size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                du_c[i*output_size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                
+                du_i[i*output_size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                du_f[i*output_size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             db_o[i] += do_t[i]*temp; //db_o_i
@@ -451,25 +477,31 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
         /* we must recalculate y that corresponds to dh*/
         
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             
-            for(j = 0; j < size; j++){
-                dy[j] +=  df_plus[i]*derivative_sigmoid(z_f_plus[i])*u_f[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  di_plus[i]*derivative_sigmoid(z_i_plus[i])*u_i[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  do_plus[i]*derivative_sigmoid(z_o_plus[i])*u_o[i*size+j]*dropout_mask_plus[j];
-                dy[j] +=  dc_plus[i]*sigmoid(z_i_plus[i])*derivative_tanhh(z_c_plus[i])*u_c[i*size+j]*dropout_mask_plus[j];
+            for(j = 0; j < output_size; j++){
+                dy[j] +=  df_plus[i]*derivative_sigmoid(z_f_plus[i])*u_f[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  di_plus[i]*derivative_sigmoid(z_i_plus[i])*u_i[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  do_plus[i]*derivative_sigmoid(z_o_plus[i])*u_o[i*output_size+j]*dropout_mask_plus[j];
+                dy[j] +=  dc_plus[i]*sigmoid(z_i_plus[i])*derivative_tanhh(z_c_plus[i])*u_c[i*output_size+j]*dropout_mask_plus[j];
                 
+                
+            }
+		}
+		for(i = 0; i < output_size_up; i++){
+            for(j = 0; j < output_size; j++){
+
                 if(w_up != NULL){
-                    dy[j] +=  df_up[i]*derivative_sigmoid(z_f_up[i])*w_f_up[i*size+j]*dropout_mask[j];
-                    dy[j] +=  di_up[i]*derivative_sigmoid(z_i_up[i])*w_i_up[i*size+j]*dropout_mask[j];
-                    dy[j] +=  do_up[i]*derivative_sigmoid(z_o_up[i])*w_o_up[i*size+j]*dropout_mask[j];
-                    dy[j] +=  dc_up[i]*sigmoid(z_i_up[i])*derivative_tanhh(z_c_up[i])*w_c_up[i*size+j]*dropout_mask[j];
+                    dy[j] +=  df_up[i]*derivative_sigmoid(z_f_up[i])*w_f_up[i*output_size+j]*dropout_mask[j];
+                    dy[j] +=  di_up[i]*derivative_sigmoid(z_i_up[i])*w_i_up[i*output_size+j]*dropout_mask[j];
+                    dy[j] +=  do_up[i]*derivative_sigmoid(z_o_up[i])*w_o_up[i*output_size+j]*dropout_mask[j];
+                    dy[j] +=  dc_up[i]*sigmoid(z_i_up[i])*derivative_tanhh(z_c_up[i])*w_c_up[i*output_size+j]*dropout_mask[j];
                 }
                 
             }
         }
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
 
         
             
@@ -488,19 +520,26 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
             df_t[i] = dc_t[i]*c_minus[i];
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                dw_o[i*size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
-                du_o[i*size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                dw_o[i*input_size+j] += do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                dw_c[i*size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                du_c[i*size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                dw_c[i*input_size+j] += dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                dw_i[i*size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                du_i[i*size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                dw_i[i*input_size+j] += di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                dw_f[i*size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                du_f[i*size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                dw_f[i*input_size+j] += df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                du_o[i*output_size+j] += do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                du_c[i*output_size+j] += dc_t[i]*temp5*temp2*h_minus[j]; //du_c_ixj
+                
+                du_i[i*output_size+j] += di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                du_f[i*output_size+j] += df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             db_o[i] += do_t[i]*temp; //db_o_i
@@ -544,7 +583,7 @@ float** lstm_bp(int flag, int size, float** dw,float** du, float** db, float** w
  
  /* dparams should be initialized with all 0s*/
  /* dparams should be initialized with all 0s*/
-float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus, int** w_active_output_neurons, int** u_active_output_neurons, int** w_indices_up, int** u_indices, float** d_w_scores, float** d_u_scores, float k_percentage, int** w_active_output_neurons_up, int** u_active_output_neurons_up){
+float** lstm_bp_edge_popup(int flag, int input_size, int output_size, int output_size_up, float** dw,float** du, float** db, float** w, float** u, float** z, float* dy, float* x_t, float* c_t, float* h_minus, float* c_minus, float** z_up, float** dfioc_up, float** z_plus, float** dfioc_plus, float** w_up, float* dropout_mask,float* dropout_mask_plus, int** w_active_output_neurons, int** u_active_output_neurons, int** w_indices_up, int** u_indices, float** d_w_scores, float** d_u_scores, float k_percentage, int** w_active_output_neurons_up, int** u_active_output_neurons_up){
     
 /* different cases for:
      * last cell in orizontal and vertical
@@ -555,7 +594,8 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
      
      
      
-    int i,j, size2 = size*size*k_percentage, size_2 = size*size;
+    int i,j, size2 = output_size*output_size_up*k_percentage, size_2 = output_size*output_size_up;
+    int size3 = output_size*output_size*k_percentage, size_3 = output_size*output_size;
     
     float temp;
     float temp2;
@@ -647,15 +687,15 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
     float* u_o = u[2];
     float* u_c = u[3];
     
-    float* do_t = (float*)malloc(sizeof(float)*size);
-    float* dc_t = (float*)malloc(sizeof(float)*size);
-    float* di_t = (float*)malloc(sizeof(float)*size);
-    float* df_t = (float*)malloc(sizeof(float)*size);
+    float* do_t = (float*)malloc(sizeof(float)*output_size);
+    float* dc_t = (float*)malloc(sizeof(float)*output_size);
+    float* di_t = (float*)malloc(sizeof(float)*output_size);
+    float* df_t = (float*)malloc(sizeof(float)*output_size);
      
     /*last cell in orizontal and vertical*/ 
     if( flag == 0){
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             temp = 0;
             temp2 = 0;
             temp3 = 0;
@@ -679,19 +719,26 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
             if(w_active_output_neurons[0][i])
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                d_w_scores[2][i*size+j] += w_o[i*size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
-                d_u_scores[2][i*size+j] += u_o[i*size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                d_w_scores[2][i*input_size+j] += w_o[i*input_size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                d_w_scores[3][i*size+j] += w_c[i*size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                d_u_scores[3][i*size+j] += u_c[i*size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                d_w_scores[3][i*input_size+j] += w_c[i*input_size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                d_w_scores[1][i*size+j] += w_i[i*size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                d_u_scores[1][i*size+j] += u_i[i*size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                d_w_scores[1][i*input_size+j] += w_i[i*input_size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                d_w_scores[0][i*size+j] += w_f[i*size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                d_u_scores[0][i*size+j] += u_f[i*size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                d_w_scores[0][i*input_size+j] += w_f[i*input_size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                d_u_scores[2][i*output_size+j] += u_o[i*output_size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                d_u_scores[3][i*output_size+j] += u_c[i*output_size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                
+                d_u_scores[1][i*output_size+j] += u_i[i*output_size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                d_u_scores[0][i*output_size+j] += u_f[i*output_size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             
@@ -705,24 +752,24 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
         /* we must recalculate y that corresponds to dh*/
         if(w_up != NULL){
             for(i = size2; i < size_2; i++){
-                if(w_active_output_neurons_up[0][(int)(w_indices_up[0][i]/size)]){
-                    dy[w_indices_up[0][i]%size] += df_up[(int)(w_indices_up[0][i]/size)]*derivative_sigmoid(z_f_up[(int)(w_indices_up[0][i]/size)])*w_f_up[w_indices_up[0][i]];
+                if(w_active_output_neurons_up[0][(int)(w_indices_up[0][i]/output_size)]){
+                    dy[w_indices_up[0][i]%output_size] += df_up[(int)(w_indices_up[0][i]/output_size)]*derivative_sigmoid(z_f_up[(int)(w_indices_up[0][i]/output_size)])*w_f_up[w_indices_up[0][i]];
                 }
-                if(w_active_output_neurons_up[1][(int)(w_indices_up[1][i]/size)]){
-                    dy[w_indices_up[1][i]%size] += di_up[(int)(w_indices_up[1][i]/size)]*derivative_sigmoid(z_i_up[(int)(w_indices_up[1][i]/size)])*w_i_up[w_indices_up[1][i]];
+                if(w_active_output_neurons_up[1][(int)(w_indices_up[1][i]/output_size)]){
+                    dy[w_indices_up[1][i]%output_size] += di_up[(int)(w_indices_up[1][i]/output_size)]*derivative_sigmoid(z_i_up[(int)(w_indices_up[1][i]/output_size)])*w_i_up[w_indices_up[1][i]];
                 }
-                if(w_active_output_neurons_up[2][(int)(w_indices_up[2][i]/size)]){
-                    dy[w_indices_up[2][i]%size] += do_up[(int)(w_indices_up[2][i]/size)]*derivative_sigmoid(z_o_up[(int)(w_indices_up[2][i]/size)])*w_o_up[w_indices_up[2][i]];
+                if(w_active_output_neurons_up[2][(int)(w_indices_up[2][i]/output_size)]){
+                    dy[w_indices_up[2][i]%output_size] += do_up[(int)(w_indices_up[2][i]/output_size)]*derivative_sigmoid(z_o_up[(int)(w_indices_up[2][i]/output_size)])*w_o_up[w_indices_up[2][i]];
                 }
-                if((w_active_output_neurons_up[1][(int)(w_indices_up[3][i]/size)] || u_active_output_neurons_up[1][(int)(w_indices_up[3][i]/size)]) && (w_active_output_neurons_up[3][(int)(w_indices_up[3][i]/size)])){
-                    dy[w_indices_up[3][i]%size] +=  dc_up[(int)(w_indices_up[3][i]/size)]*sigmoid(z_i_up[(int)(w_indices_up[3][i]/size)])*derivative_tanhh(z_c_up[(int)(w_indices_up[3][i]/size)])*w_c_up[w_indices_up[3][i]];
+                if((w_active_output_neurons_up[1][(int)(w_indices_up[3][i]/output_size)] || u_active_output_neurons_up[1][(int)(w_indices_up[3][i]/output_size)]) && (w_active_output_neurons_up[3][(int)(w_indices_up[3][i]/output_size)])){
+                    dy[w_indices_up[3][i]%output_size] +=  dc_up[(int)(w_indices_up[3][i]/output_size)]*sigmoid(z_i_up[(int)(w_indices_up[3][i]/output_size)])*derivative_tanhh(z_c_up[(int)(w_indices_up[3][i]/output_size)])*w_c_up[w_indices_up[3][i]];
                 }
                 
                 
             }
         }
 
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             /* and then we can compute what we computed before*/
             dy[i]*=dropout_mask[i];
             temp = 0;
@@ -748,19 +795,26 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
             if(w_active_output_neurons[0][i])
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                d_w_scores[2][i*size+j] += w_o[i*size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
-                d_u_scores[2][i*size+j] += u_o[i*size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                d_w_scores[2][i*input_size+j] += w_o[i*input_size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                d_w_scores[3][i*size+j] += w_c[i*size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                d_u_scores[3][i*size+j] += u_c[i*size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                d_w_scores[3][i*input_size+j] += w_c[i*input_size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                d_w_scores[1][i*size+j] += w_i[i*size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                d_u_scores[1][i*size+j] += u_i[i*size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                d_w_scores[1][i*input_size+j] += w_i[i*input_size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                d_w_scores[0][i*size+j] += w_f[i*size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                d_u_scores[0][i*size+j] += u_f[i*size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                d_w_scores[0][i*input_size+j] += w_f[i*input_size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                d_u_scores[2][i*output_size+j] += u_o[i*output_size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                d_u_scores[3][i*output_size+j] += u_c[i*output_size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                
+                d_u_scores[1][i*output_size+j] += u_i[i*output_size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                d_u_scores[0][i*output_size+j] += u_f[i*output_size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
             
@@ -772,25 +826,25 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
     /*last cells in vertical but not in orizontal*/
     else if(flag == 2){
         /* we must recalculate y that corresponds to dh*/
-        for(i = size2; i < size_2; i++){
-            if(u_active_output_neurons[0][(int)(u_indices[0][i]/size)]){
-                dy[u_indices[0][i]%size] += df_plus[(int)(u_indices[0][i]/size)]*derivative_sigmoid(z_f_plus[(int)(u_indices[0][i]/size)])*u_f[u_indices[0][i]]*dropout_mask_plus[u_indices[0][i]%size];
+        for(i = size3; i < size_3; i++){
+            if(u_active_output_neurons[0][(int)(u_indices[0][i]/output_size)]){
+                dy[u_indices[0][i]%output_size] += df_plus[(int)(u_indices[0][i]/output_size)]*derivative_sigmoid(z_f_plus[(int)(u_indices[0][i]/output_size)])*u_f[u_indices[0][i]]*dropout_mask_plus[u_indices[0][i]%output_size];
             }
-            if(u_active_output_neurons[1][(int)(u_indices[1][i]/size)]){
-                dy[u_indices[1][i]%size] += di_plus[(int)(u_indices[1][i]/size)]*derivative_sigmoid(z_i_plus[(int)(u_indices[1][i]/size)])*u_i[u_indices[1][i]]*dropout_mask_plus[u_indices[1][i]%size];
+            if(u_active_output_neurons[1][(int)(u_indices[1][i]/output_size)]){
+                dy[u_indices[1][i]%output_size] += di_plus[(int)(u_indices[1][i]/output_size)]*derivative_sigmoid(z_i_plus[(int)(u_indices[1][i]/output_size)])*u_i[u_indices[1][i]]*dropout_mask_plus[u_indices[1][i]%output_size];
             }
-            if(u_active_output_neurons[2][(int)(u_indices[2][i]/size)]){
-                dy[u_indices[2][i]%size] += do_plus[(int)(u_indices[2][i]/size)]*derivative_sigmoid(z_o_plus[(int)(u_indices[2][i]/size)])*u_o[u_indices[2][i]]*dropout_mask_plus[u_indices[2][i]%size];
+            if(u_active_output_neurons[2][(int)(u_indices[2][i]/output_size)]){
+                dy[u_indices[2][i]%output_size] += do_plus[(int)(u_indices[2][i]/output_size)]*derivative_sigmoid(z_o_plus[(int)(u_indices[2][i]/output_size)])*u_o[u_indices[2][i]]*dropout_mask_plus[u_indices[2][i]%output_size];
             }
-            if((u_active_output_neurons[1][(int)(u_indices[3][i]/size)] || w_active_output_neurons[1][(int)(u_indices[3][i]/size)]) && (u_active_output_neurons[3][(int)(u_indices[3][i]/size)])){
-                dy[u_indices[3][i]%size] +=  dc_plus[(int)(u_indices[3][i]/size)]*sigmoid(z_i_plus[(int)(u_indices[3][i]/size)])*derivative_tanhh(z_c_plus[(int)(u_indices[3][i]/size)])*u_c[u_indices[3][i]]*dropout_mask_plus[u_indices[3][i]%size];
+            if((u_active_output_neurons[1][(int)(u_indices[3][i]/output_size)] || w_active_output_neurons[1][(int)(u_indices[3][i]/output_size)]) && (u_active_output_neurons[3][(int)(u_indices[3][i]/output_size)])){
+                dy[u_indices[3][i]%output_size] +=  dc_plus[(int)(u_indices[3][i]/output_size)]*sigmoid(z_i_plus[(int)(u_indices[3][i]/output_size)])*derivative_tanhh(z_c_plus[(int)(u_indices[3][i]/output_size)])*u_c[u_indices[3][i]]*dropout_mask_plus[u_indices[3][i]%output_size];
             }
             
             
         }
         
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             /* and then we can compute what we computed before*/
             temp = 0;
             temp2 = 0;
@@ -815,19 +869,26 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
             if(w_active_output_neurons[0][i])
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                d_w_scores[2][i*size+j] += w_o[i*size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
-                d_u_scores[2][i*size+j] += u_o[i*size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                d_w_scores[2][i*input_size+j] += w_o[i*input_size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                d_w_scores[3][i*size+j] += w_c[i*size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                d_u_scores[3][i*size+j] += u_c[i*size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                d_w_scores[3][i*input_size+j] += w_c[i*input_size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                d_w_scores[1][i*size+j] += w_i[i*size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                d_u_scores[1][i*size+j] += u_i[i*size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                d_w_scores[1][i*input_size+j] += w_i[i*input_size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                d_w_scores[0][i*size+j] += w_f[i*size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                d_u_scores[0][i*size+j] += u_f[i*size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                d_w_scores[0][i*input_size+j] += w_f[i*input_size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                d_u_scores[2][i*output_size+j] += u_o[i*output_size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                d_u_scores[3][i*output_size+j] += u_c[i*output_size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                
+                d_u_scores[1][i*output_size+j] += u_i[i*output_size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                d_u_scores[0][i*output_size+j] += u_f[i*output_size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
            
@@ -841,41 +902,41 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
         /* we must recalculate y that corresponds to dh*/
         if(w_up != NULL){
             for(i = size2; i < size_2; i++){
-                if(w_active_output_neurons_up[0][(int)(w_indices_up[0][i]/size)]){
-                    dy[w_indices_up[0][i]%size] += df_up[(int)(w_indices_up[0][i]/size)]*derivative_sigmoid(z_f_up[(int)(w_indices_up[0][i]/size)])*w_f_up[w_indices_up[0][i]]*dropout_mask[w_indices_up[0][i]%size];
+                if(w_active_output_neurons_up[0][(int)(w_indices_up[0][i]/output_size)]){
+                    dy[w_indices_up[0][i]%output_size] += df_up[(int)(w_indices_up[0][i]/output_size)]*derivative_sigmoid(z_f_up[(int)(w_indices_up[0][i]/output_size)])*w_f_up[w_indices_up[0][i]]*dropout_mask[w_indices_up[0][i]%output_size];
                 }
-                if(w_active_output_neurons_up[1][(int)(w_indices_up[1][i]/size)]){
-                    dy[w_indices_up[1][i]%size] += di_up[(int)(w_indices_up[1][i]/size)]*derivative_sigmoid(z_i_up[(int)(w_indices_up[1][i]/size)])*w_i_up[w_indices_up[1][i]]*dropout_mask[w_indices_up[1][i]%size];
+                if(w_active_output_neurons_up[1][(int)(w_indices_up[1][i]/output_size)]){
+                    dy[w_indices_up[1][i]%output_size] += di_up[(int)(w_indices_up[1][i]/output_size)]*derivative_sigmoid(z_i_up[(int)(w_indices_up[1][i]/output_size)])*w_i_up[w_indices_up[1][i]]*dropout_mask[w_indices_up[1][i]%output_size];
                 }
-                if(w_active_output_neurons_up[2][(int)(w_indices_up[2][i]/size)]){
-                    dy[w_indices_up[2][i]%size] += do_up[(int)(w_indices_up[2][i]/size)]*derivative_sigmoid(z_o_up[(int)(w_indices_up[2][i]/size)])*w_o_up[w_indices_up[2][i]]*dropout_mask[w_indices_up[2][i]%size];
+                if(w_active_output_neurons_up[2][(int)(w_indices_up[2][i]/output_size)]){
+                    dy[w_indices_up[2][i]%output_size] += do_up[(int)(w_indices_up[2][i]/output_size)]*derivative_sigmoid(z_o_up[(int)(w_indices_up[2][i]/output_size)])*w_o_up[w_indices_up[2][i]]*dropout_mask[w_indices_up[2][i]%output_size];
                 }
-                if((w_active_output_neurons_up[1][(int)(w_indices_up[3][i]/size)] || u_active_output_neurons_up[1][(int)(w_indices_up[3][i]/size)]) && (w_active_output_neurons_up[3][(int)(w_indices_up[3][i]/size)])){
-                    dy[w_indices_up[3][i]%size] +=  dc_up[(int)(w_indices_up[3][i]/size)]*sigmoid(z_i_up[(int)(w_indices_up[3][i]/size)])*derivative_tanhh(z_c_up[(int)(w_indices_up[3][i]/size)])*w_c_up[w_indices_up[3][i]]*dropout_mask[w_indices_up[3][i]%size];
+                if((w_active_output_neurons_up[1][(int)(w_indices_up[3][i]/output_size)] || u_active_output_neurons_up[1][(int)(w_indices_up[3][i]/output_size)]) && (w_active_output_neurons_up[3][(int)(w_indices_up[3][i]/output_size)])){
+                    dy[w_indices_up[3][i]%output_size] +=  dc_up[(int)(w_indices_up[3][i]/output_size)]*sigmoid(z_i_up[(int)(w_indices_up[3][i]/output_size)])*derivative_tanhh(z_c_up[(int)(w_indices_up[3][i]/output_size)])*w_c_up[w_indices_up[3][i]]*dropout_mask[w_indices_up[3][i]%output_size];
                 }
                 
                 
             }
         }
-        for(i = size2; i < size_2; i++){
-            if(u_active_output_neurons[0][(int)(u_indices[0][i]/size)]){
-                dy[u_indices[0][i]%size] += df_plus[(int)(u_indices[0][i]/size)]*derivative_sigmoid(z_f_plus[(int)(u_indices[0][i]/size)])*u_f[u_indices[0][i]]*dropout_mask_plus[u_indices[0][i]%size];
+        for(i = size3; i < size_3; i++){
+            if(u_active_output_neurons[0][(int)(u_indices[0][i]/output_size)]){
+                dy[u_indices[0][i]%output_size] += df_plus[(int)(u_indices[0][i]/output_size)]*derivative_sigmoid(z_f_plus[(int)(u_indices[0][i]/output_size)])*u_f[u_indices[0][i]]*dropout_mask_plus[u_indices[0][i]%output_size];
             }
-            if(u_active_output_neurons[1][(int)(u_indices[1][i]/size)]){
-                dy[u_indices[1][i]%size] += di_plus[(int)(u_indices[1][i]/size)]*derivative_sigmoid(z_i_plus[(int)(u_indices[1][i]/size)])*u_i[u_indices[1][i]]*dropout_mask_plus[u_indices[1][i]%size];
+            if(u_active_output_neurons[1][(int)(u_indices[1][i]/output_size)]){
+                dy[u_indices[1][i]%output_size] += di_plus[(int)(u_indices[1][i]/output_size)]*derivative_sigmoid(z_i_plus[(int)(u_indices[1][i]/output_size)])*u_i[u_indices[1][i]]*dropout_mask_plus[u_indices[1][i]%output_size];
             }
-            if(u_active_output_neurons[2][(int)(u_indices[2][i]/size)]){
-                dy[u_indices[2][i]%size] += do_plus[(int)(u_indices[2][i]/size)]*derivative_sigmoid(z_o_plus[(int)(u_indices[2][i]/size)])*u_o[u_indices[2][i]]*dropout_mask_plus[u_indices[2][i]%size];
+            if(u_active_output_neurons[2][(int)(u_indices[2][i]/output_size)]){
+                dy[u_indices[2][i]%output_size] += do_plus[(int)(u_indices[2][i]/output_size)]*derivative_sigmoid(z_o_plus[(int)(u_indices[2][i]/output_size)])*u_o[u_indices[2][i]]*dropout_mask_plus[u_indices[2][i]%output_size];
             }
-            if((u_active_output_neurons[1][(int)(u_indices[3][i]/size)] || w_active_output_neurons[1][(int)(u_indices[3][i]/size)]) && (u_active_output_neurons[3][(int)(u_indices[3][i]/size)])){
-                dy[u_indices[3][i]%size] +=  dc_plus[(int)(u_indices[3][i]/size)]*sigmoid(z_i_plus[(int)(u_indices[3][i]/size)])*derivative_tanhh(z_c_plus[(int)(u_indices[3][i]/size)])*u_c[u_indices[3][i]]*dropout_mask_plus[u_indices[3][i]%size];
+            if((u_active_output_neurons[1][(int)(u_indices[3][i]/output_size)] || w_active_output_neurons[1][(int)(u_indices[3][i]/output_size)]) && (u_active_output_neurons[3][(int)(u_indices[3][i]/output_size)])){
+                dy[u_indices[3][i]%output_size] +=  dc_plus[(int)(u_indices[3][i]/output_size)]*sigmoid(z_i_plus[(int)(u_indices[3][i]/output_size)])*derivative_tanhh(z_c_plus[(int)(u_indices[3][i]/output_size)])*u_c[u_indices[3][i]]*dropout_mask_plus[u_indices[3][i]%output_size];
             }
             
             
         }
 
         
-        for(i = 0; i < size; i++){
+        for(i = 0; i < output_size; i++){
             /* and then we can compute what we computed before*/
             temp = 0;
             temp2 = 0;
@@ -900,19 +961,26 @@ float** lstm_bp_edge_popup(int flag, int size, float** dw,float** du, float** db
             if(w_active_output_neurons[0][i])
             temp4 = derivative_sigmoid(z_f[i]);
             
-            for(j = 0; j < size; j++){
+            for(j = 0; j < input_size; j++){
                 
-                d_w_scores[2][i*size+j] += w_o[i*size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
-                d_u_scores[2][i*size+j] += u_o[i*size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                d_w_scores[2][i*input_size+j] += w_o[i*input_size+j]*do_t[i]*temp*x_t[j]; //dw_o_ixj
                 
-                d_w_scores[3][i*size+j] += w_c[i*size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
-                d_u_scores[3][i*size+j] += u_c[i*size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                d_w_scores[3][i*input_size+j] += w_c[i*input_size+j]*dc_t[i]*temp5*temp2*x_t[j]; //dw_c_ixj
                 
-                d_w_scores[1][i*size+j] += w_i[i*size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
-                d_u_scores[1][i*size+j] += u_i[i*size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                d_w_scores[1][i*input_size+j] += w_i[i*input_size+j]*di_t[i]*temp3*x_t[j]; //dw_i_ixj
                 
-                d_w_scores[0][i*size+j] += w_f[i*size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
-                d_u_scores[0][i*size+j] += u_f[i*size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
+                d_w_scores[0][i*input_size+j] += w_f[i*input_size+j]*df_t[i]*temp4*x_t[j]; //dw_f_ixj
+            }
+            
+            for(j = 0; j < output_size; j++){
+                
+                d_u_scores[2][i*output_size+j] += u_o[i*output_size+j]*do_t[i]*temp*h_minus[j]; //du_o_ixj
+                
+                d_u_scores[3][i*output_size+j] += u_c[i*output_size+j]*dc_t[i]*temp5*temp2*h_minus[j]; //dw_c_ixj
+                
+                d_u_scores[1][i*output_size+j] += u_i[i*output_size+j]*di_t[i]*temp3*h_minus[j]; //du_i_ixj
+                
+                d_u_scores[0][i*output_size+j] += u_f[i*output_size+j]*df_t[i]*temp4*h_minus[j]; //du_f_ixj
             }
             
            

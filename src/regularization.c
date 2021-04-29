@@ -135,8 +135,10 @@ void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda){
     int j,k,u,z,w;
     for(j = 0; j < m->n_lstm; j++){
         for(k = 0; k < 4; k++){
-            for(u = 0; u < m->lstms[j]->size*m->lstms[j]->size; u++){
+            for(u = 0; u < m->lstms[j]->output_size*m->lstms[j]->input_size; u++){
                 ridge_regression(&m->lstms[j]->d_w[k][u],m->lstms[j]->w[k][u],lambda,total_number_weights);
+            }
+            for(u = 0; u < m->lstms[j]->output_size*m->lstms[j]->output_size; u++){
                 ridge_regression(&m->lstms[j]->d_u[k][u],m->lstms[j]->u[k][u],lambda,total_number_weights);
             }
         }

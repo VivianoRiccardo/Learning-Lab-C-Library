@@ -727,14 +727,14 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
             if(m->lstms[i]->training_mode == GRADIENT_DESCENT || m->lstms[i]->training_mode == FREEZE_TRAINING){
-                sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->size*m->lstms[i]->size);
-                sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->size*m->lstms[i]->size);
-                sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->size);
+                sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
+                sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
+                sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->output_size);
             }
             
             else if(m->lstms[i]->training_mode == EDGE_POPUP){
-                sum1D(m->lstms[i]->d_w_scores[j],m2->lstms[i]->d_w_scores[j],m3->lstms[i]->d_w_scores[j],m->lstms[i]->size*m->lstms[i]->size);
-                sum1D(m->lstms[i]->d_u_scores[j],m2->lstms[i]->d_u_scores[j],m3->lstms[i]->d_u_scores[j],m->lstms[i]->size*m->lstms[i]->size);
+                sum1D(m->lstms[i]->d_w_scores[j],m2->lstms[i]->d_w_scores[j],m3->lstms[i]->d_w_scores[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
+                sum1D(m->lstms[i]->d_u_scores[j],m2->lstms[i]->d_u_scores[j],m3->lstms[i]->d_u_scores[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
             }
         }
     

@@ -298,7 +298,7 @@ typedef struct rl { //residual-layers
 } rl;
 
 typedef struct lstm { //long short term memory layers
-    int size,layer,dropout_flag_up;
+    int input_size, output_size, layer,dropout_flag_up;
     int dropout_flag_right, window, residual_flag; 
     int norm_flag, n_grouped_cell;//dropout flag = 1 if dropout must be applied
     int training_mode, feed_forward_flag;

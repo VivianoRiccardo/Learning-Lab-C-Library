@@ -801,15 +801,21 @@ void update_lstm_layer_nesterov(rmodel* m, float lr, float momentum, int mini_ba
     int i,j,k;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->input_size; k++){
                 if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
-                    nesterov_momentum(&m->lstms[i]->w[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_w[j][k],&m->lstms[i]->d1_w[j][k]);
+                    nesterov_momentum(&m->lstms[i]->w[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_w[j][k],&m->lstms[i]->d1_w[j][k]);      
+                }
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
+                    nesterov_momentum(&m->lstms[i]->u_scores[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_u_scores[j][k],&m->lstms[i]->d1_u[j][k]);
+                }
+            }
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->output_size; k++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
                     nesterov_momentum(&m->lstms[i]->u[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_u[j][k],&m->lstms[i]->d1_u[j][k]);
-                    if(k < m->lstms[i]->size && m->lstms[i]->training_mode != FREEZE_BIASES)
+                    if(k < m->lstms[i]->output_size && m->lstms[i]->training_mode != FREEZE_BIASES)
                         nesterov_momentum(&m->lstms[i]->biases[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_biases[j][k],&m->lstms[i]->d1_biases[j][k]);
                 }
                 else if(m->lstms[i]->training_mode == EDGE_POPUP){
-                    nesterov_momentum(&m->lstms[i]->w_scores[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_w_scores[j][k],&m->lstms[i]->d1_w[j][k]);
                     nesterov_momentum(&m->lstms[i]->u_scores[j][k],lr,momentum,mini_batch_size,m->lstms[i]->d_u_scores[j][k],&m->lstms[i]->d1_u[j][k]);
                 }
             }
@@ -831,15 +837,21 @@ void update_lstm_layer_adam_diff_grad(rmodel* m,float lr,int mini_batch_size,flo
     int i,j,k;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->input_size; k++){
                 if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
                     adam_diff_grad_algorithm(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_w_diff_grad[j][k]);
-                    adam_diff_grad_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_u_diff_grad[j][k]);
-                    if(k < m->lstms[i]->size && m->lstms[i]->training_mode != FREEZE_BIASES)
-                        adam_diff_grad_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_biases_diff_grad[j][k]);
                 }
                 else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adam_diff_grad_algorithm(&m->lstms[i]->w_scores[j][k],&m->lstms[i]->d1_w_scores[j][k],&m->lstms[i]->d2_w_scores[j][k],m->lstms[i]->d_w_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_w_diff_grad[j][k]);
+                }
+            }
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->output_size; k++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
+                    adam_diff_grad_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_u_diff_grad[j][k]);
+                    if(k < m->lstms[i]->output_size && m->lstms[i]->training_mode != FREEZE_BIASES)
+                        adam_diff_grad_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_biases_diff_grad[j][k]);
+                }
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adam_diff_grad_algorithm(&m->lstms[i]->u_scores[j][k],&m->lstms[i]->d1_u_scores[j][k],&m->lstms[i]->d2_u_scores[j][k],m->lstms[i]->d_u_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->lstms[i]->ex_d_u_diff_grad[j][k]);    
                 }
             }
@@ -861,15 +873,21 @@ void update_lstm_layer_adam(rmodel* m,float lr,int mini_batch_size,float b1, flo
     int i,j,k;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->input_size; k++){
                 if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
                     adam_algorithm(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-                    adam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-                    if(k < m->lstms[i]->size && m->lstms[i]->training_mode != FREEZE_BIASES)
-                        adam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                 }
                 else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adam_algorithm(&m->lstms[i]->w_scores[j][k],&m->lstms[i]->d1_w_scores[j][k],&m->lstms[i]->d2_w_scores[j][k],m->lstms[i]->d_w_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                }
+            }
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->output_size; k++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
+                    adam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                    if(k < m->lstms[i]->output_size && m->lstms[i]->training_mode != FREEZE_BIASES)
+                        adam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                }
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adam_algorithm(&m->lstms[i]->u_scores[j][k],&m->lstms[i]->d1_u_scores[j][k],&m->lstms[i]->d2_u_scores[j][k],m->lstms[i]->d_u_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                 }
             }
@@ -891,15 +909,21 @@ void update_lstm_layer_adamod(rmodel* m,float lr,int mini_batch_size,float b1, f
     int i,j,k;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->input_size; k++){
                 if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
                     adamod(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_w[j][k]);
-                    adamod(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_u[j][k]);
-                    if(k < m->lstms[i]->size && m->lstms[i]->training_mode != FREEZE_BIASES)
-                        adamod(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_biases[j][k]);
                 }
                 else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adamod(&m->lstms[i]->w_scores[j][k],&m->lstms[i]->d1_w_scores[j][k],&m->lstms[i]->d2_w_scores[j][k],m->lstms[i]->d_w_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_w[j][k]);
+                }
+            }
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->output_size; k++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
+                    adamod(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_u[j][k]);
+                    if(k < m->lstms[i]->output_size && m->lstms[i]->training_mode != FREEZE_BIASES)
+                        adamod(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_biases[j][k]);
+                }
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     adamod(&m->lstms[i]->u_scores[j][k],&m->lstms[i]->d1_u_scores[j][k],&m->lstms[i]->d2_u_scores[j][k],m->lstms[i]->d_u_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->lstms[i]->d3_u[j][k]);
                 }
             }
@@ -920,16 +944,23 @@ void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, fl
     int i,j,k;
     for(i = 0; i < m->n_lstm; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < m->lstms[i]->size*m->lstms[i]->size; k++){
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->input_size; k++){
                 if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
                     radam_algorithm(&m->lstms[i]->w[j][k],&m->lstms[i]->d1_w[j][k],&m->lstms[i]->d2_w[j][k],m->lstms[i]->d_w[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-                    radam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-                    if(k < m->lstms[i]->size && m->lstms[i]->training_mode != FREEZE_BIASES)
-                        radam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                 }
                 
                 else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     radam_algorithm(&m->lstms[i]->w_scores[j][k],&m->lstms[i]->d1_w_scores[j][k],&m->lstms[i]->d2_w_scores[j][k],m->lstms[i]->d_w_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                }
+            }
+            for(k = 0; k < m->lstms[i]->output_size*m->lstms[i]->output_size; k++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT){
+                    radam_algorithm(&m->lstms[i]->u[j][k],&m->lstms[i]->d1_u[j][k],&m->lstms[i]->d2_u[j][k],m->lstms[i]->d_u[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                    if(k < m->lstms[i]->output_size && m->lstms[i]->training_mode != FREEZE_BIASES)
+                        radam_algorithm(&m->lstms[i]->biases[j][k],&m->lstms[i]->d1_biases[j][k],&m->lstms[i]->d2_biases[j][k],m->lstms[i]->d_biases[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                }
+                
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
                     radam_algorithm(&m->lstms[i]->u_scores[j][k],&m->lstms[i]->d1_u_scores[j][k],&m->lstms[i]->d2_u_scores[j][k],m->lstms[i]->d_u_scores[j][k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                 }
             }

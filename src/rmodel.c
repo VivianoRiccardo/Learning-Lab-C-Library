@@ -60,6 +60,7 @@ rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int 
         }
     }
     
+    
     /* sorting lstm layers*/
     for(i = 0; i < n_lstm; i++){
                 
@@ -71,6 +72,7 @@ rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int 
             }
         }
     }
+    
     
     /* checking if the layers are sequential or not*/
     position = 0;
@@ -91,7 +93,13 @@ rmodel* recurrent_network(int layers, int n_lstm, lstm** lstms, int window, int 
             exit(1);
         }
     }
-    /*There is no check if the sizes match or not, this happen during the feed forward*/
+
+    for(i = 1; i < n_lstm; i++){
+        if(lstms[i]->input_size != lstms[i-1]->output_size){
+            fprintf(stderr,"Error: your lstm input-output does not match, layers %d - %d\n",lstms[i]->layer,lstms[i-1]->layer);
+            exit(1);
+        }
+    }
     
     m->layers = layers;
     m->n_lstm = n_lstm;
@@ -461,12 +469,12 @@ rmodel* load_rmodel(char* file){
  * 
  * 
  * */
-void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms){    
+void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int layers, lstm** lstms){    
     
     //allocation of the resources
 
-    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
-    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
+    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->output_size); //here we store the modified output by dropout coming from an lstm cell
+    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->output_size); //here we store the modified output by dropout coming from an lstm cell
     
     int i,j;
     
@@ -481,31 +489,31 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                     //in this case the h-1 and c-1 come from the last mini_batch
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT)
-                        set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
+                        set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
                    
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size);
                     else if(lstms[j]->feed_forward_flag == EDGE_POPUP)
-                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices, input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices, input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
 
                 }
 
                 else{
                     
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size);
                     else
-                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
                     
                 }
             }
@@ -514,49 +522,54 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
                 
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
-                        set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
+                        set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
                    
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size);
                     else{
-                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
                     
                     }
                 }    
                 else{
                     
                     
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(dropout_output, dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(dropout_output, dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size);
                     else
-                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms[j]->w, lstms[j]->u, lstms[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
                 }
             }
             
             /* the dropout is applied to each lstm_hidden to feed the deeper lstm cell in vertical, as input*/
             if(!i)
                 if(lstms[j]->dropout_flag_up == DROPOUT)
-                    set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
+                    set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
+            free(dropout_output);
+            dropout_output = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
             
             if(lstms[j]->dropout_flag_up == DROPOUT_TEST)
-                mul_value(dropout_output,lstms[j]->dropout_threshold_up,dropout_output,lstms[j]->size);
+                mul_value(dropout_output,lstms[j]->dropout_threshold_up,dropout_output,lstms[j]->output_size);
             
             if(!j && lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dropout_output,input_model[i],dropout_output,lstms[j]->size);
+                sum1D(dropout_output,input_model[i],dropout_output,lstms[j]->output_size);
             else if(j && lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->size);
+                sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->output_size);
                 
-            copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->size);
+            copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->output_size);
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+            
         }
     }
     
@@ -579,12 +592,12 @@ void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_mo
  * 
  * 
  * */
-void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, int window, int size, int layers, lstm** lstms, lstm** lstms2){    
+void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, int window, int layers, lstm** lstms, lstm** lstms2){    
     
     //allocation of the resources
 
-    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
-    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
+    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->output_size); //here we store the modified output by dropout coming from an lstm cell
+    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->output_size); //here we store the modified output by dropout coming from an lstm cell
     
     int i,j;
     
@@ -599,31 +612,31 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
                     //in this case the h-1 and c-1 come from the last mini_batch
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT)
-                        set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
+                        set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
                    
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size, lstms[j]->output_size);
                     else if(lstms[j]->feed_forward_flag == EDGE_POPUP)
-                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices, input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices, input_model[i], dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
 
                 }
 
                 else{
                     
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size, lstms[j]->output_size);
                     else
-                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,input_model[i], dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
                     
                 }
             }
@@ -632,47 +645,51 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
                 
                 if(i == 0){//i = 0 and j != 0 means that we are at the first lstm in orizontal but not in vertical
                     if(lstms[j]->dropout_flag_right == DROPOUT)
-                        set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
+                        set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->dropout_threshold_right);
                    
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size, lstms[j]->output_size);
                     else
-                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size,lstms[j]->output_size,lstms[j]->k_percentage);
                 }    
                 else{
                     
                     
-                    get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
+                    get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);//dropout for h between recurrent connections
                     
                     if(lstms[j]->dropout_flag_right == DROPOUT_TEST)
-                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->size);
+                        mul_value(dropout_output2,lstms[j]->dropout_threshold_right,dropout_output2,lstms[j]->output_size);
                     if(lstms[j]->feed_forward_flag == FULLY_FEED_FORWARD)
-                    lstm_ff(dropout_output, dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size);
+                    lstm_ff(dropout_output, dropout_output2, lstms[j]->lstm_cell[i-1], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size, lstms[j]->output_size);
                     else
-                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->size,lstms[j]->k_percentage);
+                    lstm_ff_edge_popup(lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,dropout_output, dropout_output2, cell_states[j], lstms[j]->lstm_cell[i], lstms[j]->lstm_hidden[i], lstms2[j]->w, lstms2[j]->u, lstms2[j]->biases, lstms[j]->lstm_z[i], lstms[j]->input_size, lstms[j]->output_size,lstms[j]->k_percentage);
                 }
             }
             
             /* the dropout is applied to each lstm_hidden to feed the deeper lstm cell in vertical, as input*/
             if(!i)
                 if(lstms[j]->dropout_flag_up == DROPOUT)
-                    set_dropout_mask(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
+                    set_dropout_mask(lstms[j]->output_size,lstms[j]->dropout_mask_up,lstms[j]->dropout_threshold_up);
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
+            free(dropout_output);
+            dropout_output = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,lstms[j]->lstm_hidden[i],dropout_output);
             
             if(lstms[j]->dropout_flag_up == DROPOUT_TEST)
-                mul_value(dropout_output,lstms[j]->dropout_threshold_up,dropout_output,lstms[j]->size);
+                mul_value(dropout_output,lstms[j]->dropout_threshold_up,dropout_output,lstms[j]->output_size);
             
             if(!j && lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dropout_output,input_model[i],dropout_output,lstms[j]->size);
+                sum1D(dropout_output,input_model[i],dropout_output,lstms[j]->output_size);
             else if(j && lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->size);
+                sum1D(dropout_output,lstms[j-1]->out_up[i],dropout_output,lstms[j]->output_size);
                 
-            copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->size);
+            copy_array(dropout_output,lstms[j]->out_up[i],lstms[j]->output_size);
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
         }
     }
     
@@ -699,27 +716,27 @@ void ff_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** inpu
  *             @ float** input_error:= the error of the inputs of this model, dimensions: m->window*m->size, must be initialized only with m->window
  * 
  * */
-float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error){
+float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window,int layers,lstm** lstms, float** input_error){
 
    /* backpropagation passage*/
 
     int i,j, lstm_bp_flag;
     
-    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
-    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->size);
+    float* dropout_output2 = NULL;
     float* dx; //here we store the modified output by dropout coming from the last lstm cell
-    float* dz = (float*)calloc(lstms[0]->size,sizeof(float)); //for residual dx
+    float* dz = (float*)calloc(lstms[layers-1]->output_size,sizeof(float)); //for residual dx
     float*** matrix = (float***)malloc(sizeof(float**)*layers);
     float** temp;
+    int output_up = 0;
     for(i = 0; i < layers; i++){
         matrix[i] = NULL;
     }
     /*with i = 0 we should handle the h minus and c minus that are given by the params passed to the function*/
     for(i = window-1; i > 0; i--){
         for(j = layers-1; j >= 0; j--){
-            dx = (float*)calloc(lstms[0]->size,sizeof(float));
+            dx = (float*)calloc(lstms[j]->output_size,sizeof(float));
             if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dx,dz,dx,lstms[0]->size);
+                sum1D(dx,dz,dx,lstms[j]->output_size);
                 
             if(j == layers-1 && i == window-1)
                 lstm_bp_flag = 0;
@@ -732,28 +749,33 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             else
                 lstm_bp_flag = 3;
             
+            if(j != layers-1)
+                output_up = lstms[j+1]->output_size;
+            
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
             
             if(j == layers-1)
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,error_model[i],dx);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,error_model[i],dx);
 
             if(j == layers-1){
                 
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
                 
                 if(j != 0){
                     if(i == window-1){
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
                     }
                     else{
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size, output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
                     
                     }
                 }
@@ -761,16 +783,16 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                 else{
                     if(i == window-1){
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
                     
                     }
                     else{
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size,  lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
                     }
                 }
                 
@@ -785,20 +807,20 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             else if(j != layers-1 && j){
                 
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
 
                 
                 if(i == window-1){
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 else{
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
                     free_matrix(matrix[j],4);
@@ -810,19 +832,19 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             
             else{
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
 
                 if(i == window-1){
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)    
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 else{
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
                     free_matrix(matrix[j],4);
@@ -831,14 +853,17 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                 
             }
             
-            copy_array(dx,dz,lstms[0]->size);
+            free(dz);
+            dz = (float*)calloc(lstms[j]->output_size,sizeof(float));
+            copy_array(dx,dz,lstms[j]->output_size);
             free(dx);
             
             if(!j && input_error != NULL){
-                input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+                input_error[i] = lstm_dinput(i,lstms[j]->output_size,matrix[j],lstms[j]);
                 if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-                    sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+                    sum1D(input_error[i],dz,input_error[i],lstms[j]->output_size);
             }
+            
             
         }
         
@@ -847,9 +872,9 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
     i = 0;
     /* computing back propagation just for the first lstm layers with hidden states defined by the previous batch*/
     for(j = layers-1; j >= 0; j--){
-        dx = (float*)calloc(lstms[0]->size,sizeof(float));
+        dx = (float*)calloc(lstms[j]->output_size,sizeof(float));
         if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
-            sum1D(dx,dz,dx,lstms[0]->size);
+            sum1D(dx,dz,dx,lstms[j]->output_size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
         else if(j != layers-1 && i == window-1)
@@ -862,25 +887,32 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             lstm_bp_flag = 3;
         
         
+        if(j != layers-1)
+            output_up = lstms[j+1]->output_size;
+        
+        free(dropout_output2);
+        dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
+        
+        
         if(j == layers-1)
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,error_model[i],dx);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,error_model[i],dx);
 
         if(j == layers-1){
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             
             if(j != 0){
                 if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 else if(lstms[j]->training_mode == EDGE_POPUP)
-                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
             }
             else{
                 if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 else if(lstms[j]->training_mode == EDGE_POPUP)
-                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
+                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
             }
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
@@ -890,12 +922,12 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
         
         else if(j != layers-1 && j != 0){
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             
             if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
             else if(lstms[j]->training_mode == EDGE_POPUP)
-            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
             matrix[j] = temp;
@@ -903,27 +935,29 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
         
         else{
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
             else if(lstms[j]->training_mode == EDGE_POPUP)
-            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
+            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
             matrix[j] = temp;
             
         }
-        copy_array(dx,dz,lstms[0]->size);
+        
+        free(dz);
+        dz = (float*)calloc(lstms[j]->output_size,sizeof(float));
+        copy_array(dx,dz,lstms[j]->output_size);
         free(dx);
         
         if(!j && input_error != NULL){
-            input_error[i] = lstm_dinput(i,lstms[j]->size,matrix[j],lstms[j]);
+            input_error[i] = lstm_dinput(i,lstms[j]->output_size,matrix[j],lstms[j]);
             if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+                sum1D(input_error[i],dz,input_error[i],lstms[j]->output_size);
         }
     }
     
-    free(dropout_output);
     free(dropout_output2);
     free(dz);
     return matrix;
@@ -946,27 +980,27 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
  *             @ float** input_error:= the error of the inputs of this model, dimensions: m->window*m->size, must be initialized only with m->window
  * 
  * */
-float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window, int size,int layers,lstm** lstms, float** input_error, lstm** lstms2){
+float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window,int layers,lstm** lstms, float** input_error, lstm** lstms2){
 
    /* backpropagation passage*/
 
     int i,j, lstm_bp_flag;
     
-    float* dropout_output = (float*)malloc(sizeof(float)*lstms[0]->size); //here we store the modified output by dropout coming from an lstm cell
-    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[0]->size);
+    float* dropout_output2 = (float*)malloc(sizeof(float)*lstms[layers-1]->output_size);
     float* dx; //here we store the modified output by dropout coming from the last lstm cell
-    float* dz = (float*)calloc(lstms[0]->size,sizeof(float)); //for residual dx
+    float* dz = (float*)calloc(lstms[layers-1]->output_size,sizeof(float)); //for residual dx
     float*** matrix = (float***)malloc(sizeof(float**)*layers);
     float** temp;
+    int output_up = 0;
     for(i = 0; i < layers; i++){
         matrix[i] = NULL;
     }
     /*with i = 0 we should handle the h minus and c minus that are given by the params passed to the function*/
     for(i = window-1; i > 0; i--){
         for(j = layers-1; j >= 0; j--){
-            dx = (float*)calloc(lstms[0]->size,sizeof(float));
+            dx = (float*)calloc(lstms[j]->output_size,sizeof(float));
             if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
-                sum1D(dx,dz,dx,lstms[0]->size);
+                sum1D(dx,dz,dx,lstms[j]->output_size);
                 
             if(j == layers-1 && i == window-1)
                 lstm_bp_flag = 0;
@@ -979,28 +1013,33 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
             else
                 lstm_bp_flag = 3;
             
+            if(j != layers-1)
+            output_up = lstms[j+1]->output_size;
+            
+            free(dropout_output2);
+            dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
             
             if(j == layers-1)
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,error_model[i],dx);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,error_model[i],dx);
 
             if(j == layers-1){
                 
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
                 
                 if(j != 0){
                     if(i == window-1){
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
                     }
                     else{
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
                     
                     }
                 }
@@ -1008,16 +1047,16 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                 else{
                     if(i == window-1){
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, NULL, NULL,NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
                     
                     }
                     else{
                         if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                            temp = lstm_bp(lstm_bp_flag,lstms[j]->size,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                         else if(lstms[j]->training_mode == EDGE_POPUP)
-                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up,  lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
                     }
                 }
                 
@@ -1032,20 +1071,20 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
             else if(j != layers-1 && j){
                 
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
 
                 
                 if(i == window-1){
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 else{
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
                     free_matrix(matrix[j],4);
@@ -1057,19 +1096,19 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
             
             else{
                 
-                get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
+                get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,lstms[j]->lstm_hidden[i-1],dropout_output2);
 
                 if(i == window-1){
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)    
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], NULL,NULL,lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 else{
                     if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                        temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                        temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size, output_up,lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                     else if(lstms[j]->training_mode == EDGE_POPUP)
-                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+                        temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
                     free_matrix(matrix[j],4);
@@ -1078,13 +1117,15 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                 
             }
             
-            copy_array(dx,dz,lstms[0]->size);
+            free(dz);
+            dz = (float*)calloc(lstms[j]->output_size,sizeof(float));
+            copy_array(dx,dz,lstms[j]->output_size);
             free(dx);
             
             if(!j && input_error != NULL){
-                input_error[i] = lstm_dinput_opt(i,lstms[j]->size,matrix[j],lstms[j],lstms2[j]);
+                input_error[i] = lstm_dinput_opt(i,lstms[j]->output_size,matrix[j],lstms[j],lstms2[j]);
                 if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-                    sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+                    sum1D(input_error[i],dz,input_error[i],lstms[j]->output_size);
             }
             
         }
@@ -1094,9 +1135,9 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
     i = 0;
     /* computing back propagation just for the first lstm layers with hidden states defined by the previous batch*/
     for(j = layers-1; j >= 0; j--){
-        dx = (float*)calloc(lstms[0]->size,sizeof(float));
+        dx = (float*)calloc(lstms[j]->output_size,sizeof(float));
         if(j < layers-1 && lstms[j+1]->residual_flag == LSTM_RESIDUAL)
-            sum1D(dx,dz,dx,lstms[0]->size);
+            sum1D(dx,dz,dx,lstms[j]->output_size);
         if(j == layers-1 && i == window-1)
             lstm_bp_flag = 0;
         else if(j != layers-1 && i == window-1)
@@ -1108,26 +1149,31 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
         else
             lstm_bp_flag = 3;
         
+        if(j != layers-1)
+            output_up = lstms[j+1]->output_size;
+            
+        free(dropout_output2);
+        dropout_output2 = (float*)malloc(sizeof(float)*lstms[j]->output_size);
         
         if(j == layers-1)
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_up,error_model[i],dx);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_up,error_model[i],dx);
 
         if(j == layers-1){
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             
             if(j != 0){
                 if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 else if(lstms[j]->training_mode == EDGE_POPUP)
-                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
             }
             else{
                 if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-                temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+                temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
                 else if(lstms[j]->training_mode == EDGE_POPUP)
-                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
+                temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
             }
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
@@ -1137,12 +1183,12 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
         
         else if(j != layers-1 && j != 0){
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             
             if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
             else if(lstms[j]->training_mode == EDGE_POPUP)
-            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
             matrix[j] = temp;
@@ -1150,27 +1196,29 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
         
         else{
             
-            get_dropout_array(lstms[j]->size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
+            get_dropout_array(lstms[j]->output_size,lstms[j]->dropout_mask_right,hidden_states[j],dropout_output2);
             if(lstms[j]->training_mode == GRADIENT_DESCENT || lstms[j]->training_mode == FREEZE_TRAINING)
-            temp = lstm_bp(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
+            temp = lstm_bp(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right);
             else if(lstms[j]->training_mode == EDGE_POPUP)
-            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->size, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
+            temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
                 free_matrix(matrix[j],4);
             matrix[j] = temp;
             
         }
-        copy_array(dx,dz,lstms[0]->size);
+        
+        free(dz);
+        dz = (float*)calloc(lstms[j]->output_size,sizeof(float));
+        copy_array(dx,dz,lstms[j]->output_size);
         free(dx);
         
         if(!j && input_error != NULL){
-            input_error[i] = lstm_dinput_opt(i,lstms[j]->size,matrix[j],lstms[j],lstms2[j]);
+            input_error[i] = lstm_dinput_opt(i,lstms[j]->output_size,matrix[j],lstms[j],lstms2[j]);
             if(lstms[j]->residual_flag == LSTM_RESIDUAL)
-                sum1D(input_error[i],dz,input_error[i],lstms[j]->size);
+                sum1D(input_error[i],dz,input_error[i],lstms[j]->output_size);
         }
     }
     
-    free(dropout_output);
     free(dropout_output2);
     free(dz);
     return matrix;
@@ -1186,6 +1234,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
  * 
  * */
 uint64_t count_weights_rmodel(rmodel* m){
+    /*
     int i;
     uint64_t sum = 0;
     for(i = 0; i < m->n_lstm; i++){
@@ -1201,6 +1250,8 @@ uint64_t count_weights_rmodel(rmodel* m){
         }
     }
     return sum;
+    * */
+    return 0;
 }
 
 
@@ -1229,9 +1280,9 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     
     float* temp = (float*)malloc(sizeof(float)*output);
     float* temp2 = (float*)malloc(sizeof(float)*output);
-    float* temp3 = (float*)calloc(output,sizeof(float));
+    float* temp3 = (float*)calloc(lstms->input_size,sizeof(float));
         
-    ret_err = (float*)calloc(output,sizeof(float));
+    ret_err = (float*)calloc(lstms->input_size,sizeof(float));
     
     
     sigmoid_array(lstms->lstm_z[index][1],temp,output);//obtaining i
@@ -1252,24 +1303,24 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     
     if(lstms->feed_forward_flag != EDGE_POPUP && lstms->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms->w[3][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms->w[3][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms->k_percentage; k < output*output; k++){
-            if(lstms->w_active_output_neurons[3][(int)(lstms->w_indices[3][k]/output)]){
-                temp3[lstms->w_indices[3][k]%output] = lstms->w[3][lstms->w_indices[3][k]]*temp[(int)(lstms->w_indices[3][k]/output)];
+        for(k = output*lstms->input_size*lstms->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms->w_active_output_neurons[3][(int)(lstms->w_indices[3][k]/lstms->input_size)]){
+                temp3[lstms->w_indices[3][k]%lstms->input_size] = lstms->w[3][lstms->w_indices[3][k]]*temp[(int)(lstms->w_indices[3][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][2],temp2,output);//dzo
     for(k = 0; k < output; k++){
@@ -1280,24 +1331,24 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     dot1D(returning_error[2],temp2,temp,output);
     if(lstms->feed_forward_flag != EDGE_POPUP && lstms->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms->w[2][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms->w[2][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms->k_percentage; k < output*output; k++){
-            if(lstms->w_active_output_neurons[2][(int)(lstms->w_indices[2][k]/output)]){
-                temp3[lstms->w_indices[2][k]%output] = lstms->w[2][lstms->w_indices[2][k]]*temp[(int)(lstms->w_indices[2][k]/output)];
+        for(k = output*lstms->input_size*lstms->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms->w_active_output_neurons[2][(int)(lstms->w_indices[2][k]/lstms->input_size)]){
+                temp3[lstms->w_indices[2][k]%lstms->input_size] = lstms->w[2][lstms->w_indices[2][k]]*temp[(int)(lstms->w_indices[2][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][1],temp2,output);//dzi
     for(k = 0; k < output; k++){
@@ -1309,24 +1360,24 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     
     if(lstms->feed_forward_flag != EDGE_POPUP && lstms->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms->w[1][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms->w[1][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms->k_percentage; k < output*output; k++){
-            if(lstms->w_active_output_neurons[1][(int)(lstms->w_indices[1][k]/output)]){
-                temp3[lstms->w_indices[1][k]%output] = lstms->w[1][lstms->w_indices[1][k]]*temp[(int)(lstms->w_indices[1][k]/output)];
+        for(k = output*lstms->input_size*lstms->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms->w_active_output_neurons[1][(int)(lstms->w_indices[1][k]/lstms->input_size)]){
+                temp3[lstms->w_indices[1][k]%lstms->input_size] = lstms->w[1][lstms->w_indices[1][k]]*temp[(int)(lstms->w_indices[1][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][0],temp2,output);//dzf
     for(k = 0; k < output; k++){
@@ -1337,21 +1388,21 @@ float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms){
     dot1D(returning_error[0],temp2,temp,output);
     if(lstms->feed_forward_flag != EDGE_POPUP && lstms->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms->w[0][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms->w[0][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms->k_percentage; k < output*output; k++){
-            if(lstms->w_active_output_neurons[0][(int)(lstms->w_indices[0][k]/output)]){
-                temp3[lstms->w_indices[0][k]%output] = lstms->w[0][lstms->w_indices[0][k]]*temp[(int)(lstms->w_indices[0][k]/output)];
+        for(k = output*lstms->input_size*lstms->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms->w_active_output_neurons[0][(int)(lstms->w_indices[0][k]/lstms->input_size)]){
+                temp3[lstms->w_indices[0][k]%lstms->input_size] = lstms->w[0][lstms->w_indices[0][k]]*temp[(int)(lstms->w_indices[0][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
         
     free(temp);
     free(temp2);
@@ -1379,9 +1430,9 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
     
     float* temp = (float*)malloc(sizeof(float)*output);
     float* temp2 = (float*)malloc(sizeof(float)*output);
-    float* temp3 = (float*)calloc(output,sizeof(float));
+    float* temp3 = (float*)calloc(lstms->input_size,sizeof(float));
         
-    ret_err = (float*)calloc(output,sizeof(float));
+    ret_err = (float*)calloc(lstms->input_size,sizeof(float));
     
     
     sigmoid_array(lstms->lstm_z[index][1],temp,output);//obtaining i
@@ -1402,24 +1453,24 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
     
     if(lstms->feed_forward_flag != EDGE_POPUP && lstms->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms2->w[3][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms2->w[3][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms2->k_percentage; k < output*output; k++){
-            if(lstms2->w_active_output_neurons[3][(int)(lstms2->w_indices[3][k]/output)]){
-                temp3[lstms2->w_indices[3][k]%output] = lstms2->w[3][lstms2->w_indices[3][k]]*temp[(int)(lstms2->w_indices[3][k]/output)];
+        for(k = output*lstms->input_size*lstms2->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms2->w_active_output_neurons[3][(int)(lstms2->w_indices[3][k]/lstms->input_size)]){
+                temp3[lstms2->w_indices[3][k]%lstms->input_size] = lstms2->w[3][lstms2->w_indices[3][k]]*temp[(int)(lstms2->w_indices[3][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][2],temp2,output);//dzo
     for(k = 0; k < output; k++){
@@ -1430,24 +1481,24 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
     dot1D(returning_error[2],temp2,temp,output);
     if(lstms2->feed_forward_flag != EDGE_POPUP && lstms2->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms2->w[2][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms2->w[2][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms2->k_percentage; k < output*output; k++){
-            if(lstms2->w_active_output_neurons[2][(int)(lstms2->w_indices[2][k]/output)]){
-                temp3[lstms2->w_indices[2][k]%output] = lstms2->w[2][lstms2->w_indices[2][k]]*temp[(int)(lstms2->w_indices[2][k]/output)];
+        for(k = output*lstms->input_size*lstms2->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms2->w_active_output_neurons[2][(int)(lstms2->w_indices[2][k]/lstms->input_size)]){
+                temp3[lstms2->w_indices[2][k]%lstms->input_size] = lstms2->w[2][lstms2->w_indices[2][k]]*temp[(int)(lstms2->w_indices[2][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][1],temp2,output);//dzi
     for(k = 0; k < output; k++){
@@ -1459,24 +1510,24 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
     
     if(lstms2->feed_forward_flag != EDGE_POPUP && lstms2->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms2->w[1][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms2->w[1][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms2->k_percentage; k < output*output; k++){
-            if(lstms2->w_active_output_neurons[1][(int)(lstms2->w_indices[1][k]/output)]){
-                temp3[lstms2->w_indices[1][k]%output] = lstms2->w[1][lstms2->w_indices[1][k]]*temp[(int)(lstms2->w_indices[1][k]/output)];
+        for(k = output*lstms->input_size*lstms2->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms2->w_active_output_neurons[1][(int)(lstms2->w_indices[1][k]/lstms->input_size)]){
+                temp3[lstms2->w_indices[1][k]%lstms->input_size] = lstms2->w[1][lstms2->w_indices[1][k]]*temp[(int)(lstms2->w_indices[1][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
     
     free(temp3);
-    temp3 = (float*)calloc(output,sizeof(float));
+    temp3 = (float*)calloc(lstms->input_size,sizeof(float));
     
     derivative_sigmoid_array(lstms->lstm_z[index][0],temp2,output);//dzf
     for(k = 0; k < output; k++){
@@ -1487,21 +1538,21 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
     dot1D(returning_error[0],temp2,temp,output);
     if(lstms2->feed_forward_flag != EDGE_POPUP && lstms2->training_mode != EDGE_POPUP){
         for(k = 0; k < output; k++){
-            for(k2 = 0; k2 < output; k2++){
-                temp3[k2] = lstms2->w[0][k*output+k2]*temp[k];
+            for(k2 = 0; k2 < lstms->input_size; k2++){
+                temp3[k2] = lstms2->w[0][k*lstms->input_size+k2]*temp[k];
             }
         }
     }
     
     else{
-        for(k = output*output*lstms->k_percentage; k < output*output; k++){
-            if(lstms2->w_active_output_neurons[0][(int)(lstms2->w_indices[0][k]/output)]){
-                temp3[lstms2->w_indices[0][k]%output] = lstms2->w[0][lstms2->w_indices[0][k]]*temp[(int)(lstms2->w_indices[0][k]/output)];
+        for(k = output*lstms->input_size*lstms->k_percentage; k < output*lstms->input_size; k++){
+            if(lstms2->w_active_output_neurons[0][(int)(lstms2->w_indices[0][k]/lstms->input_size)]){
+                temp3[lstms2->w_indices[0][k]%lstms->input_size] = lstms2->w[0][lstms2->w_indices[0][k]]*temp[(int)(lstms2->w_indices[0][k]/lstms->input_size)];
             }
         }
     }
     
-    sum1D(ret_err,temp3,ret_err,output);
+    sum1D(ret_err,temp3,ret_err,lstms->input_size);
         
     free(temp);
     free(temp2);
@@ -1836,7 +1887,7 @@ void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, 
         n_cells = 1;
         for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
         if(k == m->layers){ n_cells--; k--;}
-        ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,m->lstms[0]->size,n_cells,&m->lstms[i]);
+        ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,n_cells,&m->lstms[i]);
         for(j = 0; j < m->window; j++){
             temp[j] = m->lstms[k]->out_up[j];
         }
@@ -1882,7 +1933,7 @@ void ff_rmodel_opt(float** hidden_states, float** cell_states, float** input_mod
         n_cells = 1;
         for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
         if(k == m->layers){ n_cells--; k--;}
-        ff_rmodel_lstm_opt(&hidden_states[i],&cell_states[i],temp,m->window,m->lstms[0]->size,n_cells,&m->lstms[i],&m2->lstms[i]);
+        ff_rmodel_lstm_opt(&hidden_states[i],&cell_states[i],temp,m->window,n_cells,&m->lstms[i],&m2->lstms[i]);
         for(j = 0; j < m->window; j++){
             temp[j] = m->lstms[k]->out_up[j];
         }
@@ -1928,8 +1979,8 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
     int i,j,ret_count = m->layers-1,z;
     float** temp = (float**)malloc(sizeof(float*)*m->window);// inputs of lstms
     for(i = 0; i < m->window; i++){
-        error2_model[i] = (float*)calloc(m->lstms[0]->size,sizeof(float));
-        copy_array(error_model[i],error2_model[i],m->lstms[0]->size);
+        error2_model[i] = (float*)calloc(m->lstms[m->layers-1]->output_size,sizeof(float));
+        copy_array(error_model[i],error2_model[i],m->lstms[m->layers-1]->output_size);
     }
     int flagg = 0;
     int k = 0;
@@ -1953,9 +2004,11 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
                         temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
                     }
                 }
-                ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k+1],input_error3);
+                ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3);
                 for(j = 0; j < m->window; j++){
-                    copy_array(input_error3[j],error2_model[j],m->lstms[0]->size);
+					free(error2_model[j]);
+					error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
+                    copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
                 for(j = ret_count; j > ret_count-n_cells; j--){
@@ -1969,7 +2022,9 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
             }
             for(j = 0; j < m->window/m->lstms[k]->n_grouped_cell; j++){
                 for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
-                    copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[0]->size);
+					free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
+					error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
+                    copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[k]->output_size);
                 }
             }
             
@@ -1982,7 +2037,7 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
             int n_cells = ret_count-k;
             int k2 = k;
             if(k < 0) k = 0;
-            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k],input_error);
+            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_cells,&m->lstms[k],input_error);
             k = k2;
 
             for(j = ret_count; j > k; j--){
@@ -2021,8 +2076,8 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
     int i,j,ret_count = m->layers-1,z;
     float** temp = (float**)malloc(sizeof(float*)*m->window);// inputs of lstms
     for(i = 0; i < m->window; i++){
-        error2_model[i] = (float*)calloc(m->lstms[0]->size,sizeof(float));
-        copy_array(error_model[i],error2_model[i],m->lstms[0]->size);
+        error2_model[i] = (float*)calloc(m->lstms[m->layers-1]->output_size,sizeof(float));
+        copy_array(error_model[i],error2_model[i],m->lstms[m->layers-1]->output_size);
     }
     int flagg = 0;
     int k = 0;
@@ -2046,9 +2101,11 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
                         temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
                     }
                 }
-                ret2 = bp_rmodel_lstm_opt(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k+1],input_error3,&m2->lstms[k+1]);
+                ret2 = bp_rmodel_lstm_opt(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3,&m2->lstms[k+1]);
                 for(j = 0; j < m->window; j++){
-                    copy_array(input_error3[j],error2_model[j],m->lstms[0]->size);
+					free(error2_model[j]);
+					error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
+                    copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
                 for(j = ret_count; j > ret_count-n_cells; j--){
@@ -2062,7 +2119,9 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
             }
             for(j = 0; j < m->window/m->lstms[k]->n_grouped_cell; j++){
                 for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
-                    copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[0]->size);
+					free(error2_model[j*m->lstms[k]->n_grouped_cell+z]);
+					error2_model[j*m->lstms[k]->n_grouped_cell+z] = (float*)calloc(m->lstms[k]->output_size,sizeof(float));
+                    copy_array(m->lstms[k]->bns[j]->error2[z],error2_model[j*m->lstms[k]->n_grouped_cell+z],m->lstms[k]->output_size);
                 }
             }
             
@@ -2075,7 +2134,7 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
             int n_cells = ret_count-k;
             int k2 = k;
             if(k < 0) k = 0;
-            ret2 = bp_rmodel_lstm_opt(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,m->lstms[0]->size,n_cells,&m->lstms[k],input_error,&m2->lstms[k]);
+            ret2 = bp_rmodel_lstm_opt(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_cells,&m->lstms[k],input_error,&m2->lstms[k]);
             k = k2;
 
             for(j = ret_count; j > k; j--){

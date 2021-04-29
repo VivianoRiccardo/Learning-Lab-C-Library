@@ -38,8 +38,8 @@ SOFTWARE.
  *                @ int window:= the number of unrolled cell in orizontal
  * 
  * */
-lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag){
-    if(layer < 0 || size <= 0){
+lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag){
+    if(layer < 0 || input_size <= 0 || output_size <= 0){
         fprintf(stderr,"Error: the layer flag must be >= 0 and size param should be > 0\n");
         exit(1);
     }
@@ -55,10 +55,16 @@ lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int
             exit(1);
         }
     }
+    
+    if(residual_flag == LSTM_RESIDUAL && input_size != output_size){
+		fprintf(stderr,"Error: if have set the residual for this lstm cell, but your input size does not match your output size!\n");
+		exit(1);
+	}
     int i,j;
     lstm* lstml = (lstm*)malloc(sizeof(lstm));
     lstml->layer = layer;
-    lstml->size = size;
+    lstml->input_size = input_size;
+    lstml->output_size = output_size;
     lstml->dropout_flag_up = dropout_flag1;
     lstml->dropout_flag_right = dropout_flag2;
     lstml->w = (float**)malloc(sizeof(float*)*4);
@@ -110,8 +116,8 @@ lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int
     lstml->lstm_hidden = (float**)malloc(sizeof(float*)*window);
     lstml->out_up = (float**)malloc(sizeof(float*)*window);
     lstml->lstm_cell = (float**)malloc(sizeof(float*)*window);
-    lstml->dropout_mask_up = (float*)malloc(sizeof(float)*size);
-    lstml->dropout_mask_right = (float*)malloc(sizeof(float)*size);
+    lstml->dropout_mask_up = (float*)malloc(sizeof(float)*output_size);
+    lstml->dropout_mask_right = (float*)malloc(sizeof(float)*output_size);
     lstml->dropout_threshold_up = dropout_threshold1;
     
     lstml->dropout_threshold_right = dropout_threshold2;
@@ -121,7 +127,7 @@ lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int
     if(norm_flag == GROUP_NORMALIZATION){
         lstml->bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
         for(i = 0; i < window/n_grouped_cell; i++){
-            lstml->bns[i] = batch_normalization(n_grouped_cell,size,layer,NO_ACTIVATION);
+            lstml->bns[i] = batch_normalization(n_grouped_cell,output_size,layer,NO_ACTIVATION);
         }
     }
     
@@ -171,70 +177,75 @@ lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int
     
     for(i = 0; i < window; i++){
         lstml->lstm_z[i] = (float**)malloc(sizeof(float*)*4);
-        lstml->lstm_hidden[i] = (float*)calloc(size,sizeof(float));
-        lstml->lstm_cell[i] = (float*)calloc(size,sizeof(float));
-        lstml->out_up[i] = (float*)calloc(size,sizeof(float));
+        lstml->lstm_hidden[i] = (float*)calloc(output_size,sizeof(float));
+        lstml->lstm_cell[i] = (float*)calloc(output_size,sizeof(float));
+        lstml->out_up[i] = (float*)calloc(output_size,sizeof(float));
         for(j = 0; j < 4; j++){
-            lstml->lstm_z[i][j] = (float*)calloc(size,sizeof(float));
+            lstml->lstm_z[i][j] = (float*)calloc(output_size,sizeof(float));
         }
     }
     
     for(i = 0; i < 4; i++){
-        lstml->w[i] = (float*)calloc(size*size,sizeof(float));
-        lstml->u[i] = (float*)calloc(size*size,sizeof(float));
-        lstml->w_active_output_neurons[i] = (int*)calloc(size*size,sizeof(int));
-        lstml->u_active_output_neurons[i] = (int*)calloc(size*size,sizeof(int));
-        for(j = 0; j < size*size; j++){
-            lstml->w[i][j] = random_general_gaussian_xavier_init(size);
-            lstml->u[i][j] = random_general_gaussian_xavier_init(size);
+        lstml->w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+        lstml->u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+        lstml->w_active_output_neurons[i] = (int*)calloc(output_size*input_size,sizeof(int));
+        lstml->u_active_output_neurons[i] = (int*)calloc(output_size*output_size,sizeof(int));
+        for(j = 0; j < output_size*input_size; j++){
+            lstml->w[i][j] = random_general_gaussian_xavier_init(input_size);
             lstml->w_active_output_neurons[i][j] = 1;
+        }
+        for(j = 0; j < output_size*output_size; j++){
+            lstml->u[i][j] = random_general_gaussian_xavier_init(output_size);
             lstml->u_active_output_neurons[i][j] = 1;
         }
         
         if(training_mode != EDGE_POPUP){
-            lstml->d_w[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->ex_d_w_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d1_w[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d2_w[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d3_w[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_u[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->ex_d_u_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d1_u[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d2_u[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d3_u[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_biases[i] = (float*)calloc(size,sizeof(float));
-            lstml->ex_d_biases_diff_grad[i] = (float*)calloc(size,sizeof(float));
-            lstml->d1_biases[i] = (float*)calloc(size,sizeof(float));
-            lstml->d2_biases[i] = (float*)calloc(size,sizeof(float));
-            lstml->d3_biases[i] = (float*)calloc(size,sizeof(float));
+            lstml->d_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->ex_d_w_diff_grad[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d1_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d2_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d3_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->ex_d_u_diff_grad[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d1_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d2_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d3_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d_biases[i] = (float*)calloc(output_size,sizeof(float));
+            lstml->ex_d_biases_diff_grad[i] = (float*)calloc(output_size,sizeof(float));
+            lstml->d1_biases[i] = (float*)calloc(output_size,sizeof(float));
+            lstml->d2_biases[i] = (float*)calloc(output_size,sizeof(float));
+            lstml->d3_biases[i] = (float*)calloc(output_size,sizeof(float));
         }
         
         else if(training_mode == EDGE_POPUP || feed_forward_flag == EDGE_POPUP){
-            lstml->w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d1_w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d1_u_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d2_w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d2_u_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d3_w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d3_u_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->u_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_u_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->ex_d_w_scores_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->ex_d_u_scores_diff_grad[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->w_indices[i] = (int*)calloc(size*size,sizeof(int));
-            lstml->u_indices[i] = (int*)calloc(size*size,sizeof(int));
-            for(j = 0; j < size*size; j++){
+            lstml->w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d_w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d1_w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d1_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d2_w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d2_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d3_w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d3_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->ex_d_w_scores_diff_grad[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->ex_d_u_scores_diff_grad[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->w_indices[i] = (int*)calloc(output_size*input_size,sizeof(int));
+            lstml->u_indices[i] = (int*)calloc(output_size*output_size,sizeof(int));
+            for(j = 0; j < input_size*output_size; j++){
                 lstml->w_indices[i][j] = j;
+                
+            }
+            for(j = 0; j < output_size*output_size; j++){
                 lstml->u_indices[i][j] = j;
             }
         }
         
-        lstml->biases[i] = (float*)calloc(size,sizeof(float)); 
+        lstml->biases[i] = (float*)calloc(output_size,sizeof(float)); 
         
     }
     
-    for(i = 0; i < size; i++){
+    for(i = 0; i < output_size; i++){
         lstml->dropout_mask_up[i] = 1;
         lstml->dropout_mask_right[i] = 1;
     }
@@ -262,8 +273,8 @@ lstm* recurrent_lstm (int size, int dropout_flag1, float dropout_threshold1, int
  *                @ int window:= the number of unrolled cell in orizontal
  * 
  * */
-lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag){
-    if(layer < 0 || size <= 0){
+lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_size, int dropout_flag1, float dropout_threshold1, int dropout_flag2, float dropout_threshold2, int layer, int window, int residual_flag, int norm_flag, int n_grouped_cell, int training_mode, int feed_forward_flag){
+    if(layer < 0 || input_size <= 0 || output_size <= 0){
         fprintf(stderr,"Error: the layer flag must be >= 0 and size param should be > 0\n");
         exit(1);
     }
@@ -282,7 +293,8 @@ lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, f
     int i,j;
     lstm* lstml = (lstm*)malloc(sizeof(lstm));
     lstml->layer = layer;
-    lstml->size = size;
+    lstml->input_size = input_size;
+    lstml->output_size = output_size;
     lstml->dropout_flag_up = dropout_flag1;
     lstml->dropout_flag_right = dropout_flag2;
     lstml->w = NULL;
@@ -334,8 +346,8 @@ lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, f
     lstml->lstm_hidden = (float**)malloc(sizeof(float*)*window);
     lstml->out_up = (float**)malloc(sizeof(float*)*window);
     lstml->lstm_cell = (float**)malloc(sizeof(float*)*window);
-    lstml->dropout_mask_up = (float*)malloc(sizeof(float)*size);
-    lstml->dropout_mask_right = (float*)malloc(sizeof(float)*size);
+    lstml->dropout_mask_up = (float*)malloc(sizeof(float)*output_size);
+    lstml->dropout_mask_right = (float*)malloc(sizeof(float)*output_size);
     lstml->dropout_threshold_up = dropout_threshold1;
     
     lstml->dropout_threshold_right = dropout_threshold2;
@@ -345,7 +357,7 @@ lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, f
     if(norm_flag == GROUP_NORMALIZATION){
         lstml->bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
         for(i = 0; i < window/n_grouped_cell; i++){
-            lstml->bns[i] = batch_normalization_without_learning_parameters(n_grouped_cell,size,layer,NO_ACTIVATION);
+            lstml->bns[i] = batch_normalization_without_learning_parameters(n_grouped_cell,output_size,layer,NO_ACTIVATION);
         }
     }
     
@@ -395,32 +407,32 @@ lstm* recurrent_lstm_without_learning_parameters (int size, int dropout_flag1, f
     
     for(i = 0; i < window; i++){
         lstml->lstm_z[i] = (float**)malloc(sizeof(float*)*4);
-        lstml->lstm_hidden[i] = (float*)calloc(size,sizeof(float));
-        lstml->lstm_cell[i] = (float*)calloc(size,sizeof(float));
-        lstml->out_up[i] = (float*)calloc(size,sizeof(float));
+        lstml->lstm_hidden[i] = (float*)calloc(output_size,sizeof(float));
+        lstml->lstm_cell[i] = (float*)calloc(output_size,sizeof(float));
+        lstml->out_up[i] = (float*)calloc(output_size,sizeof(float));
         for(j = 0; j < 4; j++){
-            lstml->lstm_z[i][j] = (float*)calloc(size,sizeof(float));
+            lstml->lstm_z[i][j] = (float*)calloc(output_size,sizeof(float));
         }
     }
     
     for(i = 0; i < 4; i++){
         
         if(training_mode != EDGE_POPUP){
-            lstml->d_w[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_u[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_biases[i] = (float*)calloc(size,sizeof(float));
+            lstml->d_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
+            lstml->d_biases[i] = (float*)calloc(output_size,sizeof(float));
         }
         
         else if(training_mode == EDGE_POPUP || feed_forward_flag == EDGE_POPUP){
             
-            lstml->d_w_scores[i] = (float*)calloc(size*size,sizeof(float));
-            lstml->d_u_scores[i] = (float*)calloc(size*size,sizeof(float));
+            lstml->d_w_scores[i] = (float*)calloc(output_size*input_size,sizeof(float));
+            lstml->d_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
   
         }
         
     }
     
-    for(i = 0; i < size; i++){
+    for(i = 0; i < output_size; i++){
         lstml->dropout_mask_up[i] = 1;
         lstml->dropout_mask_right[i] = 1;
     }
@@ -726,7 +738,14 @@ void save_lstm(lstm* rlstm, int n){
         exit(1);
     }
     
-    i = fwrite(&rlstm->size,sizeof(int),1,fw);
+    i = fwrite(&rlstm->input_size,sizeof(int),1,fw);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fwrite(&rlstm->output_size,sizeof(int),1,fw);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
@@ -777,21 +796,21 @@ void save_lstm(lstm* rlstm, int n){
     
     
     for(j = 0; j < 4; j++){
-        i = fwrite(rlstm->w[j],sizeof(float)*(rlstm->size)*(rlstm->size),1,fw);
+        i = fwrite(rlstm->w[j],sizeof(float)*(rlstm->output_size)*(rlstm->input_size),1,fw);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
             exit(1);
         }
         
-        i = fwrite(rlstm->u[j],sizeof(float)*(rlstm->size)*(rlstm->size),1,fw);
+        i = fwrite(rlstm->u[j],sizeof(float)*(rlstm->output_size)*(rlstm->output_size),1,fw);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
             exit(1);
         }
         
-        i = fwrite(rlstm->biases[j],sizeof(float)*(rlstm->size),1,fw);
+        i = fwrite(rlstm->biases[j],sizeof(float)*(rlstm->output_size),1,fw);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
@@ -801,28 +820,28 @@ void save_lstm(lstm* rlstm, int n){
     
     if(exists_edge_popup_stuff_lstm(rlstm)){
         for(j = 0; j < 4; j++){
-            i = fwrite(rlstm->w_scores[j],sizeof(float)*(rlstm->size)*(rlstm->size),1,fw);
+            i = fwrite(rlstm->w_scores[j],sizeof(float)*(rlstm->output_size)*(rlstm->input_size),1,fw);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
             
-            i = fwrite(rlstm->w_indices[j],sizeof(int)*(rlstm->size)*(rlstm->size),1,fw);
+            i = fwrite(rlstm->w_indices[j],sizeof(int)*(rlstm->output_size)*(rlstm->input_size),1,fw);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
             
-            i = fwrite(rlstm->u_indices[j],sizeof(int)*(rlstm->size)*(rlstm->size),1,fw);
+            i = fwrite(rlstm->u_indices[j],sizeof(int)*(rlstm->output_size)*(rlstm->output_size),1,fw);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
             
-            i = fwrite(rlstm->u_scores[j],sizeof(float)*(rlstm->size)*(rlstm->size),1,fw);
+            i = fwrite(rlstm->u_scores[j],sizeof(float)*(rlstm->output_size)*(rlstm->output_size),1,fw);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
@@ -860,7 +879,7 @@ lstm* load_lstm(FILE* fr){
         return NULL;
     int i,j;
     
-    int size = 0,layer = 0,dropout_flag_up = 0,dropout_flag_right = 0, window = 0, residual_flag = 0, norm_flag = 0, n_grouped_cell = 0, training_mode = 0, feed_forward_flag = 0;
+    int input_size = 0, output_size = 0, layer = 0,dropout_flag_up = 0,dropout_flag_right = 0, window = 0, residual_flag = 0, norm_flag = 0, n_grouped_cell = 0, training_mode = 0, feed_forward_flag = 0;
     float dropout_threshold_right = 0,dropout_threshold_up = 0, k_percentage;
     float** w_scores = NULL;
     float** w = (float**)malloc(sizeof(float*)*4);
@@ -919,7 +938,14 @@ lstm* load_lstm(FILE* fr){
         exit(1);
     }
     
-    i = fread(&size,sizeof(int),1,fr);
+    i = fread(&input_size,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
+        exit(1);
+    }
+    
+    i = fread(&output_size,sizeof(int),1,fr);
     
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
@@ -969,25 +995,25 @@ lstm* load_lstm(FILE* fr){
     }
     
     for(j = 0; j < 4; j++){
-        w[j] = (float*)malloc(sizeof(float)*size*size);
-        u[j] = (float*)malloc(sizeof(float)*size*size);
-        biases[j] = (float*)malloc(sizeof(float)*size);
+        w[j] = (float*)malloc(sizeof(float)*output_size*input_size);
+        u[j] = (float*)malloc(sizeof(float)*output_size*output_size);
+        biases[j] = (float*)malloc(sizeof(float)*output_size);
         
-        i = fread(w[j],sizeof(float)*(size)*(size),1,fr);
+        i = fread(w[j],sizeof(float)*(output_size)*(input_size),1,fr);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
             exit(1);
         }
         
-        i = fread(u[j],sizeof(float)*(size)*(size),1,fr);
+        i = fread(u[j],sizeof(float)*(output_size)*(output_size),1,fr);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
             exit(1);
         }
         
-        i = fread(biases[j],sizeof(float)*(size),1,fr);
+        i = fread(biases[j],sizeof(float)*(output_size),1,fr);
     
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
@@ -997,31 +1023,31 @@ lstm* load_lstm(FILE* fr){
     
     if(training_mode == EDGE_POPUP || feed_forward_flag == EDGE_POPUP){
         for(j = 0; j < 4; j++){
-            w_scores[j] = (float*)malloc(sizeof(float)*size*size);
-            u_scores[j] = (float*)malloc(sizeof(float)*size*size);
-            w_indices[j] = (int*)malloc(sizeof(int)*size*size);
-            u_indices[j] = (int*)malloc(sizeof(int)*size*size);
+            w_scores[j] = (float*)malloc(sizeof(float)*input_size*output_size);
+            u_scores[j] = (float*)malloc(sizeof(float)*output_size*output_size);
+            w_indices[j] = (int*)malloc(sizeof(int)*input_size*output_size);
+            u_indices[j] = (int*)malloc(sizeof(int)*output_size*output_size);
             
-            i = fread(w_scores[j],sizeof(float)*(size)*(size),1,fr);
+            i = fread(w_scores[j],sizeof(float)*(input_size)*(output_size),1,fr);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
-            i = fread(w_indices[j],sizeof(int)*(size)*(size),1,fr);
+            i = fread(w_indices[j],sizeof(int)*(input_size)*(output_size),1,fr);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
-            i = fread(u_indices[j],sizeof(int)*(size)*(size),1,fr);
+            i = fread(u_indices[j],sizeof(int)*(output_size)*(output_size),1,fr);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
             
-            i = fread(u_scores[j],sizeof(float)*(size)*(size),1,fr);
+            i = fread(u_scores[j],sizeof(float)*(output_size)*(output_size),1,fr);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
@@ -1039,16 +1065,16 @@ lstm* load_lstm(FILE* fr){
         }
     }
     
-    lstm* l = recurrent_lstm(size,dropout_flag_up,dropout_threshold_up,dropout_flag_right,dropout_threshold_right,layer, window, residual_flag,norm_flag,n_grouped_cell,training_mode,feed_forward_flag);
+    lstm* l = recurrent_lstm(input_size,output_size,dropout_flag_up,dropout_threshold_up,dropout_flag_right,dropout_threshold_right,layer, window, residual_flag,norm_flag,n_grouped_cell,training_mode,feed_forward_flag);
     for(i = 0; i < 4; i++){
-        copy_array(w[i],l->w[i],size*size);
-        copy_array(u[i],l->u[i],size*size);
-        copy_array(biases[i],l->biases[i],size);
+        copy_array(w[i],l->w[i],output_size*input_size);
+        copy_array(u[i],l->u[i],output_size*output_size);
+        copy_array(biases[i],l->biases[i],output_size);
         if(training_mode == EDGE_POPUP || feed_forward_flag == EDGE_POPUP){
-            copy_array(w_scores[i],l->w_scores[i],size*size);
-            copy_array(u_scores[i],l->u_scores[i],size*size);
-            copy_int_array(u_indices[i],l->u_indices[i],size*size);
-            copy_int_array(w_indices[i],l->w_indices[i],size*size);
+            copy_array(w_scores[i],l->w_scores[i],output_size*input_size);
+            copy_array(u_scores[i],l->u_scores[i],output_size*output_size);
+            copy_int_array(u_indices[i],l->u_indices[i],output_size*output_size);
+            copy_int_array(w_indices[i],l->w_indices[i],output_size*input_size);
             free(w_scores[i]);
             free(u_scores[i]);
             free(u_indices[i]);
@@ -1068,14 +1094,16 @@ lstm* load_lstm(FILE* fr){
     l->k_percentage = k_percentage;
     if(exists_edge_popup_stuff_lstm(l)){
         for(i = 0; i <4; i++){
-            get_used_outputs_lstm(l->w_active_output_neurons[i],l->size,l->size,l->w_indices[i],l->k_percentage);
-            get_used_outputs_lstm(l->u_active_output_neurons[i],l->size,l->size,l->u_indices[i],l->k_percentage);
+            get_used_outputs_lstm(l->w_active_output_neurons[i],l->input_size,l->output_size,l->w_indices[i],l->k_percentage);
+            get_used_outputs_lstm(l->u_active_output_neurons[i],l->output_size,l->output_size,l->u_indices[i],l->k_percentage);
         }
     }
     else{
         for(i = 0; i <4; i++){
-            for(j = 0; j < size*size; j++){
+            for(j = 0; j < output_size*input_size; j++){
                 l->w_active_output_neurons[i][j] = 1;
+            }
+            for(j = 0; j < output_size*output_size; j++){
                 l->u_active_output_neurons[i][j] = 1;
             }
         }
@@ -1108,46 +1136,46 @@ lstm* copy_lstm(lstm* l){
     if(l == NULL)
         return NULL;
     int i;
-    lstm* copy = recurrent_lstm(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell,l->training_mode,l->feed_forward_flag);
+    lstm* copy = recurrent_lstm(l->input_size,l->output_size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell,l->training_mode,l->feed_forward_flag);
     for(i = 0; i < 4; i++){
-        copy_array(l->w[i],copy->w[i],l->size*l->size);
-        copy_array(l->u[i],copy->u[i],l->size*l->size);
-        copy_int_array(l->w_active_output_neurons[i],copy->w_active_output_neurons[i],l->size*l->size);
-        copy_int_array(l->u_active_output_neurons[i],copy->u_active_output_neurons[i],l->size*l->size);
+        copy_array(l->w[i],copy->w[i],l->output_size*l->input_size);
+        copy_array(l->u[i],copy->u[i],l->output_size*l->output_size);
+        copy_int_array(l->w_active_output_neurons[i],copy->w_active_output_neurons[i],l->output_size*l->input_size);
+        copy_int_array(l->u_active_output_neurons[i],copy->u_active_output_neurons[i],l->output_size*l->output_size);
         
         if(exists_d_params_lstm(l)){
-            copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
-            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_w[i],copy->d1_w[i],l->size*l->size);
-            copy_array(l->d2_w[i],copy->d2_w[i],l->size*l->size);
-            copy_array(l->d3_w[i],copy->d3_w[i],l->size*l->size);
-            copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
-            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_u[i],copy->d1_u[i],l->size*l->size);
-            copy_array(l->d2_u[i],copy->d2_u[i],l->size*l->size);
-            copy_array(l->d3_u[i],copy->d3_u[i],l->size*l->size);
-            copy_array(l->d_biases[i],copy->d_biases[i],l->size);
-            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->size);
-            copy_array(l->d1_biases[i],copy->d1_biases[i],l->size);
-            copy_array(l->d2_biases[i],copy->d2_biases[i],l->size);
-            copy_array(l->d3_biases[i],copy->d3_biases[i],l->size);
+            copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->output_size*l->input_size);
+            copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
+            copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
+            copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
+            copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->output_size*l->output_size);
+            copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
+            copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
+            copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
+            copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
+            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->output_size);
+            copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
+            copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
+            copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
         }
-        copy_array(l->biases[i],copy->biases[i],l->size);
+        copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_edge_popup_stuff_lstm(l)){
-            copy_array(l->w_scores[i],copy->w_scores[i],l->size*l->size);
-            copy_array(l->u_scores[i],copy->u_scores[i],l->size*l->size);
-            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->size*l->size);
-            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->size*l->size);
-            copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->size*l->size);
-            copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->size*l->size);
-            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->size*l->size);
-            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->size*l->size);
-            copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->size*l->size);
-            copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->size*l->size);
-            copy_int_array(l->u_indices[i],copy->u_indices[i],l->size*l->size);
-            copy_int_array(l->w_indices[i],copy->w_indices[i],l->size*l->size);
+            copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
+            copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->output_size*l->input_size);
+            copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->output_size*l->output_size);
+            copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
+            copy_int_array(l->u_indices[i],copy->u_indices[i],l->output_size*l->output_size);
+            copy_int_array(l->w_indices[i],copy->w_indices[i],l->output_size*l->input_size);
         }
     }
     
@@ -1188,17 +1216,17 @@ lstm* copy_lstm_without_learning_parameters(lstm* l){
     if(l == NULL)
         return NULL;
     int i;
-    lstm* copy = recurrent_lstm_without_learning_parameters(l->size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell,l->training_mode,l->feed_forward_flag);
+    lstm* copy = recurrent_lstm_without_learning_parameters(l->input_size,l->output_size,l->dropout_flag_up,l->dropout_threshold_up,l->dropout_flag_right,l->dropout_threshold_right,l->layer, l->window,l->residual_flag,l->norm_flag,l->n_grouped_cell,l->training_mode,l->feed_forward_flag);
     for(i = 0; i < 4; i++){
         
         if(exists_d_params_lstm(l)){
-            copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
-            copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
-            copy_array(l->d_biases[i],copy->d_biases[i],l->size);
+            copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
         }
         if(exists_edge_popup_stuff_lstm(l)){
-            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->size*l->size);
-            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->size*l->size);
+            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
         }
     }
     
@@ -1232,43 +1260,43 @@ void paste_lstm(lstm* l,lstm* copy){
         
     int i;
     for(i = 0; i < 4; i++){
-        copy_array(l->w[i],copy->w[i],l->size*l->size);
-        copy_array(l->u[i],copy->u[i],l->size*l->size);
-        copy_array(l->biases[i],copy->biases[i],l->size);
+        copy_array(l->w[i],copy->w[i],l->output_size*l->input_size);
+        copy_array(l->u[i],copy->u[i],l->output_size*l->output_size);
+        copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_d_params_lstm(l)){
-            copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
-            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_w[i],copy->d1_w[i],l->size*l->size);
-            copy_array(l->d2_w[i],copy->d2_w[i],l->size*l->size);
-            copy_array(l->d3_w[i],copy->d3_w[i],l->size*l->size);
-            copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
-            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_u[i],copy->d1_u[i],l->size*l->size);
-            copy_array(l->d2_u[i],copy->d2_u[i],l->size*l->size);
-            copy_array(l->d3_u[i],copy->d3_u[i],l->size*l->size);
-            copy_array(l->d_biases[i],copy->d_biases[i],l->size);
-            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->size);
-            copy_array(l->d1_biases[i],copy->d1_biases[i],l->size);
-            copy_array(l->d2_biases[i],copy->d2_biases[i],l->size);
-            copy_array(l->d3_biases[i],copy->d3_biases[i],l->size);
+            copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->output_size*l->input_size);
+            copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
+            copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
+            copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
+            copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->output_size*l->output_size);
+            copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
+            copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
+            copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
+            copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
+            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->output_size);
+            copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
+            copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
+            copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
 
         }
         
         if(exists_edge_popup_stuff_lstm(l)){
-            copy_array(l->w_scores[i],copy->w_scores[i],l->size*l->size);
-            copy_array(l->u_scores[i],copy->u_scores[i],l->size*l->size);
-            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->size*l->size);
-            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->size*l->size);
-            copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->size*l->size);
-            copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->size*l->size);
-            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->size*l->size);
-            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->size*l->size);
-            copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->size*l->size);
-            copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->size*l->size);
-            copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->size*l->size);
-            copy_int_array(l->u_indices[i],copy->u_indices[i],l->size*l->size);
-            copy_int_array(l->w_indices[i],copy->w_indices[i],l->size*l->size);
+            copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
+            copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->output_size*l->input_size);
+            copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->output_size*l->output_size);
+            copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
+            copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
+            copy_int_array(l->u_indices[i],copy->u_indices[i],l->output_size*l->output_size);
+            copy_int_array(l->w_indices[i],copy->w_indices[i],l->output_size*l->input_size);
         }
     }
     
@@ -1298,15 +1326,15 @@ void paste_lstm_without_learning_parameters(lstm* l,lstm* copy){
     int i;
     for(i = 0; i < 4; i++){
         if(exists_d_params_lstm(l)){
-            copy_array(l->d_w[i],copy->d_w[i],l->size*l->size);
-            copy_array(l->d_u[i],copy->d_u[i],l->size*l->size);
-            copy_array(l->d_biases[i],copy->d_biases[i],l->size);
+            copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
         }
         
         if(exists_edge_popup_stuff_lstm(l)){
             
-            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->size*l->size);
-            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->size*l->size);
+            copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
         }
     }
     
@@ -1336,9 +1364,9 @@ void paste_w_lstm(lstm* l,lstm* copy){
         
     int i;
     for(i = 0; i < 4; i++){
-        copy_array(l->w[i],copy->w[i],l->size*l->size);
-        copy_array(l->u[i],copy->u[i],l->size*l->size);
-        copy_array(l->biases[i],copy->biases[i],l->size);
+        copy_array(l->w[i],copy->w[i],l->output_size*l->input_size);
+        copy_array(l->u[i],copy->u[i],l->output_size*l->output_size);
+        copy_array(l->biases[i],copy->biases[i],l->output_size);
     }
     
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1362,21 +1390,30 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
         return;
     int i,j;
     for(i = 0; i < 4; i++){
-        for(j = 0; j < l->size*l->size; j++){
+        for(j = 0; j < l->output_size*l->input_size; j++){
             copy->w[i][j] = tau*l->w[i][j] + (1-tau)*copy->w[i][j];
-            copy->u[i][j] = tau*l->u[i][j] + (1-tau)*copy->u[i][j];
             if(exists_d_params_lstm(l)){
                 copy->d1_w[i][j] = tau*l->d1_w[i][j] + (1-tau)*copy->d1_w[i][j];
                 copy->d2_w[i][j] = tau*l->d2_w[i][j] + (1-tau)*copy->d2_w[i][j];
                 copy->d3_w[i][j] = tau*l->d3_w[i][j] + (1-tau)*copy->d3_w[i][j];
                 copy->ex_d_w_diff_grad[i][j] = tau*l->ex_d_w_diff_grad[i][j] + (1-tau)*copy->ex_d_w_diff_grad[i][j];
+            }
+            
+            
+            if(exists_edge_popup_stuff_lstm(l)){
+                copy->w_scores[i][j] = tau*l->w_scores[i][j] + (1-tau)*copy->w_scores[i][j];
+            }
+        }
+        for(j = 0; j < l->output_size*l->output_size; j++){
+            copy->u[i][j] = tau*l->u[i][j] + (1-tau)*copy->u[i][j];
+            if(exists_d_params_lstm(l)){
                 copy->d1_u[i][j] = tau*l->d1_u[i][j] + (1-tau)*copy->d1_u[i][j];
                 copy->d2_u[i][j] = tau*l->d2_u[i][j] + (1-tau)*copy->d2_u[i][j];
                 copy->d3_u[i][j] = tau*l->d3_u[i][j] + (1-tau)*copy->d3_u[i][j];
                 copy->ex_d_u_diff_grad[i][j] = tau*l->ex_d_u_diff_grad[i][j] + (1-tau)*copy->ex_d_u_diff_grad[i][j];
             }
             
-            if(j < l->size){
+            if(j < l->output_size){
                 copy->biases[i][j] = tau*l->biases[i][j] + (1-tau)*copy->biases[i][j];
                 if(exists_d_params_lstm(l)){
                     copy->d1_biases[i][j] = tau*l->d1_biases[i][j] + (1-tau)*copy->d1_biases[i][j];
@@ -1387,16 +1424,15 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
             }
             
             if(exists_edge_popup_stuff_lstm(l)){
-                copy->w_scores[i][j] = tau*l->w_scores[i][j] + (1-tau)*copy->w_scores[i][j];
                 copy->u_scores[i][j] = tau*l->u_scores[i][j] + (1-tau)*copy->u_scores[i][j];
             }
         }
         
         if(exists_edge_popup_stuff_lstm(l)){
-            sort(copy->d_w_scores[i],copy->w_indices[i],0,copy->size*copy->size-1);
-            sort(copy->d_u_scores[i],copy->w_indices[i],0,copy->size*copy->size-1);
-            get_used_outputs_lstm(copy->w_active_output_neurons[i],copy->size,copy->size,copy->w_indices[i],copy->k_percentage);
-            get_used_outputs_lstm(copy->u_active_output_neurons[i],copy->size,copy->size,copy->w_indices[i],copy->k_percentage);
+            sort(copy->d_w_scores[i],copy->w_indices[i],0,copy->output_size*copy->input_size-1);
+            sort(copy->d_u_scores[i],copy->w_indices[i],0,copy->output_size*copy->output_size-1);
+            get_used_outputs_lstm(copy->w_active_output_neurons[i],copy->input_size,copy->output_size,copy->w_indices[i],copy->k_percentage);
+            get_used_outputs_lstm(copy->u_active_output_neurons[i],copy->output_size,copy->output_size,copy->u_indices[i],copy->k_percentage);
         }
     }
     
@@ -1426,12 +1462,16 @@ lstm* reset_lstm(lstm* f){
         return NULL;
     int i,j,k;
     for(i = 0; i < 4; i++){
-        for(j = 0; j < f->size*f->size; j++){
+        for(j = 0; j < f->output_size*f->input_size; j++){
             if(exists_d_params_lstm(f)){
                 f->d_w[i][j] = 0;
+            }
+        }
+        for(j = 0; j < f->output_size*f->output_size; j++){
+			if(exists_d_params_lstm(f)){
                 f->d_u[i][j] = 0;
             }
-            if(j < f->size){
+            if(j < f->output_size){
                 if(exists_d_params_lstm(f))
                 f->d_biases[i][j] = 0;
                 if(!i){
@@ -1445,7 +1485,7 @@ lstm* reset_lstm(lstm* f){
     }
     for(i = 0; i < f->window; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < f->size; k++){
+            for(k = 0; k < f->output_size; k++){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
@@ -1456,14 +1496,16 @@ lstm* reset_lstm(lstm* f){
     
     if(exists_edge_popup_stuff_lstm(f)){
         for(i = 0; i < 4; i++){
-            for(j = 0; j < f->size*f->size; j++){
+            for(j = 0; j < f->output_size*f->input_size; j++){
                 f->d_w_scores[i][j] = 0;
+            }
+            for(j = 0; j < f->output_size*f->output_size; j++){
                 f->d_u_scores[i][j] = 0;
             }
-            sort(f->w_scores[i],f->w_indices[i],0,f->size*f->size-1);
-            sort(f->u_scores[i],f->u_indices[i],0,f->size*f->size-1);
-            get_used_outputs_lstm(f->w_active_output_neurons[i],f->size,f->size,f->w_indices[i],f->k_percentage);
-            get_used_outputs_lstm(f->u_active_output_neurons[i],f->size,f->size,f->u_indices[i],f->k_percentage);
+            sort(f->w_scores[i],f->w_indices[i],0,f->output_size*f->input_size-1);
+            sort(f->u_scores[i],f->u_indices[i],0,f->output_size*f->output_size-1);
+            get_used_outputs_lstm(f->w_active_output_neurons[i],f->input_size,f->output_size,f->w_indices[i],f->k_percentage);
+            get_used_outputs_lstm(f->u_active_output_neurons[i],f->output_size,f->output_size,f->u_indices[i],f->k_percentage);
         }
         
     }
@@ -1491,7 +1533,7 @@ lstm* reset_lstm_except_partial_derivatives(lstm* f){
     if(f == NULL)
         return NULL;
     int i,j,k;
-    for(j = 0; j < f->size; j++){
+    for(j = 0; j < f->output_size; j++){
 
 
         f->dropout_mask_up[j] = 1;
@@ -1501,7 +1543,7 @@ lstm* reset_lstm_except_partial_derivatives(lstm* f){
        
     for(i = 0; i < f->window; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < f->size; k++){
+            for(k = 0; k < f->output_size; k++){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
@@ -1533,7 +1575,7 @@ lstm* reset_lstm_without_dwdb(lstm* f){
     if(f == NULL)
         return NULL;
     int i,j,k;
-    for(j = 0; j < f->size; j++){
+    for(j = 0; j < f->output_size; j++){
 
 
         f->dropout_mask_up[j] = 1;
@@ -1543,7 +1585,7 @@ lstm* reset_lstm_without_dwdb(lstm* f){
        
     for(i = 0; i < f->window; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < f->size; k++){
+            for(k = 0; k < f->output_size; k++){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
@@ -1554,14 +1596,16 @@ lstm* reset_lstm_without_dwdb(lstm* f){
     
     if(exists_edge_popup_stuff_lstm(f)){
         for(i = 0; i < 4; i++){
-            for(j = 0; j < f->size*f->size; j++){
+            for(j = 0; j < f->output_size*f->input_size; j++){
                 f->d_w_scores[i][j] = 0;
+            }
+            for(j = 0; j < f->output_size*f->output_size; j++){
                 f->d_u_scores[i][j] = 0;
             }
-            sort(f->w_scores[i],f->w_indices[i],0,f->size*f->size-1);
-            sort(f->u_scores[i],f->u_indices[i],0,f->size*f->size-1);
-            get_used_outputs_lstm(f->w_active_output_neurons[i],f->size,f->size,f->w_indices[i],f->k_percentage);
-            get_used_outputs_lstm(f->u_active_output_neurons[i],f->size,f->size,f->u_indices[i],f->k_percentage);
+            sort(f->w_scores[i],f->w_indices[i],0,f->output_size*f->input_size-1);
+            sort(f->u_scores[i],f->u_indices[i],0,f->output_size*f->output_size-1);
+            get_used_outputs_lstm(f->w_active_output_neurons[i],f->input_size,f->output_size,f->w_indices[i],f->k_percentage);
+            get_used_outputs_lstm(f->u_active_output_neurons[i],f->output_size,f->output_size,f->u_indices[i],f->k_percentage);
         }
         
     }
@@ -1589,7 +1633,7 @@ lstm* reset_lstm_without_dwdb_without_learning_parameters(lstm* f){
     if(f == NULL)
         return NULL;
     int i,j,k;
-    for(j = 0; j < f->size; j++){
+    for(j = 0; j < f->output_size; j++){
 
 
         f->dropout_mask_up[j] = 1;
@@ -1599,7 +1643,7 @@ lstm* reset_lstm_without_dwdb_without_learning_parameters(lstm* f){
        
     for(i = 0; i < f->window; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < f->size; k++){
+            for(k = 0; k < f->output_size; k++){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
@@ -1610,8 +1654,10 @@ lstm* reset_lstm_without_dwdb_without_learning_parameters(lstm* f){
     
     if(exists_edge_popup_stuff_lstm(f)){
         for(i = 0; i < 4; i++){
-            for(j = 0; j < f->size*f->size; j++){
+            for(j = 0; j < f->output_size*f->input_size; j++){
                 f->d_w_scores[i][j] = 0;
+            }
+            for(j = 0; j < f->output_size*f->output_size; j++){
                 f->d_u_scores[i][j] = 0;
             }
             
@@ -1643,12 +1689,17 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
         return NULL;
     int i,j,k;
     for(i = 0; i < 4; i++){
-        for(j = 0; j < f->size*f->size; j++){
+        for(j = 0; j < f->output_size*f->input_size; j++){
             if(exists_d_params_lstm(f)){
                 f->d_w[i][j] = 0;
+            }
+            
+        }
+        for(j = 0; j < f->output_size*f->output_size; j++){
+            if(exists_d_params_lstm(f)){
                 f->d_u[i][j] = 0;
             }
-            if(j < f->size){
+            if(j < f->output_size){
                 if(exists_d_params_lstm(f))
                 f->d_biases[i][j] = 0;
                 if(!i){
@@ -1662,7 +1713,7 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
     }
     for(i = 0; i < f->window; i++){
         for(j = 0; j < 4; j++){
-            for(k = 0; k < f->size; k++){
+            for(k = 0; k < f->output_size; k++){
                 f->lstm_z[i][j][k] = 0;                        
                 f->lstm_hidden[i][k] = 0;
                 f->lstm_cell[i][k] = 0;
@@ -1673,8 +1724,10 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
     
     if(exists_edge_popup_stuff_lstm(f)){
         for(i = 0; i < 4; i++){
-            for(j = 0; j < f->size*f->size; j++){
+            for(j = 0; j < f->output_size*f->input_size; j++){
                 f->d_w_scores[i][j] = 0;
+            }
+            for(j = 0; j < f->output_size*f->output_size; j++){
                 f->d_u_scores[i][j] = 0;
             }
         }
@@ -1698,7 +1751,7 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
  *                 @ lstm* f:= the lstm layer
  * */
 uint64_t get_array_size_params_lstm(lstm* f){
-    
+    /*
     uint64_t sum = 0;
     int i;
     if(f->norm_flag == GROUP_NORMALIZATION){
@@ -1707,10 +1760,13 @@ uint64_t get_array_size_params_lstm(lstm* f){
         }
     }
     return sum+12*f->size*f->size+6*f->size;
+    * */
+    return 0;
 }
 
 
 uint64_t size_of_lstm(lstm* l){
+	/*
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1727,9 +1783,11 @@ uint64_t size_of_lstm(lstm* l){
         sum+=2*4*l->size*l->size*sizeof(int);
     }
     return sum; 
-    
+    */
+    return 0;
 }
 uint64_t size_of_lstm_without_learning_parameters(lstm* l){
+	/*
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1745,129 +1803,10 @@ uint64_t size_of_lstm_without_learning_parameters(lstm* l){
         sum+= 2*4*l->size*l->size*sizeof(float);
     }
     return sum; 
-    
-}
-/* this function paste the weights and biases in a single vector
- * 
- * Inputs:
- * 
- * 
- *                 @ lstm* f:= the lstm layer
- *                 @ float* vector:= the vector where is copyed everything
- * */
-void memcopy_vector_to_params_lstm(lstm* f, float* vector){
-    int i;
-    for(i = 0; i < 4; i++){
-        memcpy(f->w[i],&vector[(i*2)*f->size*f->size],f->size*f->size*sizeof(float));    
-        memcpy(f->u[i],&vector[(i*2+1)*f->size*f->size],f->size*f->size*sizeof(float));    
-    }
-    
-    for(i = 0; i < 4; i++){
-        memcpy(f->biases[i],&vector[8*f->size*f->size+(i)*f->size],f->size*sizeof(float));        
-    }
-    
-    if(f->norm_flag == GROUP_NORMALIZATION){
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(f->bns[i]->gamma,&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
-        }
-        
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(f->bns[i]->beta,&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
-        }
-    }
+    */
+    return 0;
 }
 
-
-/* this function paste the vector in the weights and biases of the lstm
- * 
- * Inputs:
- * 
- * 
- *                 @ lstm* f:= the lstm layer
- *                 @ float* vector:= the vector where is copyed everything
- * */
-void memcopy_params_to_vector_lstm(lstm* f, float* vector){
-    int i;
-    for(i = 0; i < 4; i++){
-        memcpy(&vector[(i*2)*f->size*f->size],f->w[i],f->size*f->size*sizeof(float));    
-        memcpy(&vector[(i*2+1)*f->size*f->size],f->u[i],f->size*f->size*sizeof(float));    
-    }
-    
-    for(i = 0; i < 4; i++){
-        memcpy(&vector[8*f->size*f->size+(i)*f->size],f->biases[i],f->size*sizeof(float));        
-    }
-    
-    if(f->norm_flag == GROUP_NORMALIZATION){
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim*sizeof(float));
-        }
-        
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim*sizeof(float));
-        }
-    }
-}
-
-/* this function paste the dweights and dbiases in a single vector
- * 
- * Inputs:
- * 
- * 
- *                 @ lstm* f:= the lstm layer
- *                 @ float* vector:= the vector where is copyed everything
- * */
-void memcopy_vector_to_derivative_params_lstm(lstm* f, float* vector){
-    int i;
-    for(i = 0; i < 4; i++){
-        memcpy(f->d_w[i],&vector[(i*2)*f->size*f->size],f->size*f->size*sizeof(float));    
-        memcpy(f->d_u[i],&vector[(i*2+1)*f->size*f->size],f->size*f->size*sizeof(float));    
-    }
-    
-    for(i = 0; i < 4; i++){
-        memcpy(f->d_biases[i],&vector[8*f->size*f->size+(i)*f->size],f->size*sizeof(float));        
-    }
-    
-    if(f->norm_flag == GROUP_NORMALIZATION){
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(f->bns[i]->d_gamma,&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
-        }
-        
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(f->bns[i]->d_beta,&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->vector_dim*sizeof(float));
-        }
-    }
-}
-
-
-/* this function paste the vector in the dweights and dbiases of the lstm
- * 
- * Inputs:
- * 
- * 
- *                 @ lstm* f:= the lstm layer
- *                 @ float* vector:= the vector where is copyed everything
- * */
-void memcopy_derivative_params_to_vector_lstm(lstm* f, float* vector){
-    int i;
-    for(i = 0; i < 4; i++){
-        memcpy(&vector[(i*2)*f->size*f->size],f->d_w[i],f->size*f->size*sizeof(float));    
-        memcpy(&vector[(i*2+1)*f->size*f->size],f->d_u[i],f->size*f->size*sizeof(float));    
-    }
-    
-    for(i = 0; i < 4; i++){
-        memcpy(&vector[8*f->size*f->size+(i)*f->size],f->d_biases[i],f->size*sizeof(float));        
-    }
-    
-    if(f->norm_flag == GROUP_NORMALIZATION){
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(&vector[8*f->size*f->size+4*f->size+i*f->bns[i]->vector_dim],f->bns[i]->d_gamma,f->bns[i]->vector_dim*sizeof(float));
-        }
-        
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            memcpy(&vector[8*f->size*f->size+4*f->size+(f->window/f->n_grouped_cell+i)*f->bns[i]->vector_dim],f->bns[i]->d_beta,f->bns[i]->vector_dim*sizeof(float));
-        }
-    }
-}
 
 
 void get_used_outputs_lstm(int* arr, int input, int output, int* indices, float k_percentage){
