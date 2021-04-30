@@ -52,5 +52,15 @@ lstm* reset_lstm_without_dwdb_without_learning_parameters(lstm* f);
 uint64_t size_of_lstm(lstm* l);
 uint64_t size_of_lstm_without_learning_parameters(lstm* l);
 void paste_lstm_without_learning_parameters(lstm* l,lstm* copy);
+uint64_t count_weights_lstm(lstm* l);
+uint64_t get_array_size_params_lstm(lstm* f);
+uint64_t get_array_size_scores_lstm(lstm* f);
+uint64_t get_array_size_weights_lstm(lstm* f);
+void memcopy_params_to_vector_lstm(lstm* f, float* vector);
+void memcopy_scores_to_vector_lstm(lstm* f, float* vector);
+void memcopy_vector_to_params_lstm(lstm* f, float* vector);
+void memcopy_vector_to_weights_lstm(lstm* f, float* vector);
+void memcopy_weights_to_vector_lstm(lstm* f, float* vector);
+void memcopy_vector_to_scores_lstm(lstm* f, float* vector);
 
 #endif

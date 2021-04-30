@@ -7493,42 +7493,18 @@ float* model_tensor_input_bp_without_learning_parameters(model* m, model* m2, in
  * 
  * */
 uint64_t count_weights(model* m){
-    int i,j,z,c;
+    int i;
     uint64_t sum = 0;
     for(i = 0; i < m->n_fcl; i++){
-        sum+=m->fcls[i]->input*m->fcls[i]->output*m->fcls[i]->k_percentage;
-        if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION){
-            sum+=m->fcls[i]->layer_norm->vector_dim;
-        }    
-    }
-    
+		sum+=count_weights_fcl(m->fcls[i]);
+	}
     for(i = 0; i < m->n_cl; i++){
-        if(m->cls[i]->convolutional_flag == CONVOLUTION){
-            sum+=m->cls[i]->n_kernels*m->cls[i]->k_percentage;
-            if(m->cls[i]->normalization_flag == GROUP_NORMALIZATION){
-                for(z = 0, c = 0; z < m->cls[i]->n_kernels; z++){
-                    if(m->cls[i]->used_kernels[z])
-                        c++;
-                }
-                sum+=c/m->cls[i]->group_norm_channels*m->cls[i]->group_norm[0]->vector_dim;
-            }
-        }
-    }
-    
+		sum+=count_weights_cl(m->cls[i]);
+	}
     for(i = 0; i < m->n_rl; i++){
-        for(j = 0; j < m->rls[i]->n_cl; j++){
-            sum+=m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->k_percentage;
-            if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(z = 0, c = 0; z < m->rls[i]->cls[j]->n_kernels; z++){
-                    if(m->rls[i]->cls[j]->used_kernels[z])
-                        c++;
-                }
-                sum+=c/m->rls[i]->cls[j]->group_norm_channels*m->rls[i]->cls[j]->group_norm[0]->vector_dim;
-            }
-        }
-    }
-    
-    return sum;
+		sum+=count_weights_rl(m->rls[i]);
+	}
+	return sum;
 }
 
 
@@ -7543,7 +7519,7 @@ uint64_t count_weights(model* m){
  *                 @ rl* f:= the residual layer
  * */
 uint64_t get_array_size_params_model(model* f){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         sum+=get_array_size_params(f->fcls[i]);
     }
@@ -7568,7 +7544,7 @@ uint64_t get_array_size_params_model(model* f){
  *                 @ rl* f:= the residual layer
  * */
 uint64_t get_array_size_weights_model(model* f){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         sum+=get_array_size_weights(f->fcls[i]);
     }
@@ -7619,7 +7595,7 @@ uint64_t get_array_size_scores_model(model* f){
  * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
  * */
 void memcopy_vector_to_params_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_vector_to_params(f->fcls[i],&vector[sum]);
         sum += get_array_size_params(f->fcls[i]);
@@ -7645,7 +7621,7 @@ void memcopy_vector_to_params_model(model* f, float* vector){
  * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
  * */
 void memcopy_vector_to_weights_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_vector_to_weights(f->fcls[i],&vector[sum]);
         sum += get_array_size_weights(f->fcls[i]);
@@ -7671,7 +7647,7 @@ void memcopy_vector_to_weights_model(model* f, float* vector){
  * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
  * */
 void memcopy_vector_to_scores_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_vector_to_scores(f->fcls[i],&vector[sum]);
         sum += get_array_size_scores_fcl(f->fcls[i]);
@@ -7695,7 +7671,7 @@ void memcopy_vector_to_scores_model(model* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_params_to_vector_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_params_to_vector(f->fcls[i],&vector[sum]);
         sum += get_array_size_params(f->fcls[i]);
@@ -7719,7 +7695,7 @@ void memcopy_params_to_vector_model(model* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_weights_to_vector_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_weights_to_vector(f->fcls[i],&vector[sum]);
         sum += get_array_size_weights(f->fcls[i]);
@@ -7745,7 +7721,7 @@ void memcopy_weights_to_vector_model(model* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_scores_to_vector_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_scores_to_vector(f->fcls[i],&vector[sum]);
         sum += get_array_size_scores_fcl(f->fcls[i]);
@@ -7768,7 +7744,7 @@ void memcopy_scores_to_vector_model(model* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_derivative_params_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_vector_to_derivative_params(f->fcls[i],&vector[sum]);
         sum += get_array_size_params(f->fcls[i]);
@@ -7793,7 +7769,7 @@ void memcopy_vector_to_derivative_params_model(model* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_derivative_params_to_vector_model(model* f, float* vector){
-    int sum = 0,i;
+    uint64_t sum = 0,i;
     for(i = 0; i < f->n_fcl; i++){
         memcopy_derivative_params_to_vector(f->fcls[i],&vector[sum]);
         sum += get_array_size_params(f->fcls[i]);

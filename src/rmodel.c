@@ -1237,28 +1237,34 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
  * 
  * */
 uint64_t count_weights_rmodel(rmodel* m){
-    /*
     int i;
     uint64_t sum = 0;
     for(i = 0; i < m->n_lstm; i++){
-        if(m->lstms[i]->feed_forward_flag == FULLY_FEED_FORWARD)
-            sum+=m->lstms[i]->size*m->lstms[i]->size*8;
-        else
-            sum+=m->lstms[i]->size*m->lstms[i]->size*8*m->lstms[i]->k_percentage;
-    }
-        
-    for(i = 0; i < m->n_lstm; i++){
-        if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-            sum+=(m->lstms[i]->window/m->lstms[i]->n_grouped_cell)*m->lstms[i]->bns[0]->vector_dim;
-        }
-    }
-    return sum;
-    * */
-    return 0;
+		sum += count_weights_lstm(m->lstms[i]);
+	}
+	return sum;
 }
 
 
+uint64_t size_of_rmodel(rmodel* r){
+	int i;
+	uint64_t sum = 0;
+	for(i = 0; i < r->n_lstm; i++){
+		sum+=size_of_lstm(r->lstms[i]);
+	}
+	
+	return sum;
+}
 
+uint64_t size_of_rmodel_without_learning_parameters(rmodel* r){
+	int i;
+	uint64_t sum = 0;
+	for(i = 0; i < r->n_lstm; i++){
+		sum+=size_of_lstm_without_learning_parameters(r->lstms[i]);
+	}
+	
+	return sum;
+}
 
 
 
@@ -2154,4 +2160,157 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
     
 }
 
+/* this function gives the number of float params for biases and weights in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+uint64_t get_array_size_params_rmodel(rmodel* f){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        sum+=get_array_size_params_lstm(f->lstms[i]);
+    }
+    
+    
+    return sum;
+}
 
+
+/* this function gives the number of float params for weights in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+uint64_t get_array_size_weights_rmodel(rmodel* f){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        sum+=get_array_size_weights_lstm(f->lstms[i]);
+    }
+    
+    
+    return sum;
+}
+
+
+/* this function gives the number of float params for scores in a model
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ * */
+uint64_t get_array_size_scores_rmodel(rmodel* f){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        sum+=get_array_size_scores_lstm(f->lstms[i]);
+    }
+    
+    return sum;
+}
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_params_rmodel(rmodel* f, float* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_vector_to_params_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_params_lstm(f->lstms[i]);
+    }
+}
+
+/* this function paste the weights in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_weights_rmodel(rmodel* f, float* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_vector_to_weights_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_weights_lstm(f->lstms[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_scores_rmodel(rmodel* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_vector_to_scores_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_scores_lstm(f->lstms[i]);
+    }
+}
+
+/* this function paste the vector in the weights and biases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_rmodel(rmodel* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_params_to_vector_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_params_lstm(f->lstms[i]);
+    }
+}
+
+/* this function paste the vector in the weights of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector_rmodel(rmodel* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_weights_to_vector_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_weights_lstm(f->lstms[i]);
+    }
+}
+
+
+
+/* this function paste the vector in the weights and biases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector_rmodel(rmodel* f, float* vector){
+    int sum = 0,i;
+    for(i = 0; i < f->n_lstm; i++){
+        memcopy_scores_to_vector_lstm(f->lstms[i],&vector[sum]);
+        sum += get_array_size_scores_lstm(f->lstms[i]);
+    }
+}

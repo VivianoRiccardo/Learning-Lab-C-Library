@@ -466,6 +466,15 @@ uint64_t size_of_rls_without_learning_parameters(rl* f){
     
 }
 
+
+uint64_t count_weights_rl(rl* r){
+	int i;
+	uint64_t sum = 0;
+	for(i = 0; i < r->n_cl; i++){
+		sum+=count_weights_cl(r->cls[i]);
+	}
+	return sum;
+}
 /* This function returns a rl* layer that is the same copy of the input f
  * except for the input array
  * This functions copies the weights and D and D1 and D2 into a another structure

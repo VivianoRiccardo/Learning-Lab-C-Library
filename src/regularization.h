@@ -25,9 +25,9 @@ SOFTWARE.
 #ifndef __REGULARIZATION_H__
 #define __REGULARIZATION_H__
 
-void add_l2_residual_layer(model* m,int total_number_weights,float lambda);
-void add_l2_convolutional_layer(model* m,int total_number_weights,float lambda);
-void add_l2_fully_connected_layer(model* m,int total_number_weights,float lambda);
-void add_l2_lstm_layer(rmodel* m,int total_number_weights,float lambda);
+void add_l2_residual_layer(model* m,double total_number_weights,float lambda);
+void add_l2_convolutional_layer(model* m,double total_number_weights,float lambda);
+void add_l2_fully_connected_layer(model* m,double total_number_weights,float lambda);
+void add_l2_lstm_layer(rmodel* m,double total_number_weights,float lambda);
 
 #endif

@@ -79,6 +79,7 @@ cl* reset_cl_without_learning_parameters(cl* f);
 cl* reset_cl_without_dwdb_without_learning_parameters(cl* f);
 uint64_t size_of_cls_without_learning_parameters(cl* f);
 void paste_cl_without_learning_parameters(cl* f, cl* copy);
+uint64_t count_weights_cl(cl* c);
 
 
 #endif

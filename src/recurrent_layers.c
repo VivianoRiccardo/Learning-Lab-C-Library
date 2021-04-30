@@ -1758,30 +1758,11 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
 }
 
 
-/* this function gives the number of float params for biases and weights in a lstm
- * 
- * Input:
- * 
- * 
- *                 @ lstm* f:= the lstm layer
- * */
-uint64_t get_array_size_params_lstm(lstm* f){
-    /*
-    uint64_t sum = 0;
-    int i;
-    if(f->norm_flag == GROUP_NORMALIZATION){
-        for(i = 0; i < f->window/f->n_grouped_cell; i++){
-            sum+=f->bns[i]->vector_dim*2;
-        }
-    }
-    return sum+12*f->size*f->size+6*f->size;
-    * */
-    return 0;
-}
+
 
 
 uint64_t size_of_lstm(lstm* l){
-    /*
+    
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1789,20 +1770,22 @@ uint64_t size_of_lstm(lstm* l){
             sum+=size_of_bn(l->bns[i]);
         }
     }
-    sum += 12*4*l->size*l->size*sizeof(float);
-    sum+= 6*4*l->size*sizeof(float);
-    sum+=7*l->window*l->size*sizeof(float);
-    sum+=2*l->size*sizeof(float);
+    sum += 6*4*l->input_size*l->output_size*sizeof(float);
+    sum += 6*4*l->output_size*l->output_size*sizeof(float);
+    sum+= 6*4*l->output_size*sizeof(float);
+    sum+=7*l->window*l->output_size*sizeof(float);
+    sum+=2*l->output_size*sizeof(float);
     if (exists_edge_popup_stuff_lstm(l)){
-        sum+= 12*4*l->size*l->size*sizeof(float);
-        sum+=2*4*l->size*l->size*sizeof(int);
+        sum+= 6*4*l->input_size*l->output_size*sizeof(float);
+        sum+= 6*4*l->output_size*l->output_size*sizeof(float);
+        sum+=4*l->input_size*l->output_size*sizeof(int);
+        sum+=4*l->output_size*l->output_size*sizeof(int);
     }
     return sum; 
-    */
-    return 0;
+    
 }
 uint64_t size_of_lstm_without_learning_parameters(lstm* l){
-    /*
+    
     uint64_t sum = 0;
     int i;
     if(l->norm_flag == GROUP_NORMALIZATION){
@@ -1810,19 +1793,22 @@ uint64_t size_of_lstm_without_learning_parameters(lstm* l){
             sum+=size_of_bn_without_learning_parameters(l->bns[i]);
         }
     }
-    sum += 2*4*l->size*l->size*sizeof(float);
-    sum+= 4*l->size*sizeof(float);
-    sum+=7*l->window*l->size*sizeof(float);
-    sum+=2*l->size;
+    sum += 4*l->input_size*l->output_size*sizeof(float);
+    sum += 4*l->output_size*l->output_size*sizeof(float);
+    sum+= 4*l->output_size*sizeof(float);
+    sum+=7*l->window*l->output_size*sizeof(float);
+    sum+=2*l->output_size;
     if (exists_edge_popup_stuff_lstm(l)){
-        sum+= 2*4*l->size*l->size*sizeof(float);
+        sum+= 4*l->input_size*l->output_size*sizeof(float);
+        sum+= 4*l->output_size*l->output_size*sizeof(float);
     }
     return sum; 
-    */
-    return 0;
+    
 }
 
-
+uint64_t count_weights_lstm(lstm* l){
+	return (uint64_t)((l->k_percentage)*4*(l->output_size*l->output_size + l->input_size*l->output_size)); 
+}
 
 void get_used_outputs_lstm(int* arr, int input, int output, int* indices, float k_percentage){
     int i,j;
@@ -1830,3 +1816,196 @@ void get_used_outputs_lstm(int* arr, int input, int output, int* indices, float 
         arr[(int)((indices[i]/input))] = 1;
     }
 }
+
+
+
+/* this function gives the number of float params for biases and weights in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+uint64_t get_array_size_params_lstm(lstm* f){
+    uint64_t sum = 0;
+    int i;
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			sum+=(uint64_t)f->bns[i]->vector_dim*2;
+		}
+    }
+    return (uint64_t)4*(f->input_size*f->output_size + f->output_size*f->output_size + f->output_size)+sum;
+}
+
+
+/* this function gives the number of float params for scores in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+uint64_t get_array_size_scores_lstm(lstm* f){
+    return (uint64_t)4*(f->input_size*f->output_size+f->output_size*f->output_size);
+}
+
+
+/* this function gives the number of float params for biases and weights in a fcl
+ * 
+ * Input:
+ * 
+ * 
+ *                 @ flc* f:= the fully-connected layer
+ * */
+uint64_t get_array_size_weights_lstm(lstm* f){
+    uint64_t sum = 0;
+    int i;
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			sum+=(uint64_t)f->bns[i]->vector_dim*2;
+		}
+    }
+    return (uint64_t)4*(f->input_size*f->output_size + f->output_size*f->output_size)+sum;
+}
+
+/* this function pastes the weights and biases from a vector into in a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_params_to_vector_lstm(lstm* f, float* vector){
+	int i;
+	for(i = 0; i < 4; i++){
+		copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(f->biases[i],&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->output_size);
+	}
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+			copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+		}
+    }
+}
+
+/* this function pastes the scores stored in a vector inside a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_vector_lstm(lstm* f, float* vector){
+	int i;
+	for(i = 0; i < 4; i++){
+		copy_array(f->w_scores[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(f->u_scores[i],&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->output_size*f->output_size);
+	}
+}
+
+/* this function pastes the the weights and biases from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_params_lstm(lstm* f, float* vector){
+    int i;
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->biases[i],f->output_size);
+	}
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
+			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
+		}
+    }
+}
+
+/* this function pastes the scores from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_weights_lstm(lstm* f, float* vector){
+    int i;
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
+	}
+
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
+			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
+		}
+    }
+}
+
+/* this function pastes the the weights from vector to a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_weights_to_vector_lstm(lstm* f, float* vector){
+    int i;
+	for(i = 0; i < 4; i++){
+		copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
+	}
+
+    if(f->norm_flag == GROUP_NORMALIZATION){
+		for(i = 0; i < f->window/f->n_grouped_cell; i++){
+			copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+			copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+		}
+    }
+}
+
+/* this function pastes the scores from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_scores_lstm(lstm* f, float* vector){
+    int i;
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[i*f->input_size*f->output_size],f->w_scores[i],f->input_size*f->output_size);
+	}
+	for(i = 0; i < 4; i++){
+		copy_array(&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->u_scores[i],f->output_size*f->output_size);
+	}
+}
+
+

@@ -984,16 +984,16 @@ void update_lstm_layer_radam(rmodel* m,float lr,int mini_batch_size,float b1, fl
  *                @ float lambda:= a float value for l2 regularization
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
-void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
+void update_model(model* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* t){
     if(m == NULL)
         return;
     
     lambda*=(float)mini_batch_size;
     
     if(regularization == L2_REGULARIZATION){
-        add_l2_residual_layer(m,total_number_weights,lambda);
-        add_l2_convolutional_layer(m,total_number_weights,lambda);
-        add_l2_fully_connected_layer(m,total_number_weights,lambda);
+        add_l2_residual_layer(m,(double)total_number_weights,lambda);
+        add_l2_convolutional_layer(m,(double)total_number_weights,lambda);
+        add_l2_fully_connected_layer(m,(double)total_number_weights,lambda);
     }
     
     
@@ -1048,7 +1048,7 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
  *                @ float lambda:= a float value for l2 regularization
  *                @ unsigned long long int* t:= the number of time radam has been used
  * */
-void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
+void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* t){
     if(m == NULL)
         return;
     
@@ -1091,7 +1091,7 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
     lambda*=(float)mini_batch_size;
     
     if(regularization == L2_REGULARIZATION)
-        add_l2_lstm_layer(m,total_number_weights,lambda);
+        add_l2_lstm_layer(m,(double)total_number_weights,lambda);
     
     
     
@@ -1134,7 +1134,7 @@ void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int
  *                @ float lambda:= a float value for l2 regularization
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
-void update_transformer(transformer* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
+void update_transformer(transformer* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* time){
     int i;
     for(i = 0; i < t->n_te; i++){
         update_transformer_encoder(t->te[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
@@ -1162,7 +1162,7 @@ void update_transformer(transformer* t, float lr, float momentum, int mini_batch
  *                @ float lambda:= a float value for l2 regularization
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
-void update_transformer_decoder(transformer_decoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
+void update_transformer_decoder(transformer_decoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* time){
     fcl** fcls = t->e->m->fcls;
     cl** cls = t->e->m->cls;
     rl** rls = t->e->m->rls;
@@ -1255,7 +1255,7 @@ void update_transformer_decoder(transformer_decoder* t, float lr, float momentum
  *                @ float lambda:= a float value for l2 regularization
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
-void update_transformer_encoder(transformer_encoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time){
+void update_transformer_encoder(transformer_encoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* time){
     fcl** fcls = t->m->fcls;
     cl** cls = t->m->cls;
     rl** rls = t->m->rls;
@@ -1319,7 +1319,7 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
     return;
 }
 
-void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t){
+void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* t){
     update_model(vm->encoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
     update_model(vm->decoder,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,t);
 }

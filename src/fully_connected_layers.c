@@ -1440,7 +1440,9 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
     return;
 }
 
-
+uint64_t count_weights_fcl(fcl* f){
+	return (uint64_t)(f->input*f->output*f->k_percentage);
+}
 /* this function gives the number of float params for biases and weights in a fcl
  * 
  * Input:

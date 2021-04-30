@@ -38,7 +38,6 @@ void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy
 void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dimension);
 float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
-void update_transformer_encoder(transformer_encoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* time);
 void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t);
 
 #endif

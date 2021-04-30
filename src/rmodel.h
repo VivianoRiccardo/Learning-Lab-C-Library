@@ -38,7 +38,6 @@ rmodel* heavy_load_rmodel(char* file);
 void ff_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, int window, int layers, lstm** lstms);
 float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** input_model, float** error_model, int window,int layers,lstm** lstms, float** input_error);
 uint64_t count_weights_rmodel(rmodel* m);
-void update_rmodel(rmodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, int total_number_weights, float lambda, unsigned long long int* t);
 void sum_rmodel_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3);
 float* lstm_dinput(int index, int output, float** returning_error, lstm* lstms);
 float* lstm_dh(int index, int output, float** returning_error, lstm* lstms);
@@ -56,5 +55,16 @@ float* lstm_dinput_opt(int index, int output, float** returning_error, lstm* lst
 float* lstm_dh_opt(int index, int output, float** returning_error, lstm* lstms, lstm* lstms2);
 void ff_rmodel_opt(float** hidden_states, float** cell_states, float** input_model, rmodel* m, rmodel* m2);
 float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input_model, float** error_model, rmodel* m, float** input_error, rmodel* m2);
+uint64_t size_of_rmodel(rmodel* r);
+uint64_t size_of_rmodel_without_learning_parameters(rmodel* r);
+uint64_t get_array_size_params_rmodel(rmodel* f);
+uint64_t get_array_size_weights_rmodel(rmodel* f);
+uint64_t get_array_size_scores_rmodel(rmodel* f);
+void memcopy_vector_to_params_rmodel(rmodel* f, float* vector);
+void memcopy_vector_to_weights_rmodel(rmodel* f, float* vector);
+void memcopy_vector_to_scores_rmodel(rmodel* f, float* vector);
+void memcopy_params_to_vector_rmodel(rmodel* f, float* vector);
+void memcopy_weights_to_vector_rmodel(rmodel* f, float* vector);
+void memcopy_scores_to_vector_rmodel(rmodel* f, float* vector);
 
 #endif

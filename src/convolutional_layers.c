@@ -1890,7 +1890,7 @@ cl* reset_cl_for_edge_popup(cl* f){
  * 
  * */
 uint64_t size_of_cls(cl* f){
-    uint64_t sum = 0;
+    uint64_t sum = f->n_kernels*sizeof(int);;
     if(exists_biases_cl(f))
         sum+=f->n_kernels*sizeof(float);
     if(exists_bp_handler_arrays(f))
@@ -1902,7 +1902,7 @@ uint64_t size_of_cls(cl* f){
     if(exists_edge_popup_stuff_cl(f))
         sum+=6*f->n_kernels*sizeof(float) + f->n_kernels*sizeof(int);
     if(exists_kernels_cl(f))
-        sum+=f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float) + f->n_kernels*sizeof(int);
+        sum+=f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
     if(exists_pre_activation_cl(f))
         sum+=f->n_kernels*f->rows1*f->cols1*sizeof(float);
     if(exists_post_activation_cl(f))
@@ -1948,6 +1948,10 @@ uint64_t size_of_cls_without_learning_parameters(cl* f){
     return sum;
 }
 
+
+uint64_t count_weights_cl(cl* c){
+	return (uint64_t)(c->k_percentage*c->n_kernels*c->channels*c->kernel_rows*c->kernel_cols);
+}
 /* This function pastes f in copy
  * except for the activation arrays , the post normalization and post pooling arrays
  * and all the arrays used by the feed forward and backpropagation.
