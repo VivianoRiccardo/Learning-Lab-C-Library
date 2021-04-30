@@ -109,7 +109,7 @@ void add_l2_convolutional_layer(model* m,double total_number_weights,float lambd
 				}
 			}
 			else if(m->cls[j]->training_mode == EDGE_POPUP){
-				for(k = m->cls[j]->n_kernels*m->cls[j]->k_percentage; k < m->cls[j]->n_kernels; k++){
+				for(k = 0; k < m->cls[j]->n_kernels; k++){
 					for(u = 0; u < m->cls[j]->channels; u++){
 						for(z = 0; z < m->cls[j]->kernel_rows; z++){
 							for(w = 0; w < m->cls[j]->kernel_cols; w++){
@@ -147,7 +147,7 @@ void add_l2_fully_connected_layer(model* m,double total_number_weights,float lam
 				}
 			}
 		}
-		else if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
+		else if(m->fcls[i]->training_mode == EDGE_POPUP){
 			for(j = 0; j < m->fcls[i]->output; j++){
 				for(k = 0; k < m->fcls[i]->input; k++){
 					ridge_regression(&m->fcls[i]->d_scores[j*m->fcls[i]->input+k],m->fcls[i]->weights[j*m->fcls[i]->input+k],lambda, total_number_weights);
