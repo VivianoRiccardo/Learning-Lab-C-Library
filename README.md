@@ -101,6 +101,7 @@ https://www.cygwin.com/
 - Local response normalization for fcl (27/04/2021)
 - Edge popup for lstm (27/04/2021)
 - Adaptive clipping gradient (27/04/2021)
+- Transformer with Edge-Popup (03/05/2021)
 # Tests
 
 Each test has been trained successfully.
