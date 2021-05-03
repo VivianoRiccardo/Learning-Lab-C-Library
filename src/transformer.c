@@ -91,6 +91,30 @@ void free_transf(transformer* t){
     free(t);
     return;
 } 
+/* this function deallocates the space allocated by a transformer structure including the matrix given as input
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ transformer* t:= the transformer structure that must be deallocated
+ * */
+void free_transf_without_learning_parameters(transformer* t){
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        free_transformer_encoder_layer_without_learning_parameters(t->te[i]);
+    }
+    for(i = 0; i < t->n_td; i++){
+        free_transformer_decoder_layer_without_learning_parameters(t->td[i]);
+    }
+    free(t->te);
+    free(t->td);
+    for(i = 0; i < t->n_te; i++){
+        free(t->encoder_decoder_connections[i]);
+    }
+    free(t->encoder_decoder_connections);
+    free(t);
+    return;
+} 
 
 
 
@@ -118,6 +142,45 @@ transformer* copy_transf(transformer* t){
     }
     for(i = 0; i < t->n_td; i++){
         td[i] = copy_transformer_decoder(t->td[i]);
+    }
+    
+    if(t->encoder_decoder_connections != NULL && t->n_td){
+        enc_dec_con = (int**)malloc(sizeof(int*)*t->n_te);
+        for(i = 0; i < t->n_te; i++){
+            enc_dec_con[i] = (int*)calloc(t->n_td,sizeof(int));
+            for(j = 0; j < t->n_td; j++){
+                enc_dec_con[i][j] = t->encoder_decoder_connections[i][j];
+            }
+        }
+    }
+    
+    transformer* t2 = transf(t->n_te,t->n_td,te,td,enc_dec_con);
+    t2->beta1_adam = t->beta1_adam; 
+    t2->beta2_adam = t->beta2_adam;
+    t2->beta3_adamod = t->beta3_adamod;
+    return t2;
+}
+/* name is self-explanatory
+ * 
+ * Inputs:
+ * 
+ *             @ transformer* t:= the transformer that must be copied
+ * */
+transformer* copy_transf_without_learning_parameters(transformer* t){
+    if (t == NULL) return NULL;
+    int i,j;
+    transformer_encoder** te = NULL;
+    transformer_decoder** td = NULL;
+    int** enc_dec_con = NULL;
+    if(t->n_te)
+        te = (transformer_encoder**)malloc(sizeof(transformer_encoder*)*t->n_te);
+    if(t->n_td)
+        td = (transformer_decoder**)malloc(sizeof(transformer_decoder*)*t->n_td);
+    for(i = 0; i < t->n_te; i++){
+        te[i] = copy_transformer_encoder_without_learning_parameters(t->te[i]);
+    }
+    for(i = 0; i < t->n_td; i++){
+        td[i] = copy_transformer_decoder_without_learning_parameters(t->td[i]);
     }
     
     if(t->encoder_decoder_connections != NULL && t->n_td){
@@ -336,6 +399,24 @@ void reset_transf(transformer* t){
  *             
  *             @ transformer* t:= the transformer structure that must be reset
  * */
+void reset_transf_without_learning_parameters(transformer* t){
+    if(t == NULL) return;
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        reset_transformer_encoder_without_learning_parameters(t->te[i]);
+    }
+    for(i = 0; i < t->n_td; i++){
+        reset_transformer_decoder_without_learning_aprameters(t->td[i]);
+    }
+    return;
+}
+/* this function resetes all the arrays inside the transformer structure
+ * that are used during the ff and bp of the training
+ * 
+ * Inputs:
+ *             
+ *             @ transformer* t:= the transformer structure that must be reset
+ * */
 void reset_transf_decoders(transformer* t){
     if(t == NULL) return;
     int i;
@@ -370,14 +451,33 @@ void reset_transf_for_edge_popup(transformer* t){
  * 
  *             @ transformer* t:= the transformer which space is calcolated
  * */
-unsigned long long int size_of_transformer(transformer* t){
-    unsigned long long int sum = 0;
+uint64_t size_of_transformer(transformer* t){
+    uint64_t sum = 0;
     int i;
     for(i = 0; i < t->n_te; i++){
         sum+=size_of_transformer_encoder(t->te[i]);
     }
     for(i = 0; i < t->n_td; i++){
         sum+=size_of_transformer_decoder(t->td[i]);
+    }
+    
+    return sum;
+}
+/* this function gives an approximation of the space allocated by a transformer structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ transformer* t:= the transformer which space is calcolated
+ * */
+uint64_t size_of_transformer_without_learning_parameters(transformer* t){
+    uint64_t sum = 0;
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        sum+=size_of_transformer_encoder_without_learning_parameters(t->te[i]);
+    }
+    for(i = 0; i < t->n_td; i++){
+        sum+=size_of_transformer_decoder_without_learning_parameters(t->td[i]);
     }
     
     return sum;
@@ -441,6 +541,54 @@ void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, floa
             }
         }
         decoder_transformer_ff(temp,t->td[i]->incoming_input,t->td[i],in,c);
+        temp = get_output_layer_from_encoder_transf(t->td[i]->e);
+        in = t->td[i]->e->m->output_dimension;
+    }
+    
+    return;
+}
+/* this function computes the feed forward of the transformer
+ * 
+ * Inputs:
+ * 
+ *             @ transformer* t:= the structure that must compute the feed forward
+ *             @ float* inputs_encoder:= the inputs for the first encoder layer of t
+ *             @ int_input_dimension1:= the dimension of inputs_encoder
+ *             @ float* inputs_decoder:= the inputs for the first decoder layer
+ *             @ int input_dimension2:= the dimension of inputs_decoder
+ *                @ int flag:= if set to RUN_ONLY_DECODER it runs only the decoder, else if it is set to RUN_ALL_TRANSF both encoder and decoder executes the ff
+ * */
+void transf_ff_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag, transformer* t2){
+    int i, in = input_dimension1,j,k;
+    float* temp = inputs_encoder;
+    if(flag == RUN_ALL_TRANSF){
+        for(i = 0; i < t->n_te; i++){
+            encoder_transformer_ff_opt(temp,t->te[i],in,t2->te[i]);
+            temp = get_output_layer_from_encoder_transf(t->te[i]);
+            in = t->te[i]->m->output_dimension;
+            
+            for(j = 0; j < t->n_td; j++){
+                int c = 0;
+                if(t->encoder_decoder_connections[i][j]){
+                    for(k = 0; k < i; k++){
+                        if(t->encoder_decoder_connections[k][j])
+                            c += t->te[k]->m->output_dimension;
+                    }
+                    memcpy(&t->td[j]->incoming_input[c],get_output_layer_from_encoder_transf(t->te[i]),sizeof(float)*t->te[i]->m->output_dimension);
+                }
+            }
+        }
+    }    
+    in = input_dimension2;
+    temp = inputs_decoder;
+    for(i = 0; i < t->n_td; i++){
+        int c = 0;
+        for(j = 0; j < t->n_te; j++){
+            if (t->encoder_decoder_connections[j][i]){
+                c += t->te[j]->m->output_dimension;
+            }
+        }
+        decoder_transformer_ff_opt(temp,t->td[i]->incoming_input,t->td[i],in,c,t->td[i]);
         temp = get_output_layer_from_encoder_transf(t->td[i]->e);
         in = t->td[i]->e->m->output_dimension;
     }
@@ -517,6 +665,80 @@ float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, fl
                 sum1D(t->te[i]->encoder_output_error,temp1,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
             }
             temp1 = encoder_transformer_bp(temp2,t->te[i],in,t->te[i]->encoder_output_error);
+        }
+    }
+    
+    return temp1;
+    
+}
+/* this function computes the bp passage for the transformer
+ * 
+ * Inputs:
+ * 
+ * 
+ *             @ transformer* t:= the transformer that must compute the bp passage
+ *             @ float* inputs_encoder:= the inputs given to the first encoder, dimension: input_dimension1
+ *             @ float* input_dimension1:= the dimension of inputs_encoder
+ *             @ float* inputs_decoder:= the inputs given to the first decoder, dimension: input_dimension2
+ *             @ int input_dimension2:= the dimension of inputs_decoder
+ *             @ float* output_error:= the error of the last decoder (if you want to add error to the last encoder add it to t->te[t->n_te-1]->encoder_output_error
+ *                @ int flag:= if set to RUN_ONLY_DECODER it runs only the decoder, else if it is set to RUN_ALL_TRANSF both encoder and decoder executes the bp
+ * */
+float* transf_bp_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag, transformer* t2){
+    int i,j,k,in;
+    float* temp1 = output_error;
+    float* temp2 = inputs_decoder;
+    
+    if(flag != RUN_ONLY_ENCODER){
+        for(i = t->n_td-1; i >-1; i--){
+            int c = 0;
+            if(i){
+                temp2 = get_output_layer_from_encoder_transf(t->td[i-1]->e);
+                in = t->td[i-1]->e->m->output_dimension;
+            }
+            
+            else{
+                temp2 = inputs_decoder;
+                in = input_dimension2;
+            }
+            for(j = 0; j < t->n_te; j++){
+                if (t->encoder_decoder_connections[j][i]){
+                    c+=t->te[j]->m->output_dimension;
+                }
+            }
+            temp1 = decoder_transformer_bp_opt(temp2,t->td[i]->incoming_input,t->td[i],in,c,temp1,t->td[i]->incoming_input_error,t2->td[i]);
+        }
+        
+        for(i = t->n_te-1; i > -1; i--){
+            
+            for(j = 0; j < t->n_td; j++){
+                int c = 0;
+                if(t->encoder_decoder_connections[i][j]){
+                    for(k = 0; k < i; k++){
+                        if(t->encoder_decoder_connections[k][j])
+                            c += t->te[k]->m->output_dimension;
+                    }
+                    sum1D(&t->td[j]->incoming_input_error[c],t->te[i]->encoder_output_error,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
+                }
+            }
+        }
+    }
+    if(flag == RUN_ALL_TRANSF){
+        for(i = t->n_te-1; i > -1; i--){    
+            if(i){
+                temp2 = get_output_layer_from_encoder_transf(t->te[i-1]);
+                in = t->te[i-1]->m->output_dimension;
+            }
+            
+            else{
+                temp2 = inputs_encoder;
+                in = input_dimension1;
+            }
+            
+            if(i < t->n_te-1){
+                sum1D(t->te[i]->encoder_output_error,temp1,t->te[i]->encoder_output_error,t->te[i]->m->output_dimension);
+            }
+            temp1 = encoder_transformer_bp_opt(temp2,t->te[i],in,t->te[i]->encoder_output_error,t2->te[i]);
         }
     }
     

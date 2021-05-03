@@ -34,10 +34,16 @@ void save_transf(transformer* t, int n);
 transformer* load_transf(FILE* fr);
 void reset_transf(transformer* t);
 void reset_transf_for_edge_popup(transformer* t);
-unsigned long long int size_of_transformer(transformer* t);
+uint64_t size_of_transformer(transformer* t);
 float* get_output_layer_from_encoder_transf(transformer_encoder* t);
 void transf_ff(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag);
 float* transf_bp(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag);
 void reset_transf_decoders(transformer* t);
+void free_transf_without_learning_parameters(transformer* t);
+transformer* copy_transf_without_learning_parameters(transformer* t);
+void reset_transf_without_learning_parameters(transformer* t);
+uint64_t size_of_transformer_without_learning_parameters(transformer* t);
+void transf_ff_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag, transformer* t2);
+float* transf_bp_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag, transformer* t2);
 
 #endif

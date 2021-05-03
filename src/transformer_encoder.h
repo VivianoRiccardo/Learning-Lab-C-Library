@@ -33,11 +33,18 @@ transformer_encoder* load_transformer_encoder(FILE* fr);
 transformer_encoder* copy_transformer_encoder(transformer_encoder* t);
 void reset_transformer_encoder(transformer_encoder* t);
 void reset_transformer_encoder_for_edge_popup(transformer_encoder* t);
-unsigned long long int size_of_transformer_encoder(transformer_encoder* t);
+uint64_t size_of_transformer_encoder(transformer_encoder* t);
 void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy);
 void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dimension);
 float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
 void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t);
+void free_transformer_encoder_layer_without_learning_parameters(transformer_encoder* t);
+void free_transformer_wrapped_encoder_layer_without_learning_parameters(transformer_encoder* t);
+transformer_encoder* copy_transformer_encoder_without_learning_parameters(transformer_encoder* t);
+void reset_transformer_encoder_without_learning_parameters(transformer_encoder* t);
+uint64_t size_of_transformer_encoder_without_learning_parameters(transformer_encoder* t);
+void encoder_transformer_ff_opt(float* inputs, transformer_encoder* t, int input_dimension, transformer_encoder* t2);
+float* encoder_transformer_bp_opt(float* inputs, transformer_encoder* t, int input_dimension,float* output_error, transformer_encoder* t2);
 
 #endif
