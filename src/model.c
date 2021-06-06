@@ -6197,7 +6197,8 @@ float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* err
  * Input:
  *             
  *             @ model* m:= the model with the layers
- *             @ int tensor_depth:= the depth of the input tensor
+ *             @ int 
+ depth:= the depth of the input tensor
  *             @ int tensor_i:= the number of rows of the tensor
  *             @ int tensor_j:= the number of columns of the tensor
  *             @ float* input:= your input array
@@ -6210,7 +6211,6 @@ void model_tensor_input_ff(model* m, int tensor_depth, int tensor_i, int tensor_
     
     /* Setting the input inside a convolutional structure*/
     cl* temp = (cl*)malloc(sizeof(cl));
-    temp->post_activation = (float*)malloc(sizeof(float)*tensor_depth*tensor_i*tensor_j);
     temp->normalization_flag = NO_NORMALIZATION;
     temp->pooling_flag = NO_POOLING;
     temp->activation_flag = SIGMOID;
@@ -6523,7 +6523,6 @@ void model_tensor_input_ff_without_learning_parameters(model* m, model* m2, int 
     
     /* Setting the input inside a convolutional structure*/
     cl* temp = (cl*)malloc(sizeof(cl));
-    temp->post_activation = (float*)malloc(sizeof(float)*tensor_depth*tensor_i*tensor_j);
     temp->normalization_flag = NO_NORMALIZATION;
     temp->pooling_flag = NO_POOLING;
     temp->activation_flag = SIGMOID;
@@ -7147,7 +7146,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     }
     free(temp);
     if(!bool_is_real(error1[0])){
-        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploding gradient problem\n");
         exit(1);
     }
     return error1;
@@ -7479,7 +7478,7 @@ float* model_tensor_input_bp_without_learning_parameters(model* m, model* m2, in
     }
     free(temp);
     if(!bool_is_real(error1[0])){
-        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploding gradient problem\n");
         exit(1);
     }
     return error1;
