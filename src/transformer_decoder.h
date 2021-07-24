@@ -42,7 +42,7 @@ void reset_transformer_decoder_except_partial_derivatives_and_left_input(transfo
 void reset_transformer_decoder_for_edge_popup(transformer_decoder* t);
 void free_transformer_decoder_layer_without_learning_parameters(transformer_decoder* d);
 transformer_decoder* copy_transformer_decoder_without_learning_parameters(transformer_decoder* t);
-void reset_transformer_decoder_without_learning_aprameters(transformer_decoder* t);
+void reset_transformer_decoder_without_learning_parameters(transformer_decoder* t);
 uint64_t size_of_transformer_decoder_without_learning_parameters(transformer_decoder* t);
 void decoder_transformer_ff_opt(float* inputs1, float* inputs2, transformer_decoder* t,int input1_dimension, int input2_dimension, transformer_decoder* t2);
 float* decoder_transformer_bp_opt(float* inputs1, float* inputs2, transformer_decoder* t, int input1_dimension, int input2_dimension, float* output_error, float* inputs2_error,transformer_decoder* t2);

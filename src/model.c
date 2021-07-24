@@ -210,7 +210,7 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     if(sla[i][0] == FCLS){
         if(m->fcls[m->n_fcl-1]->dropout_flag)
             m->output_layer = m->fcls[m->n_fcl-1]->dropout_temp;
-        else if(m->fcls[m->n_fcl-1]->normalization_flag == LAYER_NORMALIZATION)
+        else if(m->fcls[m->n_fcl-1]->normalization_flag == LAYER_NORMALIZATION || m->fcls[m->n_fcl-1]->normalization_flag == LOCAL_RESPONSE_NORMALIZATION)
             m->output_layer = m->fcls[m->n_fcl-1]->post_normalization;    
         else if(m->fcls[m->n_fcl-1]->activation_flag)
             m->output_layer = m->fcls[m->n_fcl-1]->post_activation;
@@ -6197,8 +6197,7 @@ float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* err
  * Input:
  *             
  *             @ model* m:= the model with the layers
- *             @ int 
- depth:= the depth of the input tensor
+ *             @ int tensor_depth:= the depth of the input tensor
  *             @ int tensor_i:= the number of rows of the tensor
  *             @ int tensor_j:= the number of columns of the tensor
  *             @ float* input:= your input array
@@ -7146,7 +7145,7 @@ float* model_tensor_input_bp(model* m, int tensor_depth, int tensor_i, int tenso
     }
     free(temp);
     if(!bool_is_real(error1[0])){
-        fprintf(stderr,"Error: nan occurred, probably due to the exploding gradient problem\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");
         exit(1);
     }
     return error1;
@@ -7478,7 +7477,7 @@ float* model_tensor_input_bp_without_learning_parameters(model* m, model* m2, in
     }
     free(temp);
     if(!bool_is_real(error1[0])){
-        fprintf(stderr,"Error: nan occurred, probably due to the exploding gradient problem\n");
+        fprintf(stderr,"Error: nan occurred, probably due to the exploiting gradient problem\n");
         exit(1);
     }
     return error1;
@@ -7495,15 +7494,15 @@ uint64_t count_weights(model* m){
     int i;
     uint64_t sum = 0;
     for(i = 0; i < m->n_fcl; i++){
-		sum+=count_weights_fcl(m->fcls[i]);
-	}
+        sum+=count_weights_fcl(m->fcls[i]);
+    }
     for(i = 0; i < m->n_cl; i++){
-		sum+=count_weights_cl(m->cls[i]);
-	}
+        sum+=count_weights_cl(m->cls[i]);
+    }
     for(i = 0; i < m->n_rl; i++){
-		sum+=count_weights_rl(m->rls[i]);
-	}
-	return sum;
+        sum+=count_weights_rl(m->rls[i]);
+    }
+    return sum;
 }
 
 

@@ -43,7 +43,7 @@ void copy_array(float* input, float* output, int size);
 int shuffle_char_matrices_float_int_vectors(char** m,char** m1,float* f, int* v,int n);
 void copy_char_array(char* input, char* output, int size);
 int shuffle_char_matrices_float_int_int_vectors(char** m,char** m1,float* f, int* v, int* v2, int n);
-void free_matrix(float** m, int n);
+void free_matrix(void** m, int n);
 long long unsigned int** confusion_matrix(float* model_output, float* real_output, long long unsigned int** cm, int size, float threshold);
 double* accuracy_array(long long unsigned int** cm, int size);
 int shuffle_float_matrices_float_int_int_vectors(float** m,float** m1,float* f, int* v, int* v2, int n);
@@ -65,5 +65,10 @@ void mergesort(float* values, int* indices, int low, int high);
 void sort(float* values, int* indices, int low, int high);
 void free_tensor(float*** t, int dim1, int dim2);
 int shuffle_float_matrix_float_tensor(float** m,float*** t,int n);
+void set_vector_with_value(float value, float* v, int dimension);
+char* read_files_from_file(char* file, int package_size);
+void set_files_free_from_file(char* file_to_free, char* file);
+void remove_occupied_sets(char* file);
+int msleep(long msec);
 
 #endif

@@ -66,5 +66,7 @@ void memcopy_vector_to_scores_rmodel(rmodel* f, float* vector);
 void memcopy_params_to_vector_rmodel(rmodel* f, float* vector);
 void memcopy_weights_to_vector_rmodel(rmodel* f, float* vector);
 void memcopy_scores_to_vector_rmodel(rmodel* f, float* vector);
+rmodel* load_rmodel_with_file_already_opened(FILE* fr);
+float* get_ith_output_cell(rmodel* r, int ith);
 
 #endif

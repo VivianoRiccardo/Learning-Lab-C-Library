@@ -52,6 +52,7 @@ SOFTWARE.
 #define DIFF_GRAD 4
 #define ADAMOD 5
 
+//actions in model / struct conn transf
 #define FCLS 1
 #define CLS 2
 #define RLS 3
@@ -60,7 +61,16 @@ SOFTWARE.
 #define TRANSFORMER_ENCODER 6
 #define TRANSFORMER_DECODER 7
 #define TRANSFORMER 8
+#define MODEL 9
+#define RMODEL 10
+#define ATTENTION 11
+#define MULTI_HEAD_ATTENTION 12
+#define L2_NORM_CONN 13
+#define VECTOR 14
+#define NOTHING 15
+#define TEMPORAL_ENCODING_MODEL 16
 
+// activations
 #define NO_ACTIVATION 0
 #define SIGMOID 1
 #define RELU 2
@@ -69,14 +79,17 @@ SOFTWARE.
 #define LEAKY_RELU 5
 #define ELU 6
 
+//pooling (2d)
 #define NO_POOLING 0
 #define MAX_POOLING 1
 #define AVARAGE_POOLING 2
 
+//dropout
 #define NO_DROPOUT 0
 #define DROPOUT 1
 #define DROPOUT_TEST 2
 
+//normalizations
 #define NO_NORMALIZATION 0
 #define LOCAL_RESPONSE_NORMALIZATION 1//implemented inside convolutional layer
 #define BATCH_NORMALIZATION 2// not implemented inside any layer 
@@ -85,6 +98,7 @@ SOFTWARE.
 #define SCALED_L2_NORMALIZATION 5 // not implemented inside fully connected and neither convolutional
 #define COSINE_NORMALIZATION 6 // must be added
 
+//optimization algorithms hyperparameters
 #define BETA1_ADAM 0.9
 #define BETA2_ADAM 0.999
 #define BETA3_ADAMOD 0.9999
@@ -92,28 +106,36 @@ SOFTWARE.
 #define EPSILON 1e-7
 #define RADAM_THRESHOLD 4
 
+//regularization in update
 #define NO_REGULARIZATION 0
 #define L2_REGULARIZATION 1
 
+//convolution
 #define NO_CONVOLUTION 1
 #define CONVOLUTION 2
 #define TRANSPOSED_CONVOLUTION 3
 
+//useless for now
 #define BATCH_NORMALIZATION_TRAINING_MODE 1
 #define BATCH_NORMALIZATION_FINAL_MODE 2
 
+//useless for now
 #define STATEFUL 1
 #define STATELESS 2
 
+//activation thresholds
 #define LEAKY_RELU_THRESHOLD 0.1
 #define ELU_THRESHOLD 1
 
+//lstm residual or not
 #define LSTM_RESIDUAL  1
 #define LSTM_NO_RESIDUAL 0
 
+//transformer residual or not
 #define TRANSFORMER_RESIDUAL 1
 #define TRANSFORMER_NO_RESIDUAL 0 
 
+//loss
 #define NO_SET -1
 #define NO_LOSS 0
 #define CROSS_ENTROPY_LOSS 1 << 0
@@ -125,9 +147,11 @@ SOFTWARE.
 #define ENTROPY_LOSS 1 << 6
 #define TOTAL_VARIATION_LOSS_2D 1 << 7
 
+//look ahead algorithm hyperparameters
 #define LOOK_AHEAD_ALPHA 0.8
 #define LOOK_AHEAD_K 10
 
+//training modes and feed forward flag
 #define GRADIENT_DESCENT 1 //training_mode
 #define EDGE_POPUP 2//training mode - feed_forward_flag
 #define FULLY_FEED_FORWARD 3//feed_forward_flag
@@ -137,15 +161,31 @@ SOFTWARE.
 
 #define ONLY_DROPOUT 5//feed_forward_flag (only fully-connected)
 
+//attention types
 #define STANDARD_ATTENTION 1
 #define MASKED_ATTENTION 2
 
+//for decoders
 #define RUN_ONLY_DECODER 0
 #define RUN_ONLY_ENCODER 1
 #define RUN_ALL_TRANSF 2
 
-
+// for sort algorithm at the end of each edge popup iteration
 #define SORT_SWITCH_THRESHOLD 1e6// used to sort the scores if > of this threshold bottom up merge sort is used, otherwise quicksort is used
+
+//vector
+#define NO_ACTION 0
+#define ADDITION 1 
+#define SUBTRACTION 2 
+#define MULTIPLICATION 3
+#define RESIZE 4
+#define CONCATENATE 5
+#define DIVISION 6
+#define INVERSE 7
+#define CHANGE_SIGN 8
+#define NO_CONCATENATE 9
+
+#define POSITIONAL_ENCODING 13
 
 // Neat hyperparams
 #define SPECIES_THERESHOLD 3
@@ -609,6 +649,80 @@ typedef struct training{
     float** floats;
 }training;
 
+
+
+
+typedef struct vector_struct{
+	float* v, *output, *input_error;
+	int action,v_size, output_size, activation_flag, dropout_flag, index, input_size;
+	float dropout_threshold;
+}vector_struct;
+
+typedef struct struct_conn{
+	int id, concatenate_flag;
+	model** temporal_m;//temporal_encoding_model_size
+	model** temporal_m2;//used only in case of concatenate (must be assigned by a previous other already allocated temporal_m)
+	model* m1, *m2;
+	rmodel* r1, *r2;
+	transformer_encoder* e1, *e2;
+	transformer_decoder* d1, *d2;
+	transformer* t1, *t2;
+	scaled_l2_norm* l1, *l2;
+	vector_struct* v1, *v2, *v3;
+	int input1_type, input2_type, output_type;//model, rmodel, encoder transf, decoder transf, transf
+	int decoder_left_input, decoder_down_input, transf_dec_input, transf_enc_input;//transf_enc_input is used either for the transformer or for the encoder
+	int model_input_index, temporal_encoding_model_size, input_size;//all for models, model_input_index is used also for l2 normalization and vector for the input1type and also for vector respect input1_type
+	int vector_index;//used in case of concatenate for input2_type
+	
+	//rmodel
+	int* rmodel_input_left;//r2->n_lstm
+	int* rmodel_input_down;//r2->lstms[0]->window
+	
+	//temporal m
+	int* input_temporal_index;//temporal_encoding_model_size
+	
+	//encoder
+	int* input_encoder_indeces;//transf_enc_input
+	
+	//decoder
+	int* input_decoder_indeces_left;//decoder_left_input
+	int* input_decoder_indeces_down;//decoder_down_input
+	
+	// transformer
+	int* input_transf_encoder_indeces;//transf_enc_input
+	int* input_transf_decoder_indeces;//transf_dec_input
+	
+	// rmodel
+	float** h;//left for rmodel
+	float** c;//left for rmodel
+	float** inputs;// down input for rmodel (r2)
+	
+	//encoder
+	float* encoder_input;//transf_enc_input
+	
+	//decoder
+	float* decoder_input_left;//decoder_left_input
+	float* decoder_input_down;//decoder_down_input
+	
+	//transformer
+	float* transformer_input_encoder;//decoder_left_input
+	float* transformer_input_decoder;//decoder_down_input
+	
+}struct_conn;
+
+typedef struct error_handler{
+	int size,reference_index;
+	int free_flag_error;
+	float* ret_error;
+}error_handler;
+
+typedef struct error_super_struct{
+	int n_error_handlers;
+	error_handler** e;
+}error_super_struct;
+
+
+
 #include "attention.h"
 #include "batch_norm_layers.h"
 #include "client.h"
@@ -637,6 +751,7 @@ typedef struct training{
 #include "positional_encoding.h"
 #include "scaled_l2_norm_layers.h"
 #include "server.h"
+#include "struct_conn.h"
 #include "training.h"
 #include "transformer.h"
 #include "transformer_decoder.h"
@@ -644,5 +759,6 @@ typedef struct training{
 #include "update.h"
 #include "utils.h"
 #include "vae_model.h"
+#include "vector.h"
 
 #endif

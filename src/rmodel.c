@@ -330,7 +330,7 @@ void save_rmodel(rmodel* m, int n){
     s = itoa(n,s);
     s = strcat(s,t);
     
-    fw = fopen(s,"w");
+    fw = fopen(s,"a+");
     
     if(fw == NULL){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
@@ -444,6 +444,65 @@ rmodel* load_rmodel(char* file){
     if(i!=0){
         fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
         exit(1);
+    }
+    
+    rmodel* m = recurrent_network(layers,n_lstm,lstms, window, hidden_state_mode);
+    
+    return m;
+    
+}
+/* This function loads a recurrent network model from a .bin file with name file
+ * 
+ * Input:
+ * 
+ *             @ char* file:= the binary file from which the rmodel will be loaded
+ * 
+ * */
+rmodel* load_rmodel_with_file_already_opened(FILE* fr){
+
+    if(fr == NULL){
+        fprintf(stderr,"Error: error during the opening of the file\n");
+        exit(1);
+    }
+    
+    int layers = 0,n_lstm = 0, window = 0, hidden_state_mode = 0,i;
+    
+    i = fread(&layers,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&n_lstm,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&window,sizeof(int),1,fr);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+    i = fread(&hidden_state_mode,sizeof(int),1,fr);
+    
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the rmodel\n");
+        exit(1);
+    }
+    
+
+    lstm** lstms;
+    
+    if(!n_lstm)
+        lstms = NULL;
+    else
+        lstms = (lstm**)malloc(sizeof(lstm*)*n_lstm);
+        
+    for(i = 0; i < n_lstm; i++){
+        lstms[i] = load_lstm(fr);
     }
     
     rmodel* m = recurrent_network(layers,n_lstm,lstms, window, hidden_state_mode);
@@ -801,7 +860,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                 
                 
                 if(matrix[j] != NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
 
@@ -826,7 +885,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                         temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
                 
@@ -850,7 +909,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                         temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
                 
@@ -918,7 +977,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
                 temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u, lstms[j]->d_biases, lstms[j]->w, lstms[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j]->k_percentage,NULL,NULL);
             }
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
             
         }
@@ -932,7 +991,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             else if(lstms[j]->training_mode == EDGE_POPUP)
             temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
         }
         
@@ -944,7 +1003,7 @@ float*** bp_rmodel_lstm(float** hidden_states, float** cell_states, float** inpu
             else if(lstms[j]->training_mode == EDGE_POPUP)
             temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms[j]->d_w,lstms[j]->d_u,lstms[j]->d_biases,lstms[j]->w,lstms[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms[j]->w_active_output_neurons, lstms[j]->u_active_output_neurons, lstms[j+1]->w_indices,lstms[j]->u_indices,lstms[j]->d_w_scores,lstms[j]->d_u_scores,lstms[j+1]->k_percentage,lstms[j+1]->w_active_output_neurons,lstms[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
             
         }
@@ -1065,7 +1124,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                 
                 
                 if(matrix[j] != NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
 
@@ -1090,7 +1149,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                         temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
                 
@@ -1114,7 +1173,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                         temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,lstms[j]->lstm_cell[i-1], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
                 }
                 if(matrix[j]!= NULL)
-                    free_matrix(matrix[j],4);
+                    free_matrix((void**)matrix[j],4);
                 
                 matrix[j] = temp;
                 
@@ -1179,7 +1238,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
                 temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u, lstms2[j]->d_biases, lstms2[j]->w, lstms2[j]->u, lstms[j]->lstm_z[i], dx,input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], NULL, NULL, lstms[j]->lstm_z[i+1],matrix[j],NULL,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j]->k_percentage,NULL,NULL);
             }
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
             
         }
@@ -1193,7 +1252,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
             else if(lstms[j]->training_mode == EDGE_POPUP)
             temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, lstms[j-1]->out_up[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
         }
         
@@ -1205,7 +1264,7 @@ float*** bp_rmodel_lstm_opt(float** hidden_states, float** cell_states, float** 
             else if(lstms[j]->training_mode == EDGE_POPUP)
             temp = lstm_bp_edge_popup(lstm_bp_flag,lstms[j]->input_size,lstms[j]->output_size,output_up, lstms2[j]->d_w,lstms2[j]->d_u,lstms2[j]->d_biases,lstms2[j]->w,lstms2[j]->u,lstms[j]->lstm_z[i], dx, input_model[i],lstms[j]->lstm_cell[i],dropout_output2,cell_states[j], lstms[j+1]->lstm_z[i], matrix[j+1], lstms[j]->lstm_z[i+1],matrix[j],lstms2[j+1]->w,lstms[j]->dropout_mask_up,lstms[j]->dropout_mask_right,lstms2[j]->w_active_output_neurons, lstms2[j]->u_active_output_neurons, lstms2[j+1]->w_indices,lstms2[j]->u_indices,lstms2[j]->d_w_scores,lstms2[j]->d_u_scores,lstms2[j+1]->k_percentage,lstms2[j+1]->w_active_output_neurons,lstms2[j+1]->u_active_output_neurons);
             if(matrix[j] != NULL)
-                free_matrix(matrix[j],4);
+                free_matrix((void**)matrix[j],4);
             matrix[j] = temp;
             
         }
@@ -1240,30 +1299,30 @@ uint64_t count_weights_rmodel(rmodel* m){
     int i;
     uint64_t sum = 0;
     for(i = 0; i < m->n_lstm; i++){
-		sum += count_weights_lstm(m->lstms[i]);
-	}
-	return sum;
+        sum += count_weights_lstm(m->lstms[i]);
+    }
+    return sum;
 }
 
 
 uint64_t size_of_rmodel(rmodel* r){
-	int i;
-	uint64_t sum = 0;
-	for(i = 0; i < r->n_lstm; i++){
-		sum+=size_of_lstm(r->lstms[i]);
-	}
-	
-	return sum;
+    int i;
+    uint64_t sum = 0;
+    for(i = 0; i < r->n_lstm; i++){
+        sum+=size_of_lstm(r->lstms[i]);
+    }
+    
+    return sum;
 }
 
 uint64_t size_of_rmodel_without_learning_parameters(rmodel* r){
-	int i;
-	uint64_t sum = 0;
-	for(i = 0; i < r->n_lstm; i++){
-		sum+=size_of_lstm_without_learning_parameters(r->lstms[i]);
-	}
-	
-	return sum;
+    int i;
+    uint64_t sum = 0;
+    for(i = 0; i < r->n_lstm; i++){
+        sum+=size_of_lstm_without_learning_parameters(r->lstms[i]);
+    }
+    
+    return sum;
 }
 
 
@@ -1891,12 +1950,12 @@ void ff_rmodel(float** hidden_states, float** cell_states, float** input_model, 
     for(i = 0; i < m->window; i++){
         temp[i] = input_model[i];
     }
-    int n_cells;
-    for(i = 0, n_cells = 1;i < m->layers; i+=n_cells){
-        n_cells = 1;
-        for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
-        if(k == m->layers){ n_cells--; k--;}
-        ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,n_cells,&m->lstms[i]);
+    int n_lstm;
+    for(i = 0, n_lstm = 1;i < m->layers; i+=n_lstm){
+        n_lstm = 1;
+        for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_lstm++);
+        if(k == m->layers){ n_lstm--; k--;}
+        ff_rmodel_lstm(&hidden_states[i],&cell_states[i],temp,m->window,n_lstm,&m->lstms[i]);
         for(j = 0; j < m->window; j++){
             temp[j] = m->lstms[k]->out_up[j];
         }
@@ -1937,12 +1996,12 @@ void ff_rmodel_opt(float** hidden_states, float** cell_states, float** input_mod
     for(i = 0; i < m->window; i++){
         temp[i] = input_model[i];
     }
-    int n_cells;
-    for(i = 0, n_cells = 1;i < m->layers; i+=n_cells){
-        n_cells = 1;
-        for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_cells++);
-        if(k == m->layers){ n_cells--; k--;}
-        ff_rmodel_lstm_opt(&hidden_states[i],&cell_states[i],temp,m->window,n_cells,&m->lstms[i],&m2->lstms[i]);
+    int n_lstm;
+    for(i = 0, n_lstm = 1;i < m->layers; i+=n_lstm){
+        n_lstm = 1;
+        for(k = i; k < m->layers && m->lstms[k]->norm_flag != GROUP_NORMALIZATION; k++,n_lstm++);
+        if(k == m->layers){ n_lstm--; k--;}
+        ff_rmodel_lstm_opt(&hidden_states[i],&cell_states[i],temp,m->window,n_lstm,&m->lstms[i],&m2->lstms[i]);
         for(j = 0; j < m->window; j++){
             temp[j] = m->lstms[k]->out_up[j];
         }
@@ -2005,23 +2064,23 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
             }
         }
         if(flag){
-            int n_cells = ret_count-k;
+            int n_lstm = ret_count-k;
             flagg = 1;
-            if(n_cells){
+            if(n_lstm){
                 for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell; j++){
                     for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
                         temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
                     }
                 }
-                ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3);
+                ret2 = bp_rmodel_lstm(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_lstm,&m->lstms[k+1],input_error3);
                 for(j = 0; j < m->window; j++){
                     free(error2_model[j]);
                     error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
                     copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
-                for(j = ret_count; j > ret_count-n_cells; j--){
-                    ret[j] = ret2[n_cells-1-(ret_count-j)];
+                for(j = ret_count; j > ret_count-n_lstm; j--){
+                    ret[j] = ret2[n_lstm-1-(ret_count-j)];
                 }
                 free(ret2);
             }
@@ -2037,16 +2096,16 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
                 }
             }
             
-            if(n_cells)
+            if(n_lstm)
                 ret_count = k;
         }
         
         else{
             
-            int n_cells = ret_count-k;
+            int n_lstm = ret_count-k;
             int k2 = k;
             if(k < 0) k = 0;
-            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_cells,&m->lstms[k],input_error);
+            ret2 = bp_rmodel_lstm(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_lstm,&m->lstms[k],input_error);
             k = k2;
 
             for(j = ret_count; j > k; j--){
@@ -2056,7 +2115,7 @@ float*** bp_rmodel(float** hidden_states, float** cell_states, float** input_mod
         }
     }
     
-    free_matrix(error2_model,m->window);
+    free_matrix((void**)error2_model,m->window);
     free(input_error3);
     free(temp);
     return ret;
@@ -2102,23 +2161,23 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
             }
         }
         if(flag){
-            int n_cells = ret_count-k;
+            int n_lstm = ret_count-k;
             flagg = 1;
-            if(n_cells){
+            if(n_lstm){
                 for(j = 0; j < m->lstms[k]->window/m->lstms[k]->n_grouped_cell; j++){
                     for(z = 0; z < m->lstms[k]->n_grouped_cell; z++){
                         temp[j*m->lstms[k]->n_grouped_cell+z] = m->lstms[k]->bns[j]->outputs[z];
                     }
                 }
-                ret2 = bp_rmodel_lstm_opt(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_cells,&m->lstms[k+1],input_error3,&m2->lstms[k+1]);
+                ret2 = bp_rmodel_lstm_opt(&hidden_states[k+1],&cell_states[k+1],temp,error2_model,m->window,n_lstm,&m->lstms[k+1],input_error3,&m2->lstms[k+1]);
                 for(j = 0; j < m->window; j++){
                     free(error2_model[j]);
                     error2_model[j] = (float*)calloc(m->lstms[k+1]->input_size,sizeof(float));
                     copy_array(input_error3[j],error2_model[j],m->lstms[k+1]->input_size);
                     free(input_error3[j]);
                 }
-                for(j = ret_count; j > ret_count-n_cells; j--){
-                    ret[j] = ret2[n_cells-1-(ret_count-j)];
+                for(j = ret_count; j > ret_count-n_lstm; j--){
+                    ret[j] = ret2[n_lstm-1-(ret_count-j)];
                 }
                 free(ret2);
             }
@@ -2134,16 +2193,16 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
                 }
             }
             
-            if(n_cells)
+            if(n_lstm)
                 ret_count = k;
         }
         
         else{
             
-            int n_cells = ret_count-k;
+            int n_lstm = ret_count-k;
             int k2 = k;
             if(k < 0) k = 0;
-            ret2 = bp_rmodel_lstm_opt(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_cells,&m->lstms[k],input_error,&m2->lstms[k]);
+            ret2 = bp_rmodel_lstm_opt(&hidden_states[k],&cell_states[k],input_model,error2_model,m->window,n_lstm,&m->lstms[k],input_error,&m2->lstms[k]);
             k = k2;
 
             for(j = ret_count; j > k; j--){
@@ -2153,7 +2212,7 @@ float*** bp_rmodel_opt(float** hidden_states, float** cell_states, float** input
         }
     }
     
-    free_matrix(error2_model,m->window);
+    free_matrix((void**)error2_model,m->window);
     free(input_error3);
     free(temp);
     return ret;
@@ -2313,4 +2372,15 @@ void memcopy_scores_to_vector_rmodel(rmodel* f, float* vector){
         memcopy_scores_to_vector_lstm(f->lstms[i],&vector[sum]);
         sum += get_array_size_scores_lstm(f->lstms[i]);
     }
+}
+
+/* this function returns the ith cell, it can be from the normalization layer (if it is in the final layer too
+ * or just the output*/
+float* get_ith_output_cell(rmodel* r, int ith){
+    if(r->lstms[r->n_lstm-1]->norm_flag == GROUP_NORMALIZATION){
+        return r->lstms[r->n_lstm-1]->bns[(int)(ith/r->lstms[r->n_lstm-1]->n_grouped_cell)]->outputs[ith%r->lstms[r->n_lstm-1]->n_grouped_cell];
+    }
+    
+    return r->lstms[r->n_lstm-1]->out_up[ith];
+    
 }

@@ -367,9 +367,9 @@ void ddpg_train(ddpg* d){
         slow_paste_model(d->m4,d->tm4[i],d->tau);
     }
     
-    free_matrix(inputx3,d->batch_size);
-    free_matrix(output,d->batch_size);
-    free_matrix(ret_err3,d->batch_size);
+    free_matrix((void**)inputx3,d->batch_size);
+    free_matrix((void**)output,d->batch_size);
+    free_matrix((void**)ret_err3,d->batch_size);
     free(ret_err);
     free(ret_err2);
 }

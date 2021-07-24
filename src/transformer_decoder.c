@@ -516,7 +516,7 @@ void reset_transformer_decoder(transformer_decoder* t){
  * 
  *                 @transformer_decoder* t:= the transformer decoder structure that must be rests
  * */
-void reset_transformer_decoder_without_learning_aprameters(transformer_decoder* t){
+void reset_transformer_decoder_without_learning_parameters(transformer_decoder* t){
     if(t == NULL)
         return;
     int i;

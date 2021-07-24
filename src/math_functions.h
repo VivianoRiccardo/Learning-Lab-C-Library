@@ -102,5 +102,8 @@ float derivative_sigmoid_given_the_sigmoid(float x);
 void derivative_sigmoid_array_given_the_sigmoid(float* input, float* output, int size);
 float total_variation_loss_2d(float* y, int rows, int cols);
 void derivative_total_variation_loss_2d(float* y, float* output, int rows, int cols);
+void div1D(float* input1, float* input2, float* output, int size);
+void sub1D(float* input1, float* input2, float* output, int size);
+void inverse(float* input, float* output, int size);
 
 #endif

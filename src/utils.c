@@ -586,7 +586,7 @@ void copy_char_array(char* input, char* output, int size){
  *             @ int n:= number of rows of m
  * 
  * */
-void free_matrix(float** m, int n){
+void free_matrix(void** m, int n){
     int i;
     for(i = 0; i < n; i++){
         if(m[i] != NULL)
@@ -595,6 +595,8 @@ void free_matrix(float** m, int n){
     
     free(m);
 }
+
+
 
 /* This function returns a matrix that can be associated with the confusion matrix
  * where the rows rapresent the model output*2 with real yes and no and the cols rapresent predicted model yes and predicted model no
@@ -905,4 +907,131 @@ void free_4D_tensor(float**** t, int dim1, int dim2, int dim3){
         free(t[i]);
     }
     free(t);
+}
+
+
+void set_vector_with_value(float value, float* v, int dimension){
+	int i;
+	for(i = 0; i < dimension; i++){
+		v[i] = value;
+	}
+}
+
+
+// this function gives me the file of all the data files. each line in the file is a filename
+// that filename contains all the filenames of the data the client must work with
+// furthermore each line at the end of the file name has a ; to tell: that filename is currently being used or not
+// this function checks this file and return an array of package size length within the first free filename it meets
+// then it sets the ; to that filename
+char* read_files_from_file(char* file, int package_size){
+    // checking files of the subset
+    int size = 0,count,i;
+    char* ksource;
+    read_file_in_char_vector(&ksource,file,&size);// reading the files
+    char* temp = (char*)calloc(package_size,sizeof(char));
+    char* temp2 = NULL;
+    FILE* f = fopen(file,"w");
+    for(i = 0,count = 0; i < size; i++){
+        if(ksource[i] != '\n' && temp2 == NULL){
+            fprintf(f,"%c",ksource[i]);
+            temp[count] = ksource[i];
+            count++;
+        }
+        else if (ksource[i] == '\n' && temp2 == NULL){
+            if(temp[count-1] != ';'){
+                fprintf(f,";");
+                temp[count] = '\0';
+                temp2 = temp;
+            }
+            else{
+                free(temp);
+                temp = (char*)calloc(package_size,sizeof(char));
+            }
+            fprintf(f,"\n");
+            count = 0;
+        }
+        else{
+            fprintf(f,"%c",ksource[i]);
+        }
+    }
+    fclose(f);
+    if(temp2 == NULL)
+        free(temp);
+    free(ksource);
+    return temp2;
+}
+
+// read above. this function open that file and remove the ; from the line of file_to_free
+void set_files_free_from_file(char* file_to_free, char* file){
+    // checking files of the subset
+    int size = 0,count,i;
+    char* ksource;
+    read_file_in_char_vector(&ksource,file,&size);// reading the files
+    char* temp = (char*)calloc(1024,sizeof(char));
+    FILE* f = fopen(file,"w");
+    for(i = 0,count = 0; i < size; i++){
+        if(ksource[i] != '\n' && ksource[i] != ';'){
+            fprintf(f,"%c",ksource[i]);
+            temp[count] = ksource[i];
+            count++;
+        }
+        else{
+            if(ksource[i] == ';'){
+                temp[count] = '\0';
+                printf("%s\n%s\n",temp,file_to_free);
+                printf("%d\n",strcmp(temp,file_to_free));
+                if(strcmp(temp,file_to_free))
+                    fprintf(f,";");
+                
+                
+            }
+            else
+                fprintf(f,"\n");
+            free(temp);
+            temp = (char*)calloc(1024,sizeof(char));
+            count = 0;
+        }
+    }
+    fclose(f);
+    free(temp);
+    free(ksource);
+}
+
+// this function removes all the ; from file
+void remove_occupied_sets(char* file){
+    // checking files of the subset
+    int size = 0,i;
+    char* ksource;
+    read_file_in_char_vector(&ksource,file,&size);// reading the files
+    FILE* f = fopen(file,"w");
+                
+    for(i = 0; i < size; i++){
+        if(ksource[i] != ';')
+            fprintf(f,"%c",ksource[i]);
+    }
+    fclose(f);
+    free(ksource);
+}
+
+
+/* msleep(): Sleep for the requested number of milliseconds. */
+int msleep(long msec)
+{
+    struct timespec ts;
+    int res;
+
+    if (msec < 0)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    ts.tv_sec = msec / 1000;
+    ts.tv_nsec = (msec % 1000) * 1000000;
+
+    do {
+        res = nanosleep(&ts, &ts);
+    } while (res && errno == EINTR);
+
+    return res;
 }

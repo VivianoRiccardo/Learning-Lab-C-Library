@@ -544,6 +544,13 @@ void derivative_elu_array(float* input, float* output, int size, float a){
     }
 }
 
+//function inverse
+void inverse(float* input, float* output, int size){
+	int i;
+    for(i = 0; i < size; i++){
+        output[i] = 1.0/input[i];
+    }
+}
 /* This function computes the dot product between 2 array, input and input2
  * with the same length, and store the result in the output array
  * 
@@ -558,6 +565,22 @@ void dot1D(float* input1, float* input2, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
         output[i] = input1[i]*input2[i];
+    }
+}
+/* This function computes the division product between 2 array, input and input2
+ * with the same length, and store the result in the output array
+ * 
+ * Input:
+ * 
+ *             @ float* input1:= the first input array
+ *             @ float* input2:= the second input array
+ *             @ float* output:= the output array
+ *             @ int size:= the size of input1, input2, input3
+ * */
+void div1D(float* input1, float* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input1[i]/input2[i];
     }
 }
 
@@ -575,6 +598,22 @@ void sum1D(float* input1, float* input2, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
         output[i] = input1[i]+input2[i];
+    }
+}
+/* This function computes the subtraction between 2 array, input and input2
+ * with the same length, and store the result in the output array
+ * 
+ * Input:
+ * 
+ *             @ float* input1:= the first input array
+ *             @ float* input2:= the second input array
+ *             @ float* output:= the output array
+ *             @ int size:= the size of input1, input2, input3
+ * */
+void sub1D(float* input1, float* input2, float* output, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input1[i]-input2[i];
     }
 }
 

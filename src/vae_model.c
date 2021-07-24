@@ -28,6 +28,7 @@ SOFTWARE.
 /* This function creates a variational auto encoder filled with amodel encoder and a decoder model
  * pay attention: the vaemodel store in encoder and decoder the copies of encoder and decoder param
  * the final array of encoder is considered the first half as the mean and the second half as the std
+ * the output of the encoder must be latent_size * 2
  * Inputs:
  * 
  *     
@@ -38,6 +39,10 @@ SOFTWARE.
 vaemodel* variational_auto_encoder_model(model* encoder, model* decoder, int latent_size){
     if(encoder == NULL || decoder == NULL || !latent_size){
         fprintf(stderr,"Error: encorder must be != NULL, decoder must be != NULL, latent_size must be > 0\n");
+        exit(1);
+    }
+    if(latent_size*2 != encoder->output_dimension){
+        fprintf(stderr,"Error, the output of the necoder must be latent size*2\n");
         exit(1);
     }
     vaemodel* vm = (vaemodel*)malloc(sizeof(vaemodel));
@@ -197,66 +202,8 @@ void vae_model_tensor_input_ff(vaemodel* vm, int tensor_depth, int tensor_i, int
         vm->input[i] = random_normal();
     }
     
-    for(i = 0; i < vm->encoder->layers-1; i++){
-        if(vm->encoder->sla[i][0] == 0){
-            i--;
-            break;
-        }
-    }
-    
-    if(vm->encoder->sla[i][0] == FCLS){
-        if(vm->encoder->fcls[vm->encoder->n_fcl-1]->dropout_flag){
-            fprintf(stderr,"Error: is not a good practice using dropout for the encoder of vae model, 'cause you cannot shift the output for the decoder in the Test time\n");
-            exit(1);
-        }
-        if(vm->encoder->fcls[vm->encoder->n_fcl-1]->activation_flag){
-            if(vm->encoder->fcls[vm->encoder->n_fcl-1]->activation_flag == SOFTMAX){
-                fprintf(stderr,"Error: cannot be computed with softmax function for the final layer of the encoder\n");
-                exit(1);
-            }
-            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation,vm->z,vm->latent_size);
-        }
-        
-        else{
-            dot1D(vm->input,&vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation,vm->z,vm->latent_size);
-        }
-    }
-    
-    else if(vm->encoder->sla[i][0] == CLS){
-        if(vm->encoder->cls[vm->encoder->n_cl-1]->pooling_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling,vm->z,vm->latent_size);
-        }
-        
-        else if(vm->encoder->cls[vm->encoder->n_cl-1]->normalization_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization,vm->z,vm->latent_size);
-        }
-        
-        else if(vm->encoder->cls[vm->encoder->n_cl-1]->activation_flag){
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->post_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->post_activation,vm->z,vm->latent_size);
-        }
-        
-        else {
-            dot1D(vm->input,&vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation,vm->z,vm->latent_size);
-        }
-    }
-    
-    else if(vm->encoder->sla[i][0] == RLS){
-        if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag){
-            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation,vm->z,vm->latent_size);
-        }
-        
-        else{
-            dot1D(vm->input,&vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation[vm->latent_size],vm->z,vm->latent_size);
-            sum1D(vm->z,vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation,vm->z,vm->latent_size);
-        }
-    }
+    dot1D(vm->input,&vm->encoder->output_layer[vm->latent_size],vm->z,vm->latent_size);
+    sum1D(vm->z,vm->encoder->output_layer,vm->z,vm->latent_size);
     
     model_tensor_input_ff(vm->decoder,vm->latent_size,1,1,vm->z);
     
@@ -276,78 +223,13 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
     
     int i,j;
     
-    for(i = 0; i < vm->encoder->layers-1; i++){
-        if(vm->encoder->sla[i][0] == 0){
-            i--;
-            break;
-        }
+    
+    for(j = 0; j < vm->latent_size; j++){
+        vm->dstd[j] += (float)(2*vm->encoder->output_layer[vm->latent_size+j]) - ((float)(1/vm->encoder->output_layer[vm->latent_size+j]));
+        vm->dmean[j] += (float)(2*vm->encoder->output_layer[j]);
     }
     
-    if(vm->encoder->sla[i][0] == FCLS){
-        if(vm->encoder->fcls[vm->encoder->n_fcl-1]->dropout_flag){
-            fprintf(stderr,"Error: is not a good practice using dropout for the encoder of vae model, 'cause you cannot shift the output for the decoder in the Test time\n");
-            exit(1);
-        }
-        if(vm->encoder->fcls[vm->encoder->n_fcl-1]->activation_flag){
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->fcls[vm->encoder->n_fcl-1]->post_activation[j];
-            }
-        }
-        
-        else{
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->fcls[vm->encoder->n_fcl-1]->pre_activation[j];
-            }
-        }
-    }
     
-    else if(vm->encoder->sla[i][0] == CLS){
-        if(vm->encoder->cls[vm->encoder->n_cl-1]->pooling_flag){
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->cls[vm->encoder->n_cl-1]->post_pooling[j];
-            }
-        }
-        
-        else if(vm->encoder->cls[vm->encoder->n_cl-1]->normalization_flag){
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->cls[vm->encoder->n_cl-1]->post_normalization[j];
-            }
-        }
-        
-        else if(vm->encoder->cls[vm->encoder->n_cl-1]->activation_flag){
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->cls[vm->encoder->n_cl-1]->post_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->cls[vm->encoder->n_cl-1]->post_activation[j];
-            }
-        }
-        
-        else {
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->cls[vm->encoder->n_cl-1]->pre_activation[j];
-            }
-        }
-    }
-    
-    else if(vm->encoder->sla[i][0] == RLS){
-        if(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->activation_flag){
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->post_activation[j];
-            }
-        }
-        
-        else{
-            for(j = 0; j < vm->latent_size; j++){
-                vm->dstd[j] += (exp(vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation[vm->latent_size+j]) - 1)/2;
-                vm->dmean[j] += vm->encoder->rls[vm->encoder->n_rl-1]->cl_output->pre_activation[j];
-            }
-        }
-    }
     
     sum1D(vm->dmean,temp,temp2,vm->latent_size);
     dot1D(temp,vm->input,temp2+vm->latent_size,vm->latent_size);
@@ -362,7 +244,7 @@ float* vae_model_tensor_input_bp(vaemodel* vm, int tensor_depth, int tensor_i, i
     
 }
 
-/* number of weights of a cae model*/
+/* number of weights of a vae model*/
 int count_weights_vae_model(vaemodel* vm){
     return count_weights(vm->encoder) + count_weights(vm->decoder);
 }

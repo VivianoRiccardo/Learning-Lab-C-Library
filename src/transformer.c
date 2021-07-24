@@ -406,7 +406,7 @@ void reset_transf_without_learning_parameters(transformer* t){
         reset_transformer_encoder_without_learning_parameters(t->te[i]);
     }
     for(i = 0; i < t->n_td; i++){
-        reset_transformer_decoder_without_learning_aprameters(t->td[i]);
+        reset_transformer_decoder_without_learning_parameters(t->td[i]);
     }
     return;
 }
