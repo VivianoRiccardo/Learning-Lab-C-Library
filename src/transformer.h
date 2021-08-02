@@ -45,5 +45,6 @@ void reset_transf_without_learning_parameters(transformer* t);
 uint64_t size_of_transformer_without_learning_parameters(transformer* t);
 void transf_ff_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, int flag, transformer* t2);
 float* transf_bp_opt(transformer* t, float* inputs_encoder, int input_dimension1, float* inputs_decoder, int input_dimension2, float* output_error, int flag, transformer* t2);
+void paste_transformer_without_learning_parameters(transformer* t, transformer* copy);
 
 #endif

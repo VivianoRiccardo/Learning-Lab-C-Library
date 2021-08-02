@@ -52,13 +52,11 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     
     b->gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
-    b->ex_d_gamma_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d1_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d2_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d3_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
     b->beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d_beta = (float*)calloc(vector_input_dimension,sizeof(float));
-    b->ex_d_beta_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d1_beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d2_beta = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d3_beta = (float*)calloc(vector_input_dimension,sizeof(float));
@@ -87,7 +85,7 @@ bn* batch_normalization(int batch_size, int vector_input_dimension, int layer, i
     
     return b;
 }
-/* this function builds a normalization layer that can be used for batch normalization or group normalization or layer normalization
+/* this function builds a normalization layer that can be used for batch normalization or group normalization or layer normalization without weights and biases and d1, d2, d3 (learning parameters)
  * 
  * Input:
  * 
@@ -116,13 +114,11 @@ bn* batch_normalization_without_learning_parameters(int batch_size, int vector_i
     b->post_activation = (float**)malloc(sizeof(float*)*batch_size);
     b->gamma = NULL;
     b->d_gamma = (float*)calloc(vector_input_dimension,sizeof(float));
-    b->ex_d_gamma_diff_grad = (float*)calloc(vector_input_dimension,sizeof(float));
     b->d1_gamma = NULL;
     b->d2_gamma = NULL;
     b->d3_gamma = NULL;
     b->beta = NULL;
     b->d_beta = (float*)calloc(vector_input_dimension,sizeof(float));
-    b->ex_d_beta_diff_grad = NULL;
     b->d1_beta = NULL;
     b->d2_beta = NULL;
     b->d3_beta = NULL;
@@ -176,13 +172,11 @@ void free_batch_normalization(bn* b){
     
     free(b->gamma);
     free(b->d_gamma);
-    free(b->ex_d_gamma_diff_grad);
     free(b->d1_gamma);
     free(b->d2_gamma);
     free(b->d3_gamma);
     free(b->beta);
     free(b->d_beta);
-    free(b->ex_d_beta_diff_grad);
     free(b->d1_beta);
     free(b->d2_beta);
     free(b->d3_beta);
@@ -199,7 +193,7 @@ void free_batch_normalization(bn* b){
  * Input:
  * 
  *             @ bn* b:= the actual layer that must be saved
- *             @ int n:= the name of the bin file where the layer is saved
+ *             @ int n:= the name (number) of the bin file where the layer is saved (n.bin)
  * 
  * 
  * */
@@ -270,159 +264,6 @@ void save_bn(bn* b, int n){
         exit(1);
     }
     
-    i = fwrite(b->final_mean,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->final_var,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fclose(fw);
-    
-    if(i != 0){
-        fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
-        exit(1);
-    }
-    free(s);
-    
-    
-}
-
-
-/* This function saves a batch normalized layer on a .bin file with name n.bin
- * 
- * Input:
- * 
- *             @ bn* b:= the actual layer that must be saved
- *             @ int n:= the name of the bin file where the layer is saved
- * 
- * 
- * */
-void heavy_save_bn(bn* b, int n){
-    if(b == NULL)
-        return;
-    int i;
-    FILE* fw;
-    char* s = (char*)malloc(sizeof(char)*256);
-    char* t = ".bin";
-    s = itoa(n,s);
-    s = strcat(s,t);
-    
-    fw = fopen(s,"a+");
-    
-    if(fw == NULL){
-        fprintf(stderr,"Error: error during the opening of the file %s\n",s);
-        exit(1);
-    }
-    
-    i = fwrite(&b->layer,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(&b->batch_size,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(&b->vector_dim,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(&b->activation_flag,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(&b->mode_flag,sizeof(int),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->gamma,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->d1_gamma,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->d2_gamma,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->d3_gamma,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->ex_d_gamma_diff_grad,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->beta,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    
-    i = fwrite(b->d1_beta,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    i = fwrite(b->d2_beta,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    i = fwrite(b->d3_beta,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
-    i = fwrite(b->d_beta,sizeof(float)*(b->vector_dim),1,fw);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred saving a bn layer\n");
-        exit(1);
-    }
     i = fwrite(b->final_mean,sizeof(float)*(b->vector_dim),1,fw);
     
     if(i != 1){
@@ -555,194 +396,6 @@ bn* load_bn(FILE* fr){
 }
 
 
-/* This function loads a batch_normalized layer from a file
- * 
- * Inputs:
- * 
- *                 @ FILE* fr:= the file from where the batch normalized layer must been loaded
- * 
- * */
-bn* heavy_load_bn(FILE* fr){
-    if(fr == NULL)
-        return NULL;
-    int i;
-    
-    int batch_size = 0,vector_dim = 0, layer = 0, activation_flag,mode_flag;
-    float* gamma;
-    float* d1_gamma;
-    float* d2_gamma;
-    float* d3_gamma;
-    float* ex_d_gamma_diff_grad;
-    float* beta;
-    float* d1_beta;
-    float* d2_beta;
-    float* d3_beta;
-    float* ex_d_beta_diff_grad;
-    float* final_mean;
-    float* final_var;
-    
-    i = fread(&layer,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(&batch_size,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(&vector_dim,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(&activation_flag,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(&mode_flag,sizeof(int),1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    gamma = (float*)malloc(sizeof(float)*vector_dim);
-    d1_gamma = (float*)malloc(sizeof(float)*vector_dim);
-    d2_gamma = (float*)malloc(sizeof(float)*vector_dim);
-    d3_gamma = (float*)malloc(sizeof(float)*vector_dim);
-    ex_d_gamma_diff_grad = (float*)malloc(sizeof(float)*vector_dim);
-    beta = (float*)malloc(sizeof(float)*vector_dim);
-    d1_beta = (float*)malloc(sizeof(float)*vector_dim);
-    d2_beta = (float*)malloc(sizeof(float)*vector_dim);
-    d3_beta = (float*)malloc(sizeof(float)*vector_dim);
-    ex_d_beta_diff_grad = (float*)malloc(sizeof(float)*vector_dim);
-    final_mean = (float*)malloc(sizeof(float)*vector_dim);
-    final_var = (float*)malloc(sizeof(float)*vector_dim);
-    
-    i = fread(gamma,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(d1_gamma,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(d2_gamma,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(d3_gamma,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(ex_d_gamma_diff_grad,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    i = fread(beta,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    i = fread(d1_beta,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    i = fread(d2_beta,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    i = fread(d3_beta,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    i = fread(ex_d_beta_diff_grad,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    i = fread(final_mean,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    
-    i = fread(final_var,sizeof(float)*vector_dim,1,fr);
-    
-    if(i != 1){
-        fprintf(stderr,"Error: an error occurred loading a bn layer\n");
-        exit(1);
-    }
-    
-    
-    
-    bn* b = batch_normalization(batch_size,vector_dim, layer, activation_flag);
-    
-    copy_array(gamma,b->gamma,vector_dim);
-    copy_array(d1_gamma,b->d1_gamma,vector_dim);
-    copy_array(d2_gamma,b->d2_gamma,vector_dim);
-    copy_array(d3_gamma,b->d3_gamma,vector_dim);
-    copy_array(ex_d_gamma_diff_grad,b->ex_d_gamma_diff_grad,vector_dim);
-    copy_array(beta,b->beta,vector_dim);
-    copy_array(d1_beta,b->d1_beta,vector_dim);
-    copy_array(d2_beta,b->d2_beta,vector_dim);
-    copy_array(d3_beta,b->d3_beta,vector_dim);
-    copy_array(ex_d_beta_diff_grad,b->ex_d_beta_diff_grad,vector_dim);
-    copy_array(final_mean,b->final_mean,vector_dim);
-    copy_array(final_var,b->final_var,vector_dim);
-    b->mode_flag = mode_flag;
-    free(gamma);
-    free(d1_gamma);
-    free(d2_gamma);
-    free(d3_gamma);
-    free(ex_d_gamma_diff_grad);
-    free(beta);
-    free(d1_beta);
-    free(d2_beta);
-    free(d3_beta);
-    free(ex_d_beta_diff_grad);
-    free(final_mean);
-    free(final_var);
-    
-    return b;
-    
-}
-
 /* This function returns a bn* layer that is the same copy of the input b.
  * 
  * Input:
@@ -756,13 +409,11 @@ bn* copy_bn(bn* b){
     bn* copy = batch_normalization(b->batch_size,b->vector_dim, b->layer, b->activation_flag);
     copy_array(b->gamma,copy->gamma,b->vector_dim);
     copy_array(b->d_gamma,copy->d_gamma,b->vector_dim);
-    copy_array(b->ex_d_gamma_diff_grad,copy->ex_d_gamma_diff_grad,b->vector_dim);
     copy_array(b->d1_gamma,copy->d1_gamma,b->vector_dim);
     copy_array(b->d2_gamma,copy->d2_gamma,b->vector_dim);
     copy_array(b->d3_gamma,copy->d3_gamma,b->vector_dim);
     copy_array(b->beta,copy->beta,b->vector_dim);
     copy_array(b->d_beta,copy->d_beta,b->vector_dim);
-    copy_array(b->ex_d_beta_diff_grad,copy->ex_d_beta_diff_grad,b->vector_dim);
     copy_array(b->d1_beta,copy->d1_beta,b->vector_dim);
     copy_array(b->d2_beta,copy->d2_beta,b->vector_dim);
     copy_array(b->d3_beta,copy->d3_beta,b->vector_dim);
@@ -868,7 +519,7 @@ bn* reset_bn_except_partial_derivatives(bn* b){
 uint64_t size_of_bn(bn* b){
     uint64_t sum = 0;
     sum+= (b->batch_size*b->vector_dim*6);
-    sum+= (b->vector_dim*17);
+    sum+= (b->vector_dim*15);
     return sum;
 }
 /* this function computes the size of the space allocated by the arrays of a batch normalized layer (more or less)
@@ -900,13 +551,11 @@ void paste_bn(bn* b1, bn* b2){
     
     copy_array(b1->gamma,b2->gamma,b1->vector_dim);
     copy_array(b1->d_gamma,b2->d_gamma,b1->vector_dim);
-    copy_array(b1->ex_d_gamma_diff_grad,b2->ex_d_gamma_diff_grad,b1->vector_dim);
     copy_array(b1->d1_gamma,b2->d1_gamma,b1->vector_dim);
     copy_array(b1->d2_gamma,b2->d2_gamma,b1->vector_dim);
     copy_array(b1->d3_gamma,b2->d3_gamma,b1->vector_dim);
     copy_array(b1->beta,b2->beta,b1->vector_dim);
     copy_array(b1->d_beta,b2->d_beta,b1->vector_dim);
-    copy_array(b1->ex_d_beta_diff_grad,b2->ex_d_beta_diff_grad,b1->vector_dim);
     copy_array(b1->d1_beta,b2->d1_beta,b1->vector_dim);
     copy_array(b1->d2_beta,b2->d2_beta,b1->vector_dim);
     copy_array(b1->d3_beta,b2->d3_beta,b1->vector_dim);
@@ -974,12 +623,10 @@ void slow_paste_bn(bn* f, bn* copy,float tau){
         copy->d1_gamma[i] = tau*f->d1_gamma[i] + (1-tau)*copy->d1_gamma[i];
         copy->d2_gamma[i] = tau*f->d2_gamma[i] + (1-tau)*copy->d2_gamma[i];
         copy->d3_gamma[i] = tau*f->d3_gamma[i] + (1-tau)*copy->d3_gamma[i];
-        copy->ex_d_gamma_diff_grad[i] = tau*f->ex_d_gamma_diff_grad[i] + (1-tau)*copy->ex_d_gamma_diff_grad[i];
         copy->beta[i] = tau*f->beta[i] + (1-tau)*copy->beta[i];
         copy->d1_beta[i] = tau*f->d1_beta[i] + (1-tau)*copy->d1_beta[i];
         copy->d2_beta[i] = tau*f->d2_beta[i] + (1-tau)*copy->d2_beta[i];
         copy->d3_beta[i] = tau*f->d3_beta[i] + (1-tau)*copy->d3_beta[i];
-        copy->ex_d_beta_diff_grad[i] = tau*f->ex_d_beta_diff_grad[i] + (1-tau)*copy->ex_d_beta_diff_grad[i];
     }
     
     return;

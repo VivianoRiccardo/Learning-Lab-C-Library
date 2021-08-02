@@ -49,7 +49,9 @@ vector_struct* create_vector(float* v, int v_size, int output_size, int action, 
     ve->activation_flag = activation_flag;
     ve->dropout_flag = dropout_flag;
     ve->index = index;
+    
     ve->dropout_threshold = dropout_threshold;
+    if(action != RESIZE)
     ve->output = (float*)calloc(output_size,sizeof(float));
     ve->output_size = output_size;
     ve->input_error = (float*)calloc(input_size,sizeof(float));
@@ -68,12 +70,12 @@ void free_vector(vector_struct* v){
 
 void reset_vector(vector_struct* v){
     int i;
-    for(i = 0; i < v->output_size; i++){
-        v->output[i] = 0;
-        if(v->action != RESIZE)
-            v->input_error[i] = 0;
+    if(v->action != RESIZE){
+        for(i = 0; i < v->output_size; i++){
+            v->output[i] = 0;
+        }
     }
-    if(v->action == RESIZE)
+    else
     set_vector_with_value(0.0,v->input_error,v->input_size);
 }
 
@@ -85,6 +87,16 @@ vector_struct* copy_vector(vector_struct* v){
         copy_array(v->v,vec,v->v_size);
     }
     return create_vector(vec,v->v_size,v->output_size,v->action, v->activation_flag, v->dropout_flag, v->index, v->dropout_threshold, v->input_size);
+}
+
+
+void paste_vector(vector_struct* v, vector_struct* copy){
+    copy_array(v->v,copy->v,v->v_size);
+    return;
+}
+
+uint64_t size_of_vector(vector_struct* v){
+    return (uint64_t)(v->v_size+v->output_size);
 }
 
 void save_vector(vector_struct* v, int n){
@@ -334,8 +346,25 @@ void ff_vector(float* input1,float* input2, vector_struct* v){
             mul_value(input1,-1.0,v->output,v->output_size);
         }
         
+        else if(v->action == GET_MAX){
+            if(v->output_size != v->v_size){
+                fprintf(stderr,"Error: your v_size != output_size\n");
+                exit(1);
+            }
+            int index = -1,i;
+            float max = -1;
+            for(i = 0; i < v->output_size; i++){
+                if(input1[i] > max){
+                    max = input1[i];
+                    index = i;
+                }
+            }
+            v->output[index] = 1;
+        }
+        
         else if(v->action == RESIZE){
-            copy_array(&input1[v->index],v->output,min(v->input_size-v->index,v->output_size));
+            v->output = &input1[v->index];
+            //copy_array(&input1[v->index],v->output,min(v->input_size-v->index,v->output_size));
         }
         
         else if(v->activation_flag == SIGMOID){

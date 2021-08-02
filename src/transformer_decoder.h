@@ -48,6 +48,7 @@ void decoder_transformer_ff_opt(float* inputs1, float* inputs2, transformer_deco
 float* decoder_transformer_bp_opt(float* inputs1, float* inputs2, transformer_decoder* t, int input1_dimension, int input2_dimension, float* output_error, float* inputs2_error,transformer_decoder* t2);
 void wrapped_encoder_transformer_decoder_ff_opt(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension2,int input_dimension1, transformer_encoder* t2);
 float* wrapped_encoder_transformer_decoder_bp_opt(float* inputs1, float* inputs2, transformer_encoder* t, int input_dimension2,int input_dimension1,float* output_error,float* encoder_error, transformer_encoder* t2);
+void paste_transformer_decoder_without_learning_parameters(transformer_decoder* t, transformer_decoder* copy);
 
 
 #endif

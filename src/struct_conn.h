@@ -33,7 +33,11 @@ struct_conn* structure_connection(int id, model* m1, model* m2, rmodel* r1, rmod
 void reset_struct_conn(struct_conn* s);
 void struct_connection_input_arrays(struct_conn* s);
 void ff_struc_conn(struct_conn* s, int transformer_flag);
-void bp_struc_conn(struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es);
+error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es);
+error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es);
+void ff_struc_conn_opt(struct_conn* real_s, struct_conn* s, int transformer_flag);
+void paste_struct_conn(struct_conn* s, struct_conn* copy);
+void free_struct_conn(struct_conn* s);
 
 
 #endif

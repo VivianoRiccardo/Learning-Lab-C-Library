@@ -27,8 +27,14 @@ SOFTWARE.
 int min(int x, int y) {
     return (x < y) ? x : y;
 }
+float min_float(float x, float y) {
+    return (x < y) ? x : y;
+}
 
 int max(int x, int y) {
+    return (x > y) ? x : y;
+}
+float max_float(float x, float y) {
     return (x > y) ? x : y;
 }
 
@@ -227,7 +233,7 @@ void derivative_tanhh_array(float* input, float* output, int size){
 
 float mse(float y_hat, float y){
     float z = y_hat-y;
-    return z*z/2;
+    return z*z/2.0;
 }
 
 void mse_array(float* y_hat, float* y, float* output, int size){
@@ -381,7 +387,7 @@ void derivative_huber_loss_array(float* y_hat, float* y,float* output, float thr
     }
 }
 
-/*used for a tanh*/
+/*used for a tanh output*/
 float modified_huber_loss(float y_hat, float y, float threshold1, float threshold2){
     if(y*y_hat>= -1){
         if(threshold1-y_hat*y > 0)
@@ -500,6 +506,36 @@ void derivative_entropy_array(float* y_hat, float* output, int size){
     for(i = 0; i < size; i++){
         output[i] = derivative_entropy(y_hat[i]);
     }
+}
+
+//y either 1 or 0
+float constrantive_loss(float y_hat, float y, float margin){
+	return y*y_hat*y_hat*1.0/2.0 + (1.0-y)*max_float(0,margin-y_hat)*max_float(0,margin-y_hat)*1.0/2.0;
+}
+
+float derivative_constrantive_loss(float y_hat, float y, float margin){
+	if(y == 0){
+		if(max_float(0.0,margin-y_hat) > 0)
+			return y_hat-margin;
+	}
+	
+	else{
+		return y_hat;
+	}
+}
+
+void constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size){
+	int i;
+	for(i = 0; i < size; i++){
+		output[i] = constrantive_loss(y_hat[i],y[i],margin);
+	}
+}
+
+void derivative_constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size){
+	int i;
+	for(i = 0; i < size; i++){
+		output[i] = derivative_constrantive_loss(y_hat[i],y[i],margin);
+	}
 }
 
 void softmax_array_not_complete(float* input, float* output,int* mask, int size){

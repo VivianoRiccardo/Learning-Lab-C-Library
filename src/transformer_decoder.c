@@ -729,6 +729,26 @@ void paste_transformer_decoder(transformer_decoder* t, transformer_decoder* copy
  *             @transformer_decoder* t:= the transformer decoder that must be copied
  *             @transformer_decoder* copy:= the transformer decoder structure in which will be copied t
  * */
+void paste_transformer_decoder_without_learning_parameters(transformer_decoder* t, transformer_decoder* copy){
+    int i;
+    for(i = 0; i < t->n_head*3; i++){
+        paste_fcl_without_learning_parameters(t->fcls[i],copy->fcls[i]);
+    }
+    for(i = 0; i < t->n_l2; i++){
+        paste_scaled_l2_norm(t->l2[i],copy->l2[i]);
+    }
+    copy->attention_flag = t->attention_flag;
+    paste_transformer_encoder_without_learning_parameters(t->e,copy->e);
+    paste_model_without_learning_parameters(t->linear_after_attention,copy->linear_after_attention);
+}
+/* This function, given 2 structures with the same number of layers will copy
+ * the main features of the first into the second one
+ * 
+ * Inputs:
+ * 
+ *             @transformer_decoder* t:= the transformer decoder that must be copied
+ *             @transformer_decoder* copy:= the transformer decoder structure in which will be copied t
+ * */
 void slow_paste_transformer_decoder(transformer_decoder* t, transformer_decoder* copy, float tau){
     int i;
     for(i = 0; i < t->n_head*3; i++){

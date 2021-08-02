@@ -73,12 +73,10 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     lstml->u = (float**)malloc(sizeof(float*)*4);
     if(training_mode != EDGE_POPUP){
         lstml->d_w = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_w_diff_grad = (float**)malloc(sizeof(float*)*4);
         lstml->d1_w = (float**)malloc(sizeof(float*)*4);
         lstml->d2_w = (float**)malloc(sizeof(float*)*4);
         lstml->d3_w = (float**)malloc(sizeof(float*)*4);
         lstml->d_u = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_u_diff_grad = (float**)malloc(sizeof(float*)*4);
         lstml->d1_u = (float**)malloc(sizeof(float*)*4);
         lstml->d2_u = (float**)malloc(sizeof(float*)*4);
         lstml->d3_u = (float**)malloc(sizeof(float*)*4);
@@ -86,12 +84,10 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     
     else{
         lstml->d_w = NULL;
-        lstml->ex_d_w_diff_grad = NULL;
         lstml->d1_w = NULL;
         lstml->d2_w = NULL;
         lstml->d3_w = NULL;
         lstml->d_u = NULL;
-        lstml->ex_d_u_diff_grad = NULL;
         lstml->d1_u = NULL;
         lstml->d2_u = NULL;
         lstml->d3_u = NULL;
@@ -99,7 +95,6 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     lstml->biases = (float**)malloc(sizeof(float*)*4);
     if(training_mode != EDGE_POPUP){
         lstml->d_biases = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_biases_diff_grad = (float**)malloc(sizeof(float*)*4);
         lstml->d1_biases = (float**)malloc(sizeof(float*)*4);
         lstml->d2_biases = (float**)malloc(sizeof(float*)*4);
         lstml->d3_biases = (float**)malloc(sizeof(float*)*4);
@@ -107,7 +102,6 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     
     else{
         lstml->d_biases = NULL;
-        lstml->ex_d_biases_diff_grad = NULL;
         lstml->d1_biases = NULL;
         lstml->d2_biases = NULL;
         lstml->d3_biases = NULL;
@@ -151,8 +145,6 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
         lstml->d3_u_scores = (float**)malloc(sizeof(float*)*4);
         lstml->u_scores = (float**)malloc(sizeof(float*)*4);
         lstml->d_u_scores = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_w_scores_diff_grad = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_u_scores_diff_grad = (float**)malloc(sizeof(float*)*4);
         lstml->w_indices = (int**)malloc(sizeof(int*)*4);
         lstml->u_indices = (int**)malloc(sizeof(int*)*4);
     }
@@ -168,8 +160,6 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
         lstml->d3_u_scores = NULL;
         lstml->u_scores = NULL;
         lstml->d_u_scores = NULL;
-        lstml->ex_d_w_scores_diff_grad = NULL;
-        lstml->ex_d_u_scores_diff_grad = NULL;
         lstml->w_indices = NULL;
         lstml->u_indices = NULL;
     }
@@ -201,17 +191,14 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
         
         if(training_mode != EDGE_POPUP){
             lstml->d_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
-            lstml->ex_d_w_diff_grad[i] = (float*)calloc(output_size*input_size,sizeof(float));
             lstml->d1_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
             lstml->d2_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
             lstml->d3_w[i] = (float*)calloc(output_size*input_size,sizeof(float));
             lstml->d_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
-            lstml->ex_d_u_diff_grad[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->d1_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->d2_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->d3_u[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->d_biases[i] = (float*)calloc(output_size,sizeof(float));
-            lstml->ex_d_biases_diff_grad[i] = (float*)calloc(output_size,sizeof(float));
             lstml->d1_biases[i] = (float*)calloc(output_size,sizeof(float));
             lstml->d2_biases[i] = (float*)calloc(output_size,sizeof(float));
             lstml->d3_biases[i] = (float*)calloc(output_size,sizeof(float));
@@ -228,8 +215,6 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
             lstml->d3_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->d_u_scores[i] = (float*)calloc(output_size*output_size,sizeof(float));
-            lstml->ex_d_w_scores_diff_grad[i] = (float*)calloc(output_size*input_size,sizeof(float));
-            lstml->ex_d_u_scores_diff_grad[i] = (float*)calloc(output_size*output_size,sizeof(float));
             lstml->w_indices[i] = (int*)calloc(output_size*input_size,sizeof(int));
             lstml->u_indices[i] = (int*)calloc(output_size*output_size,sizeof(int));
             for(j = 0; j < input_size*output_size; j++){
@@ -303,12 +288,10 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
     lstml->u = NULL;
     if(training_mode != EDGE_POPUP){
         lstml->d_w = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_w_diff_grad = NULL;
         lstml->d1_w = NULL;
         lstml->d2_w = NULL;
         lstml->d3_w = NULL;
         lstml->d_u = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_u_diff_grad = NULL;
         lstml->d1_u = NULL;
         lstml->d2_u = NULL;
         lstml->d3_u = NULL;
@@ -316,12 +299,10 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
     
     else{
         lstml->d_w = NULL;
-        lstml->ex_d_w_diff_grad = NULL;
         lstml->d1_w = NULL;
         lstml->d2_w = NULL;
         lstml->d3_w = NULL;
         lstml->d_u = NULL;
-        lstml->ex_d_u_diff_grad = NULL;
         lstml->d1_u = NULL;
         lstml->d2_u = NULL;
         lstml->d3_u = NULL;
@@ -329,7 +310,6 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
     lstml->biases = NULL;
     if(training_mode != EDGE_POPUP){
         lstml->d_biases = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_biases_diff_grad = NULL;
         lstml->d1_biases = NULL;
         lstml->d2_biases = NULL;
         lstml->d3_biases = NULL;
@@ -337,7 +317,6 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
     
     else{
         lstml->d_biases = NULL;
-        lstml->ex_d_biases_diff_grad = NULL;
         lstml->d1_biases = NULL;
         lstml->d2_biases = NULL;
         lstml->d3_biases = NULL;
@@ -381,8 +360,6 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
         lstml->d3_u_scores = NULL;
         lstml->u_scores = NULL;
         lstml->d_u_scores = (float**)malloc(sizeof(float*)*4);
-        lstml->ex_d_w_scores_diff_grad = NULL;
-        lstml->ex_d_u_scores_diff_grad = NULL;
         lstml->w_indices = NULL;
         lstml->u_indices = NULL;
     }
@@ -398,8 +375,6 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
         lstml->d3_u_scores = NULL;
         lstml->u_scores = NULL;
         lstml->d_u_scores = NULL;
-        lstml->ex_d_w_scores_diff_grad = NULL;
-        lstml->ex_d_u_scores_diff_grad = NULL;
         lstml->w_indices = NULL;
         lstml->u_indices = NULL;
     }
@@ -494,12 +469,10 @@ void free_recurrent_lstm(lstm* rlstm){
         free(rlstm->u[i]);
         if(exists_d_params_lstm(rlstm)){
             free(rlstm->d_w[i]);
-            free(rlstm->ex_d_w_diff_grad[i]);
             free(rlstm->d1_w[i]);
             free(rlstm->d2_w[i]);
             free(rlstm->d3_w[i]);
             free(rlstm->d_u[i]);
-            free(rlstm->ex_d_u_diff_grad[i]);
             free(rlstm->d1_u[i]);
             free(rlstm->d2_u[i]);
             free(rlstm->d3_u[i]);
@@ -507,7 +480,6 @@ void free_recurrent_lstm(lstm* rlstm){
             free(rlstm->d1_biases[i]);
             free(rlstm->d2_biases[i]);
             free(rlstm->d3_biases[i]);
-            free(rlstm->ex_d_biases_diff_grad[i]);
         }
         free(rlstm->biases[i]);
         free(rlstm->w_active_output_neurons[i]);
@@ -524,8 +496,6 @@ void free_recurrent_lstm(lstm* rlstm){
             free(rlstm->d3_u_scores[i]);
             free(rlstm->u_scores[i]);
             free(rlstm->d_u_scores[i]);
-            free(rlstm->ex_d_w_scores_diff_grad[i]);
-            free(rlstm->ex_d_u_scores_diff_grad[i]);
             free(rlstm->w_indices[i]);
             free(rlstm->u_indices[i]);
         }
@@ -553,23 +523,18 @@ void free_recurrent_lstm(lstm* rlstm){
     free(rlstm->d3_u_scores);
     free(rlstm->u_scores);
     free(rlstm->d_u_scores);
-    free(rlstm->ex_d_w_scores_diff_grad);
-    free(rlstm->ex_d_u_scores_diff_grad);
     free(rlstm->w);
     free(rlstm->u);
     free(rlstm->d_w);
-    free(rlstm->ex_d_w_diff_grad);
     free(rlstm->d1_w);
     free(rlstm->d2_w);
     free(rlstm->d3_w);
     free(rlstm->d_u);
-    free(rlstm->ex_d_u_diff_grad);
     free(rlstm->d1_u);
     free(rlstm->d2_u);
     free(rlstm->d3_u);
     free(rlstm->biases);
     free(rlstm->d_biases);
-    free(rlstm->ex_d_biases_diff_grad);
     free(rlstm->d1_biases);
     free(rlstm->d2_biases);
     free(rlstm->d3_biases);
@@ -643,23 +608,18 @@ void free_recurrent_lstm_without_learning_parameters(lstm* rlstm){
     free(rlstm->d3_u_scores);
     free(rlstm->u_scores);
     free(rlstm->d_u_scores);
-    free(rlstm->ex_d_w_scores_diff_grad);
-    free(rlstm->ex_d_u_scores_diff_grad);
     free(rlstm->w);
     free(rlstm->u);
     free(rlstm->d_w);
-    free(rlstm->ex_d_w_diff_grad);
     free(rlstm->d1_w);
     free(rlstm->d2_w);
     free(rlstm->d3_w);
     free(rlstm->d_u);
-    free(rlstm->ex_d_u_diff_grad);
     free(rlstm->d1_u);
     free(rlstm->d2_u);
     free(rlstm->d3_u);
     free(rlstm->biases);
     free(rlstm->d_biases);
-    free(rlstm->ex_d_biases_diff_grad);
     free(rlstm->d1_biases);
     free(rlstm->d2_biases);
     free(rlstm->d3_biases);
@@ -1145,17 +1105,14 @@ lstm* copy_lstm(lstm* l){
         
         if(exists_d_params_lstm(l)){
             copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
-            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->output_size*l->input_size);
             copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
             copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
             copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
             copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
-            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->output_size*l->output_size);
             copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
             copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
             copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
             copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
-            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->output_size);
             copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
             copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
             copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
@@ -1165,12 +1122,10 @@ lstm* copy_lstm(lstm* l){
             copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
             copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
             copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
-            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->output_size*l->input_size);
             copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
-            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->output_size*l->output_size);
             copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
             copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
             copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
@@ -1186,12 +1141,10 @@ lstm* copy_lstm(lstm* l){
             copy_array(l->bns[i]->d1_gamma,copy->bns[i]->d1_gamma,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->d2_gamma,copy->bns[i]->d2_gamma,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->d3_gamma,copy->bns[i]->d3_gamma,l->bns[i]->vector_dim);
-            copy_array(l->bns[i]->ex_d_gamma_diff_grad,copy->bns[i]->ex_d_gamma_diff_grad,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->beta,copy->bns[i]->beta,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->d_beta,copy->bns[i]->d_beta,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->d2_beta,copy->bns[i]->d2_beta,l->bns[i]->vector_dim);
             copy_array(l->bns[i]->d3_beta,copy->bns[i]->d3_beta,l->bns[i]->vector_dim);
-            copy_array(l->bns[i]->ex_d_beta_diff_grad,copy->bns[i]->ex_d_beta_diff_grad,l->bns[i]->vector_dim);
         }
     }
     
@@ -1267,17 +1220,14 @@ void paste_lstm(lstm* l,lstm* copy){
         copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_d_params_lstm(l)){
             copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
-            copy_array(l->ex_d_w_diff_grad[i],copy->ex_d_w_diff_grad[i],l->output_size*l->input_size);
             copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
             copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
             copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
             copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
-            copy_array(l->ex_d_u_diff_grad[i],copy->ex_d_u_diff_grad[i],l->output_size*l->output_size);
             copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
             copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
             copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
             copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
-            copy_array(l->ex_d_biases_diff_grad[i],copy->ex_d_biases_diff_grad[i],l->output_size);
             copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
             copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
             copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
@@ -1288,12 +1238,10 @@ void paste_lstm(lstm* l,lstm* copy){
             copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
             copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
             copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
-            copy_array(l->ex_d_w_scores_diff_grad[i],copy->ex_d_w_scores_diff_grad[i],l->output_size*l->input_size);
             copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
             copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
-            copy_array(l->ex_d_u_scores_diff_grad[i],copy->ex_d_u_scores_diff_grad[i],l->output_size*l->output_size);
             copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
             copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
             copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
@@ -1399,7 +1347,6 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
                 copy->d1_w[i][j] = tau*l->d1_w[i][j] + (1-tau)*copy->d1_w[i][j];
                 copy->d2_w[i][j] = tau*l->d2_w[i][j] + (1-tau)*copy->d2_w[i][j];
                 copy->d3_w[i][j] = tau*l->d3_w[i][j] + (1-tau)*copy->d3_w[i][j];
-                copy->ex_d_w_diff_grad[i][j] = tau*l->ex_d_w_diff_grad[i][j] + (1-tau)*copy->ex_d_w_diff_grad[i][j];
             }
             
             
@@ -1409,7 +1356,6 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
                 copy->d1_w_scores[i][j] = tau*l->d1_w_scores[i][j] + (1-tau)*copy->d1_w_scores[i][j];
                 copy->d2_w_scores[i][j] = tau*l->d2_w_scores[i][j] + (1-tau)*copy->d2_w_scores[i][j];
                 copy->d3_w_scores[i][j] = tau*l->d3_w_scores[i][j] + (1-tau)*copy->d3_w_scores[i][j];
-                copy->ex_d_w_scores_diff_grad[i][j] = tau*l->ex_d_w_scores_diff_grad[i][j] + (1-tau)*copy->ex_d_w_scores_diff_grad[i][j];
                 copy->w_indices[i][j] = j;
             }
         }
@@ -1419,7 +1365,6 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
                 copy->d1_u[i][j] = tau*l->d1_u[i][j] + (1-tau)*copy->d1_u[i][j];
                 copy->d2_u[i][j] = tau*l->d2_u[i][j] + (1-tau)*copy->d2_u[i][j];
                 copy->d3_u[i][j] = tau*l->d3_u[i][j] + (1-tau)*copy->d3_u[i][j];
-                copy->ex_d_u_diff_grad[i][j] = tau*l->ex_d_u_diff_grad[i][j] + (1-tau)*copy->ex_d_u_diff_grad[i][j];
             }
             
             if(j < l->output_size){
@@ -1428,7 +1373,6 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
                     copy->d1_biases[i][j] = tau*l->d1_biases[i][j] + (1-tau)*copy->d1_biases[i][j];
                     copy->d2_biases[i][j] = tau*l->d2_biases[i][j] + (1-tau)*copy->d2_biases[i][j];
                     copy->d3_biases[i][j] = tau*l->d3_biases[i][j] + (1-tau)*copy->d3_biases[i][j];
-                    copy->ex_d_biases_diff_grad[i][j] = tau*l->ex_d_biases_diff_grad[i][j] + (1-tau)*copy->ex_d_biases_diff_grad[i][j];
                 }
             }
             
@@ -1438,7 +1382,6 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
                 copy->d1_u_scores[i][j] = tau*l->d1_u_scores[i][j] + (1-tau)*copy->d1_u_scores[i][j];
                 copy->d2_u_scores[i][j] = tau*l->d2_u_scores[i][j] + (1-tau)*copy->d2_u_scores[i][j];
                 copy->d3_u_scores[i][j] = tau*l->d3_u_scores[i][j] + (1-tau)*copy->d3_u_scores[i][j];
-                copy->ex_d_u_scores_diff_grad[i][j] = tau*l->ex_d_u_scores_diff_grad[i][j] + (1-tau)*copy->ex_d_u_scores_diff_grad[i][j];
                 copy->u_indices[i][j] = j;
             }
         }
@@ -1770,13 +1713,13 @@ uint64_t size_of_lstm(lstm* l){
             sum+=size_of_bn(l->bns[i]);
         }
     }
-    sum += 6*4*l->input_size*l->output_size*sizeof(float);
+    sum += 4*4*l->input_size*l->output_size*sizeof(float);
     sum += 6*4*l->output_size*l->output_size*sizeof(float);
     sum+= 6*4*l->output_size*sizeof(float);
     sum+=7*l->window*l->output_size*sizeof(float);
     sum+=2*l->output_size*sizeof(float);
     if (exists_edge_popup_stuff_lstm(l)){
-        sum+= 6*4*l->input_size*l->output_size*sizeof(float);
+        sum+= 4*4*l->input_size*l->output_size*sizeof(float);
         sum+= 6*4*l->output_size*l->output_size*sizeof(float);
         sum+=4*l->input_size*l->output_size*sizeof(int);
         sum+=4*l->output_size*l->output_size*sizeof(int);

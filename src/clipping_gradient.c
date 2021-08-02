@@ -24,21 +24,29 @@ SOFTWARE.
 
 #include "llab.h"
 
-/* This function, given a threshold, clips the gradient of the weights of the whole model given by all the models m and rmodels r as well as the transformers given, if the ||DL/Dw|| > threshold,
+// the functions are called partial derivative weights, but actuallyy they compute the biases too.
+
+
+/* This function, given a threshold, clips the gradient of the weights of the whole model (given transformer, model, rmodel, encoders, decoders), if the ||DL/Dw|| > threshold,
  * in that case DL/Dw_i *= threshold/||DL/Dw||
- * (sub normalization layers are still considered during the clipping)
+ * (normalization layers are still considered during the clipping)
+ * proceedings.mlr.press/v28/pascanu13.pdf
  * Input:
  * 
  *             @ model** m:= the models
  *             @ model** r:= the rmodels
- *                @ transformer** t:= the transformers
+ *             @ transformer** t:= the transformers
+ *             @ transformer_encoder** e:= the transformer encoders
+ *             @ transformer_decoder** d:= the transformer decoders
  *             @ int n_m:= the number of models
  *             @ int n_r:= the number of rmodels
  *             @ int n_t:= the number of transformers
+ *             @ int n_e:= the number of transformer encoders
+ *             @ int n_d:= the number of transformer decoders
  *             @ float threshold:= the threshold
  * 
  * */
-void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, int n_r, int n_t, float threshold){
+void general_clipping_gradient(model** m, rmodel** r,transformer** t, transformer_encoder** e, transformer_decoder** d, int n_m, int n_r, int n_t,int n_e, int n_d, float threshold){
     double sum = 0;
     int i,j;
     for(i = 0; i < n_m; i++){
@@ -68,6 +76,24 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
              sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(t[i]->td[j]->l2,t[i]->td[j]->n_l2);
          }
     }
+    
+    for(i = 0; i < n_e; i++){
+		sum += (double)sum_all_quadratic_derivative_weights_m(e[i]->m);
+	    sum += (double)sum_all_quadratic_derivative_weights_m(e[i]->linear_after_attention);
+	    sum += (double)sum_all_quadratic_derivative_weights_fcls(e[i]->fcls,e[i]->n_head*3);
+	    sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(e[i]->l2,e[i]->n_l2);
+	}
+	
+	for(i = 0; i < n_d; i++){
+		 sum += (double)sum_all_quadratic_derivative_weights_m(d[i]->e->m);
+		 sum += (double)sum_all_quadratic_derivative_weights_m(d[i]->e->linear_after_attention);
+		 sum += (double)sum_all_quadratic_derivative_weights_m(d[i]->linear_after_attention);
+		 sum += (double)sum_all_quadratic_derivative_weights_fcls(d[i]->e->fcls,d[i]->e->n_head*3);
+		 sum += (double)sum_all_quadratic_derivative_weights_fcls(d[i]->fcls,d[i]->n_head*3);
+		 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(d[i]->e->l2,d[i]->e->n_l2);
+		 sum += (double)sum_all_quadratic_derivative_weights_scaled_l2_norm(d[i]->l2,d[i]->n_l2);
+	 }
+	
     sum = sqrtl(sum);
     
     if(sum >= threshold){
@@ -108,6 +134,32 @@ void general_clipping_gradient(model** m, rmodel** r,transformer** t, int n_m, i
              clip_scaled_l2(t[i]->td[j]->l2,t[i]->td[j]->n_l2,threshold,sum);
          }
      }
+     
+     for(i = 0; i < n_e; i++){
+		 clip_fcls(e[i]->fcls,e[i]->n_head*3,threshold,sum);
+		 clip_fcls(e[i]->m->fcls,e[i]->m->n_fcl,threshold,sum);
+		 clip_cls(e[i]->m->cls,e[i]->m->n_cl,threshold,sum);
+		 clip_rls(e[i]->m->rls,e[i]->m->n_rl,threshold,sum);
+		 clip_fcls(e[i]->linear_after_attention->fcls,e[i]->linear_after_attention->n_fcl,threshold,sum);
+		 clip_cls(e[i]->linear_after_attention->cls,e[i]->linear_after_attention->n_cl,threshold,sum);
+		 clip_rls(e[i]->linear_after_attention->rls,e[i]->linear_after_attention->n_rl,threshold,sum);
+		 clip_scaled_l2(e[i]->l2,e[i]->n_l2,threshold,sum);
+	 }
+	 for(i = 0; i < n_d; i++){
+		 clip_fcls(d[i]->fcls,d[i]->n_head*3,threshold,sum);
+		 clip_fcls(d[i]->e->fcls,d[i]->e->n_head*3,threshold,sum);
+		 clip_fcls(d[i]->e->m->fcls,d[i]->e->m->n_fcl,threshold,sum);
+		 clip_cls(d[i]->e->m->cls,d[i]->e->m->n_cl,threshold,sum);
+		 clip_rls(d[i]->e->m->rls,d[i]->e->m->n_rl,threshold,sum);
+		 clip_fcls(d[i]->e->linear_after_attention->fcls,d[i]->e->linear_after_attention->n_fcl,threshold,sum);
+		 clip_cls(d[i]->e->linear_after_attention->cls,d[i]->e->linear_after_attention->n_cl,threshold,sum);
+		 clip_rls(d[i]->e->linear_after_attention->rls,d[i]->e->linear_after_attention->n_rl,threshold,sum);
+		 clip_fcls(d[i]->linear_after_attention->fcls,d[i]->linear_after_attention->n_fcl,threshold,sum);
+		 clip_cls(d[i]->linear_after_attention->cls,d[i]->linear_after_attention->n_cl,threshold,sum);
+		 clip_rls(d[i]->linear_after_attention->rls,d[i]->linear_after_attention->n_rl,threshold,sum);
+		 clip_scaled_l2(d[i]->e->l2,d[i]->e->n_l2,threshold,sum);
+		 clip_scaled_l2(d[i]->l2,d[i]->n_l2,threshold,sum);
+	 }
     
 }
 /* This function, given a threshold, clips the gradient of the weights of the model if the ||DL/Dw|| > threshold,
@@ -358,26 +410,29 @@ void clip_rls(rl** rls, int n, float threshold,float norm){
   * */
 void clip_cls(cl** cls, int n, float threshold, float norm){
     int j,k,z;
+    float div = threshold/norm;
     for(j = 0; j < n; j++){
         if(cls[j]->convolutional_flag == CONVOLUTION){
             if(cls[j]->training_mode == GRADIENT_DESCENT){
                 for(k = 0; k < cls[j]->n_kernels; k++){
                     for(z = 0; z < cls[j]->channels*cls[j]->kernel_rows*cls[j]->kernel_cols; z++){
-                        cls[j]->d_kernels[k][z]*=(threshold)/(norm);
+                        cls[j]->d_kernels[k][z]*=div;
                     }
+                    cls[j]->d_biases[k]*=div;
                 }
             }
             
             else if(cls[j]->training_mode == EDGE_POPUP){
                 for(k = 0; k < cls[j]->n_kernels; k++){
-                    cls[j]->d_scores[k]*=(threshold)/(norm);
+                    cls[j]->d_scores[k]*=div;
                 }
             }
             if(cls[j]->training_mode == GRADIENT_DESCENT){
                 if(cls[j]->normalization_flag == GROUP_NORMALIZATION){
                     for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
                         for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
-                            cls[j]->group_norm[k]->d_gamma[z]*=(threshold)/(norm);
+                            cls[j]->group_norm[k]->d_gamma[z]*=div;
+                            cls[j]->group_norm[k]->d_beta[z]*=div;
                         }
                     }
                 }
@@ -401,19 +456,25 @@ void clip_cls(cl** cls, int n, float threshold, float norm){
   * */
 void clip_fcls(fcl** fcls, int n, float threshold, float norm){
     int i,j;
+    float div = threshold/norm;
     for(i = 0; i < n; i++){
-        if(fcls[i]->training_mode == GRADIENT_DESCENT){
-            for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
-                fcls[i]->d_weights[j]*=(threshold)/(norm);
-            }
-            if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
-                clip_bns(&fcls[i]->layer_norm,fcls[i]->output/fcls[i]->n_groups,threshold,norm);
-        }
-        else if(fcls[i]->training_mode == EDGE_POPUP){
-            for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
-                fcls[i]->d_scores[j]*=(threshold)/(norm);
-            }
-        }
+		if(fcls[i]->feed_forward_flag != ONLY_DROPOUT){
+			if(fcls[i]->training_mode == GRADIENT_DESCENT){
+				for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
+					fcls[i]->d_weights[j]*=div;
+					if(j < fcls[i]->output){
+						fcls[i]->d_biases[j]*=div;
+					}
+				}
+				if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+					clip_bns(&fcls[i]->layer_norm,fcls[i]->output/fcls[i]->n_groups,threshold,norm);
+			}
+			else if(fcls[i]->training_mode == EDGE_POPUP){
+				for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
+					fcls[i]->d_scores[j]*=div;
+				}
+			}
+		}
     }
     
 }
@@ -431,36 +492,43 @@ void clip_fcls(fcl** fcls, int n, float threshold, float norm){
   * */
 void clip_lstms(lstm** lstms, int n, float threshold, float norm){
     int i,j;
+    float div = (threshold)/(norm);
     for(i = 0; i < n; i++){
         if(lstms[i]->training_mode == GRADIENT_DESCENT){
             if(lstms[i]->norm_flag == GROUP_NORMALIZATION)
                 clip_bns(lstms[i]->bns,lstms[i]->window/lstms[i]->n_grouped_cell,threshold,norm);
             for(j = 0; j < lstms[i]->output_size*lstms[i]->input_size; j++){
-                lstms[i]->d_w[0][j]*=(threshold)/(norm);
-                lstms[i]->d_w[1][j]*=(threshold)/(norm);
-                lstms[i]->d_w[2][j]*=(threshold)/(norm);
-                lstms[i]->d_w[3][j]*=(threshold)/(norm);
+                lstms[i]->d_w[0][j]*=div;
+                lstms[i]->d_w[1][j]*=div;
+                lstms[i]->d_w[2][j]*=div;
+                lstms[i]->d_w[3][j]*=div;
+                if(j < lstms[i]->output_size){
+					lstms[i]->d_biases[0][j]*=div;
+					lstms[i]->d_biases[1][j]*=div;
+					lstms[i]->d_biases[2][j]*=div;
+					lstms[i]->d_biases[3][j]*=div;
+				}
             }
             for(j = 0; j < lstms[i]->output_size*lstms[i]->output_size; j++){
-                lstms[i]->d_u[0][j]*=(threshold)/(norm);
-                lstms[i]->d_u[1][j]*=(threshold)/(norm);
-                lstms[i]->d_u[2][j]*=(threshold)/(norm);
-                lstms[i]->d_u[3][j]*=(threshold)/(norm);
+                lstms[i]->d_u[0][j]*=div;
+                lstms[i]->d_u[1][j]*=div;
+                lstms[i]->d_u[2][j]*=div;
+                lstms[i]->d_u[3][j]*=div;
             }
         }
         
         else if(lstms[i]->training_mode == EDGE_POPUP){
             for(j = 0; j < lstms[i]->output_size*lstms[i]->input_size; j++){
-                lstms[i]->d_w_scores[0][j]*=(threshold)/(norm);
-                lstms[i]->d_w_scores[1][j]*=(threshold)/(norm);
-                lstms[i]->d_w_scores[2][j]*=(threshold)/(norm);
-                lstms[i]->d_w_scores[3][j]*=(threshold)/(norm);
+                lstms[i]->d_w_scores[0][j]*=div;
+                lstms[i]->d_w_scores[1][j]*=div;
+                lstms[i]->d_w_scores[2][j]*=div;
+                lstms[i]->d_w_scores[3][j]*=div;
             }
             for(j = 0; j < lstms[i]->output_size*lstms[i]->output_size; j++){
-                lstms[i]->d_u_scores[0][j]*=(threshold)/(norm);
-                lstms[i]->d_u_scores[1][j]*=(threshold)/(norm);
-                lstms[i]->d_u_scores[2][j]*=(threshold)/(norm);
-                lstms[i]->d_u_scores[3][j]*=(threshold)/(norm);
+                lstms[i]->d_u_scores[0][j]*=div;
+                lstms[i]->d_u_scores[1][j]*=div;
+                lstms[i]->d_u_scores[2][j]*=div;
+                lstms[i]->d_u_scores[3][j]*=div;
             }
         }
         
@@ -481,9 +549,11 @@ void clip_lstms(lstm** lstms, int n, float threshold, float norm){
   * */
 void clip_bns(bn** bns, int n, float threshold, float norm){
     int i,j;
+    float div = threshold/norm;
     for(i = 0; i < n; i++){
         for(j = 0; j < bns[i]->vector_dim; j++){
-            bns[i]->d_gamma[j]*=(threshold)/(norm);
+            bns[i]->d_gamma[j]*=div;
+            bns[i]->d_beta[j]*=div;
         }
     }
     
@@ -502,8 +572,9 @@ void clip_bns(bn** bns, int n, float threshold, float norm){
   * */
 void clip_scaled_l2(scaled_l2_norm** l, int n, float threshold, float norm){
     int i,j;
+    float div = threshold/norm;
     for(i = 0; i < n; i++){
-        l[i]->d_learned_g*=(threshold)/(norm);
+        l[i]->d_learned_g*=div;
     }
     
 }
@@ -546,6 +617,7 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
                         temp = cls[j]->d_kernels[k][z];
                         sum += temp*temp;
                     }
+                    sum += cls[j]->d_biases[k]*cls[j]->d_biases[k];
                 }
             }
             
@@ -561,6 +633,8 @@ float sum_all_quadratic_derivative_weights_cls(cl** cls, int n){
                     for(k = 0; k < cls[j]->n_kernels/cls[j]->group_norm_channels; k++){
                         for(z = 0; z < cls[j]->group_norm[k]->vector_dim; z++){
                             temp = cls[j]->group_norm[k]->d_gamma[z];
+                            sum += temp*temp;
+                            temp = cls[j]->group_norm[k]->d_beta[z];
                             sum += temp*temp;
                         }
                     }
@@ -608,6 +682,9 @@ float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n){
                 for(j = 0; j < fcls[i]->output*fcls[i]->input; j++){
                     temp = fcls[i]->d_weights[j];
                     sum += temp*temp;
+                    if(j < fcls[i]->output){
+						sum += fcls[i]->d_biases[j]*fcls[i]->d_biases[j];
+					}
                 }
             }
             
@@ -617,10 +694,10 @@ float sum_all_quadratic_derivative_weights_fcls(fcl** fcls, int n){
                     sum += temp*temp;
                 }
             }
-        }
-        if(fcls[i]->training_mode == GRADIENT_DESCENT){
-            if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
-                sum += sum_all_quadratic_derivative_weights_bns(&fcls[i]->layer_norm,1);
+            if(fcls[i]->training_mode == GRADIENT_DESCENT){
+				if(fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+					sum += sum_all_quadratic_derivative_weights_bns(&fcls[i]->layer_norm,1);
+			}
         }
     }
     
@@ -653,6 +730,12 @@ float sum_all_quadratic_derivative_weights_lstms(lstm** lstms, int n){
                 sum += temp*temp;
                 temp = lstms[i]->d_w[3][j];
                 sum += temp*temp;
+                if(j < lstms[i]->output_size){
+					sum += lstms[i]->d_biases[0][j];
+					sum += lstms[i]->d_biases[1][j];
+					sum += lstms[i]->d_biases[2][j];
+					sum += lstms[i]->d_biases[3][j];
+				}
             }
             for(j = 0; j < lstms[i]->output_size*lstms[i]->input_size; j++){
                 temp = lstms[i]->d_u[0][j];
@@ -708,6 +791,8 @@ float sum_all_quadratic_derivative_weights_bns(bn** bns, int n){
         for(j = 0; j < bns[i]->vector_dim; j++){
             temp = bns[i]->d_gamma[j];
             sum += temp*temp;
+            temp = bns[i]->d_beta[j];
+            sum += temp*temp;
         }
     }
     
@@ -721,82 +806,85 @@ void adaptive_gradient_clipping_lstm(lstm* f ,float threshold, float epsilon){
     float sum_w;
     float sum_g;
     float ratio;
-    if(f->training_mode == GRADIENT_DESCENT){
-        for(k = 0; k < 4; k++){
-            for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
-                for(j = 0; j < f->input_size; j++){
-                    sum_w+=f->w[k][i*f->input_size+j]*f->w[k][i*f->input_size+j];
-                    sum_g+=f->d_w[k][i*f->input_size+j]*f->d_w[k][i*f->input_size+j];
-                }
-                sum_w = sqrtf(sum_w);
-                sum_g = sqrtf(sum_g);
-                sum_w = max(sum_w,epsilon);
-                ratio = sum_w/sum_g;
-                if(ratio > threshold){
-                    ratio = 1.0/ratio;
-                    ratio*=threshold;
-                    for(j = 0; j < f->input_size; j++){
-                        f->d_w[k][i*f->input_size+j]*=ratio;
-                    }    
-                }
-            }
-            for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
-                for(j = 0; j < f->output_size; j++){
-                    sum_w+=f->u[k][i*f->output_size+j]*f->u[k][i*f->output_size+j];
-                    sum_g+=f->d_u[k][i*f->output_size+j]*f->d_u[k][i*f->output_size+j];
-                }
-                sum_w = sqrtf(sum_w);
-                sum_g = sqrtf(sum_g);
-                sum_w = max(sum_w,epsilon);
-                ratio = sum_w/sum_g;
-                if(ratio > threshold){
-                    ratio = 1.0/ratio;
-                    ratio*=threshold;
-                    for(j = 0; j < f->output_size; j++){
-                        f->d_u[k][i*f->output_size+j]*=ratio;
-                    }    
-                }
-            }
-        }
-    }
-    if(f->training_mode == EDGE_POPUP){
-        for(k = 0; k < 4; k++){
-            for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
-                for(j = 0; j < f->input_size; j++){
-                    sum_w+=f->w_scores[k][i*f->input_size+j]*f->w_scores[k][i*f->input_size+j];
-                    sum_g+=f->d_w_scores[k][i*f->input_size+j]*f->d_w_scores[k][i*f->input_size+j];
-                }
-                sum_w = sqrtf(sum_w);
-                sum_g = sqrtf(sum_g);
-                sum_w = max(sum_w,epsilon);
-                ratio = sum_w/sum_g;
-                if(ratio > threshold){
-                    ratio = 1.0/ratio;
-                    ratio*=threshold;
-                    for(j = 0; j < f->input_size; j++){
-                        f->d_w_scores[k][i*f->input_size+j]*=ratio;
-                    }    
-                }
-            }
-            for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
-                for(j = 0; j < f->output_size; j++){
-                    sum_w+=f->u_scores[k][i*f->output_size+j]*f->u_scores[k][i*f->output_size+j];
-                    sum_g+=f->d_u_scores[k][i*f->output_size+j]*f->d_u_scores[k][i*f->output_size+j];
-                }
-                sum_w = sqrtf(sum_w);
-                sum_g = sqrtf(sum_g);
-                sum_w = max(sum_w,epsilon);
-                ratio = sum_w/sum_g;
-                if(ratio > threshold){
-                    ratio = 1.0/ratio;
-                    ratio*=threshold;
-                    for(j = 0; j < f->output_size; j++){
-                        f->d_u_scores[k][i*f->output_size+j]*=ratio;
-                    }    
-                }
-            }
-        }
-    }
+    if(f->feed_forward_flag != ONLY_DROPOUT){
+		if(f->training_mode == GRADIENT_DESCENT){
+			for(k = 0; k < 4; k++){
+				for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
+					for(j = 0; j < f->input_size; j++){
+						sum_w+=f->w[k][i*f->input_size+j]*f->w[k][i*f->input_size+j];
+						sum_g+=f->d_w[k][i*f->input_size+j]*f->d_w[k][i*f->input_size+j];
+					}
+					sum_w = sqrtf(sum_w);
+					sum_g = sqrtf(sum_g);
+					sum_w = max(sum_w,epsilon);
+					ratio = sum_w/sum_g;
+					if(ratio > threshold){
+						ratio = 1.0/ratio;
+						ratio*=threshold;
+						for(j = 0; j < f->input_size; j++){
+							f->d_w[k][i*f->input_size+j]*=ratio;
+						}    
+					}
+				}
+				for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
+					for(j = 0; j < f->output_size; j++){
+						sum_w+=f->u[k][i*f->output_size+j]*f->u[k][i*f->output_size+j];
+						sum_g+=f->d_u[k][i*f->output_size+j]*f->d_u[k][i*f->output_size+j];
+					}
+					sum_w = sqrtf(sum_w);
+					sum_g = sqrtf(sum_g);
+					sum_w = max(sum_w,epsilon);
+					ratio = sum_w/sum_g;
+					if(ratio > threshold){
+						ratio = 1.0/ratio;
+						ratio*=threshold;
+						for(j = 0; j < f->output_size; j++){
+							f->d_u[k][i*f->output_size+j]*=ratio;
+						}    
+					}
+				}
+			}
+		}
+		if(f->training_mode == EDGE_POPUP){
+			for(k = 0; k < 4; k++){
+				for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
+					for(j = 0; j < f->input_size; j++){
+						sum_w+=f->w_scores[k][i*f->input_size+j]*f->w_scores[k][i*f->input_size+j];
+						sum_g+=f->d_w_scores[k][i*f->input_size+j]*f->d_w_scores[k][i*f->input_size+j];
+					}
+					sum_w = sqrtf(sum_w);
+					sum_g = sqrtf(sum_g);
+					sum_w = max(sum_w,epsilon);
+					ratio = sum_w/sum_g;
+					if(ratio > threshold){
+						ratio = 1.0/ratio;
+						ratio*=threshold;
+						for(j = 0; j < f->input_size; j++){
+							f->d_w_scores[k][i*f->input_size+j]*=ratio;
+						}    
+					}
+				}
+				for(i = 0, sum_w = 0, sum_g = 0; i < f->output_size; i++){
+					for(j = 0; j < f->output_size; j++){
+						sum_w+=f->u_scores[k][i*f->output_size+j]*f->u_scores[k][i*f->output_size+j];
+						sum_g+=f->d_u_scores[k][i*f->output_size+j]*f->d_u_scores[k][i*f->output_size+j];
+					}
+					sum_w = sqrtf(sum_w);
+					sum_g = sqrtf(sum_g);
+					sum_w = max(sum_w,epsilon);
+					ratio = sum_w/sum_g;
+					if(ratio > threshold){
+						ratio = 1.0/ratio;
+						ratio*=threshold;
+						for(j = 0; j < f->output_size; j++){
+							f->d_u_scores[k][i*f->output_size+j]*=ratio;
+						}    
+					}
+				}
+			}
+		}
+		
+	}
     
     
     else
@@ -809,44 +897,46 @@ void adaptive_gradient_clipping_fcl(fcl* f ,float threshold, float epsilon){
     float sum_w;
     float sum_g;
     float ratio;
-    if(f->training_mode == GRADIENT_DESCENT){
-        for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
-            for(j = 0; j < f->input; j++){
-                sum_w+=f->weights[i*f->input+j]*f->weights[i*f->input+j];
-                sum_g+=f->d_weights[i*f->input+j]*f->d_weights[i*f->input+j];
-            }
-            sum_w = sqrtf(sum_w);
-            sum_g = sqrtf(sum_g);
-            sum_w = max(sum_w,epsilon);
-            ratio = sum_w/sum_g;
-            if(ratio > threshold){
-                ratio = 1.0/ratio;
-                ratio*=threshold;
-                for(j = 0; j < f->input; j++){
-                    f->d_weights[i*f->input+j]*=ratio;
-                }    
-            }
-        }
-    }
-    else if(f->training_mode == EDGE_POPUP){
-        for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
-            for(j = 0; j < f->input; j++){
-                sum_w+=f->scores[i*f->input+j]*f->scores[i*f->input+j];
-                sum_g+=f->d_scores[i*f->input+j]*f->d_scores[i*f->input+j];
-            }
-            sum_w = sqrtf(sum_w);
-            sum_g = sqrtf(sum_g);
-            sum_w = max(sum_w,epsilon);
-            ratio = sum_w/sum_g;
-            if(ratio > threshold){
-                ratio = 1.0/ratio;
-                ratio*=threshold;
-                for(j = 0; j < f->input; j++){
-                    f->d_scores[i*f->input+j]*=ratio;
-                }    
-            }
-        }
-    }
+    if(f->feed_forward_flag != ONLY_DROPOUT){
+		if(f->training_mode == GRADIENT_DESCENT){
+			for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
+				for(j = 0; j < f->input; j++){
+					sum_w+=f->weights[i*f->input+j]*f->weights[i*f->input+j];
+					sum_g+=f->d_weights[i*f->input+j]*f->d_weights[i*f->input+j];
+				}
+				sum_w = sqrtf(sum_w);
+				sum_g = sqrtf(sum_g);
+				sum_w = max(sum_w,epsilon);
+				ratio = sum_w/sum_g;
+				if(ratio > threshold){
+					ratio = 1.0/ratio;
+					ratio*=threshold;
+					for(j = 0; j < f->input; j++){
+						f->d_weights[i*f->input+j]*=ratio;
+					}    
+				}
+			}
+		}
+		else if(f->training_mode == EDGE_POPUP){
+			for(i = 0, sum_w = 0, sum_g = 0; i < f->output; i++){
+				for(j = 0; j < f->input; j++){
+					sum_w+=f->scores[i*f->input+j]*f->scores[i*f->input+j];
+					sum_g+=f->d_scores[i*f->input+j]*f->d_scores[i*f->input+j];
+				}
+				sum_w = sqrtf(sum_w);
+				sum_g = sqrtf(sum_g);
+				sum_w = max(sum_w,epsilon);
+				ratio = sum_w/sum_g;
+				if(ratio > threshold){
+					ratio = 1.0/ratio;
+					ratio*=threshold;
+					for(j = 0; j < f->input; j++){
+						f->d_scores[i*f->input+j]*=ratio;
+					}    
+				}
+			}
+		}
+	}
     
     else
         return;

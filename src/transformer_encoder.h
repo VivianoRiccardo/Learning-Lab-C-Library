@@ -46,5 +46,6 @@ void reset_transformer_encoder_without_learning_parameters(transformer_encoder* 
 uint64_t size_of_transformer_encoder_without_learning_parameters(transformer_encoder* t);
 void encoder_transformer_ff_opt(float* inputs, transformer_encoder* t, int input_dimension, transformer_encoder* t2);
 float* encoder_transformer_bp_opt(float* inputs, transformer_encoder* t, int input_dimension,float* output_error, transformer_encoder* t2);
+void paste_transformer_encoder_without_learning_parameters(transformer_encoder* t, transformer_encoder* copy);
 
 #endif
