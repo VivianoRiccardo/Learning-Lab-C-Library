@@ -413,7 +413,7 @@ void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batc
                             }
                         }
                         if(m->cls[j]->training_mode != FREEZE_BIASES)
-                        adam_diff_grad_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,m->cls[j]->d3_kernels[k]);
+                        adam_diff_grad_algorithm(&m->cls[j]->biases[k],&m->cls[j]->d1_biases[k],&m->cls[j]->d2_biases[k], m->cls[j]->d_biases[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->d3_biases[k]);
                         if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
                             update_batch_normalized_layer_adam_diff_grad(m->cls[j]->group_norm,m->cls[j]->n_kernels/m->cls[j]->group_norm_channels,lr,mini_batch_size,b1,b2,beta1_adam,beta2_adam);
                         }
