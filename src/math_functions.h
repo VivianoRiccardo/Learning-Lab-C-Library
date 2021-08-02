@@ -105,5 +105,11 @@ void derivative_total_variation_loss_2d(float* y, float* output, int rows, int c
 void div1D(float* input1, float* input2, float* output, int size);
 void sub1D(float* input1, float* input2, float* output, int size);
 void inverse(float* input, float* output, int size);
+float min_float(float x, float y);
+float max_float(float x, float y);
+float constrantive_loss(float y_hat, float y, float margin);
+float derivative_constrantive_loss(float y_hat, float y, float margin);
+void constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size);
+void derivative_constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size);
 
 #endif

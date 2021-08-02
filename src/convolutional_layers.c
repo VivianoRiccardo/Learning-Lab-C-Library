@@ -128,14 +128,12 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     }
     if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
         c->d_kernels = (float**)malloc(sizeof(float*)*n_kernels);
-        c->ex_d_kernels_diff_grad = (float**)malloc(sizeof(float*)*n_kernels);
         c->d1_kernels = (float**)malloc(sizeof(float*)*n_kernels);
         c->d2_kernels = (float**)malloc(sizeof(float*)*n_kernels);
         c->d3_kernels = (float**)malloc(sizeof(float*)*n_kernels);
     }
     else{
         c->d_kernels = NULL;
-        c->ex_d_kernels_diff_grad = NULL;
         c->d1_kernels = NULL;
         c->d2_kernels = NULL;
         c->d3_kernels = NULL;
@@ -146,7 +144,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         c->biases = NULL;
     if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
         c->d_biases = (float*)calloc(n_kernels,sizeof(float));
-        c->ex_d_biases_diff_grad = (float*)calloc(n_kernels,sizeof(float));
         c->d1_biases = (float*)calloc(n_kernels,sizeof(float));
         c->d2_biases = (float*)calloc(n_kernels,sizeof(float));
         c->d3_biases = (float*)calloc(n_kernels,sizeof(float));
@@ -154,7 +151,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     
     else{
         c->d_biases = NULL;
-        c->ex_d_biases_diff_grad = NULL;
         c->d1_biases = NULL;
         c->d2_biases = NULL;
         c->d3_biases = NULL;
@@ -171,7 +167,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     if(convolutional_flag != NO_CONVOLUTION && (feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP)){
         c->scores = (float*)calloc(n_kernels,sizeof(float));
         c->d_scores = (float*)calloc(n_kernels,sizeof(float));
-        c->ex_d_scores_diff_grad = (float*)calloc(n_kernels,sizeof(float));
         c->d1_scores = (float*)calloc(n_kernels,sizeof(float));
         c->d2_scores = (float*)calloc(n_kernels,sizeof(float));
         c->d3_scores = (float*)calloc(n_kernels,sizeof(float));
@@ -181,7 +176,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
     else{
         c->scores = NULL;
         c->d_scores = NULL;
-        c->ex_d_scores_diff_grad = NULL;
         c->d1_scores = NULL;
         c->d2_scores = NULL;
         c->d3_scores = NULL;
@@ -279,7 +273,6 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
             c->kernels[i] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
             if(training_mode == GRADIENT_DESCENT || training_mode == FREEZE_TRAINING || training_mode == FREEZE_BIASES){
                 c->d_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
-                c->ex_d_kernels_diff_grad[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
                 c->d1_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
                 c->d2_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
                 c->d3_kernels[i] = (float*)calloc(channels*kernel_rows*kernel_cols,sizeof(float));
@@ -409,14 +402,12 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
 
     if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
         c->d_kernels = (float**)malloc(sizeof(float*)*n_kernels);
-        c->ex_d_kernels_diff_grad = NULL;
         c->d1_kernels = NULL;
         c->d2_kernels = NULL;
         c->d3_kernels = NULL;
     }
     else{
         c->d_kernels = NULL;
-        c->ex_d_kernels_diff_grad = NULL;
         c->d1_kernels = NULL;
         c->d2_kernels = NULL;
         c->d3_kernels = NULL;
@@ -425,7 +416,6 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
     c->biases = NULL;
     if(training_mode != EDGE_POPUP && training_mode != ONLY_FF && convolutional_flag != NO_CONVOLUTION){
         c->d_biases = (float*)calloc(n_kernels,sizeof(float));
-        c->ex_d_biases_diff_grad = NULL;
         c->d1_biases = NULL;
         c->d2_biases = NULL;
         c->d3_biases = NULL;
@@ -433,7 +423,6 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
     
     else{
         c->d_biases = NULL;
-        c->ex_d_biases_diff_grad = NULL;
         c->d1_biases = NULL;
         c->d2_biases = NULL;
         c->d3_biases = NULL;
@@ -450,7 +439,6 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
     if(convolutional_flag != NO_CONVOLUTION && (feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP)){
         c->scores = NULL;
         c->d_scores = (float*)calloc(n_kernels,sizeof(float));
-        c->ex_d_scores_diff_grad = NULL;
         c->d1_scores = NULL;
         c->d2_scores = NULL;
         c->d3_scores = NULL;
@@ -460,7 +448,6 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
     else{
         c->scores = NULL;
         c->d_scores = NULL;
-        c->ex_d_scores_diff_grad = NULL;
         c->d1_scores = NULL;
         c->d2_scores = NULL;
         c->d3_scores = NULL;
@@ -641,7 +628,6 @@ void free_convolutional(cl* c){
         free(c->kernels[i]);
         if(exists_d_kernels_cl(c)){
             free(c->d_kernels[i]);
-            free(c->ex_d_kernels_diff_grad[i]);
             free(c->d1_kernels[i]);
             free(c->d2_kernels[i]);
             free(c->d3_kernels[i]);
@@ -651,12 +637,10 @@ void free_convolutional(cl* c){
     free(c->kernels);
     free(c->used_kernels);
     free(c->d_kernels);
-    free(c->ex_d_kernels_diff_grad);
     free(c->d1_kernels);
     free(c->d2_kernels);
     free(c->biases);
     free(c->d_biases);
-    free(c->ex_d_biases_diff_grad);
     free(c->d1_biases);
     free(c->d2_biases);
     free(c->d3_biases);
@@ -672,7 +656,6 @@ void free_convolutional(cl* c){
     free(c->indices);
     free(c->scores);
     free(c->d_scores);
-    free(c->ex_d_scores_diff_grad);
     free(c->d1_scores);
     free(c->d2_scores);
     free(c->d3_scores);
@@ -706,12 +689,10 @@ void free_convolutional_without_learning_parameters(cl* c){
     free(c->kernels);
     free(c->used_kernels);
     free(c->d_kernels);
-    free(c->ex_d_kernels_diff_grad);
     free(c->d1_kernels);
     free(c->d2_kernels);
     free(c->biases);
     free(c->d_biases);
-    free(c->ex_d_biases_diff_grad);
     free(c->d1_biases);
     free(c->d2_biases);
     free(c->d3_biases);
@@ -727,7 +708,6 @@ void free_convolutional_without_learning_parameters(cl* c){
     free(c->indices);
     free(c->scores);
     free(c->d_scores);
-    free(c->ex_d_scores_diff_grad);
     free(c->d1_scores);
     free(c->d2_scores);
     free(c->d3_scores);
@@ -1421,7 +1401,6 @@ cl* copy_cl(cl* f){
         }
         if(exists_d_kernels_cl(f)){
             copy_array(f->d_kernels[i],copy->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
-            copy_array(f->ex_d_kernels_diff_grad[i],copy->ex_d_kernels_diff_grad[i],f->channels*f->kernel_rows*f->kernel_cols);
             copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
             copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
             copy_array(f->d3_kernels[i],copy->d3_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
@@ -1438,7 +1417,6 @@ cl* copy_cl(cl* f){
     copy_array(f->biases,copy->biases,f->n_kernels);
     if(exists_d_biases_cl(f)){
         copy_array(f->d_biases,copy->d_biases,f->n_kernels);
-        copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->n_kernels);
         copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
         copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
         copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
@@ -1447,7 +1425,6 @@ cl* copy_cl(cl* f){
     if(exists_edge_popup_stuff_cl(f)){
         copy_array(f->scores,copy->scores,f->n_kernels);
         copy_array(f->d_scores,copy->d_scores,f->n_kernels);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels);
         copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
         copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
         copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
@@ -1896,11 +1873,11 @@ uint64_t size_of_cls(cl* f){
     if(exists_bp_handler_arrays(f))
         sum+=(3*f->n_kernels*f->rows1*f->cols1 + f->channels*f->input_rows*f->input_cols)*sizeof(float);
     if(exists_d_biases_cl(f))
-        sum+=5*f->n_kernels*sizeof(float);
+        sum+=4*f->n_kernels*sizeof(float);
     if(exists_d_kernels_cl(f))
-        sum+=5*f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
+        sum+=4*f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
     if(exists_edge_popup_stuff_cl(f))
-        sum+=6*f->n_kernels*sizeof(float) + f->n_kernels*sizeof(int);
+        sum+=5*f->n_kernels*sizeof(float) + f->n_kernels*sizeof(int);
     if(exists_kernels_cl(f))
         sum+=f->n_kernels*f->kernel_rows*f->kernel_cols*sizeof(float);
     if(exists_pre_activation_cl(f))
@@ -1978,7 +1955,6 @@ void paste_cl(cl* f, cl* copy){
             }
             if(exists_d_kernels_cl(f)){
                 copy_array(f->d_kernels[i],copy->d_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
-                copy_array(f->ex_d_kernels_diff_grad[i],copy->ex_d_kernels_diff_grad[i],f->channels*f->kernel_rows*f->kernel_cols);
                 copy_array(f->d1_kernels[i],copy->d1_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
                 copy_array(f->d2_kernels[i],copy->d2_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
                 copy_array(f->d3_kernels[i],copy->d3_kernels[i],f->channels*f->kernel_rows*f->kernel_cols);
@@ -1996,7 +1972,6 @@ void paste_cl(cl* f, cl* copy){
     copy_array(f->biases,copy->biases,f->n_kernels);
     if(exists_d_biases_cl(f)){
         copy_array(f->d_biases,copy->d_biases,f->n_kernels);
-        copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->n_kernels);
         copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
         copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
         copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
@@ -2005,7 +1980,6 @@ void paste_cl(cl* f, cl* copy){
         copy_int_array(f->indices,copy->indices,f->n_kernels);
         copy_array(f->scores,copy->scores,f->n_kernels);
         copy_array(f->d_scores,copy->d_scores,f->n_kernels);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->n_kernels);
         copy_array(f->d1_scores,copy->d1_scores,f->n_kernels);
         copy_array(f->d2_scores,copy->d2_scores,f->n_kernels);
         copy_array(f->d3_scores,copy->d3_scores,f->n_kernels);
@@ -2115,7 +2089,6 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
                     copy->d1_kernels[i][j] = tau*f->d1_kernels[i][j] + (1-tau)*copy->d1_kernels[i][j];
                     copy->d2_kernels[i][j] = tau*f->d2_kernels[i][j] + (1-tau)*copy->d2_kernels[i][j];
                     copy->d3_kernels[i][j] = tau*f->d3_kernels[i][j] + (1-tau)*copy->d3_kernels[i][j];
-                    copy->ex_d_kernels_diff_grad[i][j] = tau*f->ex_d_kernels_diff_grad[i][j] + (1-tau)*copy->ex_d_kernels_diff_grad[i][j];
                 }
             }
             if(exists_biases_cl(f)){
@@ -2124,7 +2097,6 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
                 copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
                 copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
                 copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
-                copy->ex_d_biases_diff_grad[i] = tau*f->ex_d_biases_diff_grad[i] + (1-tau)*copy->ex_d_biases_diff_grad[i];
             
             }
         }
@@ -2143,7 +2115,6 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
              copy->d1_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d1_scores[i];
              copy->d2_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d2_scores[i];
              copy->d3_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d3_scores[i];
-             copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
              copy->indices[i] = i;
              copy->used_kernels[i] = 0;
          }
@@ -2565,7 +2536,6 @@ cl* reset_edge_popup_d_cl(cl* f){
         f->d1_scores[i] = 0;
         f->d2_scores[i] = 0;
         f->d3_scores[i] = 0;
-        f->ex_d_scores_diff_grad[i] = 0;
     }
     return f;
 }

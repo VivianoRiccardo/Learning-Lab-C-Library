@@ -539,6 +539,7 @@ int read_file_in_char_vector(char** ksource, char* fname, int* size){
  * 
  * */
 void copy_array(float* input, float* output, int size){
+	if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(float)*size));
 }
 
@@ -552,6 +553,7 @@ void copy_array(float* input, float* output, int size){
  * 
  * */
 void copy_int_array(int* input, int* output, int size){
+	if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(int)*size));
 }
 
@@ -565,6 +567,7 @@ void copy_int_array(int* input, int* output, int size){
  * 
  * */
 void copy_char_array(char* input, char* output, int size){
+	if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(char)*size));
 }
 
@@ -911,10 +914,10 @@ void free_4D_tensor(float**** t, int dim1, int dim2, int dim3){
 
 
 void set_vector_with_value(float value, float* v, int dimension){
-	int i;
-	for(i = 0; i < dimension; i++){
-		v[i] = value;
-	}
+    int i;
+    for(i = 0; i < dimension; i++){
+        v[i] = value;
+    }
 }
 
 
@@ -1034,4 +1037,14 @@ int msleep(long msec)
     } while (res && errno == EINTR);
 
     return res;
+}
+
+/* get a copy of the input array in a new allocated array
+ * */
+int* get_new_copy_int_array(int* array, int size){
+    if(array == NULL)
+        return NULL;
+    int* new = (int*)malloc(sizeof(int)*size);
+    copy_int_array(array,new,size);
+    return new;
 }

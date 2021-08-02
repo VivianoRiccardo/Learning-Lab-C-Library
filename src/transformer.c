@@ -226,6 +226,31 @@ void paste_transformer(transformer* t, transformer* copy){
     return;
 }
 
+/* paste a transformer into another
+ * 
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ transformer* t:= the transformer that must bhe copied
+ *                 @ transformer* copy:= where the previous one is copied
+ * */
+void paste_transformer_without_learning_parameters(transformer* t, transformer* copy){
+    if(t == NULL || copy == NULL)
+        return;
+    int i;
+    for(i = 0; i < t->n_te; i++){
+        paste_transformer_encoder_without_learning_parameters(t->te[i],copy->te[i]);
+    }
+    for(i = 0; i < t->n_td; i++){
+        paste_transformer_decoder_without_learning_parameters(t->td[i],copy->td[i]);
+    }
+    copy->beta1_adam = t->beta1_adam;
+    copy->beta2_adam = t->beta2_adam;
+    copy->beta3_adamod = t->beta3_adamod;
+    return;
+}
+
 
 /* paste a transformer into another with a tau parameter
  * 

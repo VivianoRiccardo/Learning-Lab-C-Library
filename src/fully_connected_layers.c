@@ -71,12 +71,10 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         f->active_output_neurons = (int*)calloc(output,sizeof(int));
         if(f->training_mode != EDGE_POPUP && f->training_mode != ONLY_FF){
             f->d_weights = (float*)calloc(output*input,sizeof(float));
-            f->ex_d_weights_diff_grad = (float*)calloc(output*input,sizeof(float));
             f->d1_weights = (float*)calloc(output*input,sizeof(float));
             f->d2_weights = (float*)calloc(output*input,sizeof(float));
             f->d3_weights = (float*)calloc(output*input,sizeof(float));        
             f->d_biases = (float*)calloc(output,sizeof(float));
-            f->ex_d_biases_diff_grad = (float*)calloc(output,sizeof(float));
             f->d1_biases = (float*)calloc(output,sizeof(float));
             f->d2_biases = (float*)calloc(output,sizeof(float));
             f->d3_biases = (float*)calloc(output,sizeof(float));
@@ -84,12 +82,10 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         
         else{
             f->d_weights = NULL;
-            f->ex_d_weights_diff_grad = NULL;
             f->d1_weights = NULL;
             f->d2_weights = NULL;
             f->d3_weights = NULL;    
             f->d_biases = NULL;
-            f->ex_d_biases_diff_grad = NULL;
             f->d1_biases = NULL;
             f->d2_biases = NULL;
             f->d3_biases = NULL;
@@ -102,12 +98,10 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         f->biases = NULL;
         f->active_output_neurons = NULL;
         f->d_weights = NULL;
-        f->ex_d_weights_diff_grad = NULL;
         f->d1_weights = NULL;
         f->d2_weights = NULL;
         f->d3_weights = NULL;    
         f->d_biases = NULL;
-        f->ex_d_biases_diff_grad = NULL;
         f->d1_biases = NULL;
         f->d2_biases = NULL;
         f->d3_biases = NULL;
@@ -130,7 +124,6 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     if(f->feed_forward_flag != ONLY_DROPOUT && (f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP)){
         f->scores = (float*)calloc(output*input,sizeof(float));
         f->d_scores = (float*)calloc(output*input,sizeof(float));
-        f->ex_d_scores_diff_grad = (float*)calloc(output*input,sizeof(float));
         f->d1_scores = (float*)calloc(output*input,sizeof(float));
         f->d2_scores = (float*)calloc(output*input,sizeof(float));
         f->d3_scores = (float*)calloc(output*input,sizeof(float));
@@ -140,7 +133,6 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     else{
         f->scores = NULL;
         f->d_scores  = NULL;
-        f->ex_d_scores_diff_grad  = NULL;
         f->d1_scores = NULL;
         f->d2_scores = NULL;
         f->d3_scores = NULL;
@@ -231,12 +223,10 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         f->active_output_neurons = NULL;
         if(f->training_mode != EDGE_POPUP && f->training_mode != ONLY_FF){
             f->d_weights = (float*)calloc(output*input,sizeof(float));
-            f->ex_d_weights_diff_grad = NULL;
             f->d1_weights = NULL;
             f->d2_weights = NULL;
             f->d3_weights = NULL;     
             f->d_biases = (float*)calloc(output,sizeof(float));
-            f->ex_d_biases_diff_grad = NULL;
             f->d1_biases = NULL;
             f->d2_biases = NULL;
             f->d3_biases = NULL;
@@ -244,12 +234,10 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         
         else{
             f->d_weights = NULL;
-            f->ex_d_weights_diff_grad = NULL;
             f->d1_weights = NULL;
             f->d2_weights = NULL;
             f->d3_weights = NULL;    
             f->d_biases = NULL;
-            f->ex_d_biases_diff_grad = NULL;
             f->d1_biases = NULL;
             f->d2_biases = NULL;
             f->d3_biases = NULL;
@@ -262,12 +250,10 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         f->biases = NULL;
         f->active_output_neurons = NULL;
         f->d_weights = NULL;
-        f->ex_d_weights_diff_grad = NULL;
         f->d1_weights = NULL;
         f->d2_weights = NULL;
         f->d3_weights = NULL;    
         f->d_biases = NULL;
-        f->ex_d_biases_diff_grad = NULL;
         f->d1_biases = NULL;
         f->d2_biases = NULL;
         f->d3_biases = NULL;
@@ -290,7 +276,6 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     if(f->feed_forward_flag != ONLY_DROPOUT && (f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP)){
         f->scores = NULL;
         f->d_scores = (float*)calloc(output*input,sizeof(float));
-        f->ex_d_scores_diff_grad = NULL;
         f->d1_scores = NULL;
         f->d2_scores = NULL;
         f->d3_scores = NULL;
@@ -300,7 +285,6 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     else{
         f->scores = NULL;
         f->d_scores  = NULL;
-        f->ex_d_scores_diff_grad  = NULL;
         f->d1_scores = NULL;
         f->d2_scores = NULL;
         f->d3_scores = NULL;
@@ -373,13 +357,11 @@ void free_fully_connected(fcl* f){
     
     free(f->weights);
     free(f->d_weights);
-    free(f->ex_d_weights_diff_grad);
     free(f->d1_weights);
     free(f->d2_weights);
     free(f->d3_weights);
     free(f->biases);
     free(f->d_biases);
-    free(f->ex_d_biases_diff_grad);
     free(f->d1_biases);
     free(f->d2_biases);
     free(f->d3_biases);
@@ -394,7 +376,6 @@ void free_fully_connected(fcl* f){
     free(f->error2);
     free(f->scores);
     free(f->d_scores);
-    free(f->ex_d_scores_diff_grad);
     free(f->d1_scores);
     free(f->d2_scores);
     free(f->d3_scores);
@@ -416,12 +397,10 @@ void free_fully_connected_for_edge_popup(fcl* f){
     }
     
     free(f->d_weights);
-    free(f->ex_d_weights_diff_grad);
     free(f->d1_weights);
     free(f->d2_weights);
     free(f->d3_weights);
     free(f->d_biases);
-    free(f->ex_d_biases_diff_grad);
     free(f->d1_biases);
     free(f->d2_biases);
     free(f->d3_biases);
@@ -450,7 +429,6 @@ void free_fully_connected_complementary_edge_popup(fcl* f){
     free(f->error2);
     free(f->scores);
     free(f->d_scores);
-    free(f->ex_d_scores_diff_grad);
     free(f->d1_scores);
     free(f->d2_scores);
     free(f->d3_scores);
@@ -820,12 +798,10 @@ fcl* copy_fcl(fcl* f){
     }
     if(exists_d_params_fcl(f)){
         copy_array(f->d_weights,copy->d_weights,f->output*f->input);
-        copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
         copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
         copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
         copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
         copy_array(f->d_biases,copy->d_biases,f->output);
-        copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
         copy_array(f->d1_biases,copy->d1_biases,f->output);
         copy_array(f->d2_biases,copy->d2_biases,f->output);
         copy_array(f->d3_biases,copy->d3_biases,f->output);
@@ -834,7 +810,6 @@ fcl* copy_fcl(fcl* f){
     if(exists_edge_popup_stuff_fcl(f)){
         copy_array(f->scores,copy->scores,f->input*f->output);
         copy_array(f->d_scores,copy->d_scores,f->input*f->output);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
         copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
@@ -1221,10 +1196,10 @@ uint64_t size_of_fcls(fcl* f){
         sum+=(f->output*2+f->output*f->input)*sizeof(float) + f->output*sizeof(int);
     }
     if(exists_d_params_fcl(f)){
-        sum+=(f->output*f->input + f->output)*5*sizeof(float);
+        sum+=(f->output*f->input + f->output)*4*sizeof(float);
     }
     if(exists_edge_popup_stuff_fcl(f)){
-        sum+=f->output*f->input*6*sizeof(float) +f->output*f->input*sizeof(int);
+        sum+=f->output*f->input*5*sizeof(float) +f->output*f->input*sizeof(int);
     }
     if(exists_dropout_stuff_fcl(f)){
         sum+=f->output*2*sizeof(float);
@@ -1296,13 +1271,11 @@ void paste_fcl(fcl* f,fcl* copy){
     }
     if(exists_d_params_fcl(f)){
         copy_array(f->d_weights,copy->d_weights,f->output*f->input);
-        copy_array(f->ex_d_weights_diff_grad,copy->ex_d_weights_diff_grad,f->output*f->input);
         copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
         copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
         copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
         
         copy_array(f->d_biases,copy->d_biases,f->output);
-        copy_array(f->ex_d_biases_diff_grad,copy->ex_d_biases_diff_grad,f->output);
         copy_array(f->d1_biases,copy->d1_biases,f->output);
         copy_array(f->d2_biases,copy->d2_biases,f->output);
         copy_array(f->d3_biases,copy->d3_biases,f->output);
@@ -1310,7 +1283,6 @@ void paste_fcl(fcl* f,fcl* copy){
     if(exists_edge_popup_stuff_fcl(f)){
         copy_array(f->scores,copy->scores,f->input*f->output);
         copy_array(f->d_scores,copy->d_scores,f->input*f->output);
-        copy_array(f->ex_d_scores_diff_grad,copy->ex_d_scores_diff_grad,f->input*f->output);
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
         copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
@@ -1403,7 +1375,6 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
                 copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
                 copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
                 copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
-                copy->ex_d_biases_diff_grad[i] = tau*f->ex_d_biases_diff_grad[i] + (1-tau)*copy->ex_d_biases_diff_grad[i];
             }
         }
         if(exists_params_fcl(f))
@@ -1412,14 +1383,12 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
             copy->d1_weights[i] = tau*f->d1_weights[i] + (1-tau)*copy->d1_weights[i];
             copy->d2_weights[i] = tau*f->d2_weights[i] + (1-tau)*copy->d2_weights[i];
             copy->d3_weights[i] = tau*f->d3_weights[i] + (1-tau)*copy->d3_weights[i];
-            copy->ex_d_weights_diff_grad[i] = tau*f->ex_d_weights_diff_grad[i] + (1-tau)*copy->ex_d_weights_diff_grad[i];
         }
         if(exists_edge_popup_stuff_fcl(f)){
             copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
             copy->d1_scores[i] = tau*f->d1_scores[i] + (1-tau)*copy->d1_scores[i];
             copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
             copy->d3_scores[i] = tau*f->d3_scores[i] + (1-tau)*copy->d3_scores[i];
-            copy->ex_d_scores_diff_grad[i] = tau*f->ex_d_scores_diff_grad[i] + (1-tau)*copy->ex_d_scores_diff_grad[i];
         }
         
     }
@@ -1786,7 +1755,6 @@ fcl* reset_edge_popup_d_fcl(fcl* f){
         f->d1_scores[i] = 0;
         f->d2_scores[i] = 0;
         f->d3_scores[i] = 0;
-        f->ex_d_scores_diff_grad[i] = 0;
     }
     return f;
 }

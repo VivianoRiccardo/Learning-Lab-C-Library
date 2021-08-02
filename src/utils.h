@@ -70,5 +70,6 @@ char* read_files_from_file(char* file, int package_size);
 void set_files_free_from_file(char* file_to_free, char* file);
 void remove_occupied_sets(char* file);
 int msleep(long msec);
+int* get_new_copy_int_array(int* array, int size);
 
 #endif

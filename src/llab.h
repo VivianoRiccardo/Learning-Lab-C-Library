@@ -146,6 +146,7 @@ SOFTWARE.
 #define KL_DIVERGENCE_LOSS 1 << 5
 #define ENTROPY_LOSS 1 << 6
 #define TOTAL_VARIATION_LOSS_2D 1 << 7
+#define CONTRASTIVE_2D_LOSS 1 << 8
 
 //look ahead algorithm hyperparameters
 #define LOOK_AHEAD_ALPHA 0.8
@@ -183,7 +184,8 @@ SOFTWARE.
 #define DIVISION 6
 #define INVERSE 7
 #define CHANGE_SIGN 8
-#define NO_CONCATENATE 9
+#define GET_MAX 9
+#define NO_CONCATENATE 10
 
 #define POSITIONAL_ENCODING 13
 
@@ -225,8 +227,6 @@ typedef struct bn{//batch_normalization layer
     float* d1_beta;//vector_dim
     float* d2_beta;//vector_dim
     float* d3_beta;//vector_dim
-    float* ex_d_gamma_diff_grad; //vector dim
-    float* ex_d_beta_diff_grad; //vector dim
     float* mean;//vector_dim
     float* var;//vector_dim
     float** outputs;//batch_size*vector_dim
@@ -257,8 +257,6 @@ typedef struct fcl { //fully-connected-layers
     float* d1_biases; //output
     float* d2_biases; //output
     float* d3_biases; //output
-    float* ex_d_weights_diff_grad;//output*input
-    float* ex_d_biases_diff_grad;//output
     float* pre_activation; //output
     float* post_activation; //output
     float* post_normalization; //output
@@ -275,7 +273,6 @@ typedef struct fcl { //fully-connected-layers
     int* active_output_neurons;// for edge-popup algorithm, output
     float* scores;//for edge-popup algorithm,output*input
     float* d_scores;//for edge-popup algorithm,output*input
-    float* ex_d_scores_diff_grad;//for edge-popup algorithm,output*input
     float* d1_scores;//for edge-popup algorithm,output*input
     float* d2_scores;//for edge-popup algorithm,output*input
     float* d3_scores;//for edge-popup algorithm,output*input
@@ -306,8 +303,6 @@ typedef struct cl { //convolutional-layers
     float* d1_biases; //n_kernels
     float* d2_biases; //n_kernels
     float* d3_biases; //n_kernels
-    float** ex_d_kernels_diff_grad; //n_kernels - channels*kernel_rows*kernel_cols
-    float* ex_d_biases_diff_grad; //n_kernels
     float* pre_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
     float* post_activation;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
     float* post_normalization;//n_kernels*((input_rows-kernel_rows)/stride1_rows +1 + 2*padding1_rows)*((input_cols-kernel_cols)/stride1_cols +1 + 2*padding1_cols) or n_kernels*((input_rows-1)*stride1_rows+kernel_rows - 2*padding1_rows)*((input_cols-1)*stride1_cols+kernel_cols - 2*padding1_cols)
@@ -323,7 +318,6 @@ typedef struct cl { //convolutional-layers
     int* indices;// for edge-popup algorithm, n_kernels*channels*kernel_rows*kernel_cols
     float* scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
-    float* ex_d_scores_diff_grad;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d1_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d2_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
     float* d3_scores;//for edge-popup algorithm,n_kernels*channels*kernel_rows*kernel_cols
@@ -345,18 +339,15 @@ typedef struct lstm { //long short term memory layers
     float** w;// 4 x size*size
     float** u;// 4 x size*size
     float** d_w;// 4 x size*size
-    float** ex_d_w_diff_grad;// 4 x size*size
     float** d1_w;// 4 x size*size
     float** d2_w;// 4 x size*size
     float** d3_w;// 4 x size*size
     float** d_u;// 4 x size*size
-    float** ex_d_u_diff_grad;// 4 x size*size
     float** d1_u;// 4 x size*size
     float** d2_u;// 4 x size*size
     float** d3_u;// 4 x size*size
     float** biases; //4 x size
     float** d_biases; //4 x size
-    float** ex_d_biases_diff_grad; //4 x size
     float** d1_biases; //4 x size
     float** d2_biases; //4 x size
     float** d3_biases; //4 x size
@@ -368,8 +359,6 @@ typedef struct lstm { //long short term memory layers
     float** u_scores;//for edge-popup algorithm,output*input, 4 x size*size
     float** d_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
     float** d_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
-    float** ex_d_w_scores_diff_grad;//for edge-popup algorithm,output*input, 4 x size*size
-    float** ex_d_u_scores_diff_grad;//for edge-popup algorithm,output*input, 4 x size*size
     float** d1_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
     float** d1_u_scores;//for edge-popup algorithm,output*input, 4 x size*size
     float** d2_w_scores;//for edge-popup algorithm,output*input, 4 x size*size
@@ -710,6 +699,33 @@ typedef struct struct_conn{
 	
 }struct_conn;
 
+typedef struct struct_conn_handler{
+	int n_models, n_rmodels, n_encoders, n_decoders, n_transformers, n_l2s, n_vectors, n_total_structures, n_struct_conn, n_targets, n_inputs;
+	model** m;//n_models
+	rmodel** r;
+	transformer_encoder** e;
+	transformer_decoder** d;
+	transformer** t;
+	scaled_l2_norm** l2;
+	vector_struct** v;
+	struct_conn** s;
+	int** models;//n_models X n_struct_conn, 0 nothing, 1 input, 2 output
+	int** rmodels;//n_rmodels X n_struct_conn, 0 nothing, 1 input, 2 output
+	int** encoders;//n_encoders X n_struct_conn, 0 nothing, 1 input, 2 output
+	int** decoders;//n_decoders X n_struct_conn, 0 nothing, 1 input, 2 output
+	int** transformers;//n_transformers X n_struct_conn, 0 nothing, 1 input, 2 output
+	int** l2s;//n_models X n_l2s, 0 nothing, 1 input, 2 output
+	int** vectors;//n_vectors X n_struct_conn, 0 nothing, 1 input, 2 output
+	float** targets;//the second pointer for each target is a pointer of a given dataset stored elsewhere
+	int* targets_index;
+	int* targets_size;
+	int* targets_error_flag;
+	float** targets_weights;
+	float* targets_threshold1;
+	float* targets_threshold2;
+	float* targets_gamma;
+}struct_conn_handler;
+
 typedef struct error_handler{
 	int size,reference_index;
 	int free_flag_error;
@@ -752,6 +768,7 @@ typedef struct error_super_struct{
 #include "scaled_l2_norm_layers.h"
 #include "server.h"
 #include "struct_conn.h"
+#include "struct_conn_handler.h"
 #include "training.h"
 #include "transformer.h"
 #include "transformer_decoder.h"

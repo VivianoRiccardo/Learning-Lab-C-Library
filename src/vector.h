@@ -33,5 +33,7 @@ void save_vector(vector_struct* v, int n);
 vector_struct* load_vector(FILE* fr);
 void ff_vector(float* input1,float* input2, vector_struct* v);
 float* bp_vector(float* input1,float* input2, vector_struct* v, float* output_error);
+void paste_vector(vector_struct* v, vector_struct* copy);
+uint64_t size_of_vector(vector_struct* v);
 
 #endif

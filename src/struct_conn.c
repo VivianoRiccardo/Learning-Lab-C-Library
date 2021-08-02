@@ -349,6 +349,22 @@ void reset_struct_conn(struct_conn* s){
     }    
 }
 
+
+void paste_struct_conn(struct_conn* s, struct_conn* copy){
+    if(s->r2 != NULL && s->concatenate_flag != CONCATENATE){
+        copy_int_array(s->rmodel_input_left,copy->rmodel_input_left,s->r2->n_lstm);
+        copy_int_array(s->rmodel_input_down,copy->rmodel_input_down,s->r2->lstms[0]->window);
+    }
+    
+    copy_int_array(s->input_temporal_index,copy->input_temporal_index,s->temporal_encoding_model_size);
+    copy_int_array(s->input_encoder_indeces,copy->input_encoder_indeces,s->transf_enc_input);
+    copy_int_array(s->input_decoder_indeces_down,copy->input_decoder_indeces_down,s->decoder_down_input);
+    copy_int_array(s->input_decoder_indeces_left,copy->input_decoder_indeces_left,s->decoder_left_input);
+    copy_int_array(s->input_transf_encoder_indeces,copy->input_transf_encoder_indeces,s->transf_enc_input);
+    copy_int_array(s->input_transf_decoder_indeces,copy->input_transf_decoder_indeces,s->transf_dec_input);
+    return;
+    
+}
 // this function just copy the output from some structure in the input tensor of the rmodel
 void struct_connection_input_arrays(struct_conn* s){
     if(s->input2_type == RMODEL && s->concatenate_flag != CONCATENATE){
@@ -1035,12 +1051,241 @@ void ff_struc_conn(struct_conn* s, int transformer_flag){
         ff_vector(output1,output2,s->v3);
     }
 }
+// the ith paramater is used in case we have a rmodel in input
+void ff_struc_conn_opt(struct_conn* real_s, struct_conn* s, int transformer_flag){
+    int i;
+    if(s->input2_type == MODEL && s->concatenate_flag != CONCATENATE){
+        if(s->input1_type == MODEL){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->m1->output_dimension,&s->m1->output_layer[s->model_input_index]);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->temporal_m[s->model_input_index]->output_dimension,s->temporal_m[s->model_input_index]->output_layer);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index));
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index]);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index]);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index]);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index]);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            model_tensor_input_ff_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index]);
+        }
+    }
+    else if(s->input2_type == TEMPORAL_ENCODING_MODEL && s->concatenate_flag != CONCATENATE){
+        float** inputs = (float**)malloc(sizeof(float*)*s->temporal_encoding_model_size);
+        if(s->input1_type == MODEL){
+            fprintf(stderr,"Error: you are using temporal model for encoding but previous structure is a model too, instead you should use temporal for transformer /encoder transformer / decoder transforemr / rnn\n");
+            exit(1);
+        }
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            fprintf(stderr,"Error: you have 2 temporal encoding model one after another: useless we are exiting!\n");
+            exit(1);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = get_ith_output_cell(s->r1,s->input_temporal_index[i]);
+            }
+            model_tensor_input_ff_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->e1)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_ff_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->d1->e)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_ff_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_ff_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            fprintf(stderr,"Error: you are using a temporal model on a previous normalization, useless!\n");
+            exit(1);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            fprintf(stderr,"Error: you are using temporal model on a previous vector structure, useless!\n");
+            exit(1);
+        }
+        free(inputs);
+    }
+    
+    else if(s->input2_type == RMODEL && s->concatenate_flag != CONCATENATE){
+        ff_rmodel_opt(s->h,s->c,s->inputs,s->r2,real_s->r2);
+    }
+    
+    else if(s->input2_type == TRANSFORMER_ENCODER && s->concatenate_flag != CONCATENATE){
+            encoder_transformer_ff_opt(s->encoder_input,s->e2,s->transf_enc_input,real_s->e2);
+    }
+    else if(s->input2_type == TRANSFORMER_DECODER && s->concatenate_flag != CONCATENATE){
+            decoder_transformer_ff_opt(s->decoder_input_down,s->decoder_input_left,s->d2,s->decoder_down_input,s->decoder_left_input,real_s->d2);
+    }
+    else if(s->input2_type == TRANSFORMER && s->concatenate_flag != CONCATENATE){
+            transf_ff_opt(s->t2,s->transformer_input_encoder,s->transf_enc_input,s->transformer_input_decoder,s->transf_dec_input,transformer_flag,real_s->t2);
+    }
+    
+    else if(s->input2_type == L2_NORM_CONN && s->concatenate_flag != CONCATENATE){
+        if(s->input1_type == MODEL){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&s->m1->output_layer[s->model_input_index],s->l2->output);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,s->temporal_m[s->model_input_index]->output_layer,s->l2->output);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,get_ith_output_cell(s->r1,s->model_input_index),s->l2->output);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],s->l2->output);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],s->l2->output);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],s->l2->output);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&s->l1->output[s->model_input_index],s->l2->output);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            feed_forward_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->norm,&s->v1->output[s->model_input_index],s->l2->output);
+        }
+    }
+    else if(s->input2_type == VECTOR && s->concatenate_flag != CONCATENATE){
+        if(s->input1_type == MODEL){
+            ff_vector(&s->m1->output_layer[s->model_input_index],NULL,s->v2);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            ff_vector(s->temporal_m[s->model_input_index]->output_layer,NULL,s->v2);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            ff_vector(get_ith_output_cell(s->r1,s->model_input_index),NULL,s->v2);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            ff_vector(&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],NULL,s->v2);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            ff_vector(&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],NULL,s->v2);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            ff_vector(&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],NULL,s->v2);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            ff_vector(&s->l1->output[s->model_input_index],NULL,s->v2);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            ff_vector(&s->v1->output[s->model_input_index],NULL,s->v2);
+        }
+    }
+    
+    else if(s->output_type == VECTOR && s->concatenate_flag == CONCATENATE){
+        float* output1, *output2;
+        if(s->input1_type == MODEL){
+            output1 = &s->m1->output_layer[s->model_input_index];
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            output1 = s->temporal_m[s->model_input_index]->output_layer;
+        }
+        
+        else if(s->input1_type == RMODEL){
+            output1 = get_ith_output_cell(s->r1,s->model_input_index);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            output1 = &get_output_layer_from_encoder_transf(s->e1)[s->model_input_index];
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            output1 = &get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index];
+        }
+        else if(s->input1_type == TRANSFORMER){
+            output1 = &get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index];
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            output1 = &s->l2->output[s->model_input_index];
+        }
+        
+        else if(s->input1_type == VECTOR){
+            output1 = &s->v2->output[s->model_input_index];
+        }
+        
+        if(s->input2_type == MODEL){
+            output2 = &s->m2->output_layer[s->vector_index];
+        }
+        
+        else if(s->input2_type == TEMPORAL_ENCODING_MODEL){
+            output2 = s->temporal_m2[s->vector_index]->output_layer;
+        }
+        
+        else if(s->input2_type == RMODEL){
+            output2 = get_ith_output_cell(s->r2,s->vector_index);
+        }
+        
+        else if(s->input2_type == TRANSFORMER_ENCODER){
+            output2 = &get_output_layer_from_encoder_transf(s->e2)[s->vector_index];
+        }
+        else if(s->input2_type == TRANSFORMER_DECODER){
+            output2 = &get_output_layer_from_encoder_transf(s->d2->e)[s->vector_index];
+        }
+        else if(s->input2_type == TRANSFORMER){
+            output2 = &get_output_layer_from_encoder_transf(s->t2->td[s->t2->n_td-1]->e)[s->vector_index];
+        }
+        
+        else if(s->input2_type == L2_NORM_CONN){
+            output2 = &s->l2->output[s->vector_index];
+        }
+        
+        else if(s->input2_type == VECTOR){
+            output2 = &s->v2->output[s->vector_index];
+        }
+        
+        ff_vector(output1,output2,s->v3);
+    }
+}
 
 // e is the error of the current model, es is the super struct where must be added the current returning error of the current model
-void bp_struc_conn(struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es){
+error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es){
     
     int i,j;
-    
+    if(e == NULL){
+        e = (error_super_struct*)malloc(sizeof(error_super_struct));
+        e->n_error_handlers = 0;
+        e->e = NULL;
+    }
     float* err;
     float** temp_err;
     
@@ -1549,5 +1794,527 @@ void bp_struc_conn(struct_conn* s, int transformer_flag, error_super_struct* e, 
         free(err);
         
     }
+    
+    return e;
+}
+// e is the error of the current model, es is the super struct where must be added the current returning error of the current model
+error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int transformer_flag, error_super_struct* e, error_super_struct* es){
+    
+    int i,j;
+    if(e == NULL){
+        e = (error_super_struct*)malloc(sizeof(error_super_struct));
+        e->n_error_handlers = 0;
+        e->e = NULL;
+    }
+    float* err;
+    float** temp_err;
+    
+    if(s->input2_type == MODEL && s->concatenate_flag != CONCATENATE){
+        
+        
+        error_handler* h = (error_handler*)malloc(sizeof(error_handler));
+        h->ret_error = NULL;
+        h->size = s->input_size;
+        h->reference_index = s->model_input_index;
+        h->free_flag_error = 0;
+        es->n_error_handlers++;
+        es->e = realloc(es->e,sizeof(error_handler*)*es->n_error_handlers);
+        es->e[es->n_error_handlers-1] = h;
+        
+        err = (float*)calloc(s->m2->output_dimension,sizeof(float));
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->m2->output_dimension - e->e[j]->reference_index,e->e[j]->size));
+        }
+        if(s->input1_type == MODEL){
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->m1->output_dimension,&s->m1->output_layer[s->model_input_index], err,s->m2->output_dimension);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->temporal_m[s->model_input_index]->output_dimension,s->temporal_m[s->model_input_index]->output_layer,err,s->m2->output_dimension);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index),err,s->m2->output_dimension);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->m2->output_dimension);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->m2->output_dimension);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->m2->output_dimension);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index],err,s->m2->output_dimension);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index],err,s->m2->output_dimension);
+        }
+        free(err);
+    }
+    
+    else if(s->input2_type == TEMPORAL_ENCODING_MODEL && s->concatenate_flag != CONCATENATE){
+        
+        
+        
+        
+        float** inputs = (float**)malloc(sizeof(float*)*s->temporal_encoding_model_size);
+        float** ret_temporal_error = (float**)malloc(sizeof(float*)*s->temporal_encoding_model_size);
+        temp_err = (float**)malloc(s->temporal_encoding_model_size*sizeof(float*));
+        
+        for(j = 0; j < s->temporal_encoding_model_size; j++){
+            temp_err[j] = (float*)calloc(s->temporal_m[j]->output_dimension,sizeof(float));
+        }
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],min(s->temporal_m[e->e[j]->reference_index]->output_dimension,e->e[j]->size));
+        }
+        
+        
+        
+        if(s->input1_type == MODEL){
+            fprintf(stderr,"Error: you are using temporal model for encoding but previous structure is a model too, instead you should use temporal for transformer /encoder transformer / decoder transforemr / rnn\n");
+            exit(1);
+        }
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            fprintf(stderr,"Error: in consecutive mode 2 different temporal models, no sense here!\n");
+            exit(1);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = get_ith_output_cell(s->r1,s->input_temporal_index[i]);
+            }
+            model_tensor_input_bp_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size,temp_err,s->m2->output_dimension,ret_temporal_error);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->e1)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_bp_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size,temp_err,s->m2->output_dimension,ret_temporal_error);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->d1->e)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_bp_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size,temp_err,s->m2->output_dimension,ret_temporal_error);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            for(i = 0; i < s->temporal_encoding_model_size; i++){
+                inputs[i] = &(get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->input_temporal_index[i]]);
+            }
+            model_tensor_input_bp_multicore_opt(s->temporal_m,real_s->m2,1,1,s->input_size,inputs,s->temporal_encoding_model_size,s->temporal_encoding_model_size,temp_err,s->m2->output_dimension,ret_temporal_error);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            fprintf(stderr,"Error: you are using a temporal model on a previous normalization, useless!\n");
+            exit(1);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            fprintf(stderr,"Error: you are using temporal model on a previous vector structure, useless!\n");
+            exit(1);
+        }
+        
+        
+        error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*s->temporal_encoding_model_size);
+        for(j = 0; j < s->temporal_encoding_model_size; j++){
+            h[j] = (error_handler*)malloc(sizeof(error_handler));
+            h[j]->ret_error = NULL;
+            h[j]->free_flag_error = 0;
+            h[j]->size = s->input_size;
+            h[j]->reference_index = s->input_temporal_index[j];
+        }
+        
+        es->n_error_handlers+=s->temporal_encoding_model_size;
+        es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+        for(j = es->n_error_handlers-s->temporal_encoding_model_size; j < es->n_error_handlers; j++){
+            h[j-(es->n_error_handlers-s->temporal_encoding_model_size)]->ret_error = ret_temporal_error[j-(es->n_error_handlers-s->temporal_encoding_model_size)];
+            es->e[j] = h[j-(es->n_error_handlers-s->temporal_encoding_model_size)];    
+        }
+        
+        free(h);
+        free_matrix((void**)temp_err,s->temporal_encoding_model_size);
+        free(ret_temporal_error);
+        free(inputs);
+    }
+    
+    else if(s->input2_type == RMODEL && s->concatenate_flag != CONCATENATE){
+        
+        int n = 0;
+        
+        temp_err = (float**)malloc(sizeof(float*)*s->r2->lstms[s->r2->n_lstm-1]->window);
+        float** inp_err = (float**)malloc(sizeof(float*)*s->r2->lstms[0]->window);
+        for(j = 0; j < s->r2->lstms[s->r2->n_lstm-1]->window; j++){
+            temp_err[j] = (float*)calloc(s->r2->lstms[s->r2->n_lstm-1]->output_size,sizeof(float));
+        }
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],s->r2->lstms[s->r2->n_lstm-1]->output_size);
+        }
+        float*** ret = bp_rmodel_opt(s->h,s->c,s->inputs,temp_err,s->r2,inp_err,real_s->r2);
+        
+        
+        for(j = 0; j < s->r2->n_lstm; j++){
+            if(s->rmodel_input_left[j] != -1){
+                n++;
+            }
+        }
+        for(j = 0; j < s->r2->lstms[s->r2->n_lstm-1]->window; j++){
+            if(s->rmodel_input_down[j] != -1){
+                n++;
+            }
+        }
+        
+        error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*n);
+        for(j = 0; j < n; j++){
+            h[j] = (error_handler*)malloc(sizeof(error_handler));
+            h[j]->ret_error = NULL;
+            h[j]->free_flag_error = 1;
+        }
+        
+        int m = n;
+        
+        for(n = 0, j = 0; j < s->r2->n_lstm; j++){
+            if(s->rmodel_input_left[j] != -1){
+                h[n]->ret_error = lstm_dh(0,s->r2->lstms[j]->output_size,ret[j],s->r2->lstms[j]);
+                h[n]->reference_index = s->rmodel_input_left[j];
+                h[n]->size = s->r2->lstms[j]->output_size;
+                n++;
+            }
+        }
+        for(j = 0; j < s->r2->lstms[s->r2->n_lstm-1]->window; j++){
+            if(s->rmodel_input_down[j] != -1){
+                h[n]->ret_error = inp_err[j];
+                h[n]->reference_index = s->rmodel_input_down[j];
+                h[n]->size = s->r2->lstms[0]->input_size;
+                n++;
+            }
+        }
+        es->n_error_handlers+=m;
+        es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+        for(j = es->n_error_handlers-m; j < es->n_error_handlers; j++){
+            es->e[j] = h[j-(es->n_error_handlers-m)];    
+        }
+        free(h);
+        free_matrix((void**)temp_err,s->r2->lstms[s->r2->n_lstm-1]->window);
+        free(inp_err);
+        free_tensor(ret,s->r2->n_lstm,4);
+        
+    }
+    
+    else if(s->input2_type == TRANSFORMER_ENCODER && s->concatenate_flag != CONCATENATE){
+            
+            int n = 0;
+            for(i = 0; i < s->transf_enc_input; i++){
+                if(s->input_encoder_indeces[i] != -1) n++;
+            }
+            
+            
+            
+            error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*n);
+            
+            
+
+            err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
+            for(j = 0; j < e->n_error_handlers; j++){
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->e2->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+            }
+            float* ret = encoder_transformer_bp_opt(s->encoder_input,s->e2,s->transf_enc_input,err,real_s->e2);
+            for(i = 0, n = 0; i < s->transf_enc_input; i++){
+                if(s->input_encoder_indeces[i] != -1){
+                    h[n] = (error_handler*)malloc(sizeof(error_handler));
+                    h[n]->free_flag_error = 0;
+                    h[n]->size = s->transf_enc_input - i;
+                    h[n]->ret_error = &ret[i];                    
+                    n++;
+                }
+            }
+            es->n_error_handlers+=n;
+            es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+            for(j = es->n_error_handlers-n; j < es->n_error_handlers; j++){
+                es->e[j] = h[j-(es->n_error_handlers-n)];    
+            }
+            free(h);
+            free(err);
+    }
+    
+    else if(s->input2_type == TRANSFORMER_DECODER && s->concatenate_flag != CONCATENATE){
+            int n = 0, flag = 0;
+            for(i = 0; i < s->decoder_down_input; i++){
+                if(s->input_decoder_indeces_down[i] != -1) n++;
+            }
+            for(i = 0; i < s->decoder_left_input; i++){
+                if(s->input_decoder_indeces_left[i] != -1) n++;
+            }
+            
+            float* input2_error = (float*)calloc(s->decoder_left_input,sizeof(float));
+            
+            
+            error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*n);
+            
+            
+
+            err = (float*)calloc(s->d2->e->m->output_dimension,sizeof(float));
+            for(j = 0; j < e->n_error_handlers; j++){
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->d2->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+            }
+            float* ret = decoder_transformer_bp_opt(s->decoder_input_down,s->decoder_input_left,s->d2,s->decoder_down_input,s->decoder_left_input,err, input2_error,real_s->d2);
+            for(i = 0, n = 0; i < s->decoder_down_input; i++){
+                if(s->input_decoder_indeces_down[i] != -1){
+                    h[n] = (error_handler*)malloc(sizeof(error_handler));
+                    h[n]->free_flag_error = 0;
+                    h[n]->size = s->decoder_down_input - i;
+                    h[n]->ret_error = &ret[i];                    
+                    n++;
+                }
+            }
+            for(i = 0; i < s->decoder_left_input; i++){
+                if(s->input_decoder_indeces_left[i] != -1){
+                    h[n] = (error_handler*)malloc(sizeof(error_handler));
+                    if(!flag)
+                    h[n]->free_flag_error = 1;
+                    else
+                    h[n]->free_flag_error = 0;
+                    h[n]->size = s->decoder_left_input - i;
+                    h[n]->ret_error = &input2_error[i];                    
+                    n++;
+                    flag = 1;
+                }
+            }
+            es->n_error_handlers+=n;
+            es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+            for(j = es->n_error_handlers-n; j < es->n_error_handlers; j++){
+                es->e[j] = h[j-(es->n_error_handlers-n)];    
+            }
+            free(h);
+            free(err);
+    }
+    else if(s->input2_type == TRANSFORMER && s->concatenate_flag != CONCATENATE){
+            int n = 0;
+            for(i = 0; i < s->transf_enc_input; i++){
+                if(s->input_transf_encoder_indeces[i] != -1) n++;
+            }
+            
+            
+            
+            error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*n);
+            
+            
+
+            err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
+            for(j = 0; j < e->n_error_handlers; j++){
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->t2->td[s->t2->n_td-1]->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+            }
+            float* ret = transf_bp_opt(s->t2,s->transformer_input_encoder,s->transf_enc_input,s->transformer_input_decoder,s->transf_dec_input,err,transformer_flag, real_s->t2);
+            for(i = 0, n = 0; i < s->transf_enc_input; i++){
+                if(s->input_transf_encoder_indeces[i] != -1){
+                    h[n] = (error_handler*)malloc(sizeof(error_handler));
+                    h[n]->free_flag_error = 0;
+                    h[n]->size = s->transf_enc_input - i;
+                    h[n]->ret_error = &ret[i];                    
+                    n++;
+                }
+            }
+            es->n_error_handlers+=n;
+            es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+            for(j = es->n_error_handlers-n; j < es->n_error_handlers; j++){
+                es->e[j] = h[j-(es->n_error_handlers-n)];    
+            }
+            free(h);
+            free(err);
+    }
+    
+    else if(s->input2_type == L2_NORM_CONN && s->concatenate_flag != CONCATENATE){
+        
+        err = (float*)calloc(s->l2->input_dimension,sizeof(float));
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->l2->input_dimension-e->e[j]->reference_index,e->e[j]->size));
+        }
+        
+        if(s->input1_type == MODEL){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&s->m1->output_layer[s->model_input_index],err,s->l2->output_error);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,s->temporal_m[s->model_input_index]->output_layer,err,s->l2->output_error);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,get_ith_output_cell(s->r1,s->model_input_index),err,s->l2->output_error);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->l2->output_error);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->l2->output_error);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->l2->output_error);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&s->l1->output[s->model_input_index],err,s->l2->output_error);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            back_propagation_scaled_l2_norm(s->l2->input_dimension,s->l2->learned_g,&s->l2->d_learned_g,s->l2->norm,&s->v1->output[s->model_input_index],err,s->l2->output_error);
+        }
+        error_handler* h = (error_handler*)malloc(sizeof(error_handler));
+        h->free_flag_error = 0;
+        h->size = s->l2->input_dimension;
+        h->ret_error = s->l2->output_error;
+        h->reference_index = s->model_input_index;
+        es->n_error_handlers++;
+        es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+        es->e[es->n_error_handlers-1] = h;
+        free(err);
+        
+    }
+    else if(s->input2_type == VECTOR && s->concatenate_flag != CONCATENATE){
+        
+        float* ret;
+        err = (float*)calloc(s->v2->output_size,sizeof(float));
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v2->output_size-e->e[j]->reference_index,e->e[j]->size));
+        }
+        
+        if(s->input1_type == MODEL){
+            ret = bp_vector(&s->m1->output_layer[s->model_input_index],NULL,s->v2,err);
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            ret = bp_vector(s->temporal_m[s->model_input_index]->output_layer,NULL,s->v2,err);
+        }
+        
+        else if(s->input1_type == RMODEL){
+            ret = bp_vector(get_ith_output_cell(s->r1,s->model_input_index),NULL,s->v2,err);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            
+            ret = bp_vector(&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],NULL,s->v2,err);
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            ret = bp_vector(&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],NULL,s->v2,err);
+        }
+        else if(s->input1_type == TRANSFORMER){
+            ret = bp_vector(&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],NULL,s->v2,err);
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            ret = bp_vector(&s->l1->output[s->model_input_index],NULL,s->v2,err);
+        }
+        
+        else if(s->input1_type == VECTOR){
+            ret = bp_vector(&s->v1->output[s->model_input_index],NULL,s->v2,err);
+        }
+        
+        error_handler* h = (error_handler*)malloc(sizeof(error_handler));
+        h->free_flag_error = 0;
+        h->size = s->l2->input_dimension;
+        h->ret_error = ret;
+        h->reference_index = s->model_input_index;
+        es->n_error_handlers++;
+        es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+        es->e[es->n_error_handlers-1] = h;
+        free(err);
+        
+    }
+    
+    else if(s->output_type == VECTOR && s->concatenate_flag == CONCATENATE){
+        float* output1, *output2;
+        
+        float* ret;
+        err = (float*)calloc(s->v3->output_size,sizeof(float));
+        for(j = 0; j < e->n_error_handlers; j++){
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v3->output_size-e->e[j]->reference_index,e->e[j]->size));
+        }
+        
+        if(s->input1_type == MODEL){
+            output1 = &s->m1->output_layer[s->model_input_index];
+        }
+        
+        else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
+            output1 = s->temporal_m[s->model_input_index]->output_layer;
+        }
+        
+        else if(s->input1_type == RMODEL){
+            output1 = get_ith_output_cell(s->r1,s->model_input_index);
+        }
+        
+        else if(s->input1_type == TRANSFORMER_ENCODER){
+            output1 = &get_output_layer_from_encoder_transf(s->e1)[s->model_input_index];
+        }
+        else if(s->input1_type == TRANSFORMER_DECODER){
+            output1 = &get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index];
+        }
+        else if(s->input1_type == TRANSFORMER){
+            output1 = &get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index];
+        }
+        
+        else if(s->input1_type == L2_NORM_CONN){
+            output1 = &s->l2->output[s->model_input_index];
+        }
+        
+        else if(s->input1_type == VECTOR){
+            output1 = &s->v2->output[s->model_input_index];
+        }
+        
+        if(s->input2_type == MODEL){
+            output2 = &s->m2->output_layer[s->vector_index];
+        }
+        
+        else if(s->input2_type == TEMPORAL_ENCODING_MODEL){
+            output2 = s->temporal_m2[s->vector_index]->output_layer;
+        }
+        
+        else if(s->input2_type == RMODEL){
+            output2 = get_ith_output_cell(s->r2,s->vector_index);
+        }
+        
+        else if(s->input2_type == TRANSFORMER_ENCODER){
+            output2 = &get_output_layer_from_encoder_transf(s->e2)[s->vector_index];
+        }
+        else if(s->input2_type == TRANSFORMER_DECODER){
+            output2 = &get_output_layer_from_encoder_transf(s->d2->e)[s->vector_index];
+        }
+        else if(s->input2_type == TRANSFORMER){
+            output2 = &get_output_layer_from_encoder_transf(s->t2->td[s->t2->n_td-1]->e)[s->vector_index];
+        }
+        
+        else if(s->input2_type == L2_NORM_CONN){
+            output2 = &s->l2->output[s->vector_index];
+        }
+        
+        else if(s->input2_type == VECTOR){
+            output2 = &s->v2->output[s->vector_index];
+        }
+        
+        ret = bp_vector(output1,output2,s->v3,err);
+        
+        error_handler** h = (error_handler**)malloc(sizeof(error_handler*)*2);
+        h[0]->free_flag_error = 0;
+        h[1]->free_flag_error = 0;
+        h[0]->size = s->v3->index;
+        h[1]->size = s->v3->output_size-s->v3->index;;
+        h[0]->ret_error = ret;
+        h[1]->ret_error = &ret[s->v3->index];
+        h[0]->reference_index = s->model_input_index;
+        h[1]->reference_index = s->vector_index;
+        es->n_error_handlers+=2;
+        es->e = realloc(es->e,sizeof(error_handler)*es->n_error_handlers);
+        es->e[es->n_error_handlers-2] = h[0];
+        es->e[es->n_error_handlers-1] = h[1];
+        free(h);
+        free(err);
+        
+    }
+    
+    return e;
 }
 
