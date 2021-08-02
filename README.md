@@ -102,6 +102,8 @@ https://www.cygwin.com/
 - Edge popup for lstm (27/04/2021)
 - Adaptive clipping gradient (27/04/2021)
 - Transformer with Edge-Popup (03/05/2021)
+- Variational 2d loss (02/08/2021)
+- Contrastive 2d loss (02/08/2021)
 # Tests
 
 Each test has been trained successfully.
@@ -127,6 +129,9 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 - From test 16 to test 18 there are recurrent networks with normalization, adaptive gradient clipping and also edge popup
 
 # Future implementations
+- recurrent ram optimization
+- recurrent computation optimization
+- computational optimization for arrays following numpy tutorial
 - Opencl computations
 
 
