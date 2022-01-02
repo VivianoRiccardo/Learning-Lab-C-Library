@@ -56,7 +56,7 @@ void update_residual_layer_nesterov(model* m, float lr, float momentum, int mini
                         }
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
-                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols; k++){
                             
                             nesterov_momentum(&m->rls[i]->cls[j]->scores[k],lr,momentum,mini_batch_size, m->rls[i]->cls[j]->d_scores[k],&m->rls[i]->cls[j]->d1_scores[k]);
                                     
@@ -102,7 +102,7 @@ void update_residual_layer_adam(model* m, float lr, int mini_batch_size, float b
                         }
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
-                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols; k++){
                             
                             adam_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                              
@@ -148,7 +148,7 @@ void update_residual_layer_adamod(model* m, float lr, int mini_batch_size, float
                         }
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
-                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols; k++){
                             
                             adamod(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->rls[i]->cls[j]->d3_scores[k]);
                                     
@@ -194,7 +194,7 @@ void update_residual_layer_adam_diff_grad(model* m, float lr, int mini_batch_siz
                         }
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
-                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols; k++){
                             adam_diff_grad_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->rls[i]->cls[j]->d3_scores[k]);
                                     
                         }
@@ -239,7 +239,7 @@ void update_residual_layer_radam(model* m, float lr, int mini_batch_size, float 
                         }
                     }
                     else if(m->rls[i]->cls[j]->training_mode == EDGE_POPUP){
-                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels*m->rls[i]->cls[j]->channels*m->rls[i]->cls[j]->kernel_rows*m->rls[i]->cls[j]->kernel_cols; k++){
                             radam_algorithm(&m->rls[i]->cls[j]->scores[k],&m->rls[i]->cls[j]->d1_scores[k],&m->rls[i]->cls[j]->d2_scores[k],m->rls[i]->cls[j]->d_scores[k],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                                     
                         }
@@ -284,7 +284,7 @@ void update_convolutional_layer_nesterov(model* m, float lr, float momentum, int
                     }
                 }
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                    for(k = 0; k < m->cls[j]->n_kernels*m->cls[j]->channels*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols; k++){
                         
                         nesterov_momentum(&m->cls[j]->scores[k],lr,momentum,mini_batch_size, m->cls[j]->d_scores[k],&m->cls[j]->d1_scores[k]);
                                 
@@ -330,7 +330,7 @@ void update_convolutional_layer_adam(model* m, float lr, int mini_batch_size, fl
                     }
                 }
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                    for(k = 0; k < m->cls[j]->n_kernels*m->cls[j]->channels*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols; k++){
                         
                         adam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                                 
@@ -375,7 +375,7 @@ void update_convolutional_layer_adamod(model* m, float lr, int mini_batch_size, 
                     }
                 }
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                    for(k = 0; k < m->cls[j]->n_kernels*m->cls[j]->channels*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols; k++){
                         
                         adamod(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size, beta3_adamod,&m->cls[j]->d3_scores[k]);
                                
@@ -420,7 +420,7 @@ void update_convolutional_layer_adam_diff_grad(model* m, float lr, int mini_batc
                     }
                 }
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){
+                    for(k = 0; k < m->cls[j]->n_kernels*m->cls[j]->channels*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols; k++){
                        
                         adam_diff_grad_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->cls[j]->d3_scores[k]);
                                 
@@ -465,7 +465,7 @@ void update_convolutional_layer_radam(model* m, float lr, int mini_batch_size, f
                 }
                 
                 else if(m->cls[j]->training_mode == EDGE_POPUP){
-                    for(k = 0; k < m->cls[j]->n_kernels; k++){             
+                    for(k = 0; k < m->cls[j]->n_kernels*m->cls[j]->channels*m->cls[j]->kernel_rows*m->cls[j]->kernel_cols; k++){             
                         radam_algorithm(&m->cls[j]->scores[k], &m->cls[j]->d1_scores[k],&m->cls[j]->d2_scores[k], m->cls[j]->d_scores[k],lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);                             
                     }
                 }
@@ -988,6 +988,7 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
     if(m == NULL)
         return;
     
+    //printf("lr, momentum: %f %f\n",lr, momentum);
     lambda*=(float)mini_batch_size;
     
     if(regularization == L2_REGULARIZATION){
@@ -1163,29 +1164,30 @@ void update_transformer(transformer* t, float lr, float momentum, int mini_batch
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
 void update_transformer_decoder(transformer_decoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* time){
-    fcl** fcls = t->e->m->fcls;
-    cl** cls = t->e->m->cls;
-    rl** rls = t->e->m->rls;
-    int n_fcl = t->e->m->n_fcl, n_cl = t->e->m->n_cl, n_rl = t->e->m->n_rl, l = t->e->m->layers,i;
-    
-    update_model(t->e->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    
+    int i;
+    update_transformer_encoder(t->e,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    update_model(t->linear_after_attention,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    for(i = 0; i < t->n_head; i++){
+        update_model(t->q[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+        update_model(t->k[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+        update_model(t->v[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    }
     if(gradient_descent_flag == NESTEROV){
-        for(i = 0; i < t->n_l2+t->e->n_l2; i++){
+        for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
         }
     }
     
     if(gradient_descent_flag == ADAM){
         
-        for(i = 0; i < t->n_l2+t->e->n_l2; i++){
+        for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_adam(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam);
         }
     }
     
     else if(gradient_descent_flag == RADAM){
 
-        for(i = 0; i < t->n_l2+t->e->n_l2; i++){
+        for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_radam(t->l2[i],lr,mini_batch_size,*b1,*b2,*time,t->e->m->beta1_adam,t->e->m->beta2_adam);
         }
     }
@@ -1193,7 +1195,7 @@ void update_transformer_decoder(transformer_decoder* t, float lr, float momentum
     else if(gradient_descent_flag == DIFF_GRAD){
         
 
-        for(i = 0; i < t->n_l2+t->e->n_l2; i++){
+        for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_adam_diff_grad(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam);
         }
     }
@@ -1201,40 +1203,10 @@ void update_transformer_decoder(transformer_decoder* t, float lr, float momentum
     else if(gradient_descent_flag == ADAMOD){
         
 
-        for(i = 0; i < t->n_l2+t->e->n_l2; i++){
+        for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->e->m->beta1_adam,t->e->m->beta2_adam,t->e->m->beta3_adamod);
         }
     }
-    
-    t->e->m->fcls = t->fcls;
-    t->e->m->cls = NULL; 
-    t->e->m->rls = NULL;
-    t->e->m->layers = 3*(t->n_head+t->e->n_head);
-    t->e->m->n_cl = 0;
-    t->e->m->n_rl = 0; 
-    t->e->m->n_fcl = 3*(t->n_head+t->e->n_head);
-    
-    update_model(t->e->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    
-    
-    
-    t->e->m->fcls = fcls;
-    t->e->m->cls = cls; 
-    t->e->m->rls = rls;
-    t->e->m->layers = l;
-    t->e->m->n_cl = n_cl;
-    t->e->m->n_rl = n_rl; 
-    t->e->m->n_fcl = n_fcl;
-    
-    update_model(t->e->linear_after_attention,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    
-    
-    
-    
-    update_model(t->linear_after_attention,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    
-    
-    
     
     return;
 }
@@ -1256,22 +1228,15 @@ void update_transformer_decoder(transformer_decoder* t, float lr, float momentum
  *                @ unsigned long long int* t:= the number of time that radam has been used
  * */
 void update_transformer_encoder(transformer_encoder* t, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* time){
-    fcl** fcls = t->m->fcls;
-    cl** cls = t->m->cls;
-    rl** rls = t->m->rls;
-    int n_fcl = t->m->n_fcl, n_cl = t->m->n_cl, n_rl = t->m->n_rl, l = t->m->layers,i;
+    
+    int i;
     update_model(t->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
     update_model(t->linear_after_attention,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    t->m->fcls = t->fcls;
-    t->m->cls = NULL; 
-    t->m->rls = NULL;
-    t->m->layers = 3*t->n_head;
-    t->m->n_cl = 0;
-    t->m->n_rl = 0; 
-    t->m->n_fcl = 3*t->n_head;
-    
-    update_model(t->m,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
-    
+    for(i = 0; i < t->n_head; i++){
+        update_model(t->q[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+        update_model(t->k[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+        update_model(t->v[i],lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda,time);
+    }
     if(gradient_descent_flag == NESTEROV){
         for(i = 0; i < t->n_l2; i++){
             update_scaled_l2_norm_nesterov(t->l2[i],lr,momentum,mini_batch_size);
@@ -1307,14 +1272,6 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
             update_scaled_l2_norm_adamod(t->l2[i],lr,mini_batch_size,*b1,*b2,t->m->beta1_adam,t->m->beta2_adam,t->m->beta3_adamod);
         }
     }
-    
-    t->m->fcls = fcls;
-    t->m->cls = cls; 
-    t->m->rls = rls;
-    t->m->layers = l;
-    t->m->n_cl = n_cl;
-    t->m->n_rl = n_rl; 
-    t->m->n_fcl = n_fcl;
     
     return;
 }

@@ -78,21 +78,169 @@ int save_genome(genome* g, int global_inn_numb_connections, int numb){
     
 }
 
-genome* load_genome(int global_inn_numb_connections){
-    int i,j,n,inn,inn2,k;
+char* get_genome_array(genome* g, int global_inn_numb_connections){
+    int i,n, sum=0;
+    connection** cc = get_connections(g,global_inn_numb_connections);
+    n = get_numb_connections(g,global_inn_numb_connections);
+    
+    char* c = (char*)malloc(sizeof(int)*3 + sizeof(int)*3*g->number_total_nodes + sizeof(int) + sizeof(int)*4*n + sizeof(float)+ sizeof(float)*n);
+    
+    memcpy(c+sum,&(g->number_input),sizeof(int));
+    sum+=sizeof(int);
+    memcpy(c+sum,&(g->number_output),sizeof(int));
+    sum+=sizeof(int);
+    memcpy(c+sum,&(g->number_total_nodes),sizeof(int));
+    sum+=sizeof(int);
+    memcpy(c+sum,&(g->fitness),sizeof(float));
+    sum+=sizeof(float);
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        memcpy(c+sum,&(g->all_nodes[i]->in_conn_size),sizeof(int));
+        sum+=sizeof(int);
+        memcpy(c+sum,&(g->all_nodes[i]->out_conn_size),sizeof(int));
+        sum+=sizeof(int);
+        memcpy(c+sum,&(g->all_nodes[i]->innovation_number),sizeof(int));
+        sum+=sizeof(int);
+    }
+    
+    memcpy(c+sum,&(n),sizeof(int));
+    sum+=sizeof(int);
+    
+    
+    for(i = 0; i < n; i++){
+        memcpy(c+sum,&(cc[i]->innovation_number),sizeof(int));
+        sum+=sizeof(int);
+        memcpy(c+sum,&(cc[i]->in_node->innovation_number),sizeof(int));
+        sum+=sizeof(int);
+        memcpy(c+sum,&(cc[i]->out_node->innovation_number),sizeof(int));
+        sum+=sizeof(int);
+        memcpy(c+sum,&(cc[i]->weight),sizeof(float));
+        sum+=sizeof(float);
+        memcpy(c+sum,&(cc[i]->flag),sizeof(int));
+        sum+=sizeof(int);
+    }
+    
+    free(cc);    
+    return c;
+}
+
+
+int get_genome_array_size(genome* g, int global_inn_numb_connections){
+    int i,n;
+    connection** cc = get_connections(g,global_inn_numb_connections);
+    n = get_numb_connections(g,global_inn_numb_connections);
+    free(cc);
+    return sizeof(int)*3 + sizeof(int)*3*g->number_total_nodes + sizeof(int) + sizeof(int)*4*n + sizeof(float)+ sizeof(float)*n;
+}
+
+genome* init_genome_from_array(int global_inn_numb_connections, char* g_array){
+    int i,j,n,inn,inn2,k, sum=0;
     char input[256];
-    FILE *read_ptr = NULL;
+
     connection** c = (connection**)malloc(sizeof(connection*)*global_inn_numb_connections);
     for(i = 0; i < global_inn_numb_connections; i++){
         c[i] = NULL;
     }
     genome* g = (genome*)malloc(sizeof(genome));
     
-    do{
-        printf("File.bin of the network: ");
-        i = scanf("%s",input);
-        read_ptr = fopen(input,"r");
-    }while(read_ptr == NULL);
+    memcpy(&(g->number_input),g_array+sum,sizeof(int));
+    sum+=sizeof(int);
+    memcpy(&(g->number_output),g_array+sum,sizeof(int));
+    sum+=sizeof(int);
+    memcpy(&(g->number_total_nodes),g_array+sum,sizeof(int));
+    sum+=sizeof(int);
+    memcpy(&(g->fitness),g_array+sum,sizeof(float));
+    sum+=sizeof(float);
+    g->all_nodes = (node**)malloc(sizeof(node*)*g->number_total_nodes);
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        g->all_nodes[i] = (node*)malloc(sizeof(node));
+        memcpy(&(g->all_nodes[i]->in_conn_size),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        memcpy(&(g->all_nodes[i]->out_conn_size),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        memcpy(&(g->all_nodes[i]->innovation_number),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        g->all_nodes[i]->actual_value = 0;
+        g->all_nodes[i]->stored_value = 0;
+        g->all_nodes[i]->in_connections = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->in_conn_size);
+        g->all_nodes[i]->out_connections = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->out_conn_size);
+    }
+    
+    memcpy(&n,g_array+sum,sizeof(int));
+    sum+=sizeof(int);
+    
+    for(i = 0; i < n; i++){
+        memcpy(&(inn),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        free(c[inn-1]);
+        c[inn-1] = (connection*)malloc(sizeof(connection));
+        c[inn-1]->innovation_number = inn;
+        memcpy(&(inn2),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        for(j = 0; j < g->number_total_nodes; j++){
+            if(g->all_nodes[j]->innovation_number == inn2)
+                c[inn-1]->in_node = g->all_nodes[j];
+        }
+        memcpy(&(inn2),g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+        for(j = 0; j < g->number_total_nodes; j++){
+            if(g->all_nodes[j]->innovation_number == inn2)
+                c[inn-1]->out_node = g->all_nodes[j];
+        }
+        memcpy(&c[inn-1]->weight,g_array+sum,sizeof(float));
+        sum+=sizeof(float);
+        memcpy(&c[inn-1]->flag,g_array+sum,sizeof(int));
+        sum+=sizeof(int);
+    }
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        inn = 0;
+        inn2 = 0;
+        for(j = 0; j < global_inn_numb_connections; j++){
+            if(c[j]!=NULL){
+                if(c[j]->in_node->innovation_number == g->all_nodes[i]->innovation_number){
+                    g->all_nodes[i]->out_connections[inn] = c[j];
+                    inn++;
+                }
+                if(c[j]->out_node->innovation_number == g->all_nodes[i]->innovation_number){
+
+                    g->all_nodes[i]->in_connections[inn2] = c[j];
+                    inn2++;
+                }
+                
+            }
+        }
+            
+        
+    }
+    
+    for(j = 0; j < global_inn_numb_connections; j++){
+        if(c[j] == NULL)
+            free(c[j]);
+    }
+    
+    free(c);
+    
+    return g;
+    
+    
+}
+
+genome* load_genome(int global_inn_numb_connections, char* filename){
+    int i,j,n,inn,inn2,k;
+    char input[256];
+    FILE *read_ptr = fopen(filename,"r");
+    if(read_ptr == NULL){
+        fprintf(stderr,"Error no such a file\n");
+        exit(1);
+    }
+    
+    connection** c = (connection**)malloc(sizeof(connection*)*global_inn_numb_connections);
+    for(i = 0; i < global_inn_numb_connections; i++){
+        c[i] = NULL;
+    }
+    genome* g = (genome*)malloc(sizeof(genome));
     
     k = fread(&g->number_input,sizeof(int),1,read_ptr);
     k = fread(&g->number_output,sizeof(int),1,read_ptr);
@@ -409,7 +557,6 @@ connection** get_connections(genome* g, int global_inn_numb_connections){
     int i,j,counter = 0;
     int* temp = (int*)calloc(global_inn_numb_connections,sizeof(int));
     connection** temp_connection = (connection**)malloc(sizeof(connection*)*global_inn_numb_connections);
-    
     for(i = 0; i < g->number_total_nodes; i++){
         for(j = 0; j < g->all_nodes[i]->out_conn_size; j++){
             if(!temp[g->all_nodes[i]->out_connections[j]->innovation_number-1]){

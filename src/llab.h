@@ -32,9 +32,7 @@ SOFTWARE.
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
-#include <sys/socket.h> 
 #include <sys/types.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -82,7 +80,7 @@ SOFTWARE.
 //pooling (2d)
 #define NO_POOLING 0
 #define MAX_POOLING 1
-#define AVARAGE_POOLING 2
+#define AVERAGE_POOLING 2
 
 //dropout
 #define NO_DROPOUT 0
@@ -190,7 +188,7 @@ SOFTWARE.
 #define POSITIONAL_ENCODING 13
 
 // Neat hyperparams
-#define SPECIES_THERESHOLD 3
+#define SPECIES_THERESHOLD 3 // parameter for specie distance
 #define INITIAL_POPULATION 100
 #define GENERATIONS 600000
 #define PERCENTAGE_SURVIVORS_PER_SPECIE 0.3 //the number of specie survivors is decided by the fitness of the specie/mean fitness * children param, but the genomes taken to reproduce are the best <PERCENTAGE_SURVIVORS_PER_SPECIE>
@@ -210,10 +208,18 @@ SOFTWARE.
 #define SAME_FITNESS_LIMIT 10
 #define AGE_SIGNIFICANCE 0.3// the age significance param affects the mean fitness of a specie according to the age of the specie itself
 
+#define PI 3.14159265358979323846
+
+
+#define LR_NO_DECAY 0
+#define LR_CONSTANT_DECAY 1
+#define LR_TIME_BASED_DECAY 2
+#define LR_STEP_DECAY 3
+#define LR_ANNEALING_DECAY 4
+
+
 typedef struct bn{//batch_normalization layer
-    int batch_size, vector_dim, layer, activation_flag, mode_flag;
-    float k_percentage;// for edge-popup algorithm
-    int n_best_w;// for edge-popup algorithm
+    int batch_size, vector_dim;
     float epsilon;
     float** input_vectors;//batch_size*vector_dim
     float** temp_vectors;//batch_size*vector_dim
@@ -231,14 +237,9 @@ typedef struct bn{//batch_normalization layer
     float* var;//vector_dim
     float** outputs;//batch_size*vector_dim
     float** error2;//batch_size*vector_dim
-    float** temp1;//batch_size*vector_dim
-    float* temp2;//vector_dim
-    float** post_activation;//batch_size*vector_dim
-    float* final_mean;//vector_dim
-    float* final_var;//vector_dim
-    int* indeces;// for edge-popup algorithm, vector_dim
-    float* scores;//for edge-popup algorithm,vector_dim
-    int training_mode;//GRADIENT_DESCENT, EDGE_POPUP, FREEZE_TRAINING
+    float** temp1;//batch_size*vector_dim, for bp
+    float* temp2;//vector_dim, for bp
+    int training_mode;//GRADIENT_DESCENT, FREEZE_TRAINING
 }bn;
 
 
@@ -446,19 +447,19 @@ typedef struct scaled_l2_norm{
 }scaled_l2_norm;
 
 typedef struct transformer_encoder{
-    int input_dimension,n_head,attention_flag,residual_flag1,normalization_flag1,dimension; 
+    int input_dimension,n_head,attention_flag,residual_flag1,normalization_flag1,dimension, k_embedding_dimension, v_embedding_dimension; 
     int residual_flag2,normalization_flag2, n_l2; 
     scaled_l2_norm** l2;//2 or 1 or 0
     fcl** fcls;// 3*n_head
     model* m;//the model after the attention + possible residual and normalization
     model* linear_after_attention;
     float* encoder_output_error;//m->output_dimension
-    float* q;//n_head X dimension
-    float* k;//n_head X dimension
-    float* v;//n_head X dimension
-    float* q_error;//n_head X dimension
-    float* k_error;//n_head X dimension
-    float* v_error;//n_head X dimension
+    model** q;//n_head
+    model** k;//n_head
+    model** v;//n_head
+    float* q_error;//n_head X q[i] otuput_dimension
+    float* k_error;//n_head X k[i] otuput_dimension
+    float* v_error;//n_head X v[i] otuput_dimension
     float* score_matrix;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_error;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_softmax;//n_head X dimension X dimension(input_dimension/n_head)
@@ -472,19 +473,19 @@ typedef struct transformer_encoder{
 }transformer_encoder;
 
 typedef struct transformer_decoder{
-    int input_dimension, left_dimension, n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2; 
+    int input_dimension, left_dimension, n_head,attention_flag,residual_flag,normalization_flag,dimension, encoder_input_dimension, n_l2,k_embedding,v_embedding; 
     transformer_encoder* e;//1
     model* linear_after_attention;
     scaled_l2_norm** l2;// 3 or 2 or 1 or 0
     fcl** fcls;// 3*n_head1 + 3*n_head2
     float* incoming_input;//left_dimension
     float* incoming_input_error;//left_dimension
-    float* q;//n_head X dimension
-    float* k;//n_head X dimension
-    float* v;//n_head X dimension
-    float* q_error;//n_head X dimension
-    float* k_error;//n_head X dimension
-    float* v_error;//n_head X dimension
+    model** q;//n_head
+    model** k;//n_head
+    model** v;//n_head
+    float* q_error;//n_head X q[i] otuput_dimension
+    float* k_error;//n_head X k[i] otuput_dimension
+    float* v_error;//n_head X v[i] otuput_dimension
     float* score_matrix;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_error;//n_head X dimension X dimension(input_dimension/n_head)
     float* score_matrix_softmax;//n_head X dimension X dimension(input_dimension/n_head)
@@ -514,6 +515,13 @@ typedef struct thread_args_model {
     float* error;
     float** returning_error;
 } thread_args_model;
+
+
+
+typedef struct thread_args_models {
+    model** m;
+    int n,depth;
+} thread_args_models;
 
 
 typedef struct thread_args_rmodel {
@@ -642,102 +650,94 @@ typedef struct training{
 
 
 typedef struct vector_struct{
-	float* v, *output, *input_error;
-	int action,v_size, output_size, activation_flag, dropout_flag, index, input_size;
-	float dropout_threshold;
+    float* v, *output, *input_error;
+    int action,v_size, output_size, activation_flag, dropout_flag, index, input_size;
+    float dropout_threshold;
 }vector_struct;
 
 typedef struct struct_conn{
-	int id, concatenate_flag;
-	model** temporal_m;//temporal_encoding_model_size
-	model** temporal_m2;//used only in case of concatenate (must be assigned by a previous other already allocated temporal_m)
-	model* m1, *m2;
-	rmodel* r1, *r2;
-	transformer_encoder* e1, *e2;
-	transformer_decoder* d1, *d2;
-	transformer* t1, *t2;
-	scaled_l2_norm* l1, *l2;
-	vector_struct* v1, *v2, *v3;
-	int input1_type, input2_type, output_type;//model, rmodel, encoder transf, decoder transf, transf
-	int decoder_left_input, decoder_down_input, transf_dec_input, transf_enc_input;//transf_enc_input is used either for the transformer or for the encoder
-	int model_input_index, temporal_encoding_model_size, input_size;//all for models, model_input_index is used also for l2 normalization and vector for the input1type and also for vector respect input1_type
-	int vector_index;//used in case of concatenate for input2_type
-	
-	//rmodel
-	int* rmodel_input_left;//r2->n_lstm
-	int* rmodel_input_down;//r2->lstms[0]->window
-	
-	//temporal m
-	int* input_temporal_index;//temporal_encoding_model_size
-	
-	//encoder
-	int* input_encoder_indeces;//transf_enc_input
-	
-	//decoder
-	int* input_decoder_indeces_left;//decoder_left_input
-	int* input_decoder_indeces_down;//decoder_down_input
-	
-	// transformer
-	int* input_transf_encoder_indeces;//transf_enc_input
-	int* input_transf_decoder_indeces;//transf_dec_input
-	
-	// rmodel
-	float** h;//left for rmodel
-	float** c;//left for rmodel
-	float** inputs;// down input for rmodel (r2)
-	
-	//encoder
-	float* encoder_input;//transf_enc_input
-	
-	//decoder
-	float* decoder_input_left;//decoder_left_input
-	float* decoder_input_down;//decoder_down_input
-	
-	//transformer
-	float* transformer_input_encoder;//decoder_left_input
-	float* transformer_input_decoder;//decoder_down_input
-	
+    int id, concatenate_flag;
+    model** temporal_m;//temporal_encoding_model_size
+    model** temporal_m2;//used only in case of concatenate (must be assigned by a previous other already allocated temporal_m)
+    model* m1, *m2;
+    rmodel* r1, *r2;
+    transformer_encoder* e1, *e2;
+    transformer_decoder* d1, *d2;
+    transformer* t1, *t2;
+    scaled_l2_norm* l1, *l2;
+    vector_struct* v1, *v2, *v3;
+    int input1_type, input2_type, output_type;//model, rmodel, encoder transf, decoder transf, transf
+    int decoder_left_input, decoder_down_input, transf_dec_input, transf_enc_input;//transf_enc_input is used either for the transformer or for the encoder
+    int model_input_index, temporal_encoding_model_size, input_size;//all for models, model_input_index is used also for l2 normalization and vector for the input1type and also for vector respect input1_type
+    int vector_index;//used in case of concatenate for input2_type
+    
+    //rmodel
+    int* rmodel_input_left;//r2->n_lstm
+    int* rmodel_input_down;//r2->lstms[0]->window
+    
+    //temporal m
+    int* input_temporal_index;//temporal_encoding_model_size
+    
+    //encoder
+    int* input_encoder_indeces;//transf_enc_input
+    
+    //decoder
+    int* input_decoder_indeces_left;//decoder_left_input
+    int* input_decoder_indeces_down;//decoder_down_input
+    
+    // transformer
+    int* input_transf_encoder_indeces;//transf_enc_input
+    int* input_transf_decoder_indeces;//transf_dec_input
+    
+    // rmodel
+    float** h;//left for rmodel
+    float** c;//left for rmodel
+    float** inputs;// down input for rmodel (r2)
+    
+    //encoder
+    float* encoder_input;//transf_enc_input
+    
+    //decoder
+    float* decoder_input_left;//decoder_left_input
+    float* decoder_input_down;//decoder_down_input
+    
+    //transformer
+    float* transformer_input_encoder;//decoder_left_input
+    float* transformer_input_decoder;//decoder_down_input
+    
 }struct_conn;
 
+
 typedef struct struct_conn_handler{
-	int n_models, n_rmodels, n_encoders, n_decoders, n_transformers, n_l2s, n_vectors, n_total_structures, n_struct_conn, n_targets, n_inputs;
-	model** m;//n_models
-	rmodel** r;
-	transformer_encoder** e;
-	transformer_decoder** d;
-	transformer** t;
-	scaled_l2_norm** l2;
-	vector_struct** v;
-	struct_conn** s;
-	int** models;//n_models X n_struct_conn, 0 nothing, 1 input, 2 output
-	int** rmodels;//n_rmodels X n_struct_conn, 0 nothing, 1 input, 2 output
-	int** encoders;//n_encoders X n_struct_conn, 0 nothing, 1 input, 2 output
-	int** decoders;//n_decoders X n_struct_conn, 0 nothing, 1 input, 2 output
-	int** transformers;//n_transformers X n_struct_conn, 0 nothing, 1 input, 2 output
-	int** l2s;//n_models X n_l2s, 0 nothing, 1 input, 2 output
-	int** vectors;//n_vectors X n_struct_conn, 0 nothing, 1 input, 2 output
-	float** targets;//the second pointer for each target is a pointer of a given dataset stored elsewhere
-	int* targets_index;
-	int* targets_size;
-	int* targets_error_flag;
-	float** targets_weights;
-	float* targets_threshold1;
-	float* targets_threshold2;
-	float* targets_gamma;
+	int visited,struct_type_flag,error_flag,n_inputs,n_outputs,id,depth;
+    vector_struct* input;
+    struct struct_conn_handler** inputs;
+    struct struct_conn_handler** outputs;
+    vector_struct* output;
+    float lambda;
+    float huber1;
+    float huber2;
+    float* alpha;
+    model* m;
+    rmodel* r;
+    transformer_encoder* e;// for now just model rmodel and transformer encoder
+    vector_struct* v;
+    scaled_l2_norm* l2;
 }struct_conn_handler;
 
 typedef struct error_handler{
-	int size,reference_index;
-	int free_flag_error;
-	float* ret_error;
+    int size,reference_index;
+    int free_flag_error;
+    float* ret_error;
 }error_handler;
 
 typedef struct error_super_struct{
-	int n_error_handlers;
-	error_handler** e;
+    int n_error_handlers;
+    error_handler** e;
 }error_super_struct;
 
 
+typedef struct bn BN;
 
 #include "attention.h"
 #include "batch_norm_layers.h"
@@ -751,9 +751,11 @@ typedef struct error_super_struct{
 #include "fully_connected_layers.h"
 #include "gd.h"
 #include "initialization.h"
+#include "learning_rate_decay.h"
 #include "math_functions.h"
 #include "model.h"
 #include "multi_core_model.h"
+#include "multi_core_neat.h"
 #include "multi_core_rmodel.h"
 #include "multi_core_vae_model.h"
 #include "neat_functions.h"

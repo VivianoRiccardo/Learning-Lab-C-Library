@@ -49,6 +49,36 @@ double sum_over_input(float* inputs, int dimension){
     return sum;
 }
 
+void copy_clipped_vector(float* vector, float* output,float maximum, float minimum, int dimension){
+    int i;
+    if(minimum > maximum){
+        fprintf(stderr,"Error: you must set the minimum <= to maximum in the clipping\n");
+        exit(1);
+    }
+    for(i = 0; i < dimension; i++){
+        if(vector[i] < minimum)
+            output[i] = minimum;
+        else if(vector[i] > maximum)
+            output[i] = maximum;
+        else
+            output[i] = vector[i];
+    } 
+}
+
+void clip_vector(float* vector, float minimum, float maximum, int dimension){
+        int i;
+    if(minimum > maximum){
+        fprintf(stderr,"Error: you must set the minimum <= to maximum in the clipping\n");
+        exit(1);
+    }
+    for(i = 0; i < dimension; i++){
+        if(vector[i] < minimum)
+            vector[i] = minimum;
+        else if(vector[i] > maximum)
+            vector[i] = maximum;
+        
+    } 
+}
 
 void softmax(float* input, float* output, int size){
     int i;
@@ -510,32 +540,32 @@ void derivative_entropy_array(float* y_hat, float* output, int size){
 
 //y either 1 or 0
 float constrantive_loss(float y_hat, float y, float margin){
-	return y*y_hat*y_hat*1.0/2.0 + (1.0-y)*max_float(0,margin-y_hat)*max_float(0,margin-y_hat)*1.0/2.0;
+    return y*y_hat*y_hat*1.0/2.0 + (1.0-y)*max_float(0,margin-y_hat)*max_float(0,margin-y_hat)*1.0/2.0;
 }
 
 float derivative_constrantive_loss(float y_hat, float y, float margin){
-	if(y == 0){
-		if(max_float(0.0,margin-y_hat) > 0)
-			return y_hat-margin;
-	}
-	
-	else{
-		return y_hat;
-	}
+    if(y == 0){
+        if(max_float(0.0,margin-y_hat) > 0)
+            return y_hat-margin;
+    }
+    
+    else{
+        return y_hat;
+    }
 }
 
 void constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size){
-	int i;
-	for(i = 0; i < size; i++){
-		output[i] = constrantive_loss(y_hat[i],y[i],margin);
-	}
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = constrantive_loss(y_hat[i],y[i],margin);
+    }
 }
 
 void derivative_constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size){
-	int i;
-	for(i = 0; i < size; i++){
-		output[i] = derivative_constrantive_loss(y_hat[i],y[i],margin);
-	}
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = derivative_constrantive_loss(y_hat[i],y[i],margin);
+    }
 }
 
 void softmax_array_not_complete(float* input, float* output,int* mask, int size){
@@ -582,12 +612,12 @@ void derivative_elu_array(float* input, float* output, int size, float a){
 
 //function inverse
 void inverse(float* input, float* output, int size){
-	int i;
+    int i;
     for(i = 0; i < size; i++){
         output[i] = 1.0/input[i];
     }
 }
-/* This function computes the dot product between 2 array, input and input2
+/* This function computes the multiplication between 2 array, input and input2
  * with the same length, and store the result in the output array
  * 
  * Input:
@@ -602,6 +632,15 @@ void dot1D(float* input1, float* input2, float* output, int size){
     for(i = 0; i < size; i++){
         output[i] = input1[i]*input2[i];
     }
+}
+
+float dotProduct1D(float* input1, float* input2, int size){
+    int i;
+    float sum = 0;
+    for(i = 0; i < size; i++){
+        sum+=input1[i]*input2[i];
+    }
+    return sum;
 }
 /* This function computes the division product between 2 array, input and input2
  * with the same length, and store the result in the output array
@@ -670,6 +709,22 @@ void mul_value(float* input, float value, float* output, int dimension){
         output[i] = input[i]*value;
     }
 }
+/* This function computes a dot product between an array and a float value: value
+ * 
+ * Input
+ * 
+ *             @ float* input:= the imput used to compute the output
+ *             @ float value:= the float value that must be multiplied for the inputs
+ *             @ float* output:= the array where you need to store the output
+ *             @ int dimension:= the dimension of input and output
+ * 
+ * */
+void additional_mul_value(float* input, float value, float* output, int dimension){
+    int i;
+    for(i = 0; i < dimension; i++){
+        output[i] += input[i]*value;
+    }
+}
 
 /* This function sum the partial derivatives of the residual layers of a model m and a second model m2 in a third model m3
  * 
@@ -688,22 +743,24 @@ void sum_residual_layers_partial_derivatives(model* m, model* m2, model* m3){
     int i,j,k,u,z,w;
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
-            if(exists_d_kernels_cl(m->rls[i]->cls[j]) || exists_edge_popup_stuff_cl(m->rls[i]->cls[j])){
-                if(exists_d_kernels_cl(m->rls[i]->cls[j])){
-                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
-                        sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+            if(m->rls[i]->cls[j]->training_mode != FREEZE_TRAINING){
+                if(exists_d_kernels_cl(m->rls[i]->cls[j]) || exists_edge_popup_stuff_cl(m->rls[i]->cls[j])){
+                    if(exists_d_kernels_cl(m->rls[i]->cls[j])){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels; k++){
+                            sum1D(m->rls[i]->cls[j]->d_kernels[k],m2->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->d_kernels[k],m3->rls[i]->cls[j]->channels*m3->rls[i]->cls[j]->kernel_rows*m3->rls[i]->cls[j]->kernel_cols);
+                        }
                     }
-                }
-                
-                if(exists_d_biases_cl(m->rls[i]->cls[j]))
-                sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
-                if(exists_edge_popup_stuff_cl(m->rls[i]->cls[j]))
-                sum1D(m->rls[i]->cls[j]->d_scores,m2->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->n_kernels);
+                    
+                    if(exists_d_biases_cl(m->rls[i]->cls[j]))
+                    sum1D(m->rls[i]->cls[j]->d_biases,m2->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->d_biases,m3->rls[i]->cls[j]->n_kernels);
+                    if(exists_edge_popup_stuff_cl(m->rls[i]->cls[j]))
+                    sum1D(m->rls[i]->cls[j]->d_scores,m2->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->d_scores,m3->rls[i]->cls[j]->n_kernels);
 
-                if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                    for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
-                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
-                        sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                    if(m->rls[i]->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                        for(k = 0; k < m->rls[i]->cls[j]->n_kernels/m->rls[i]->cls[j]->group_norm_channels; k++){
+                            sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                            sum1D(m->rls[i]->cls[j]->group_norm[k]->d_beta,m2->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->d_beta,m3->rls[i]->cls[j]->group_norm[k]->vector_dim);
+                        }
                     }
                 }
             }
@@ -729,22 +786,27 @@ void sum_convolutional_layers_partial_derivatives(model* m, model* m2, model* m3
     }
     int j,k,u,z,w;
     for(j = 0; j < m->n_cl; j++){
-        if(exists_d_kernels_cl(m->cls[j])){
-            for(k = 0; k < m->cls[j]->n_kernels; k++){
-                sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
-            }
-            
-            sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
-            if(exists_edge_popup_stuff_with_only_training_mode_cl(m->cls[j]))
-            sum1D(m->cls[j]->d_scores,m2->cls[j]->d_scores,m3->cls[j]->d_scores,m3->cls[j]->n_kernels);
+        if(m->cls[j]->training_mode != FREEZE_TRAINING){
+            if(exists_d_kernels_cl(m->cls[j])){
+                for(k = 0; k < m->cls[j]->n_kernels; k++){
+                    sum1D(m->cls[j]->d_kernels[k],m2->cls[j]->d_kernels[k],m3->cls[j]->d_kernels[k],m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+                }
+                
+                sum1D(m->cls[j]->d_biases,m2->cls[j]->d_biases,m3->cls[j]->d_biases,m3->cls[j]->n_kernels);
+                
 
-            if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
-                for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
-                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
-                    sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                if(m->cls[j]->normalization_flag == GROUP_NORMALIZATION){
+                    for(k = 0; k < m->cls[j]->n_kernels/m->cls[j]->group_norm_channels; k++){
+                        sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                        sum1D(m->cls[j]->group_norm[k]->d_beta,m2->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->d_beta,m3->cls[j]->group_norm[k]->vector_dim);
+                    }
                 }
             }
+            if(exists_edge_popup_stuff_with_only_training_mode_cl(m->cls[j])){
+                sum1D(m->cls[j]->d_scores,m2->cls[j]->d_scores,m3->cls[j]->d_scores,m3->cls[j]->n_kernels*m3->cls[j]->channels*m3->cls[j]->kernel_rows*m3->cls[j]->kernel_cols);
+            }
         }
+            
     }
 
 }
@@ -767,15 +829,17 @@ void sum_fully_connected_layers_partial_derivatives(model* m, model* m2, model* 
     }
     int i,j,k;
     for(i = 0; i < m->n_fcl; i++){
-        if(exists_d_params_fcl(m->fcls[i])){
-            sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
-            sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);
+        if(m->fcls[i]->training_mode != FREEZE_TRAINING){
+            if(exists_d_params_fcl(m->fcls[i])){
+                sum1D(m->fcls[i]->d_weights,m2->fcls[i]->d_weights,m3->fcls[i]->d_weights,m->fcls[i]->input*m->fcls[i]->output);    
+                sum1D(m->fcls[i]->d_biases,m2->fcls[i]->d_biases,m3->fcls[i]->d_biases,m->fcls[i]->output);
+            }
+            if(exists_edge_popup_stuff_fcl(m->fcls[i])){
+                sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);   
+            } 
+            if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
+                sum1D(m->fcls[i]->layer_norm->d_gamma,m2->fcls[i]->layer_norm->d_gamma,m3->fcls[i]->layer_norm->d_gamma,m->fcls[i]->layer_norm->vector_dim);
         }
-        if(exists_edge_popup_stuff_fcl(m->fcls[i])){
-            sum1D(m->fcls[i]->d_scores,m2->fcls[i]->d_scores,m3->fcls[i]->d_scores,m->fcls[i]->output*m->fcls[i]->input);   
-        } 
-        if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
-            sum1D(m->fcls[i]->layer_norm->d_gamma,m2->fcls[i]->layer_norm->d_gamma,m3->fcls[i]->layer_norm->d_gamma,m->fcls[i]->layer_norm->vector_dim);
     }
     
         
@@ -800,23 +864,25 @@ void sum_lstm_layers_partial_derivatives(rmodel* m, rmodel* m2, rmodel* m3){
     }
     int i,j;
     for(i = 0; i < m->n_lstm; i++){
-        for(j = 0; j < 4; j++){
-            if(m->lstms[i]->training_mode == GRADIENT_DESCENT || m->lstms[i]->training_mode == FREEZE_TRAINING){
-                sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
-                sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
-                sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->output_size);
+        if(m->lstms[i]->training_mode != FREEZE_TRAINING){
+            for(j = 0; j < 4; j++){
+                if(m->lstms[i]->training_mode == GRADIENT_DESCENT || m->lstms[i]->training_mode == FREEZE_TRAINING){
+                    sum1D(m->lstms[i]->d_w[j],m2->lstms[i]->d_w[j],m3->lstms[i]->d_w[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
+                    sum1D(m->lstms[i]->d_u[j],m2->lstms[i]->d_u[j],m3->lstms[i]->d_u[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
+                    sum1D(m->lstms[i]->d_biases[j],m2->lstms[i]->d_biases[j],m3->lstms[i]->d_biases[j],m->lstms[i]->output_size);
+                }
+                
+                else if(m->lstms[i]->training_mode == EDGE_POPUP){
+                    sum1D(m->lstms[i]->d_w_scores[j],m2->lstms[i]->d_w_scores[j],m3->lstms[i]->d_w_scores[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
+                    sum1D(m->lstms[i]->d_u_scores[j],m2->lstms[i]->d_u_scores[j],m3->lstms[i]->d_u_scores[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
+                }
             }
-            
-            else if(m->lstms[i]->training_mode == EDGE_POPUP){
-                sum1D(m->lstms[i]->d_w_scores[j],m2->lstms[i]->d_w_scores[j],m3->lstms[i]->d_w_scores[j],m->lstms[i]->output_size*m->lstms[i]->input_size);
-                sum1D(m->lstms[i]->d_u_scores[j],m2->lstms[i]->d_u_scores[j],m3->lstms[i]->d_u_scores[j],m->lstms[i]->output_size*m->lstms[i]->output_size);
-            }
-        }
-    
-        if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
-            for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
-                sum1D(m->lstms[i]->bns[j]->d_gamma,m2->lstms[i]->bns[j]->d_gamma,m3->lstms[i]->bns[j]->d_gamma,m->lstms[i]->bns[j]->vector_dim);
-                sum1D(m->lstms[i]->bns[j]->d_beta,m2->lstms[i]->bns[j]->d_beta,m3->lstms[i]->bns[j]->d_beta,m->lstms[i]->bns[j]->vector_dim);
+        
+            if(m->lstms[i]->norm_flag == GROUP_NORMALIZATION){
+                for(j = 0; j < m->lstms[i]->window/m->lstms[i]->n_grouped_cell; j++){
+                    sum1D(m->lstms[i]->bns[j]->d_gamma,m2->lstms[i]->bns[j]->d_gamma,m3->lstms[i]->bns[j]->d_gamma,m->lstms[i]->bns[j]->vector_dim);
+                    sum1D(m->lstms[i]->bns[j]->d_beta,m2->lstms[i]->bns[j]->d_beta,m3->lstms[i]->bns[j]->d_beta,m->lstms[i]->bns[j]->vector_dim);
+                }
             }
         }
     }

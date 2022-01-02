@@ -32,6 +32,8 @@ typedef struct species{
     genome** all_other_genomes;
     int numb_all_other_genomes;
     int age;
+    float best_fitness;
+    int specie_rip;
 }species;
     
 

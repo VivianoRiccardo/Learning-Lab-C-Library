@@ -77,6 +77,8 @@ void paste_rl_without_learning_parameters(rl* f, rl* copy);
 void free_residual_without_learning_parameters(rl* r);
 rl* reset_rl_without_dwdb_without_learning_patameters(rl* f);
 uint64_t count_weights_rl(rl* r);
+void free_residual_without_arrays(rl* r);
+
 
 
 #endif

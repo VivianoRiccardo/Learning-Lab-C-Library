@@ -33,6 +33,14 @@ void* model_thread_ff(void* _args) {
     return _args;
 }
 
+void* model_thread_sum(void* _args) {
+    
+    // depacking args
+    thread_args_models* args = (thread_args_models*) _args;
+    sum_models_partial_derivatives_multithread(args->m, args->m[0], args->n, args->depth);
+    return _args;
+}
+
 void* model_thread_ff_opt(void* _args) {
     
     // depacking args
@@ -360,4 +368,51 @@ void ff_error_bp_model_multicore_opt(model** m, model* m2, int depth, int rows, 
             free(args[j]);
         }
     }
+}
+
+
+model* sum_models_partial_derivatives_multithread(model** batch_m, model* m, int n, int depth){
+    if(depth == 0 && n <=3){
+        sum_models_partial_derivatives(m,batch_m,n);
+        return m;
+    }
+    
+    if(n == 0)
+        return NULL;
+    else if(n == 1)
+        return batch_m[0];
+    else if(n == 2){
+        sum_model_partial_derivatives(batch_m[0],batch_m[1],batch_m[0]);
+        return batch_m[0];
+    }
+    else if(n == 3){
+        sum_models_partial_derivatives(batch_m[0],&batch_m[1],2);
+        return batch_m[0];
+    }
+    pthread_t thread[2];
+    thread_args_models* args[2];
+    int size = (int)(n/2);
+    args[0] = (thread_args_models*)malloc(sizeof(thread_args_models));
+    args[0]->depth = depth+1;
+    args[0]->n = size;
+    args[0]->m = batch_m;
+    args[1] = (thread_args_models*)malloc(sizeof(thread_args_models));
+    args[1]->depth = depth+1;
+    args[1]->n = n-size;
+    args[1]->m = batch_m+size;
+    pthread_create(thread, NULL, model_thread_sum, args[0]);
+    pthread_create(thread+1, NULL, model_thread_sum, args[1]);
+    pthread_join(thread[0],NULL);
+    pthread_join(thread[1],NULL);
+    free(args[0]);
+    free(args[1]);
+    model* t1 = batch_m[0];
+    model* t2 = batch_m[size];
+    sum_model_partial_derivatives(t1,t2,t1);
+    if(depth == 0){
+        sum_model_partial_derivatives(t1,m,m);
+        t1 = m;
+    }
+    
+    return t1;
 }

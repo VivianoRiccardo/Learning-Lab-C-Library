@@ -37,5 +37,6 @@ void model_tensor_input_bp_multicore_opt(model** m,model*m2, int depth, int rows
 void* model_thread_bp_opt(void* _args);
 void ff_error_bp_model_multicore_opt(model** m, model* m2, int depth, int rows, int cols, float** inputs, int mini_batch_size, int threads,float** outputs, float** returning_error);
 void* model_thread_ff_bp_opt(void* _args);
+model* sum_models_partial_derivatives_multithread(model** batch_m, model* m, int n, int depth);
 
 #endif

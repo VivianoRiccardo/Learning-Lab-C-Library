@@ -42,8 +42,11 @@ float random_float_number(float a);
 int shuffle_connection_set(connection** m,int n);
 int shuffle_genome_set(genome** m,int n);
 int save_genome(genome* g, int global_inn_numb_connections, int numb);
-genome* load_genome(int global_inn_numb_connections);
+genome* load_genome(int global_inn_numb_connections, char* filename);
 int round_up(float num);
+char* get_genome_array(genome* g, int global_inn_numb_connections);
+genome* init_genome_from_array(int global_inn_numb_connections, char* g_array);
+int get_genome_array_size(genome* g, int global_inn_numb_connections);
 
 
 // Functions defined in mutations.c
@@ -67,11 +70,15 @@ int recursive_computation(int** array, node* head, genome* g, connection* c,floa
 // Functions defined in species.c
 
 float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_connections);
-species* create_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species);
+species* create_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_threshold, int* total_species);
 void free_species(species* s, int total_species, int global_inn_numb_connections);
-species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s);
+species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_threshold, int* total_species, species** s);
 void free_species_except_for_rapresentatives(species* s, int total_species, int global_inn_numb_connections);
 int get_oldest_age(species* s, int total_species);
+void delete_species_without_population(species** s, int* total_species, int global_inn_numb_connections);
+void update_best_specie_fitnesses(species* s, int total_species);
+
+
 
 // Functions defined in fitness.c
 
@@ -81,6 +88,20 @@ genome** sort_genomes_by_fitness(genome** g, int size);
 
 // Functions defined in neat.c
 
-neat* init(int max_buffer, int input, int output);
-void neat_generation_run(neat* nes, genome** gg);
+neat* init(int input, int output, int initial_popoulation, int species_threshold, int max_population,int generations, float percentage_survivors_per_specie, float connection_mutation_rate, float  new_connection_assignment_rate, float add_connection_big_specie_rate, float add_connection_small_specie_rate, float add_node_specie_rate, float activate_connection_rate, float remove_connection_rate, int children, float crossover_rate, int saving, int limiting_species, int limiting_threshold, int same_fitness_limit, int keep_parents, float age_significance);
+void neat_generation_run(neat* nes);
 void free_neat(neat* nes);
+char* get_neat_in_char_vector(neat* nes);
+neat* init_from_char(char* neat_c, int input, int output, int initial_population, int species_threshold, int max_population,int generations, float percentage_survivors_per_specie, float connection_mutation_rate, float  new_connection_assignment_rate, float add_connection_big_specie_rate, float add_connection_small_specie_rate, float add_node_specie_rate, float activate_connection_rate, float remove_connection_rate, int children, float crossover_rate, int saving, int limiting_species, int limiting_threshold, int same_fitness_limit, int keep_parents, float age_significance);
+void reset_fitnesses(neat* n);
+void reset_fitness_ith_genome(neat* nes, int index);
+float** feed_forward_iths_genome(neat* nes, float** input, int* indices, int n_genome);
+float* feed_forward_ith_genome(neat* nes, float* input, int index);
+float get_fitness_of_ith_genome(neat* nes, int index);
+void increment_fitness_of_genome_ith(neat* nes, int index, float increment);
+int get_global_innovation_number_nodes(neat* nes);
+int get_global_innovation_number_connections(neat* nes);
+int get_lenght_of_char_neat(neat* nes);
+int get_number_of_genomes(neat* nes);
+void save_ith_genome(neat* nes, int index, int n);
+float best_fitness(neat* nes);

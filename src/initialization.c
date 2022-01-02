@@ -26,7 +26,7 @@ SOFTWARE.
 
 /*random number between 0 and 1*/
 float r2(){
-    return (float)rand() / (float)RAND_MAX ;
+    return (float)((float)rand() / (float)RAND_MAX);
 }
 
 float signed_r2(float n){
@@ -40,7 +40,7 @@ float generate_from_random_distribution(float lo, float hi){
 }
 
 float drand (){
-  return (rand () + 1.0) / (RAND_MAX + 1.0);
+  return (float)(rand () + 1.0) / (RAND_MAX + 1.0);
 }
 
 /* a random number from a gaussian distribution with mean 0 and std 1*/

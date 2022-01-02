@@ -111,5 +111,9 @@ float constrantive_loss(float y_hat, float y, float margin);
 float derivative_constrantive_loss(float y_hat, float y, float margin);
 void constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size);
 void derivative_constrantive_loss_array(float* y_hat, float* y,float* output, float margin, int size);
+float dotProduct1D(float* input1, float* input2, int size);
+void additional_mul_value(float* input, float value, float* output, int dimension);
+void copy_clipped_vector(float* vector, float* output, float maximum, float minimum, int dimension);
+void clip_vector(float* vector, float minimum, float maximum, int dimension);
 
 #endif

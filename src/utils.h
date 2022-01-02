@@ -28,7 +28,7 @@ SOFTWARE.
 char* get_full_path(char* directory, char* filename);
 void get_dropout_array(int size, float* mask, float* input, float* output); 
 void set_dropout_mask(int size, float* mask, float threshold); 
-void ridge_regression(float *dw, float w, float lambda, int n);
+void ridge_regression(float *dw, float w, float lambda_value, int n);
 int read_files(char** name, char* directory);
 char* itoa(int i, char b[]);
 int shuffle_char_matrix(char** m,int n);
@@ -60,7 +60,7 @@ void copy_int_array(int* input, int* output, int size);
 int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);
 int check_nans_matrix(float** m, int rows, int cols);
-void merge(float* values, int* indices, int temp[], int from, int mid, int to, int length);
+void merge(float* values, int* indices, int temp[], int from_index, int mid, int to, int length);
 void mergesort(float* values, int* indices, int low, int high);
 void sort(float* values, int* indices, int low, int high);
 void free_tensor(float*** t, int dim1, int dim2);
@@ -71,5 +71,6 @@ void set_files_free_from_file(char* file_to_free, char* file);
 void remove_occupied_sets(char* file);
 int msleep(long msec);
 int* get_new_copy_int_array(int* array, int size);
+void set_int_vector_with_value(int value, int* v, int dimension);
 
 #endif

@@ -48,4 +48,13 @@ typedef struct genome{
     float fitness;
 }genome;
 
+typedef struct thread_args_genome {
+    genome* g;
+    float* input;
+    float** output;
+    int global_inn_numb_nodes;
+    int global_inn_numb_connections;
+    int index;
+} thread_args_genome;
+
 #endif

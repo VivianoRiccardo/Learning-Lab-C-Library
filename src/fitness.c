@@ -79,36 +79,22 @@ float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_signif
  *                 @ int size:= the size of g
  * */
 genome** sort_genomes_by_fitness(genome** g, int size){
-    int i,j = 0,k,z,flag;
     genome** gg = (genome**)malloc(sizeof(genome*)*size);
-    genome* temp1;
-    genome* temp2;
-
-    
+    float* values = (float*)calloc(size,sizeof(float));
+    int* indices = (int*)calloc(size,sizeof(int));
+    int i;
     for(i = 0; i < size; i++){
-        flag = 0;
-        for(k = 0; k < j; k++){
-            if(g[i]->fitness > gg[k]->fitness){
-                temp1 = gg[k];
-                for(z = k; z < j-1; z++){
-                    temp2 = gg[z+1];
-                    gg[z+1] = temp1;
-                    temp1 = temp2;
-                }
-                flag = 1;
-                gg[z+1] = temp1;
-                gg[k] = g[i];
-                break;
-            }
-    
-        }
-        
-        if(!j)
-            gg[0] = g[i];
-        else if(!flag)
-            gg[j] = g[i];
-        j++;
+        values[i] = g[i]->fitness;
+        indices[i] = i;
     }
     
+    sort(values,indices,0,size-1);
+    
+    for(i = size-1; i > -1; i--){
+        gg[(size-1)-i] = g[indices[i]];
+    }
+
+    free(values);
+    free(indices);
     return gg;
 }

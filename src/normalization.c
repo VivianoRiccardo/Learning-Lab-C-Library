@@ -450,8 +450,8 @@ void batch_normalization_final_mean_variance(float** input_vectors, int n_vector
         var[i] = (float)((float)mini_batch_size/(float)(mini_batch_size-1))*var[i]/(float)(n_vectors/mini_batch_size);
     }
     
-    copy_array(mean,bn_layer->final_mean,vector_size);
-    copy_array(var,bn_layer->final_var,vector_size);
+    copy_array(mean,bn_layer->mean,vector_size);
+    copy_array(var,bn_layer->var,vector_size);
     
     free(mean);
     free(var);
@@ -813,7 +813,7 @@ void given_max_min_normalize_cl(cl* f, float max, float min){
 }
 
 
-void normalize_among_all_leyers(model* m){
+void min_max_normalize_scores_among_all_leyers(model* m){
     float max = -9999999;
     float min = 9999999;
     int i,j,k;
@@ -904,7 +904,7 @@ void feed_forward_scaled_l2_norm(int input_dimension, float learned_g, float* no
 void back_propagation_scaled_l2_norm(int input_dimension,float learned_g, float* d_learned_g, float norm,float* input, float* output_error, float* input_error){
     int i,j;
     float quadratic_norm = norm*norm;
-    float cubic_norm = norm*norm*norm;
+    float cubic_norm = quadratic_norm*norm;
     for(i = 0; i < input_dimension; i++){
         (*d_learned_g) += output_error[i]*input[i]/norm;
         for(j = 0; j < input_dimension; j++){

@@ -78,8 +78,8 @@ void set_dropout_mask(int size, float* mask, float threshold){
  *             @ float lambda:= an hyperparameter
  *             @ int n:= the number of total weights in the network
  * */
-void ridge_regression(float *dw, float w, float lambda, int n){
-    (*dw) = (*dw) + (float)((((double)(lambda))/((double)(n)))*((double)(w)));
+void ridge_regression(float *dw, float w, float lambda_value, int n){
+    (*dw) = (*dw) + (float)((((double)(lambda_value))/((double)(n)))*((double)(w)));
 }
 
 /* Function used to read all the files in a directory
@@ -539,7 +539,7 @@ int read_file_in_char_vector(char** ksource, char* fname, int* size){
  * 
  * */
 void copy_array(float* input, float* output, int size){
-	if(input == NULL || output == NULL || !size) return;
+    if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(float)*size));
 }
 
@@ -553,7 +553,7 @@ void copy_array(float* input, float* output, int size){
  * 
  * */
 void copy_int_array(int* input, int* output, int size){
-	if(input == NULL || output == NULL || !size) return;
+    if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(int)*size));
 }
 
@@ -567,7 +567,7 @@ void copy_int_array(int* input, int* output, int size){
  * 
  * */
 void copy_char_array(char* input, char* output, int size){
-	if(input == NULL || output == NULL || !size) return;
+    if(input == NULL || output == NULL || !size) return;
     memcpy(output,input,(sizeof(char)*size));
 }
 
@@ -840,8 +840,8 @@ char** get_files(int index1, int n_files){
  }
  
  
-void merge(float* values, int* indices, int temp[], int from, int mid, int to, int length){
-    int k = from, i = from, j = mid + 1;
+void merge(float* values, int* indices, int temp[], int from_index, int mid, int to, int length){
+    int k = from_index, i = from_index, j = mid + 1;
  
     while (i <= mid && j <= to){
         if (values[indices[i]] < values[indices[j]]) {
@@ -856,7 +856,7 @@ void merge(float* values, int* indices, int temp[], int from, int mid, int to, i
         temp[k++] = indices[i++];
     }
  
-    for (i = from; i <= to; i++) {
+    for (i = from_index; i <= to; i++) {
         indices[i] = temp[i];
     }
 }
@@ -914,6 +914,13 @@ void free_4D_tensor(float**** t, int dim1, int dim2, int dim3){
 
 
 void set_vector_with_value(float value, float* v, int dimension){
+    int i;
+    for(i = 0; i < dimension; i++){
+        v[i] = value;
+    }
+}
+
+void set_int_vector_with_value(int value, int* v, int dimension){
     int i;
     for(i = 0; i < dimension; i++){
         v[i] = value;

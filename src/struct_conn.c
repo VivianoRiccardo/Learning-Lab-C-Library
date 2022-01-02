@@ -1314,25 +1314,25 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
         }
         
         else if(s->input1_type == RMODEL){
-            model_tensor_input_bp(s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index),err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index),err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == TRANSFORMER_ENCODER){
-            model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->m2->output_dimension);
         }
         else if(s->input1_type == TRANSFORMER_DECODER){
-            model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->m2->output_dimension);
         }
         else if(s->input1_type == TRANSFORMER){
-            model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == L2_NORM_CONN){
-            model_tensor_input_bp(s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index],err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == VECTOR){
-            model_tensor_input_bp(s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp(s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index],err,s->m2->output_dimension);
         }
         free(err);
     }
@@ -1834,25 +1834,25 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
         }
         
         else if(s->input1_type == RMODEL){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index),err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->r1->lstms[s->r1->n_lstm-1]->output_size,get_ith_output_cell(s->r1,s->model_input_index),err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == TRANSFORMER_ENCODER){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->e1)[s->model_input_index],err,s->m2->output_dimension);
         }
         else if(s->input1_type == TRANSFORMER_DECODER){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->d1->e)[s->model_input_index],err,s->m2->output_dimension);
         }
         else if(s->input1_type == TRANSFORMER){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e)[s->model_input_index],err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == L2_NORM_CONN){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->l1->output[s->model_input_index],err,s->m2->output_dimension);
         }
         
         else if(s->input1_type == VECTOR){
-            model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index],err,s->m2->output_dimension);
+            h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->input_size,&s->v1->output[s->model_input_index],err,s->m2->output_dimension);
         }
         free(err);
     }

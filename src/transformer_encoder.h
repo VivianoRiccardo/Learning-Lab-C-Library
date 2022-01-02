@@ -25,27 +25,27 @@ SOFTWARE.
 #ifndef __TRANSFORMER_ENCODER_H__
 #define __TRANSFORMER_ENCODER_H__
 
-transformer_encoder* transformer_encoder_layer(model* m, model* linear_after_attention, fcl** fcls, scaled_l2_norm** l2, int input_dimension, int n_head,int residual_flag1,int normalization_flag1,int residual_flag2,int normalization_flag2, int attention_flag);
+transformer_encoder* transformer_encoder_layer(model** q, model** k, model** v, model* m, model* linear_after_attention, scaled_l2_norm** l2, int input_dimension, int n_head,int residual_flag1,int normalization_flag1,int residual_flag2,int normalization_flag2, int attention_flag, int k_embedding_dimension, int v_embedding_dimension);
 void free_transformer_encoder_layer(transformer_encoder* t);
+void free_transformer_encoder_layer_without_learning_parameters(transformer_encoder* t);
 void free_transformer_wrapped_encoder_layer(transformer_encoder* t);
+void free_transformer_wrapped_encoder_layer_without_learning_parameters(transformer_encoder* t);
 void save_transformer_encoder(transformer_encoder* t, int n);
 transformer_encoder* load_transformer_encoder(FILE* fr);
 transformer_encoder* copy_transformer_encoder(transformer_encoder* t);
+transformer_encoder* copy_transformer_encoder_without_learning_parameters(transformer_encoder* t);
 void reset_transformer_encoder(transformer_encoder* t);
-void reset_transformer_encoder_for_edge_popup(transformer_encoder* t);
+void reset_transformer_encoder_without_learning_parameters(transformer_encoder* t);
+void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t); //[DEPRECATED]
+void reset_transformer_encoder_for_edge_popup(transformer_encoder* t);//[DEPRECATED]
 uint64_t size_of_transformer_encoder(transformer_encoder* t);
+uint64_t size_of_transformer_encoder_without_learning_parameters(transformer_encoder* t);
 void paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy);
+void paste_transformer_encoder_without_learning_parameters(transformer_encoder* t, transformer_encoder* copy);
 void slow_paste_transformer_encoder(transformer_encoder* t, transformer_encoder* copy, float tau);
 void encoder_transformer_ff(float* inputs, transformer_encoder* t, int input_dimension);
-float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
-void reset_transformer_encoder_except_partial_derivatives(transformer_encoder* t);
-void free_transformer_encoder_layer_without_learning_parameters(transformer_encoder* t);
-void free_transformer_wrapped_encoder_layer_without_learning_parameters(transformer_encoder* t);
-transformer_encoder* copy_transformer_encoder_without_learning_parameters(transformer_encoder* t);
-void reset_transformer_encoder_without_learning_parameters(transformer_encoder* t);
-uint64_t size_of_transformer_encoder_without_learning_parameters(transformer_encoder* t);
 void encoder_transformer_ff_opt(float* inputs, transformer_encoder* t, int input_dimension, transformer_encoder* t2);
+float* encoder_transformer_bp(float* inputs, transformer_encoder* t, int input_dimension,float* output_error);
 float* encoder_transformer_bp_opt(float* inputs, transformer_encoder* t, int input_dimension,float* output_error, transformer_encoder* t2);
-void paste_transformer_encoder_without_learning_parameters(transformer_encoder* t, transformer_encoder* copy);
 
 #endif

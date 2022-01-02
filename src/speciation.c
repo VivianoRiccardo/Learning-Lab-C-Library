@@ -148,8 +148,8 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
     
 }
 
-
-species* create_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species){
+// just create species and rapresentative genomes it doesn't fill the species except for rapresentative
+species* create_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_threshold, int* total_species){
     int i,j,count_s = 0,flag;
     species* s = NULL;
     
@@ -158,16 +158,19 @@ species* create_species(genome** g, int numb_genomes, int global_inn_numb_connec
         if(!count_s){
             s = (species*)malloc(sizeof(species));
             s[count_s].rapresentative_genome = copy_genome(g[i]);
-            s[count_s].numb_all_other_genomes = 0;
+            s[count_s].numb_all_other_genomes = 1;
             s[count_s].age = 1;
-            s[count_s].all_other_genomes = NULL;
+            s[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
+            s[count_s].all_other_genomes[0] = copy_genome(g[i]);
+            s[count_s].best_fitness = g[i]->fitness;
+            s[count_s].specie_rip = 0;
             count_s++;
         }
         
         else{
             flag = 0;
             for(j = 0; j < count_s; j++){
-                if(compute_species_distance(s[j].rapresentative_genome,g[i],global_inn_numb_connections) < species_thereshold){
+                if(compute_species_distance(s[j].rapresentative_genome,g[i],global_inn_numb_connections) < species_threshold){
                     flag = 1;
                     break;
                 }
@@ -176,10 +179,12 @@ species* create_species(genome** g, int numb_genomes, int global_inn_numb_connec
             if(!flag){
                 s = (species*)realloc(s,sizeof(species)*(count_s+1));
                 s[count_s].rapresentative_genome = copy_genome(g[i]);
-                s[count_s].numb_all_other_genomes = 0;
+                s[count_s].numb_all_other_genomes = 1;
                 s[count_s].age = 1;
-                s[count_s].all_other_genomes = NULL;
-
+                s[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
+                s[count_s].all_other_genomes[0] = copy_genome(g[i]);
+                s[count_s].best_fitness = g[i]->fitness;
+                s[count_s].specie_rip = 0;
                 count_s++;
             }
         }
@@ -215,15 +220,20 @@ void free_species_except_for_rapresentatives(species* s, int total_species, int 
         }
         
         free(s[i].all_other_genomes);
+        s[i].all_other_genomes = NULL;
         s[i].numb_all_other_genomes = 0;
     }
 }
 
-species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_thereshold, int* total_species, species** s){
+species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb_connections, float species_threshold, int* total_species, species** s){
     int i,j,k,z,count_s = (*total_species),flag;
     genome** temp_g;
     
     shuffle_genome_set(g,numb_genomes);
+    
+    for(i = 0; i < (*total_species); i++){
+        (*s)[i].age++;
+    }
     
     for(i = 0; i < numb_genomes; i++){
         if(!count_s){
@@ -233,13 +243,15 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
             (*s)[count_s].age = 1;
             (*s)[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
             (*s)[count_s].all_other_genomes[0] = copy_genome(g[i]);
+            (*s)[count_s].best_fitness = g[i]->fitness;
+            (*s)[count_s].specie_rip = 0;
             count_s++;
         }
         
         else{
             flag = 0;
             for(j = 0; j < count_s; j++){
-                if(compute_species_distance((*s)[j].rapresentative_genome,g[i],global_inn_numb_connections) < species_thereshold){
+                if(compute_species_distance((*s)[j].rapresentative_genome,g[i],global_inn_numb_connections) < species_threshold){
                     flag = 1;
                     if(!(*s)[j].numb_all_other_genomes){
                         (*s)[j].all_other_genomes = (genome**)malloc(sizeof(genome*));
@@ -255,9 +267,7 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
                         (*s)[j].all_other_genomes = temp_g;
                         
                     }
-                    
                     (*s)[j].numb_all_other_genomes++;
-                    (*s)[j].age++;
                     
                     break;
                 }
@@ -270,6 +280,8 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
                 (*s)[count_s].age = 1;
                 (*s)[count_s].all_other_genomes = (genome**)malloc(sizeof(genome*));
                 (*s)[count_s].all_other_genomes[0] = copy_genome(g[i]);
+                (*s)[count_s].best_fitness = g[i]->fitness;
+                (*s)[count_s].specie_rip = 0;
                 count_s++;
             }
         }
@@ -282,6 +294,14 @@ species* put_genome_in_species(genome** g, int numb_genomes, int global_inn_numb
     
 }
 
+void update_best_specie_fitnesses(species* s, int total_species){
+    int i,j;
+    for(i = 0; i < total_species; i++){
+        for(j = 0; j < s[i].numb_all_other_genomes; j++){
+            s[i].best_fitness = max_float(s[i].best_fitness,s[i].all_other_genomes[j]->fitness);
+        }
+    }
+}
 
 int get_oldest_age(species* s, int total_species){
     int i;
@@ -294,5 +314,32 @@ int get_oldest_age(species* s, int total_species){
     }
     
     return max;
+}
+
+void delete_species_without_population(species** s, int* total_species, int global_inn_numb_connections){
+    species* new_s = NULL;
+    int i, sum = 0;
+    for(i = 0; i < (*total_species); i++){
+       if((*s)[i].numb_all_other_genomes > 0){
+           sum++;
+       }
+    }
+    
+    new_s = (species*)malloc(sizeof(species)*sum);
+    sum = 0;
+    for(i = 0; i < (*total_species); i++){
+       if((*s)[i].numb_all_other_genomes > 0){
+           new_s[sum] = (*s)[i];
+           sum++;
+       }
+       
+       else{
+           free_genome((*s)[i].rapresentative_genome, global_inn_numb_connections);
+       }
+    }
+    free((*s));
+    (*s) = new_s;
+    (*total_species) = sum;
+    return;
 }
 

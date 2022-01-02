@@ -66,7 +66,7 @@ SOFTWARE.
  *                 
  *                 
  * */ 
-ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int threads, int regularization1,int regularization2, int m1_input,int m1_output,int m2_output,int m3_output,int gradient_descent_flag1,int gradient_descent_flag2, int buff_size, int max_frames, float lr1, float lr2, float momentum1, float momentum2, float lambda1, float lambda2, float tau,float epsilon_greedy, float lambda){
+ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int threads, int regularization1,int regularization2, int m1_input,int m1_output,int m2_output,int m3_output,int gradient_descent_flag1,int gradient_descent_flag2, int buff_size, int max_frames, float lr1, float lr2, float momentum1, float momentum2, float lambda1, float lambda2, float tau,float epsilon_greedy, float lambda_value){
                     
     if(m1 == NULL || m2 == NULL || m3 == NULL || m4 == NULL){
         fprintf(stderr,"Error: you cannot have any model set to the null pointer!\n");
@@ -149,7 +149,7 @@ ddpg* init_ddpg(model* m1, model* m2, model* m3, model* m4, int batch_size, int 
     d->lambda1 = lambda1;
     d->lambda2 = lambda2;
     d->epsilon_greedy = epsilon_greedy;
-    d->lambda = lambda;
+    d->lambda = lambda_value;
     d->tau = tau;
     d->t1 = 1;
     d->t2 = 1;

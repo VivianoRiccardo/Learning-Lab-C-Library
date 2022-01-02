@@ -104,7 +104,15 @@ float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* err
 void model_tensor_input_ff_without_learning_parameters(model* m, model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input);
 float* model_tensor_input_bp_without_learning_parameters(model* m, model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input, float* error, int error_dimension);
 float* ff_error_bp_model_once_opt(model* m,model* m2, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output);
-
-
-
+void free_model_without_arrays(model* m);
+void make_the_model_only_for_ff(model* m);
+float* get_output_layer_from_model(model* m);
+int get_output_dimension_from_model(model* m);
+void set_model_beta(model* m, float beta1, float beta2);
+float get_beta1_from_model(model* m);
+float get_beta2_from_model(model* m);
+void set_ith_layer_training_mode_model(model* m, int ith, int training_flag);
+void set_k_percentage_of_ith_layer_model(model* m, int ith, float k_percentage);
+void set_model_beta_adamod(model* m, float beta);
+float get_beta3_from_model(model* m);
 #endif

@@ -79,6 +79,11 @@ uint64_t size_of_fcls_without_learning_parameters(fcl* f);
 void paste_fcl_without_learning_parameters(fcl* f,fcl* copy);
 fcl* reset_fcl_without_dwdb_without_learning_parameters(fcl* f);
 uint64_t count_weights_fcl(fcl* f);
+void make_the_fcl_only_for_ff(fcl* f);
+fcl* fully_connected_without_arrays(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag);
+void free_fully_connected_without_arrays(fcl* f);
+
+
 
     
 

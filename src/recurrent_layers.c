@@ -121,7 +121,7 @@ lstm* recurrent_lstm (int input_size, int output_size, int dropout_flag1, float 
     if(norm_flag == GROUP_NORMALIZATION){
         lstml->bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
         for(i = 0; i < window/n_grouped_cell; i++){
-            lstml->bns[i] = batch_normalization(n_grouped_cell,output_size,layer,NO_ACTIVATION);
+            lstml->bns[i] = batch_normalization(n_grouped_cell,output_size);
         }
     }
     
@@ -336,7 +336,7 @@ lstm* recurrent_lstm_without_learning_parameters (int input_size, int output_siz
     if(norm_flag == GROUP_NORMALIZATION){
         lstml->bns = (bn**)malloc(sizeof(bn*)*window/n_grouped_cell);
         for(i = 0; i < window/n_grouped_cell; i++){
-            lstml->bns[i] = batch_normalization_without_learning_parameters(n_grouped_cell,output_size,layer,NO_ACTIVATION);
+            lstml->bns[i] = batch_normalization_without_learning_parameters(n_grouped_cell,output_size);
         }
     }
     
@@ -1750,7 +1750,7 @@ uint64_t size_of_lstm_without_learning_parameters(lstm* l){
 }
 
 uint64_t count_weights_lstm(lstm* l){
-	return (uint64_t)((l->k_percentage)*4*(l->output_size*l->output_size + l->input_size*l->output_size)); 
+    return (uint64_t)((l->k_percentage)*4*(l->output_size*l->output_size + l->input_size*l->output_size)); 
 }
 
 void get_used_outputs_lstm(int* arr, int input, int output, int* indices, float k_percentage){
@@ -1773,9 +1773,9 @@ uint64_t get_array_size_params_lstm(lstm* f){
     uint64_t sum = 0;
     int i;
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			sum+=(uint64_t)f->bns[i]->vector_dim*2;
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            sum+=(uint64_t)f->bns[i]->vector_dim*2;
+        }
     }
     return (uint64_t)4*(f->input_size*f->output_size + f->output_size*f->output_size + f->output_size)+sum;
 }
@@ -1804,9 +1804,9 @@ uint64_t get_array_size_weights_lstm(lstm* f){
     uint64_t sum = 0;
     int i;
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			sum+=(uint64_t)f->bns[i]->vector_dim*2;
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            sum+=(uint64_t)f->bns[i]->vector_dim*2;
+        }
     }
     return (uint64_t)4*(f->input_size*f->output_size + f->output_size*f->output_size)+sum;
 }
@@ -1820,21 +1820,21 @@ uint64_t get_array_size_weights_lstm(lstm* f){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_params_to_vector_lstm(lstm* f, float* vector){
-	int i;
-	for(i = 0; i < 4; i++){
-		copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(f->biases[i],&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->output_size);
-	}
+    int i;
+    for(i = 0; i < 4; i++){
+        copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(f->biases[i],&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->output_size);
+    }
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
-			copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+            copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+        }
     }
 }
 
@@ -1847,13 +1847,13 @@ void memcopy_params_to_vector_lstm(lstm* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_scores_to_vector_lstm(lstm* f, float* vector){
-	int i;
-	for(i = 0; i < 4; i++){
-		copy_array(f->w_scores[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(f->u_scores[i],&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->output_size*f->output_size);
-	}
+    int i;
+    for(i = 0; i < 4; i++){
+        copy_array(f->w_scores[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(f->u_scores[i],&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->output_size*f->output_size);
+    }
 }
 
 /* this function pastes the the weights and biases from a fcl structure into a vector
@@ -1866,20 +1866,20 @@ void memcopy_scores_to_vector_lstm(lstm* f, float* vector){
  * */
 void memcopy_vector_to_params_lstm(lstm* f, float* vector){
     int i;
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->biases[i],f->output_size);
-	}
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*f->output_size],f->biases[i],f->output_size);
+    }
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
-			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
+            copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size + f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
+        }
     }
 }
 
@@ -1893,18 +1893,18 @@ void memcopy_vector_to_params_lstm(lstm* f, float* vector){
  * */
 void memcopy_vector_to_weights_lstm(lstm* f, float* vector){
     int i;
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
-	}
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[i*f->input_size*f->output_size],f->w[i],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->u[i],f->output_size*f->output_size);
+    }
 
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
-			copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->gamma,f->bns[i]->vector_dim);
+            copy_array(&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->beta,f->bns[i]->vector_dim);
+        }
     }
 }
 
@@ -1918,18 +1918,18 @@ void memcopy_vector_to_weights_lstm(lstm* f, float* vector){
  * */
 void memcopy_weights_to_vector_lstm(lstm* f, float* vector){
     int i;
-	for(i = 0; i < 4; i++){
-		copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
-	}
+    for(i = 0; i < 4; i++){
+        copy_array(f->w[i],&vector[i*f->input_size*f->output_size],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(f->u[i],&vector[4*f->input_size*f->output_size+i*f->output_size*f->output_size],f->output_size*f->output_size);
+    }
 
     if(f->norm_flag == GROUP_NORMALIZATION){
-		for(i = 0; i < f->window/f->n_grouped_cell; i++){
-			copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
-			copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
-		}
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            copy_array(f->bns[i]->gamma,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+            copy_array(f->bns[i]->beta,&vector[4*(f->input_size*f->output_size+f->output_size*f->output_size)+i*2*f->bns[i]->vector_dim + f->bns[i]->vector_dim],f->bns[i]->vector_dim);
+        }
     }
 }
 
@@ -1943,12 +1943,12 @@ void memcopy_weights_to_vector_lstm(lstm* f, float* vector){
  * */
 void memcopy_vector_to_scores_lstm(lstm* f, float* vector){
     int i;
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[i*f->input_size*f->output_size],f->w_scores[i],f->input_size*f->output_size);
-	}
-	for(i = 0; i < 4; i++){
-		copy_array(&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->u_scores[i],f->output_size*f->output_size);
-	}
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[i*f->input_size*f->output_size],f->w_scores[i],f->input_size*f->output_size);
+    }
+    for(i = 0; i < 4; i++){
+        copy_array(&vector[4*f->input_size*f->output_size + i*f->output_size*f->output_size],f->u_scores[i],f->output_size*f->output_size);
+    }
 }
 
 

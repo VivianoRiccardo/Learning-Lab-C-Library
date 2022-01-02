@@ -22,26 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __BATCH_NORM_LAYERS_H__
-#define __BATCH_NORM_LAYERS_H__
+#ifndef __LEARNING_RATE_DECAY_H__
+#define __LEARNING_RATE_DECAY_H__
 
-bn* batch_normalization(int batch_size, int vector_input_dimension);
-void free_batch_normalization(bn* b);
-void save_bn(bn* b, int n);
-bn* load_bn(FILE* fr);
-bn* copy_bn(bn* b);
-bn* reset_bn(bn* b);
-uint64_t size_of_bn(bn* b);
-void paste_bn(bn* b1, bn* b2);
-void slow_paste_bn(bn* f, bn* copy,float tau);
-bn* batch_normalization_without_learning_parameters(int batch_size, int vector_input_dimension);
-bn* copy_bn_without_learning_parameters(bn* b);
-uint64_t size_of_bn_without_learning_parameters(bn* b);
-void paste_bn_without_learning_parameters(bn* b1, bn* b2);
-bn* batch_normalization_without_arrays(int batch_size, int vector_input_dimension);
-void make_the_bn_only_for_ff(bn* b);
-void free_the_bn_only_for_ff(bn* b);
-void paste_w_bn(bn* b1, bn* b2);
-bn* reset_bn_except_partial_derivatives(bn* b);
+void constant_decay(float* lr, float decay, float minimum);
+void time_based_decay(float* lr, float decay, float minimum, int iterations);
+void step_decay(float* lr, float initial_lr, float drop, float minimum, int epoch, int epochs_drop);
+void cosine_annealing(float* lr, float lr_minimum, float lr_maximum, int epoch, int epoch_threshold);
+void update_lr(float* lr, float lr_minimum, float lr_maximum,float initial_lr, float decay, int epoch, int epoch_threshold, int lr_decay_flag);
 
 #endif

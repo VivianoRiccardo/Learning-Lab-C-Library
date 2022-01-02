@@ -22,23 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "llab.h"
-
 #ifndef __STRUCT_CONN_HANDLER_H__
 #define __STRUCT_CONN_HANDLER_H__
 
-struct_conn_handler* init_mother_of_all_structs(int n_inputs, int n_models,int n_rmodels,int n_encoders,int n_decoders,int n_transformers,int n_l2s,int n_vectors,int n_total_structures,int n_struct_conn,int n_targets, model** m, rmodel** r, transformer_encoder** e,transformer_decoder** d,transformer** t,scaled_l2_norm** l2,vector_struct** v,struct_conn** s, int** models, int** rmodels,int** encoders,int** decoders,int** transformers,int** l2s,int** vectors,float** targets,int* targets_index,int* targets_error_flag,float** targets_weights,float* targets_threshold1,float* targets_threshold2,float* targets_gamma, int* targets_size);
-void free_struct_conn_handler(struct_conn_handler* s);
-void free_struct_conn_handler_without_learning_parameters(struct_conn_handler* s);
-struct_conn_handler* copy_struct_conn_handler(struct_conn_handler* s);
-struct_conn_handler* copy_struct_conn_handler_without_learning_parameters(struct_conn_handler* s);
-void paste_struct_conn_handler(struct_conn_handler* s, struct_conn_handler* copy);
-void paste_struct_conn_handler_without_learning_parameters(struct_conn_handler* s, struct_conn_handler* copy);
-void slow_paste_struct_conn_handler(struct_conn_handler* s, struct_conn_handler* copy, float tau);
-void reset_struct_conn_handler(struct_conn_handler* s);
-void reset_struct_conn_handler_without_learning_parameters(struct_conn_handler* s);
-uint64_t size_of_struct_conn_handler(struct_conn_handler* s);
-uint64_t size_of_struct_conn_handler_without_learning_parameters(struct_conn_handler* s);
 
+
+struct_conn_handler* struct_handler(int id, int struct_type_flag, int error_flag, int n_inputs, int n_outputs, vector_struct* input, struct_conn_handler** inputs, struct_conn_handler** outpus, vector_struct* output, float lambda, float huber1, float huber2, float* alpha, model* m, rmodel* r, transformer_encoder* e, vector_struct* v, scaled_l2_norm* l2);
+void free_struct_handler(struct_conn_handler* s);
+int there_are_no_cycles(struct_conn_handler* s, int depth);
 
 #endif

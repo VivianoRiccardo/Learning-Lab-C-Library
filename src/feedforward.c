@@ -155,7 +155,7 @@ float* feed_forward(genome* g1, float* inputs, int global_inn_numb_nodes, int gl
     
     if(there_is_storing){
         
-        /*qui i nodi poco dopo er gli stored vanno segnalati*/
+        /*qui i nodi poco dopo per gli stored vanno segnalati*/
         for(i = 0; i < g->number_output; i++){
             for(j = 0; j < temp[i]; j++){
                 if(lists[i][j].flag == 1){
