@@ -104,6 +104,7 @@ https://www.cygwin.com/
 - Transformer with Edge-Popup (03/05/2021)
 - Variational 2d loss (02/08/2021)
 - Contrastive 2d loss (02/08/2021)
+- Learning rate decay (02/01/2022)
 # Tests
 
 Each test has been trained successfully.
