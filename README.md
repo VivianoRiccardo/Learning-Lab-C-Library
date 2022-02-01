@@ -105,7 +105,16 @@ https://www.cygwin.com/
 - Variational 2d loss (02/08/2021)
 - Contrastive 2d loss (02/08/2021)
 - Learning rate decay (02/01/2022)
+- Dueling Categorical DQN with sequential models (01/02/2022)
+
+# Python Version
+
+https://github.com/ez-spark/Pyllab
+
+
 # Tests
+
+More tests are availabe at https://github.com/ez-spark/Pyllab/test
 
 Each test has been trained successfully.
 
