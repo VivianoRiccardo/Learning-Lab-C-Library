@@ -1370,3 +1370,1214 @@ model* parse_model_without_arrays_str(char* ksource, int size){
 
 
 
+
+
+dueling_categorical_dqn* parse_dueling_categorical_dqn_file(char* filename){
+    char* ksource;//ksource
+    int size = 0,i;
+    int ret = read_file_in_char_vector(&ksource,filename,&size);
+    
+    if(ret)
+        return NULL;
+    
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    free(ksource);
+    return dqn;
+    
+}
+
+dueling_categorical_dqn* parse_dueling_categorical_dqn_str(char* str, int size){
+    char* ksource = str;
+    int i;
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    return dqn;
+    
+}
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_learning_parameters_file(char* filename){
+    char* ksource;//ksource
+    int size = 0,i;
+    int ret = read_file_in_char_vector(&ksource,filename,&size);
+    
+    if(ret)
+        return NULL;
+    
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_without_learning_parameters_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_without_learning_parameters_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    free(ksource);
+    return dqn;
+    
+}
+
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_learning_parameters_str(char* str, int size){
+    char* ksource = str;
+    int i;
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_without_learning_parameters_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_without_learning_parameters_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_without_learning_parameters_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    return dqn;
+    
+}
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_arrays_file(char* filename){
+    char* ksource;//ksource
+    int size = 0,i;
+    int ret = read_file_in_char_vector(&ksource,filename,&size);
+    
+    if(ret)
+        return NULL;
+    
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_without_arrays_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_without_arrays_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init_without_arrays(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    free(ksource);
+    return dqn;
+    
+}
+
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_arrays_str(char* str, int size){
+    char* ksource = str;
+    int i;
+    
+    
+    char* shared_hidden_layers = "shared_hidden_layers";
+    char* v_hidden_layers = "v_hidden_layers";
+    char* v_linear_last_layer = "v_linear_last_layer";
+    char* a_hidden_layers = "a_hidden_layers";
+    char* a_linear_last_layer = "a_linear_last_layer";
+    
+    char* temp = (char*)malloc(sizeof(char)*256);
+    int shar,v_hid,v_lin,a_hid,a_lin,counter,lines;
+    int index_shar,index_v, index_vv, index_a, index_aa, len_shar, len_v, len_vv, len_a, len_aa;
+    for(shar = 0, v_hid = 0,v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else
+                    shar = 1;
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else
+                        v_hid = 1;
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else
+                            v_lin = 1;
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else
+                                a_hid = 1;
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else
+                                    a_lin = 1;
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    if(!shar || !v_hid || !v_lin || !a_hid || !a_lin){
+        fprintf(stderr,"Error: something went wrong during parsing!\n");
+        free(ksource);
+        free(temp);
+        exit(1);
+    }
+    
+    for(index_shar = 0, index_v = 0, index_vv = 0, index_a = 0, index_aa = 0, len_shar = 0, len_v = 0, len_vv = 0, len_a = 0, len_aa = 0, shar = 0, v_hid = 0, v_lin = 0, a_hid = 0, a_lin = 0,counter = 0, i = 0,lines = 0; i < size; i++){
+        if(ksource[i] != ';' && ksource[i] != '\n'){
+            temp[counter] = ksource[i];
+            counter++;
+        }
+        else if(ksource[i] == ';'){
+            
+            temp[counter] = '\0';
+            if(!shar){
+                if(i >= size-2 || lines || ksource[i+1] != '\n' || memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers))){
+                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                    free(ksource);
+                    free(temp);
+                    exit(1);
+                }
+                else{
+                    shar = 1;
+                    index_shar = i+2;
+                }
+            }
+            
+            else{
+                if(!v_hid){
+                    if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_hidden_layers,temp,strlen(v_hidden_layers))){
+                        v_hid = 0;
+                    }
+                    else{
+                        v_hid = 1;
+                        len_shar = i-strlen(v_hidden_layers)-index_shar;
+                        index_v = i+2;
+                    }
+                }
+                else{
+                    if(!v_lin){
+                        if(i >= size-2 || ksource[i+1] != '\n' || memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                            v_lin = 0;
+                        }
+                        else{
+                            v_lin = 1;
+                            len_v = i-strlen(v_linear_last_layer)-index_v;
+                            index_vv = i+2;
+                        }
+                    }
+                    else{
+                        if(!a_hid){
+                            if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_hidden_layers,temp,strlen(a_hidden_layers))){
+                                a_hid = 0;
+                            }
+                            else{
+                                a_hid = 1;
+                                len_vv = i-strlen(a_hidden_layers)-index_vv;
+                                index_a = i+2;
+                            }
+                        }
+                        
+                        else{
+                            if(!a_lin){
+                                if(i >= size-2 || ksource[i+1] != '\n' || memcmp(a_linear_last_layer,temp,strlen(a_linear_last_layer))){
+                                    a_lin = 0;
+                                }
+                                else{
+                                    a_lin = 1;
+                                    len_a = i-strlen(a_linear_last_layer)-index_a;
+                                    index_aa = i+2;
+                                    len_aa = size-index_aa;
+                                    break;
+                                }
+                            }
+                            else{
+                                if(!memcmp(shared_hidden_layers,temp,strlen(shared_hidden_layers)) || !memcmp(v_hidden_layers,temp,strlen(v_hidden_layers)) || !memcmp(v_linear_last_layer,temp,strlen(v_linear_last_layer)) || !memcmp(a_hidden_layers,temp,strlen(a_hidden_layers)) || !memcmp(a_linear_last_layer,temp,strlen(v_linear_last_layer))){
+                                    fprintf(stderr,"Error: something went wrong during parsing!\n");
+                                    free(ksource);
+                                    free(temp);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            counter = 0;
+            lines++;
+        }
+        
+        else if(ksource[i] == '\n'){
+            counter = 0;
+            lines++;
+        }
+    }
+    
+    free(temp);
+    model* shared_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_shar,len_shar);
+    model* v_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_v,len_v);
+    model* v_linear_last_layer_dqn = parse_model_without_arrays_str(ksource+index_vv,len_vv);
+    model* a_hidden_layers_dqn = parse_model_without_arrays_str(ksource+index_a,len_a);
+    model* a_linear_last_layer_dqn = parse_model_without_arrays_str(ksource+index_aa,len_aa);
+    if(a_linear_last_layer_dqn->output_dimension%v_linear_last_layer_dqn->output_dimension){
+        fprintf(stderr,"Error: something went wrong defining the output sizes!\n");
+        exit(1);
+    }
+    dueling_categorical_dqn* dqn = dueling_categorical_dqn_init_without_arrays(get_input_layer_size(shared_hidden_layers_dqn),a_linear_last_layer_dqn->output_dimension/v_linear_last_layer_dqn->output_dimension,v_linear_last_layer_dqn->output_dimension,-10,10,shared_hidden_layers_dqn,v_hidden_layers_dqn,a_hidden_layers_dqn,v_linear_last_layer_dqn,a_linear_last_layer_dqn);
+    return dqn;
+    
+}

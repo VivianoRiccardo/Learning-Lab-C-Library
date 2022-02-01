@@ -115,4 +115,6 @@ void set_ith_layer_training_mode_model(model* m, int ith, int training_flag);
 void set_k_percentage_of_ith_layer_model(model* m, int ith, float k_percentage);
 void set_model_beta_adamod(model* m, float beta);
 float get_beta3_from_model(model* m);
+int get_input_layer_size(model* m);
+
 #endif

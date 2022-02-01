@@ -72,5 +72,6 @@ void remove_occupied_sets(char* file);
 int msleep(long msec);
 int* get_new_copy_int_array(int* array, int size);
 void set_int_vector_with_value(int value, int* v, int dimension);
+int argmax(float* vector, int dimension);
 
 #endif

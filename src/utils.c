@@ -1055,3 +1055,17 @@ int* get_new_copy_int_array(int* array, int size){
     copy_int_array(array,new,size);
     return new;
 }
+
+int argmax(float* vector, int dimension){
+    if(vector == NULL)
+        return -1;
+    int i,index = 0;
+    float max = vector[0];
+    for(i = 0; i < dimension; i++){
+        if(vector[i] > max){
+            max = vector[i];
+            index = i;
+        }
+    }
+    return index;
+}

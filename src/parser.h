@@ -39,5 +39,11 @@ model* parse_model_without_arrays_file(char* filename);
 model* parse_model_str(char* ksource, int size);
 model* parse_model_without_learning_parameters_str(char* ksource, int size);
 model* parse_model_without_arrays_str(char* ksource, int size);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_file(char* filename);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_str(char* str, int size);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_learning_parameters_str(char* str, int size);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_learning_parameters_file(char* filename);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_arrays_str(char* str, int size);
+dueling_categorical_dqn* parse_dueling_categorical_dqn_without_arrays_file(char* filename);
 
 #endif

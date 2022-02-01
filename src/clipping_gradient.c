@@ -273,6 +273,56 @@ void clipping_gradient(model* m, float threshold) {
      }
 }
 
+void dueling_categorical_dqn_clipping_gradient(dueling_categorical_dqn* dqn, float threshold){
+	if(dqn == NULL)
+		return;
+	double sum = 0;
+     sum += sum_all_quadratic_derivative_weights_fcls(dqn->shared_hidden_layers->fcls, dqn->shared_hidden_layers->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(dqn->shared_hidden_layers->cls, dqn->shared_hidden_layers->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(dqn->shared_hidden_layers->rls, dqn->shared_hidden_layers->n_rl);
+     
+     sum += sum_all_quadratic_derivative_weights_fcls(dqn->v_hidden_layers->fcls, dqn->v_hidden_layers->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(dqn->v_hidden_layers->cls, dqn->v_hidden_layers->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(dqn->v_hidden_layers->rls, dqn->v_hidden_layers->n_rl);
+     
+     sum += sum_all_quadratic_derivative_weights_fcls(dqn->v_linear_last_layer->fcls, dqn->v_linear_last_layer->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(dqn->v_linear_last_layer->cls, dqn->v_linear_last_layer->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(dqn->v_linear_last_layer->rls, dqn->v_linear_last_layer->n_rl);
+     
+     sum += sum_all_quadratic_derivative_weights_fcls(dqn->a_hidden_layers->fcls, dqn->a_hidden_layers->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(dqn->a_hidden_layers->cls, dqn->a_hidden_layers->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(dqn->a_hidden_layers->rls, dqn->a_hidden_layers->n_rl);
+     
+     sum += sum_all_quadratic_derivative_weights_fcls(dqn->a_linear_last_layer->fcls, dqn->a_linear_last_layer->n_fcl);
+     sum += sum_all_quadratic_derivative_weights_cls(dqn->a_linear_last_layer->cls, dqn->a_linear_last_layer->n_cl);
+     sum += sum_all_quadratic_derivative_weights_rls(dqn->a_linear_last_layer->rls, dqn->a_linear_last_layer->n_rl);
+     
+    
+     
+     sum = sqrtf(sum);
+     if(sum >= threshold){
+         clip_fcls(dqn->shared_hidden_layers->fcls, dqn->shared_hidden_layers->n_fcl, threshold, sum);
+         clip_cls(dqn->shared_hidden_layers->cls, dqn->shared_hidden_layers->n_cl, threshold, sum);
+         clip_rls(dqn->shared_hidden_layers->rls, dqn->shared_hidden_layers->n_rl, threshold, sum);
+         
+         clip_fcls(dqn->v_hidden_layers->fcls, dqn->v_hidden_layers->n_fcl, threshold, sum);
+         clip_cls(dqn->v_hidden_layers->cls, dqn->v_hidden_layers->n_cl, threshold, sum);
+         clip_rls(dqn->v_hidden_layers->rls, dqn->v_hidden_layers->n_rl, threshold, sum);
+         
+         clip_fcls(dqn->v_linear_last_layer->fcls, dqn->v_linear_last_layer->n_fcl, threshold, sum);
+         clip_cls(dqn->v_linear_last_layer->cls, dqn->v_linear_last_layer->n_cl, threshold, sum);
+         clip_rls(dqn->v_linear_last_layer->rls, dqn->v_linear_last_layer->n_rl, threshold, sum);
+         
+         clip_fcls(dqn->a_hidden_layers->fcls, dqn->a_hidden_layers->n_fcl, threshold, sum);
+         clip_cls(dqn->a_hidden_layers->cls, dqn->a_hidden_layers->n_cl, threshold, sum);
+         clip_rls(dqn->a_hidden_layers->rls, dqn->a_hidden_layers->n_rl, threshold, sum);
+         
+         clip_fcls(dqn->a_linear_last_layer->fcls, dqn->a_linear_last_layer->n_fcl, threshold, sum);
+         clip_cls(dqn->a_linear_last_layer->cls, dqn->a_linear_last_layer->n_cl, threshold, sum);
+         clip_rls(dqn->a_linear_last_layer->rls, dqn->a_linear_last_layer->n_rl, threshold, sum);
+     }
+}
+
 /* This function, given a threshold, sum all the quadratic derivative weights of the model m
  * 
  * Input:
@@ -1251,6 +1301,17 @@ void adaptive_gradient_clipping_model(model* m, float threshold, float epsilon){
     for(i = 0; i < m->n_rl; i++){
         adaptive_gradient_clipping_rl(m->rls[i],threshold,epsilon);
     }
+}
+
+void adaptive_gradient_clipping_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float threshold, float epsilon){
+    if(dqn == NULL)
+        return;
+    adaptive_gradient_clipping_model(dqn->shared_hidden_layers,threshold,epsilon);
+    adaptive_gradient_clipping_model(dqn->v_hidden_layers,threshold,epsilon);
+    adaptive_gradient_clipping_model(dqn->v_linear_last_layer,threshold,epsilon);
+    adaptive_gradient_clipping_model(dqn->a_hidden_layers,threshold,epsilon);
+    adaptive_gradient_clipping_model(dqn->a_linear_last_layer,threshold,epsilon);
+    return;
 }
 
 void adaptive_gradient_clipping_rmodel(rmodel* r, float threshold, float epsilon){

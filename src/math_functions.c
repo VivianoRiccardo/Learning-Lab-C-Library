@@ -38,7 +38,16 @@ float max_float(float x, float y) {
     return (x > y) ? x : y;
 }
 
-
+float mean(float* v, int size){
+    if(v == NULL)
+        return 0;
+    float sum = 0;
+    int i;
+    for(i = 0; i < size; i++){
+        sum+=v[i];
+    }
+    return (float)sum/((float)(size));
+}
 double sum_over_input(float* inputs, int dimension){
     double sum = 0;
     int i;
@@ -381,33 +390,21 @@ void derivative_total_variation_loss_2d(float* y, float* output, int rows, int c
 }
 
 float huber_loss(float y_hat, float y, float threshold){
-    if(y_hat >= y){
-        if((y_hat - y) <= threshold)
-            return (y_hat-y)*(y_hat-y)/2;
-        else
-            return threshold*(y_hat-y)-threshold*threshold/2;
-    }
-    else{
-        if((y - y_hat) <= threshold)
-            return (y-y_hat)*(y-y_hat)/2;
-        else
-            return threshold*(y-y_hat)-threshold*threshold/2;    
-    }
+    float v = float_abs(y_hat-y);
+    if(v <= threshold)
+        return v*v/(float)2;
+    else
+        return threshold*v-threshold*threshold/2;
+    
 }
 
 float derivative_huber_loss(float y_hat, float y, float threshold){
-    if(y_hat >= y){
-        if((y_hat - y) <= threshold)
-            return (y_hat-y);
-        else
-            return threshold;
-    }
-    else{
-        if((y - y_hat) <= threshold)
-            return (y-y_hat);
-        else
-            return -threshold;    
-    }
+    float v = float_abs(y_hat-y);
+    if(v <= threshold)
+        return y_hat-y;
+    else
+        return threshold*(y_hat-y)/v;
+    
 }
 
 void derivative_huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size){
@@ -938,6 +935,19 @@ void sum_model_partial_derivatives(model* m, model* m2, model* m3){
     sum_fully_connected_layers_partial_derivatives(m,m2,m3);
     sum_convolutional_layers_partial_derivatives(m,m2,m3);
     sum_residual_layers_partial_derivatives(m,m2,m3);
+}
+
+
+void sum_dueling_categorical_dqn_partial_derivatives(dueling_categorical_dqn* m1, dueling_categorical_dqn* m2, dueling_categorical_dqn* m3){
+    if(m1 == NULL || m2 == NULL || m3 == NULL){
+        fprintf(stderr,"Error: passed NULL pointer as values in sum_dueling_categorical_dqn_partial_derivatives\n");
+        exit(1);
+    }
+    sum_model_partial_derivatives(m1->shared_hidden_layers,m2->shared_hidden_layers,m3->shared_hidden_layers);
+    sum_model_partial_derivatives(m1->v_hidden_layers,m2->v_hidden_layers,m3->v_hidden_layers);
+    sum_model_partial_derivatives(m1->v_linear_last_layer,m2->v_linear_last_layer,m3->v_linear_last_layer);
+    sum_model_partial_derivatives(m1->a_hidden_layers,m2->a_hidden_layers,m3->a_hidden_layers);
+    sum_model_partial_derivatives(m1->a_linear_last_layer,m2->a_linear_last_layer,m3->a_linear_last_layer);
 }
 
 /*sum partial derivatives of batch sizes in 1 unique model

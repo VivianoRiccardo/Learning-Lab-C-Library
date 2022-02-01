@@ -1682,7 +1682,7 @@ void memcopy_vector_to_scores(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_params_to_vector(fcl* f, float* vector){
-    if(f == NULL || !exists_params_fcl(f))
+    if(f == NULL || !exists_params_fcl(f) || vector == NULL)
         return;
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
     memcpy(&vector[f->input*f->output],f->biases,f->output*sizeof(float));
@@ -1701,7 +1701,7 @@ void memcopy_params_to_vector(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_weights_to_vector(fcl* f, float* vector){
-    if(f == NULL || !exists_params_fcl(f))
+    if(f == NULL || !exists_params_fcl(f) || vector == NULL)
         return;
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1719,7 +1719,7 @@ void memcopy_weights_to_vector(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_weights(fcl* f, float* vector){
-    if(f == NULL || !exists_params_fcl(f))
+    if(f == NULL || !exists_params_fcl(f) || vector == NULL)
         return;
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1750,7 +1750,7 @@ void memcopy_scores_to_vector(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_derivative_params(fcl* f, float* vector){
-    if(f == NULL || !exists_d_params_fcl(f))
+    if(f == NULL || !exists_d_params_fcl(f) || vector == NULL)
         return;
     memcpy(f->d_weights,vector,f->input*f->output*sizeof(float));
     memcpy(f->d_biases,&vector[f->input*f->output],f->output*sizeof(float));
@@ -1770,7 +1770,7 @@ void memcopy_vector_to_derivative_params(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_derivative_params_to_vector(fcl* f, float* vector){
-    if(f == NULL || !exists_d_params_fcl(f))
+    if(f == NULL || !exists_d_params_fcl(f) || vector == NULL)
         return;
     memcpy(vector,f->d_weights,f->input*f->output*sizeof(float));
     memcpy(&vector[f->input*f->output],f->d_biases,f->output*sizeof(float));
@@ -1922,7 +1922,7 @@ void set_fcl_only_dropout(fcl* f){
 void reset_score_fcl(fcl* f){
     if(f == NULL || f->scores == NULL)
         return;
-    if(f->feed_forward_flag == NO_DROPOUT)
+    if(f->feed_forward_flag == ONLY_DROPOUT)
         return;
     int i;
     for(i = 0; i < f->input*f->output; i++){
@@ -1942,7 +1942,7 @@ void reset_score_fcl(fcl* f){
  *                 @ float goodness:= the goodness function
  * */
 void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, float goodness){
-    if(!exists_edge_popup_stuff_fcl(f))
+    if(f == NULL || !exists_edge_popup_stuff_fcl(f))
         return;
     int i;
     for(i = 0; i < f->input*f->output; i++){
@@ -1960,6 +1960,8 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
  *             @ fcl* f:= the fully connected layers which bias and weights must be re initialized
  * */
 void reinitialize_w_fcl(fcl* f){
+	if(f == NULL)
+		return;
     int i;
     for(i = 0; i < f->input*f->output; i++){
         f->weights[i] = random_general_gaussian_xavier_init(f->input);
@@ -1995,7 +1997,7 @@ fcl* reset_edge_popup_d_fcl(fcl* f){
 void set_low_score_fcl(fcl* f){
     if(f == NULL || f->scores == NULL)
         return;
-    if(f->feed_forward_flag == NO_DROPOUT)
+    if(f->feed_forward_flag == ONLY_DROPOUT)
         return;
     int i;
     for(i = 0; i < f->input*f->output; i++){

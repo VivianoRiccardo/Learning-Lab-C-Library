@@ -1032,6 +1032,34 @@ void update_model(model* m, float lr, float momentum, int mini_batch_size, int g
 
 }
 
+/* This function can update the model of the network using the adam algorithm or the nesterov momentum
+ * 
+ * Input:
+ * 
+ *             @ model* m:= the model that must be update
+ *             @ float lr:= the learning rate
+ *             @ float momentum:= the momentum
+ *             @ int mini_batch_size:= the batch used
+ *             @ int gradient_descent_flag:= NESTEROV or ADAM (1,2)
+ *                @ float* b1:= the hyper parameter b1 of adam algorithm
+ *                @ float* b2:= the hyper parameter b2 of adam algorithm
+ *                @ int regularization:= NO_REGULARIZATION or L2 (0,1)
+ *                @ int total_number_weights:= the number of total weights of the network (for l2 regularization)
+ *                @ float lambda:= a float value for l2 regularization
+ *                @ unsigned long long int* t:= the number of time that radam has been used
+ * */
+void update_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda_value, unsigned long long int* t){
+    if(dqn == NULL)
+        return;
+    update_model(dqn->shared_hidden_layers,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(dqn->v_hidden_layers,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(dqn->v_linear_last_layer,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(dqn->a_hidden_layers,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(dqn->a_linear_last_layer,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    return;
+
+}
+
 
 /* This function can update the rmodel of the network using the adam algorithm or the nesterov momentum
  * 

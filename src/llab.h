@@ -736,8 +736,44 @@ typedef struct error_super_struct{
     error_handler** e;
 }error_super_struct;
 
+typedef struct dueling_categorical_dqn{
+    int input_size;
+    int action_size;
+    int n_atoms;
+    float v_max, v_min, z_delta;
+    model* shared_hidden_layers;
+    model* v_hidden_layers;
+    model* a_hidden_layers;
+    model* v_linear_last_layer;
+    model* a_linear_last_layer;
+    float* action_mean_layer;//n_atoms
+    float* add_layer;//actions_size X n_atoms
+    float* softmax_layer;//action_size X n_atoms
+    float* derivative_softmax_layer;//action_size X n_atoms
+    float* v_linear_layer_error;//n_atoms
+    float* a_linear_layer_error;//action_size X n_atoms
+    float* support;//n_atoms
+    float* error;//action_size X n_atoms
+    float* q_functions;//action_size
+}dueling_categorical_dqn;
 
-typedef struct bn BN;
+
+typedef struct thread_args_dueling_categorical_dqn_train {
+    dueling_categorical_dqn *online_net, *online_net_wlp, *target_net, *target_net_wlp;
+    int input_size;
+    float* state_t;
+    float reward_t;
+    float* state_t_1;
+    int action_t;
+    int nonterminal_s_t_1;
+    int state_sizes;
+    float lambda;
+} thread_args_dueling_categorical_dqn_train;
+
+typedef struct thread_args_dueling_categorical_dqn {
+    dueling_categorical_dqn** m;
+    int n,depth;
+} thread_args_dueling_categorical_dqn;
 
 #include "attention.h"
 #include "batch_norm_layers.h"
@@ -747,6 +783,7 @@ typedef struct bn BN;
 #include "convolutional_layers.h"
 #include "dictionary.h"
 #include "drl.h"
+#include "dueling_categorical_dqn.h"
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
 #include "gd.h"
@@ -754,6 +791,7 @@ typedef struct bn BN;
 #include "learning_rate_decay.h"
 #include "math_functions.h"
 #include "model.h"
+#include "multi_core_dueling_categorical_dqn.h"
 #include "multi_core_model.h"
 #include "multi_core_neat.h"
 #include "multi_core_rmodel.h"

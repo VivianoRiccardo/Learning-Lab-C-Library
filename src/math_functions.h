@@ -115,5 +115,7 @@ float dotProduct1D(float* input1, float* input2, int size);
 void additional_mul_value(float* input, float value, float* output, int dimension);
 void copy_clipped_vector(float* vector, float* output, float maximum, float minimum, int dimension);
 void clip_vector(float* vector, float minimum, float maximum, int dimension);
+float mean(float* v, int size);
+void sum_dueling_categorical_dqn_partial_derivatives(dueling_categorical_dqn* m1, dueling_categorical_dqn* m2, dueling_categorical_dqn* m3);
 
 #endif

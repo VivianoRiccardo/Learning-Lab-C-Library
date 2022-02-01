@@ -54,5 +54,7 @@ void adaptive_gradient_clipping_rmodel(rmodel* r, float threshold, float epsilon
 void adaptive_gradient_clipping_encoder_transformer(transformer_encoder* e, float threshold, float epsilon);
 void adaptive_gradient_clipping_decoder_transformer(transformer_decoder* t, float threshold, float epsilon);
 void adaptive_gradient_clipping_transformer(transformer* t, float threshold, float epsilon);
+void dueling_categorical_dqn_clipping_gradient(dueling_categorical_dqn* dqn, float threshold);
+void adaptive_gradient_clipping_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float threshold, float epsilon);
 
 #endif

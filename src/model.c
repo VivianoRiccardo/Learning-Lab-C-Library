@@ -118,8 +118,8 @@ model* network(int layers, int n_rl, int n_cl, int n_fcl, rl** rls, cl** cls, fc
     for(i = 0; i < n_rl; i++){
         int min_rl = rls[i]->cls[0]->layer;
         int max_rl = rls[i]->cls[rls[i]->n_cl-1]->layer;
-        for(j = i; j < n_rl; j++){
-            for(k = 0; j < rls[j]->n_cl; k++){
+        for(j = i+1; j < n_rl; j++){
+            for(k = 0; k < rls[j]->n_cl; k++){
                 if(rls[j]->cls[k]->layer <= max_rl && rls[j]->cls[k]->layer >= min_rl){
                     fprintf(stderr,"Error: you have overlapping residual layers!\n");
                     exit(1);
@@ -1162,7 +1162,7 @@ model* load_model_with_file_already_opened(FILE* fr){
  * */
 void ff_fcl_fcl(fcl* f1, fcl* f2){
     if(f1->output != f2->input){
-        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d, size: %d, %d\n",f1->layer,f2->layer,f1->output,f2->input);
         exit(1);
     }
     
@@ -1335,7 +1335,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
  * */
 void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
     if(f1->output != f2->input){
-        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output,f2->input);
         exit(1);
     }
     
@@ -1435,8 +1435,7 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
     /* computing the activation for f2 (if the activation_flag is > 0)*/
     if(f2->activation_flag == SIGMOID){
         sigmoid_array(f2->pre_activation,f2->post_activation,f2->output);
-        if(f2->feed_forward_flag == EDGE_POPUP)
-            dot_float_input(f2->post_activation,f3->active_output_neurons,f2->post_activation,f2->output);
+        
     }
     else if(f2->activation_flag == RELU){
         relu_array(f2->pre_activation,f2->post_activation,f2->output);
@@ -1452,6 +1451,9 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
         else{
             softmax(f2->pre_activation,f2->post_activation,f2->output);
         }
+        if(f2->feed_forward_flag == EDGE_POPUP)
+            dot_float_input(f2->post_activation,f3->active_output_neurons,f2->post_activation,f2->output);
+                        
     }
     
     else if(f2->activation_flag == TANH)
@@ -1508,7 +1510,7 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
  * */
 void ff_fcl_cl(fcl* f1, cl* f2){
     if(f1->output != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output, f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     float* pooltemp = f2->pooltemp;
@@ -2001,7 +2003,7 @@ void ff_fcl_cl(fcl* f1, cl* f2){
  * */
 void ff_fcl_cl_without_learning_parameters(fcl* f1, cl* f2, cl* f3){
     if(f1->output != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output, f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     float* pooltemp = f2->pooltemp;
@@ -2499,12 +2501,12 @@ void ff_fcl_cl_without_learning_parameters(fcl* f1, cl* f2, cl* f3){
  * */
 void ff_cl_fcl(cl* f1, fcl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2, f2->input);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1, f2->input);
         exit(1);
     }
     
@@ -2645,12 +2647,12 @@ void ff_cl_fcl(cl* f1, fcl* f2){
  * */
 void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2, f2->input);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1, f2->input);
         exit(1);
     }
     
@@ -2783,12 +2785,12 @@ void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
  * */
 void ff_cl_cl(cl* f1, cl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2 , f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1 , f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     
@@ -3102,12 +3104,12 @@ void ff_cl_cl(cl* f1, cl* f2){
  * */
 void ff_cl_cl_without_learning_parameters(cl* f1, cl* f2, cl* f3){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2 , f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d\n",f1->layer,f2->layer);
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1 , f2->channels*f2->input_rows*f2->input_cols);
         exit(1);
     }
     
@@ -8902,5 +8904,31 @@ void set_k_percentage_of_ith_layer_model(model* m, int ith, float k_percentage){
             }
         }
     }    
+}
+
+int get_input_layer_size(model* m){
+    if(m == NULL)
+        return -1;
+    int i,j, index = m->layers+1;
+    int size = -1;
+    for(i = 0; i < m->n_fcl; i++){
+        if(m->fcls[i]->layer < index){
+            index = m->fcls[i]->layer;
+            size = m->fcls[i]->input;
+        }
+    }
+    for(i = 0; i < m->n_cl; i++){
+        if(m->cls[i]->layer < index){
+            index = m->cls[i]->layer;
+            size = m->cls[i]->channels*m->cls[i]->input_rows*m->cls[i]->input_cols;
+        }
+    }
+    for(i = 0; i < m->n_rl; i++){
+        if(m->rls[i]->cls[0]->layer < index){
+            index = m->rls[i]->cls[0]->layer;
+            size = m->rls[i]->channels*m->rls[i]->input_rows*m->rls[i]->input_cols;
+        }
+    }
+    return size;
 }
 
