@@ -106,6 +106,13 @@ https://www.cygwin.com/
 - Contrastive 2d loss (02/08/2021)
 - Learning rate decay (02/01/2022)
 - Dueling Categorical DQN with sequential models (01/02/2022)
+- Rainbow training (09/03/2022)
+  -  + double q network
+  -  + dueling q network
+  -  + categorical q network
+  -  + ranked base td buffer priorization
+  -  + n step reward
+  -  + diversity driven exploration (better than noisy nets of 2017 rainbow paper)
 
 # Python Version
 
