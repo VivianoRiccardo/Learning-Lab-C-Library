@@ -121,7 +121,7 @@ https://github.com/ez-spark/Pyllab
 
 # Tests
 
-More tests are availabe at https://github.com/ez-spark/Pyllab/test
+More tests are availabe at https://github.com/ez-spark/Pyllab
 
 Each test has been trained successfully.
 
