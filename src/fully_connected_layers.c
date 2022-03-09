@@ -40,7 +40,7 @@ SOFTWARE.
  *             @ int feed_forward_flag:= either FULLY_FEED_FORWARD or EDGE_POPUP
  * */
 fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
-    if(input <= 0 || output <= 0 || layer < 0){
+    if(input <= 0 || output <= 0 || layer < 0 || input*output <= 0){
         fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
         exit(1);
     }

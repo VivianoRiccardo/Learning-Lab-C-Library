@@ -32,23 +32,23 @@ void constant_decay(float* lr, float decay, float minimum){
 }
 
 // after each epoch usually
-void time_based_decay(float* lr, float decay, float minimum, int iterations){
+void time_based_decay(float* lr, float decay, float minimum, uint iterations){
     if((*lr <= minimum))
         return;
     lr[0]*=(1.0 / (1.0 + decay * (float)(iterations)));
 }
 
 // usually done after epochs_drop times
-void step_decay(float* lr, float initial_lr, float drop, float minimum, int epoch, int epochs_drop){
+void step_decay(float* lr, float initial_lr, float drop, float minimum, uint epoch, uint epochs_drop){
     lr[0] = initial_lr * pow((double)drop,floor((double)((1+epoch)/epochs_drop)));
 }
 
-void cosine_annealing(float* lr, float lr_minimum, float lr_maximum, int epoch, int epoch_threshold){
+void cosine_annealing(float* lr, float lr_minimum, float lr_maximum, uint epoch, uint epoch_threshold){
     lr[0] = lr_minimum + (float)(lr_maximum-lr_minimum)*(1.0+cos((double)(1+PI*(float)(epoch/epoch_threshold))));
 }
 
 
-void update_lr(float* lr, float lr_minimum, float lr_maximum,float initial_lr, float decay, int epoch, int epoch_threshold, int lr_decay_flag){
+void update_lr(float* lr, float lr_minimum, float lr_maximum,float initial_lr, float decay, uint epoch, uint epoch_threshold, int lr_decay_flag){
     if(lr_decay_flag == LR_NO_DECAY)
         return;
     if(epoch_threshold >= epoch)

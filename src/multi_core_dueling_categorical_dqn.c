@@ -33,6 +33,23 @@ void* dueling_categorical_dqn_train_thread(void* _args) {
     return _args;
 }
 
+void* dueling_categorical_dqn_train_kl_thread(void* _args) {
+    // depacking args
+    thread_args_dueling_categorical_dqn_train* dqn = (thread_args_dueling_categorical_dqn_train*) _args;
+    dqn->ret[0] = compute_kl_dueling_categorical_dqn_opt(dqn->online_net,dqn->online_net_wlp,dqn->state_t,dqn->q_functions,dqn->weight,dqn->alpha,dqn->clip);
+    bp_dueling_categorical_network_opt(dqn->state_t,get_input_layer_size_dueling_categorical_dqn(dqn->online_net),dqn->online_net_wlp->error,dqn->online_net,dqn->online_net_wlp);
+    return _args;
+}
+
+
+void* dueling_categorical_dqn_train_with_error_thread(void* _args) {
+    // depacking args
+    thread_args_dueling_categorical_dqn_train* dqn = (thread_args_dueling_categorical_dqn_train*) _args;
+    float* error = get_loss_for_dueling_categorical_dqn_opt_with_error(dqn->online_net,dqn->online_net_wlp,dqn->target_net,dqn->target_net_wlp,dqn->state_t,dqn->action_t,dqn->reward_t,dqn->state_t_1,dqn->lambda,dqn->state_sizes,dqn->nonterminal_s_t_1,dqn->new_error,dqn->weighted_error);
+    bp_dueling_categorical_network_opt(dqn->state_t,dqn->state_sizes,error,dqn->online_net,dqn->online_net_wlp);
+    return _args;
+}
+
 void* dueling_categorical_dqn_reset_thread(void* _args) {
     // depacking args
     thread_args_dueling_categorical_dqn_train* dqn = (thread_args_dueling_categorical_dqn_train*) _args;
@@ -69,6 +86,69 @@ void dueling_categorical_dqn_train(int threads, dueling_categorical_dqn* online_
         args[j]->lambda = lambda_value;
         args[j]->state_sizes = state_sizes;
         pthread_create(thread+j, NULL, dueling_categorical_dqn_train_thread, args[j]);
+    }
+        
+                
+    for(j = 0; j < threads; j++) {
+        pthread_join(thread[j], NULL);
+        free(args[j]);
+    }
+    return;
+
+}
+
+float dueling_categorical_dqn_train_kl(int threads, dueling_categorical_dqn* online_net, dueling_categorical_dqn** online_net_wlp, float** states_t, float** q_functions, float weight, float alpha, float clip){
+    pthread_t thread[threads];
+    thread_args_dueling_categorical_dqn_train* args[threads];
+    
+    int j;
+    float ret = 0;
+    for(j = 0; j < threads; j++){
+        float error = 0;
+        args[j] = (thread_args_dueling_categorical_dqn_train*)malloc(sizeof(thread_args_dueling_categorical_dqn_train));
+        args[j]->online_net = online_net;
+        args[j]->online_net_wlp = online_net_wlp[j];
+        args[j]->state_t = states_t[j];
+        args[j]->q_functions = q_functions[j];
+        args[j]->weight = weight;
+        args[j]->clip = clip;
+        args[j]->alpha = alpha;
+        args[j]->ret = &error;
+        pthread_create(thread+j, NULL, dueling_categorical_dqn_train_kl_thread, args[j]);
+    }
+        
+                
+    for(j = 0; j < threads; j++) {
+        pthread_join(thread[j], NULL);
+        ret+=args[j]->ret[0];
+        free(args[j]);
+    }
+    return ret;
+
+}
+
+void dueling_categorical_dqn_train_with_error(int threads, dueling_categorical_dqn* online_net,dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp, dueling_categorical_dqn** target_net_wlp, float** states_t, float* rewards_t, int* actions_t, float** states_t_1, int* nonterminals_t_1, float lambda_value, int state_sizes, float* new_errors, float* weighted_errors){
+    pthread_t thread[threads];
+    thread_args_dueling_categorical_dqn_train* args[threads];
+    
+    int j;
+    
+    for(j = 0; j < threads; j++){
+        args[j] = (thread_args_dueling_categorical_dqn_train*)malloc(sizeof(thread_args_dueling_categorical_dqn_train));
+        args[j]->online_net = online_net;
+        args[j]->online_net_wlp = online_net_wlp[j];
+        args[j]->target_net = target_net;
+        args[j]->target_net_wlp = target_net_wlp[j];
+        args[j]->state_t = states_t[j];
+        args[j]->reward_t = rewards_t[j];
+        args[j]->new_error = &new_errors[j];
+        args[j]->weighted_error = weighted_errors[j];
+        args[j]->action_t = actions_t[j];
+        args[j]->nonterminal_s_t_1 = nonterminals_t_1[j];
+        args[j]->state_t_1 = states_t_1[j];
+        args[j]->lambda = lambda_value;
+        args[j]->state_sizes = state_sizes;
+        pthread_create(thread+j, NULL, dueling_categorical_dqn_train_with_error_thread, args[j]);
     }
         
                 

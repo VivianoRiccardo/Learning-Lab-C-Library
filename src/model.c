@@ -1315,6 +1315,12 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
 
 }
 
+void ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2){
+    if(f1->output != f2->input){
+        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output,f2->input);
+        exit(1);
+    }
+}
 /* This function compute the feed forward between 2 fully-connected layer
  * 
  * Input:
@@ -1985,6 +1991,13 @@ void ff_fcl_cl(fcl* f1, cl* f2){
         }
     }    
 }
+
+void ff_fcl_cl_without_arrays(fcl* f1, cl* f2){
+    if(f1->output != f2->channels*f2->input_rows*f2->input_cols){
+        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output, f2->channels*f2->input_rows*f2->input_cols);
+        exit(1);
+    }
+}
 /* This function compute the feed forward between a fully-connected input layer
  * and a convolutional output layer
  * 
@@ -2484,6 +2497,17 @@ void ff_fcl_cl_without_learning_parameters(fcl* f1, cl* f2, cl* f3){
     }    
 }
 
+void ff_cl_fcl_without_arrays(cl* f1, fcl* f2){
+    if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->input){
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2, f2->input);
+        exit(1);
+    }
+    
+    else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->input){
+        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1, f2->input);
+        exit(1);
+    }
+}
 
 /* This function compute the feed forward between a convolutional input layer
  * and a fully-connected output layer
@@ -2775,7 +2799,17 @@ void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
     
 }
 
-
+void ff_cl_cl_without_arrays(cl* f1, cl* f2){
+    if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->channels*f2->input_rows*f2->input_cols){
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2 , f2->channels*f2->input_rows*f2->input_cols);
+        exit(1);
+    }
+    
+    else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->channels*f2->input_rows*f2->input_cols){
+        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1 , f2->channels*f2->input_rows*f2->input_cols);
+        exit(1);
+    }
+}
 /* This function compute the feed forward between 2 convolutional layers
  * 
  * Input:

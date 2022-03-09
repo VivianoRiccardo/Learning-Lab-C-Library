@@ -73,5 +73,14 @@ int msleep(long msec);
 int* get_new_copy_int_array(int* array, int size);
 void set_int_vector_with_value(int value, int* v, int dimension);
 int argmax(float* vector, int dimension);
+void max_heapify(float* values, uint* indices,uint* reverse_indices, uint n, uint i);
+void max_heapify_up(float* values, uint* indices,uint* reverse_indices,  uint n, uint i);
+void remove_ith_element_from_max_heap(float* values, uint* indices,uint* reverse_indices,  uint n, uint i);
+int shuffle_float_matrices(float** m,float** m1,int n);
+void update_recursive_cumulative_heap_up(float* values, uint index, uint started_index, uint n, float value);
+uint weighted_random_sample(float* cumulative_values, float* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length);
+int index_is_inside_buffer(uint* buffer, uint length, uint index);
+int value_is_child(uint child, uint parent);
+float subtracted_value(uint index, float* current_values, uint* taken_values, uint taken_values_length);
 
 #endif

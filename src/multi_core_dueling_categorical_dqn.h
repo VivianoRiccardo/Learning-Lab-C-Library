@@ -31,5 +31,10 @@ void* dueling_categorical_dqn_thread_sum(void* _args);
 dueling_categorical_dqn* sum_dueling_categorical_dqn_partial_derivatives_multithread(dueling_categorical_dqn** batch_m, dueling_categorical_dqn* m, int n, int depth);
 void dueling_categorical_reset_without_learning_parameters_reset(dueling_categorical_dqn** dqn, int threads);
 void* dueling_categorical_dqn_reset_thread(void* _args);
+void* dueling_categorical_dqn_train_with_error_thread(void* _args);
+void dueling_categorical_dqn_train_with_error(int threads, dueling_categorical_dqn* online_net,dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp, dueling_categorical_dqn** target_net_wlp, float** states_t, float* rewards_t, int* actions_t, float** states_t_1, int* nonterminals_t_1, float lambda_value, int state_sizes, float* new_errors, float* weighted_errors);
+void dueling_categorical_reset_without_learning_parameters_reset(dueling_categorical_dqn** dqn, int threads);
+float dueling_categorical_dqn_train_kl(int threads, dueling_categorical_dqn* online_net, dueling_categorical_dqn** online_net_wlp, float** states_t, float** q_functions, float weight, float alpha, float clip);
+void* dueling_categorical_dqn_train_kl_thread(void* _args);
 
 #endif

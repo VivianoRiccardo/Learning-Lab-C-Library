@@ -198,6 +198,33 @@ int shuffle_char_matrices(char** m,char** m1,int n){
     return 0;
 }
 
+/* Function used to shuffle randomly the pointers of the 2 matrices m and m1
+ * 
+ * Input:
+ *             @char** m:= a matrix
+ *                         dimensions: n*k
+ *                @char** m1:= a matrix
+ *                         dimensions: n*k
+ *             @int n:= number of pointers char* of m
+ * */
+int shuffle_float_matrices(float** m,float** m1,int n){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          float* t = m[j];
+          float* t1 = m1[j];
+          m[j] = m[i];
+          m[i] = t;
+          m1[j] = m1[i];
+          m1[i] = t1;
+        }
+    
+    }
+    return 0;
+}
+
 /* Function used to shuffle randomly the pointers of the 2 matrices m and m1 and 2 vectors, float and int
  * 
  * Input:
@@ -368,32 +395,7 @@ int shuffle_float_matrix(float** m,int n){
     return 0;
 }
 
-/* Function used to shuffle randomly the pointers of the 2 matrices m and m1
- * 
- * Input:
- *             @float** m:= a matrix
- *                         dimensions: n*k
- *                @float** m1:= a matrix
- *                         dimensions: n*k
- *             @int n:= number of pointers char* of m
- * */
-int shuffle_float_matrices(float** m,float** m1,int n){
-    if (n > 1) {
-        size_t i;
-        for (i = 0; i < n - 1; i++) 
-        {
-          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-          float* t = m[j];
-          float* t1 = m1[j];
-          m[j] = m[i];
-          m[i] = t;
-          m1[j] = m1[i];
-          m1[i] = t1;
-        }
-    
-    }
-    return 0;
-}
+
 
 
 int shuffle_float_matrix_float_tensor(float** m,float*** t,int n){
@@ -1057,7 +1059,7 @@ int* get_new_copy_int_array(int* array, int size){
 }
 
 int argmax(float* vector, int dimension){
-    if(vector == NULL)
+    if(vector == NULL || dimension <= 0)
         return -1;
     int i,index = 0;
     float max = vector[0];
@@ -1068,4 +1070,168 @@ int argmax(float* vector, int dimension){
         }
     }
     return index;
+}
+
+// flaot are the values, indeces are the indices of the values
+// the indeces array is sorted in this way the first is the greatest
+// reverse_indices[i] tells us where the values[i] is in the array indices
+void max_heapify(float* values, uint* indices,uint* reverse_indices,  uint n, uint i) {
+  // Find largest among root, left child and right child
+  uint largest = i;
+  uint left = 2 * i + 1;
+  uint right = 2 * i + 2;
+
+  if (left < n && values[indices[left]] >= values[indices[largest]])
+    largest = left;
+
+  if (right < n && values[indices[right]] >= values[indices[largest]])
+    largest = right;
+
+    // Swap and continue heapifying if root is not largest
+    if (largest != i) {
+      uint x = indices[i];
+      indices[i] = indices[largest];
+      reverse_indices[indices[largest]] = i;
+      reverse_indices[x] = largest;
+      indices[largest] = x;
+      max_heapify(values,indices, reverse_indices, n,largest);
+  }
+}
+// flaot are the values, indeces are the indices of the values
+// the indeces array is sorted in this way the first is the greatest
+// reverse_indices[i] tells us where the values[i] is in the array indices
+void max_heapify_up(float* values, uint* indices,uint* reverse_indices,  uint n, uint i) {
+  // Find largest among root, left child and right child
+  if(i == 0)
+    return;
+  uint smallest = i;
+  uint parent;
+  if((i%2))
+    parent = (i-1)/2;
+  else
+    parent = (i-2)/2;
+  if (values[indices[parent]] <= values[indices[smallest]])
+    smallest = parent;
+    
+  if (smallest != i) {
+      uint x = indices[i];
+      indices[i] = indices[smallest];
+      reverse_indices[indices[smallest]] = i;
+      reverse_indices[x] = smallest;
+      indices[smallest] = x;
+      max_heapify_up(values,indices, reverse_indices, n,smallest);
+  }
+}
+
+void remove_ith_element_from_max_heap(float* values, uint* indices,uint* reverse_indices,  uint n, uint i){
+    if(i >= n)
+        return;
+    
+    float value1 = values[indices[i]];
+    float value2 = values[indices[n-1]];
+    reverse_indices[indices[i]] = n-1;
+    reverse_indices[indices[n-1]] = i;
+    uint x = indices[i];
+    indices[i] = indices[n-1];
+    indices[n-1] = x;
+    if(value2 < value1)
+        max_heapify(values,indices, reverse_indices, n-1,i);
+    else if(value2>value1)
+        max_heapify_up(values,indices, reverse_indices, n-1,i);
+}
+
+void update_recursive_cumulative_heap_up(float* values, uint index, uint started_index, uint n, float value){
+    uint parent;
+    if(index){
+        if(!(index%2))
+            parent = (index-2)/2;
+        else
+            parent = (index-1)/2;
+        if(!started_index){
+            values[index]+=value;        
+        }
+    }
+    else{
+        if(!started_index){
+            values[index]+=value;        
+        }
+        return;
+    }
+    update_recursive_cumulative_heap_up(values,parent,0,n,value);
+}
+
+int index_is_inside_buffer(uint* buffer, uint length, uint index){
+    uint i;
+    for(i = 0; i < length; i++){
+        if(buffer[i] == index){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int value_is_child(uint child, uint parent){
+    if(child <= parent)
+        return 0;
+    do{
+        if(child%2)
+            child = (child-1)/2;
+        else
+            child = (child-2)/2;
+    }while(child > parent);
+    if(child == parent)
+        return 1;
+    return 0;
+}
+
+float subtracted_value(uint index, float* current_values, uint* taken_values, uint taken_values_length){
+    float ret = 0;
+    uint i;
+    for(i = 0; i < taken_values_length; i++){
+        if(!index_is_inside_buffer(taken_values,i,taken_values[i])){
+            if(value_is_child(taken_values[i],index))
+                ret+=current_values[taken_values[i]];
+        }
+    }
+    return ret;
+}
+
+// log(n) sample
+uint weighted_random_sample(float* cumulative_values, float* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length){
+    if(index >= size){
+        //printf("M ");
+        return index-1;
+     }
+    float v;
+    if(!index_is_inside_buffer(taken_values,taken_values_length,index)){
+        v = current_values[index]/sum;
+        if(random_value <= v){
+            //printf("K: %d, %d. ", index, index_is_inside_buffer(taken_values,taken_values_length,index));
+            return index;
+        }
+    }
+    else
+        v = 0;
+        
+    uint left = index*2+1;
+    uint right = index*2+2;
+    if(left >= size){
+        //printf("L ");
+        return index;
+    }
+    
+    if(right >= size){
+        //printf("R");
+        return left;
+    
+    }
+    
+    random_value-=v;
+    float sub = subtracted_value(left,current_values,taken_values,taken_values_length);
+    if(random_value <= ((cumulative_values[left]-sub)/sum))
+        return weighted_random_sample(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length);
+    else
+        return weighted_random_sample(cumulative_values, current_values, right, size, random_value-((cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length);
+
+    
 }

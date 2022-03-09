@@ -709,7 +709,7 @@ typedef struct struct_conn{
 
 
 typedef struct struct_conn_handler{
-	int visited,struct_type_flag,error_flag,n_inputs,n_outputs,id,depth;
+    int visited,struct_type_flag,error_flag,n_inputs,n_outputs,id,depth;
     vector_struct* input;
     struct struct_conn_handler** inputs;
     struct struct_conn_handler** outputs;
@@ -755,6 +755,10 @@ typedef struct dueling_categorical_dqn{
     float* support;//n_atoms
     float* error;//action_size X n_atoms
     float* q_functions;//action_size
+    
+
+    
+    
 }dueling_categorical_dqn;
 
 
@@ -762,18 +766,72 @@ typedef struct thread_args_dueling_categorical_dqn_train {
     dueling_categorical_dqn *online_net, *online_net_wlp, *target_net, *target_net_wlp;
     int input_size;
     float* state_t;
+    float* q_functions;
     float reward_t;
     float* state_t_1;
+    float* new_error;
+    float weighted_error;
     int action_t;
     int nonterminal_s_t_1;
     int state_sizes;
     float lambda;
+    float weight;
+    float clip;
+    float alpha;
+    float* ret;
 } thread_args_dueling_categorical_dqn_train;
 
 typedef struct thread_args_dueling_categorical_dqn {
     dueling_categorical_dqn** m;
     int n,depth;
 } thread_args_dueling_categorical_dqn;
+
+
+
+typedef struct rainbow{
+    float max_epsilon, min_epsilon, epsilon_decay, epsilon, alpha_priorization, beta_priorization, lambda_value, tau_copying, momentum, gamma;// lambda for n step, gamma for dqn error
+    float beta1, beta2, beta3, k_percentage, clipping_gradient_value, adaptive_clipping_gradient_value, diversity_driven_threshold, alpha;
+    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, lr_epoch_threshold, lr_decay_flag;
+    float** buffer_state_t;// not stored terminal states
+    float** buffer_state_t_1;
+    int* nonterminal_state_t_1;
+    int* actions;
+    float* rewards;
+    float* ranked_values;
+    float* recursive_cumulative_ranked_values;
+    float* diversity_driven_q_functions_buffer;
+    float** diversity_driven_states;
+    float* last_errors_dqn;
+    float* last_errors_diversity_driven;
+    dueling_categorical_dqn* online_net;
+    dueling_categorical_dqn* target_net;
+    dueling_categorical_dqn** online_net_wlp;
+    dueling_categorical_dqn** target_net_wlp;
+    float* error_priorization;
+    int* error_indices;
+    int* reverse_error_indices;// for debug
+    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag;
+    double sum_error_priorization_buffer;
+    uint64_t action_taken_iteration, max_buffer_size, train_iteration, buffer_current_index, n_step_rewards, stop_epsilon_greedy,epochs_to_copy_target, diversity_driven_q_functions;
+    uint64_t diversity_driven_q_functions_counter,past_errors_counter, past_errors;// past_errors, for softadaptù
+    
+    
+    // during training
+    int* array_to_shuffle;
+    uint* batch;
+    uint* reverse_batch;
+    float** temp_states_t;
+    float** temp_states_t_1;
+    float** temp_diversity_states_t;
+    float** qs;
+    int* temp_nonterminal_state_t_1;
+    int* temp_actions;
+    float* temp_rewards;
+    float* new_errors;
+    float* weighted_errors;
+    
+}rainbow;
+
 
 #include "attention.h"
 #include "batch_norm_layers.h"
@@ -799,6 +857,7 @@ typedef struct thread_args_dueling_categorical_dqn {
 #include "neat_functions.h"
 #include "normalization.h"
 #include "parser.h"
+#include "rainbow.h"
 #include "recurrent.h"
 #include "recurrent_layers.h"
 #include "regularization.h"

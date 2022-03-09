@@ -91,6 +91,8 @@ void set_k_percentage_of_ith_layer_dueling_categorical_dqn_v_lin(dueling_categor
 void set_k_percentage_of_ith_layer_dueling_categorical_dqn_a_hid(dueling_categorical_dqn* dqn, int ith, float k_percentage);
 void set_k_percentage_of_ith_layer_dueling_categorical_dqn_a_lin(dueling_categorical_dqn* dqn, int ith, float k_percentage);
 int get_input_layer_size_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
-
+float* get_loss_for_dueling_categorical_dqn_opt_with_error(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, dueling_categorical_dqn* target_net, dueling_categorical_dqn* target_net_wlp, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1, float* new_error, float weight_error);
+float compute_kl_dueling_categorical_dqn(dueling_categorical_dqn* online_net, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
 
 #endif

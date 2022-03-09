@@ -26,9 +26,9 @@ SOFTWARE.
 #define __LEARNING_RATE_DECAY_H__
 
 void constant_decay(float* lr, float decay, float minimum);
-void time_based_decay(float* lr, float decay, float minimum, int iterations);
-void step_decay(float* lr, float initial_lr, float drop, float minimum, int epoch, int epochs_drop);
-void cosine_annealing(float* lr, float lr_minimum, float lr_maximum, int epoch, int epoch_threshold);
-void update_lr(float* lr, float lr_minimum, float lr_maximum,float initial_lr, float decay, int epoch, int epoch_threshold, int lr_decay_flag);
+void time_based_decay(float* lr, float decay, float minimum, uint iterations);
+void step_decay(float* lr, float initial_lr, float drop, float minimum, uint epoch, uint epochs_drop);
+void cosine_annealing(float* lr, float lr_minimum, float lr_maximum, uint epoch, uint epoch_threshold);
+void update_lr(float* lr, float lr_minimum, float lr_maximum,float initial_lr, float decay, uint epoch, uint epoch_threshold, int lr_decay_flag);
 
 #endif
