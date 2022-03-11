@@ -144,6 +144,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 - Test 11 is test 6 trained with edge popup algorithm.
 - Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), must be reset.
 - From test 16 to test 18 there are recurrent networks with normalization, adaptive gradient clipping and also edge popup
+- Dueling Categorical DQN and Rainbow have been tested on cartpole v1 in pyllab
 
 # Future implementations
 - recurrent ram optimization
