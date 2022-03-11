@@ -790,8 +790,8 @@ typedef struct thread_args_dueling_categorical_dqn {
 
 typedef struct rainbow{
     float max_epsilon, min_epsilon, epsilon_decay, epsilon, alpha_priorization, beta_priorization, lambda_value, tau_copying, momentum, gamma;// lambda for n step, gamma for dqn error
-    float beta1, beta2, beta3, k_percentage, clipping_gradient_value, adaptive_clipping_gradient_value, diversity_driven_threshold, alpha;
-    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, lr_epoch_threshold, lr_decay_flag;
+    float beta1, beta2, beta3, k_percentage, clipping_gradient_value, adaptive_clipping_gradient_value, diversity_driven_threshold, alpha, beta_priorization_increase;
+    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, diversity_driven_decay, diversity_driven_minimum, diversity_driven_maximum;
     float** buffer_state_t;// not stored terminal states
     float** buffer_state_t_1;
     int* nonterminal_state_t_1;
@@ -810,9 +810,9 @@ typedef struct rainbow{
     float* error_priorization;
     int* error_indices;
     int* reverse_error_indices;// for debug
-    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag;
+    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag, lr_decay_flag, uniform_sampling;
     double sum_error_priorization_buffer;
-    uint64_t action_taken_iteration, max_buffer_size, train_iteration, buffer_current_index, n_step_rewards, stop_epsilon_greedy,epochs_to_copy_target, diversity_driven_q_functions;
+    uint64_t action_taken_iteration, max_buffer_size, train_iteration, buffer_current_index, n_step_rewards, stop_epsilon_greedy,epochs_to_copy_target, diversity_driven_q_functions, lr_epoch_threshold;
     uint64_t diversity_driven_q_functions_counter,past_errors_counter, past_errors;// past_errors, for softadaptù
     
     

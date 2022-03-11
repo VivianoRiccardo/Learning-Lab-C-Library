@@ -24,13 +24,38 @@ SOFTWARE.
 
 #include "llab.h"
 
-rainbow* init_rainbow(int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+rainbow* init_rainbow(int uniform_sampling, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
                       uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
                       float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
                       float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
-                      float diversity_driven_threshold, dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
+                      float diversity_driven_threshold, float diversity_driven_decay, float diversity_driven_minimum, float diversity_driven_maximum, float beta_priorization_increase,
+                      dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
                       dueling_categorical_dqn** target_net_wlp){
                           
+    
+    if(uniform_sampling){
+        beta_priorization = 0;
+        beta_priorization_increase = 0;
+    }
+    
+    if(beta_priorization_increase < 0 || beta_priorization_increase > 1){
+        fprintf(stderr,"Error: beta_priorization_increase should be in range [0,1]\n"),
+        exit(1);
+    }
+    if(diversity_driven_decay < 0 || diversity_driven_decay > 1){
+        fprintf(stderr,"Error: diversity driven decay should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_minimum < 0 || diversity_driven_minimum > 1 || diversity_driven_minimum > diversity_driven_maximum){
+        fprintf(stderr,"Error: diversity driven minimum should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_maximum < 0 || diversity_driven_maximum > 1){
+        fprintf(stderr,"Error: diversity driven maximum should be in range [0,1]\n"),
+        exit(1);
+    }
     
     if(lr_decay_flag != LR_NO_DECAY && lr_decay_flag != LR_ANNEALING_DECAY && lr_decay_flag != LR_CONSTANT_DECAY && lr_decay_flag != LR_STEP_DECAY && lr_decay_flag != LR_TIME_BASED_DECAY){
         fprintf(stderr, "Error: no error decay flag recognized\n");
@@ -153,8 +178,8 @@ rainbow* init_rainbow(int gd_flag, int lr_decay_flag, int feed_forward_flag, int
         exit(1);
     }
     
-    if(clipping_gradient_value < 0 || clipping_gradient_value > 1){
-        fprintf(stderr,"Error: clipping_gradient_value range in [0,1]\n");
+    if(clipping_gradient_value < 0){
+        fprintf(stderr,"Error: clipping_gradient_value must be >= 0\n");
         exit(1);
     }
     
@@ -264,7 +289,7 @@ rainbow* init_rainbow(int gd_flag, int lr_decay_flag, int feed_forward_flag, int
     r->error_priorization = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation where the td errors are stored
     r->error_indices = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation the indices of the errors from the heap to the buffer of above, error_priorization[error_indices[i]]
     r->diversity_driven_threshold = diversity_driven_threshold;// the threshold used to update alpha for the diversity driven exploration rule
-    r->alpha = 0.5;// the initial alpha value
+    r->alpha = 0.1;// the initial alpha value
     if(past_errors){// used for adaptsoft, turned out it was a shitty paper without peer review
         r->last_errors_dqn = (float*)malloc(sizeof(float)*past_errors);
         r->last_errors_diversity_driven = (float*)malloc(sizeof(float)*past_errors);
@@ -276,6 +301,10 @@ rainbow* init_rainbow(int gd_flag, int lr_decay_flag, int feed_forward_flag, int
     r->past_errors = past_errors;
     r->past_errors_counter = 0;
     r->reverse_error_indices = (int*)calloc(r->max_buffer_size,sizeof(int));
+    r->beta_priorization_increase = beta_priorization_increase;
+    r->diversity_driven_decay = diversity_driven_decay;
+    r->diversity_driven_minimum = diversity_driven_minimum;
+    r->diversity_driven_maximum = diversity_driven_maximum;
     //r->reverse_error_indices = NULL;
     
     
@@ -292,7 +321,7 @@ rainbow* init_rainbow(int gd_flag, int lr_decay_flag, int feed_forward_flag, int
     r->temp_rewards = (float*)calloc(r->batch_size,sizeof(float));
     r->new_errors = (float*)calloc(r->batch_size,sizeof(float));
     r->weighted_errors = (float*)calloc(r->batch_size,sizeof(float));
-    
+    r->uniform_sampling = uniform_sampling;
     int i;
     
     for(i = 0; i < r->diversity_driven_q_functions; i++){
@@ -320,14 +349,14 @@ void free_rainbow(rainbow* r){
     free(r->actions);
     free(r->last_errors_dqn);
     free(r->last_errors_diversity_driven);
-    free_dueling_categorical_dqn(r->online_net);
-    free_dueling_categorical_dqn(r->target_net);
-    for(i = 0; i < r->threads; i++){
-        free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
-        free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
-    }
-    free(r->online_net_wlp);
-    free(r->target_net_wlp);
+    //free_dueling_categorical_dqn(r->online_net);
+    //free_dueling_categorical_dqn(r->target_net);
+    //for(i = 0; i < r->threads; i++){
+    //    free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
+    //    free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
+    //}
+    //free(r->online_net_wlp);
+    //free(r->target_net_wlp);
     
     free(r->batch);
     free(r->reverse_batch);
@@ -349,7 +378,6 @@ void free_rainbow(rainbow* r){
 
 int get_action_rainbow(rainbow* r, float* state_t, int input_size, int free_state){
     float p = r2();
-    
     if(r->action_taken_iteration < r->stop_epsilon_greedy && p <= r->epsilon){
         r->action_taken_iteration++;
         r->epsilon = r->epsilon*exp(-r->epsilon_decay);
@@ -475,7 +503,6 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
     r->rewards[r->buffer_current_index] = reward;
     r->actions[r->buffer_current_index] = action;
     r->nonterminal_state_t_1[r->buffer_current_index] = nonterminal_s_t_1;
-    
     if(was_null)
         add_buffer_state(r, r->buffer_current_index);
     
@@ -494,24 +521,55 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
     uint length = r->max_buffer_size;
     if(r->buffer_state_t[length-1] == NULL)
         length = r->buffer_current_index;
-    
     // if the buffer current size is less then the batch size we don't train yet
     if(length < r->batch_size)
         return;
-    
     // prioritized sampling (ranked based for simplicity)
     uint i,j,index;
     double over_sum = r->sum_error_priorization_buffer;
-    for(i = 0; i < r->batch_size; i++){
-        float p = r2();
-        uint val = weighted_random_sample(r->recursive_cumulative_ranked_values,r->ranked_values,0,length,p,over_sum, r->reverse_batch, i);
-        r->batch[i] = r->error_indices[val];
-        r->reverse_batch[i] = val;
-        if(!index_is_inside_buffer(r->reverse_batch,i,val)){
-            over_sum-=r->ranked_values[val];
+    if(!r->uniform_sampling){
+        for(i = 0; i < r->batch_size; i++){
+            float p = r2();
+            uint val = weighted_random_sample(r->recursive_cumulative_ranked_values,r->ranked_values,0,length,p,over_sum, r->reverse_batch, i);
+            r->batch[i] = r->error_indices[val];
+            r->reverse_batch[i] = val;
+            if(!index_is_inside_buffer(r->reverse_batch,i,val)){
+                over_sum-=r->ranked_values[val];
+            }
         }
     }
-    
+    else{
+        for(i = 0; i < r->batch_size; i++){
+            uint n = rand()%length;
+            if(index_is_inside_buffer(r->batch,i,r->error_indices[n])){
+                int flag = 1;
+                for(j = n+1; j < length; j++){
+                    if(!index_is_inside_buffer(r->batch,i,r->error_indices[j])){
+                        flag = 0;
+                        r->batch[i] = r->error_indices[j];
+                        r->reverse_batch[i] = j;
+                        break;
+                    }
+                }
+                if(flag){
+                    for(j = n-1; j >= 0; j--){
+                        if(!index_is_inside_buffer(r->batch,i,r->error_indices[j])){
+                            flag = 0;
+                            r->batch[i] = r->error_indices[j];
+                            r->reverse_batch[i] = j;
+                            break;
+                        }
+                        if(!j)
+                            break;
+                    }    
+                }
+            }
+            else{
+                r->batch[i] = r->error_indices[n];
+                r->reverse_batch[i] = n;
+            }
+        }
+    }
     // n step forward sampling
     for(i = 0; i < r->batch_size; i++){
         r->temp_states_t_1[i] = NULL;
@@ -538,11 +596,9 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         r->temp_rewards[i] = reward;
         r->weighted_errors[i] = pow(1.0/(((float)(length))*(r->ranked_values[r->batch[i]]/r->sum_error_priorization_buffer)),r->beta_priorization);
     }
-    
     // maximum weight
     float maximum = 1.0/(pow(1.0/(((float)(length))*(r->ranked_values[length-1]/r->sum_error_priorization_buffer)),r->beta_priorization));
     mul_value(r->weighted_errors,maximum,r->weighted_errors,r->batch_size);
-    
     
     
     // first td error 
@@ -556,43 +612,57 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         dueling_categorical_reset_without_learning_parameters_reset(r->target_net_wlp,min);
     }
     
-    
     // now dd error
     // uniform random sampling (we could maybe sample with ranked based priorization as the td sampling is done, maybe future implementation)
-    if(length >= r->diversity_driven_q_functions){
-        
-        float ret = 0;
-
-        shuffle_int_array(r->array_to_shuffle,r->diversity_driven_q_functions);
-        
-        
-        for(i = 0; i < r->batch_size; i++){
-            r->temp_diversity_states_t[i] = r->diversity_driven_states[r->array_to_shuffle[i]];
-            r->qs[i] = &r->diversity_driven_q_functions_buffer[r->array_to_shuffle[i]];
-        }
-        
-        for(i = 0; i < r->batch_size; i+=r->threads){
-            int min = r->threads;
-            if(r->batch_size-i < min)
-                min = r->batch_size-i;
-            ret+=dueling_categorical_dqn_train_kl(min,r->online_net,r->online_net_wlp,r->temp_diversity_states_t+i,r->qs+i,1,r->alpha,r->clipping_gradient_value);
-            sum_dueling_categorical_dqn_partial_derivatives_multithread(r->online_net_wlp,r->online_net,min,0);// log n
-            dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
-        }
-        
-        ret/=r->batch_size;
-        if(ret < 0)
-            ret = -ret;
-        if(ret < r->diversity_driven_threshold)
-            r->alpha*=1.01;
-        else
-            r->alpha*=0.99;
-    }
     
+    if(length >= r->diversity_driven_q_functions){
+        float ret = 0;
+        int flag = 1;
+        if(r->diversity_driven_states[r->diversity_driven_q_functions-1] == NULL){
+            if(r->diversity_driven_q_functions_counter < r->batch_size)
+                flag = 0;
+            else{
+                for(i = 0; i < r->diversity_driven_q_functions; i++){
+                    r->array_to_shuffle[i] = i;
+                }
+                shuffle_int_array(r->array_to_shuffle,r->diversity_driven_q_functions_counter);
+            }
+            
+        }
+        else
+            shuffle_int_array(r->array_to_shuffle,r->diversity_driven_q_functions);
+        
+        if(flag){
+            
+            for(i = 0; i < r->batch_size; i++){
+                r->temp_diversity_states_t[i] = r->diversity_driven_states[r->array_to_shuffle[i]];
+                r->qs[i] = &r->diversity_driven_q_functions_buffer[r->array_to_shuffle[i]];
+            }
+            for(i = 0; i < r->batch_size; i+=r->threads){
+                int min = r->threads;
+                if(r->batch_size-i < min)
+                    min = r->batch_size-i;
+                ret+=dueling_categorical_dqn_train_kl(min,r->online_net,r->online_net_wlp,r->temp_diversity_states_t+i,r->qs+i,1,r->alpha,r->clipping_gradient_value);
+                sum_dueling_categorical_dqn_partial_derivatives_multithread(r->online_net_wlp,r->online_net,min,0);// log n
+                dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
+            }
+            ret/=r->batch_size;
+            if(ret < 0)
+                ret = -ret;
+            if(ret < r->diversity_driven_threshold)
+                r->alpha*=1.01;
+            else
+                r->alpha*=0.99;
+            }
+            r->diversity_driven_threshold*=exp(-r->diversity_driven_decay);
+            if(r->diversity_driven_threshold < r->diversity_driven_minimum)
+                r->diversity_driven_threshold = r->diversity_driven_minimum;
+            if(r->diversity_driven_threshold > r->diversity_driven_maximum)
+                r->diversity_driven_threshold = r->diversity_driven_maximum;
+    }
     
     if(r->adaptive_clipping_flag)
         adaptive_gradient_clipping_dueling_categorical_dqn(r->online_net,r->adaptive_clipping_gradient_value,1e-3);
-
     update_dueling_categorical_dqn(r->online_net,r->lr,r->momentum,r->batch_size,r->gd_flag,&r->beta1,&r->beta2,NO_REGULARIZATION,0,0,(unsigned long long int*)&r->train_iteration);
     reset_dueling_categorical_dqn(r->online_net);
     if(r->train_iteration && !(r->train_iteration%r->epochs_to_copy_target)){
@@ -606,6 +676,9 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             update_buffer_state(r,r->reverse_batch[i],r->new_errors[i]);
         }
     }
+    r->beta_priorization*=exp(r->beta_priorization_increase);
+    if(r->beta_priorization > 1)
+        r->beta_priorization = 1;
     
 }
 

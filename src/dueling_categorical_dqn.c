@@ -1248,7 +1248,7 @@ float compute_kl_dueling_categorical_dqn(dueling_categorical_dqn* online_net, fl
             error[i] = -alpha*weight*softmax_arr[i];
             error[index]+=alpha*weight*softmax_arr[i];
         }
-        ret+=temp*softmax_arr[i];// final error (no derivative)
+        ret+=-temp*softmax_arr[i];// final error (no derivative)
     }
     // first derivative multiplied by other_distr that is the second part
     derivative_softmax(softmax_derivative_arr,softmax_arr,other_distr,online_net->action_size);
@@ -1286,14 +1286,53 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
     float max_q1 = online_net_wlp->q_functions[0];
     float max_q2 = q_functions[0];
     float* softmax_arr = (float*)calloc(online_net->action_size,sizeof(float));
-    float* softmax_derivative_arr = (float*)calloc(online_net->action_size,sizeof(float));
+    float* softmax_arr2 = (float*)calloc(online_net->action_size,sizeof(float));// new
+    //float* softmax_derivative_arr = (float*)calloc(online_net->action_size,sizeof(float));
     float* other_distr = (float*)calloc(online_net->action_size,sizeof(float));
+    float* log1 = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* log2 = (float*)calloc(online_net->action_size,sizeof(float));// new
     float* error = (float*)calloc(online_net->action_size,sizeof(float));
     float ret = 0;// the returning error
     
     // softmax of the q functions to get the policy
     softmax(online_net_wlp->q_functions,softmax_arr,online_net->action_size);
+    softmax(q_functions,softmax_arr2,online_net->action_size);
     
+
+    
+    double summ1 = 0;// new
+    double summ2 = 0;// new
+    
+    summ1 = sum_over_input(softmax_arr,online_net->action_size);// new
+    summ2 = sum_over_input(softmax_arr2,online_net->action_size);// new
+    // new
+    for(i = 0; i < online_net->action_size; i++){
+        other_distr[i] = softmax_arr2[i]/summ2;
+        log2[i] = log(other_distr[i]);
+        log1[i] = log(softmax_arr[i]/summ1);
+        if(!bool_is_real(log2[i])){
+            log2[i] = -999999;
+        }
+        if(!bool_is_real(log1[i])){
+            log1[i] = -999999;
+        }
+        
+        ret+= softmax_arr[i]*(log1[i]-log2[i]);
+    }
+    
+    double sum = summ1*summ1;
+    for(i = 0; i < online_net->action_size; i++){
+        for(j = 0; j < online_net->action_size; j++){
+            if(i == j){
+                error[i]-=(alpha*weight*(summ1-softmax_arr[i])*softmax_arr[j]*(log1[i]-log2[i]+1))/sum;
+            }
+            
+            else{
+                error[i]+=(alpha*weight*softmax_arr[i]*softmax_arr[j]*(log1[j]-log2[j]+1))/sum;
+            }
+        }
+    }
+    /*
     // log(e^x/sum(e^x)) ~ x - max(x)
     for(i = 0; i < online_net->action_size; i++){
         // getting the maximum of the q functions of the network and saving its index
@@ -1319,7 +1358,7 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
             error[i] = -alpha*weight*softmax_arr[i];// inverted sign
             error[index]+=alpha*weight*softmax_arr[i];// inverted sign
         }
-        ret+=temp*softmax_arr[i];// final error (no derivative no inversion, we need it to then perform annhilation of alpha or not)
+        ret+=-temp*softmax_arr[i];// final error (no derivative no inversion, we need it to then perform annhilation of alpha or not)
     }
     // first derivative multiplied by other_distr that is the second part
     derivative_softmax(softmax_derivative_arr,softmax_arr,other_distr,online_net->action_size);
@@ -1328,6 +1367,7 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
     // clipping the derivatives as the paper says (no supplementary material found, gg nimps and other publishers, they keep saying hyperparams are in the supplementary
     // material, but after looking for this F@#%$ supplementary material i could not find anything so i need to come with the clipping right value, and this also for the distance threshold
     // used to rescale alpha that is the most important part)
+    * */
     clip_vector(error,-clip,clip,online_net->action_size);
     // we got the partial derivatives of the q functions, now we need to compute the partial derivatives respect to the softmax final layer of the network
     for(i = 0; i < online_net->action_size; i++){
@@ -1336,8 +1376,11 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
         }
     }
     free(softmax_arr);
-    free(softmax_derivative_arr);
+    free(softmax_arr2);
+    //free(softmax_derivative_arr);
     free(other_distr);
+    free(log1);
+    free(log2);
     free(error);
     return ret;
 }

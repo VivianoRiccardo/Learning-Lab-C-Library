@@ -1217,13 +1217,24 @@ uint weighted_random_sample(float* cumulative_values, float* current_values, uin
     uint right = index*2+2;
     if(left >= size){
         //printf("L ");
+        uint i;
+        for(i = index+1; i < size; i++){
+            if(!index_is_inside_buffer(taken_values,taken_values_length,i))
+                return i;
+        }
         return index;
     }
     
     if(right >= size){
+        uint i;
         //printf("R");
+        if(!index_is_inside_buffer(taken_values,taken_values_length,left))
+            return left;
+        for(i = index+1; i < size; i++){
+            if(!index_is_inside_buffer(taken_values,taken_values_length,i))
+                return i;
+        }
         return left;
-    
     }
     
     random_value-=v;
