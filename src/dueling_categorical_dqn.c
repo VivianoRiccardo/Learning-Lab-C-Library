@@ -1195,10 +1195,12 @@ float* get_loss_for_dueling_categorical_dqn_opt_with_error(dueling_categorical_d
     }
     if(!bool_is_real(temp_err))
         temp_err = 99999;
+    /*
     if(temp_err < 0)
         new_error[0] = -temp_err;
     else
         new_error[0] = temp_err;    
+    */
     free(tzj);
     free(b);
     free(m);

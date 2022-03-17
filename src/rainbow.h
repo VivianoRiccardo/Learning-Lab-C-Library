@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __RAINBOW_H__
 #define __RAINBOW_H__
 
-rainbow* init_rainbow(int uniform_sampling, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
                       uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
                       float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
                       float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
@@ -40,6 +40,7 @@ void add_buffer_state(rainbow* r, uint index);
 void update_buffer_state(rainbow* r, uint index, float error);
 void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, float reward, int nonterminal_s_t_1);
 void train_rainbow(rainbow* r, int last_t_1_was_terminal);
-
+void add_buffer_state_reward_sampling(rainbow* r, uint index);
+void update_buffer_state_reward_sampling(rainbow* r, uint index, float previous_reward);
 
 #endif

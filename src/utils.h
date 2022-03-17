@@ -82,5 +82,7 @@ uint weighted_random_sample(float* cumulative_values, float* current_values, uin
 int index_is_inside_buffer(uint* buffer, uint length, uint index);
 int value_is_child(uint child, uint parent);
 float subtracted_value(uint index, float* current_values, uint* taken_values, uint taken_values_length);
+uint weighted_random_sample_rewards(float* cumulative_values, int* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length, float alpha);
+float subtracted_value_rewards(uint index, int* current_values, uint* taken_values, uint taken_values_length,float alpha);
 
 #endif

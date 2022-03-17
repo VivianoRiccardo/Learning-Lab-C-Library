@@ -217,6 +217,9 @@ SOFTWARE.
 #define LR_STEP_DECAY 3
 #define LR_ANNEALING_DECAY 4
 
+#define UNIFORM_SAMPLING 1
+#define RANKED_SAMPLING 2
+#define REWARD_SAMPLING 3
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim;
@@ -756,9 +759,6 @@ typedef struct dueling_categorical_dqn{
     float* error;//action_size X n_atoms
     float* q_functions;//action_size
     
-
-    
-    
 }dueling_categorical_dqn;
 
 
@@ -799,10 +799,22 @@ typedef struct rainbow{
     float* rewards;
     float* ranked_values;
     float* recursive_cumulative_ranked_values;
+    int* positive_ranked_values;
+    float* positive_recursive_cumulative_ranked_values;
+    int* negative_ranked_values;
+    float* negative_recursive_cumulative_ranked_values;
+    int* neutral_ranked_values;
+    float* neutral_recursive_cumulative_ranked_values;
     float* diversity_driven_q_functions_buffer;
     float** diversity_driven_states;
     float* last_errors_dqn;
     float* last_errors_diversity_driven;
+    int* positive_rewards;
+    int* negative_rewards;
+    int* neutral_rewards;
+    int* positive_reverse_indices;
+    int* negative_reverse_indices;
+    int* neutral_reverse_indices;
     dueling_categorical_dqn* online_net;
     dueling_categorical_dqn* target_net;
     dueling_categorical_dqn** online_net_wlp;
@@ -810,15 +822,20 @@ typedef struct rainbow{
     float* error_priorization;
     int* error_indices;
     int* reverse_error_indices;// for debug
-    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag, lr_decay_flag, uniform_sampling;
+    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag, lr_decay_flag, sampling_flag;
     double sum_error_priorization_buffer;
+    double positive_sum_error_priorization_buffer;
+    double negative_sum_error_priorization_buffer;
+    double neutral_sum_error_priorization_buffer;
     uint64_t action_taken_iteration, max_buffer_size, train_iteration, buffer_current_index, n_step_rewards, stop_epsilon_greedy,epochs_to_copy_target, diversity_driven_q_functions, lr_epoch_threshold;
-    uint64_t diversity_driven_q_functions_counter,past_errors_counter, past_errors;// past_errors, for softadaptù
+    uint64_t diversity_driven_q_functions_counter,past_errors_counter, past_errors, positive_rewards_counter, negative_rewards_counter, neutral_rewards_counter;
+    uint64_t positive_rewards_length, negative_rewards_length, neutral_rewards_length;// past_errors, for softadaptù
     
     
     // during training
     int* array_to_shuffle;
     uint* batch;
+    uint* negative_batch, *positive_batch, *neutral_batch;
     uint* reverse_batch;
     float** temp_states_t;
     float** temp_states_t_1;

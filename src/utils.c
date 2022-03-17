@@ -1196,13 +1196,26 @@ float subtracted_value(uint index, float* current_values, uint* taken_values, ui
     return ret;
 }
 
+float subtracted_value_rewards(uint index, int* current_values, uint* taken_values, uint taken_values_length,float alpha){
+    float ret = 0;
+    uint i;
+    for(i = 0; i < taken_values_length; i++){
+        if(!index_is_inside_buffer(taken_values,i,taken_values[i])){
+            if(value_is_child(taken_values[i],index))
+                ret+=pow(((double)1/((double)current_values[taken_values[i]])),alpha);
+            //printf("i, ret: %d, %f\n",taken_values[i],ret);
+        }
+    }
+    return ret;
+}
+
 // log(n) sample
 uint weighted_random_sample(float* cumulative_values, float* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length){
     if(index >= size){
         //printf("M ");
         return index-1;
      }
-    float v;
+    float v = 0, v_left = 0;
     if(!index_is_inside_buffer(taken_values,taken_values_length,index)){
         v = current_values[index]/sum;
         if(random_value <= v){
@@ -1210,8 +1223,6 @@ uint weighted_random_sample(float* cumulative_values, float* current_values, uin
             return index;
         }
     }
-    else
-        v = 0;
         
     uint left = index*2+1;
     uint right = index*2+2;
@@ -1236,13 +1247,63 @@ uint weighted_random_sample(float* cumulative_values, float* current_values, uin
         }
         return left;
     }
-    
+    if(!index_is_inside_buffer(taken_values,taken_values_length,left)){
+        v_left = current_values[left];
+    }
     random_value-=v;
     float sub = subtracted_value(left,current_values,taken_values,taken_values_length);
-    if(random_value <= ((cumulative_values[left]-sub)/sum))
+    if(random_value <= ((v_left+cumulative_values[left]-sub)/sum))
         return weighted_random_sample(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length);
     else
-        return weighted_random_sample(cumulative_values, current_values, right, size, random_value-((cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length);
+        return weighted_random_sample(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length);
 
+    
+}
+uint weighted_random_sample_rewards(float* cumulative_values, int* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length, float alpha){
+    if(index >= size){
+        //printf("M ");
+        return index-1;
+     }
+    float v = 0;
+    float v_left = 0;
+    if(current_values[index] > 0 && !index_is_inside_buffer(taken_values,taken_values_length,index)){
+        v = pow(((double)1/((double)current_values[index])),alpha)/sum;
+        if(random_value <= v){
+            //printf("random, v, sum, index: %f, %f, %lf, %d\n",random_value,v,sum, index);
+            //printf("K: %d, %d. ", index, index_is_inside_buffer(taken_values,taken_values_length,index));
+            return index;
+        }
+    } 
+    //printf("random, v, sum, index: %f, %f, %lf, %d\n",random_value,v,sum, index);
+    uint left = index*2+1;
+    uint right = index*2+2;
+    random_value-=v;
+    if(left >= size){
+        return index;
+    }
+    
+    if(right >= size){
+        uint i;
+        return left;
+    }
+    if(current_values[left] > 0 && !index_is_inside_buffer(taken_values,taken_values_length,left)){
+        v_left = pow(((double)1/((double)current_values[left])),alpha);
+    } 
+    
+    float sub = subtracted_value_rewards(left,current_values,taken_values,taken_values_length,alpha);
+    //printf("sub, rv: %f %f\n",sub,random_value);
+    uint returned_index = size;
+    if(random_value <= ((v_left+cumulative_values[left]-sub)/sum)){
+        returned_index = weighted_random_sample_rewards(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length,alpha);
+        if(returned_index == size)
+            return weighted_random_sample_rewards(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length,alpha);
+        return returned_index;
+    }
+    else{
+        returned_index = weighted_random_sample_rewards(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length,alpha);
+        if(returned_index == size)
+            return weighted_random_sample_rewards(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length,alpha);
+        return returned_index;
+    }
     
 }
