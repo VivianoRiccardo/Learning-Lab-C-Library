@@ -113,7 +113,7 @@ https://www.cygwin.com/
   -  + ranked base td buffer priorization
   -  + n step reward
   -  + diversity driven exploration (better than noisy nets of 2017 rainbow paper)
-- Uniform and Reward sampling for rainbow training
+- Uniform and Reward sampling for rainbow training (17/03/2022)
 
 # Python Version
 
