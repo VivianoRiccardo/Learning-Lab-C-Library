@@ -92,8 +92,7 @@ bn* batch_normalization(int batch_size, int vector_input_dimension){
  * */
 bn* batch_normalization_without_arrays(int batch_size, int vector_input_dimension){
     if(batch_size <= 0 || vector_input_dimension < 1){
-        fprintf(stderr,"Error: batch size <= 0 and vector_input:dimension < 1 are not admissible!\n");
-        exit(1);
+        return NULL;
     }
     
     
@@ -280,31 +279,31 @@ void save_bn(bn* b, int n){
         exit(1);
     }
 
-    
+    convert_data(&b->batch_size,sizeof(int),1);
     i = fwrite(&b->batch_size,sizeof(int),1,fw);
-    
+    convert_data(&b->batch_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a bn layer\n");
         exit(1);
     }
-    
+    convert_data(&b->vector_dim,sizeof(int),1);
     i = fwrite(&b->vector_dim,sizeof(int),1,fw);
-    
+    convert_data(&b->vector_dim,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a bn layer\n");
         exit(1);
     }
-    
+    convert_data(&b->gamma,sizeof(float),1);
     i = fwrite(b->gamma,sizeof(float)*(b->vector_dim),1,fw);
-    
+    convert_data(&b->gamma,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a bn layer\n");
         exit(1);
     }
     
-    
+    convert_data(&b->beta,sizeof(float),1);
     i = fwrite(b->beta,sizeof(float)*(b->vector_dim),1,fw);
-    
+    convert_data(&b->beta,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a bn layer\n");
         exit(1);
@@ -338,14 +337,14 @@ bn* load_bn(FILE* fr){
     float* beta;
     
     i = fread(&batch_size,sizeof(int),1,fr);
-    
+    convert_data(&batch_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
     }
     
     i = fread(&vector_dim,sizeof(int),1,fr);
-    
+    convert_data(&vector_dim,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
@@ -356,7 +355,7 @@ bn* load_bn(FILE* fr){
     beta = (float*)malloc(sizeof(float)*vector_dim);
     
     i = fread(gamma,sizeof(float)*vector_dim,1,fr);
-    
+    convert_data(&gamma,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
@@ -364,7 +363,7 @@ bn* load_bn(FILE* fr){
     
     
     i = fread(beta,sizeof(float)*vector_dim,1,fr);
-    
+    convert_data(&beta,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
@@ -402,14 +401,14 @@ bn* load_bn_only_for_ff(FILE* fr){
 
     
     i = fread(&batch_size,sizeof(int),1,fr);
-    
+    convert_data(&batch_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
     }
     
     i = fread(&vector_dim,sizeof(int),1,fr);
-    
+    convert_data(&vector_dim,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
@@ -420,7 +419,7 @@ bn* load_bn_only_for_ff(FILE* fr){
     beta = (float*)malloc(sizeof(float)*vector_dim);
     
     i = fread(gamma,sizeof(float)*vector_dim,1,fr);
-    
+    convert_data(&gamma,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);
@@ -428,7 +427,7 @@ bn* load_bn_only_for_ff(FILE* fr){
     
     
     i = fread(beta,sizeof(float)*vector_dim,1,fr);
-    
+    convert_data(&beta,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a bn layer\n");
         exit(1);

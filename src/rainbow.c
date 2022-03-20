@@ -405,6 +405,19 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
     for(i = 0; i < n_step_rewards; i++){
         r->gamma*=lambda_value;
     }
+    
+    set_dueling_categorical_dqn_beta(r->online_net,beta1,beta2);
+    set_dueling_categorical_dqn_beta_adamod(r->online_net,beta3);
+    set_dueling_categorical_dqn_beta_adamod(r->target_net,beta3);
+    set_dueling_categorical_dqn_beta(r->target_net,beta1,beta2);
+    if(feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP){
+        set_dueling_categorical_dqn_training_edge_popup(r->online_net,k_percentage);
+        set_dueling_categorical_dqn_training_edge_popup(r->target_net,k_percentage);
+    }
+    else{
+        set_dueling_categorical_dqn_training_gd(r->online_net);
+        set_dueling_categorical_dqn_training_gd(r->target_net);
+    }
     return r;
 }
 

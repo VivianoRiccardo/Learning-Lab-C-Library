@@ -84,5 +84,9 @@ int value_is_child(uint child, uint parent);
 float subtracted_value(uint index, float* current_values, uint* taken_values, uint taken_values_length);
 uint weighted_random_sample_rewards(float* cumulative_values, int* current_values, uint index, uint size, float random_value, double sum, uint* taken_values, uint taken_values_length, float alpha);
 float subtracted_value_rewards(uint index, int* current_values, uint* taken_values, uint taken_values_length,float alpha);
+int is_little_endian();
+void reverse_ptr(void* ptr, uint64_t size);
+void swap_array_bytes_order(void* ptr, uint64_t size, uint64_t len);
+void convert_data(void* ptr, uint64_t size, uint64_t len);
 
 #endif

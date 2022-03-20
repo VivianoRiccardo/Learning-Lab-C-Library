@@ -658,97 +658,100 @@ void save_lstm(lstm* rlstm, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&rlstm->feed_forward_flag,sizeof(int),1);
     i = fwrite(&rlstm->feed_forward_flag,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
+    convert_data(&rlstm->k_percentage,sizeof(float),1);
     i = fwrite(&rlstm->k_percentage,sizeof(float),1,fw);
-    
+    convert_data(&rlstm->k_percentage,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
+    convert_data(&rlstm->training_mode,sizeof(int),1);
     i = fwrite(&rlstm->training_mode,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
+    convert_data(&rlstm->residual_flag,sizeof(int),1);
     i = fwrite(&rlstm->residual_flag,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->residual_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->norm_flag,sizeof(int),1);
     i = fwrite(&rlstm->norm_flag,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->norm_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->n_grouped_cell,sizeof(int),1);
     i = fwrite(&rlstm->n_grouped_cell,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->n_grouped_cell,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->input_size,sizeof(int),1);
     i = fwrite(&rlstm->input_size,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->input_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->output_size,sizeof(int),1);
     i = fwrite(&rlstm->output_size,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->output_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->layer,sizeof(int),1);
     i = fwrite(&rlstm->layer,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->dropout_flag_up,sizeof(int),1);
     i = fwrite(&rlstm->dropout_flag_up,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->dropout_flag_up,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->dropout_flag_right,sizeof(int),1);
     i = fwrite(&rlstm->dropout_flag_right,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->dropout_flag_right,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->window,sizeof(int),1);
     i = fwrite(&rlstm->window,sizeof(int),1,fw);
-    
+    convert_data(&rlstm->window,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->dropout_threshold_up,sizeof(float),1);
     i = fwrite(&rlstm->dropout_threshold_up,sizeof(float),1,fw);
-    
+    convert_data(&rlstm->dropout_threshold_up,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
     }
-    
+    convert_data(&rlstm->dropout_threshold_right,sizeof(float),1);
     i = fwrite(&rlstm->dropout_threshold_right,sizeof(float),1,fw);
-    
+    convert_data(&rlstm->dropout_threshold_right,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
         exit(1);
@@ -756,22 +759,23 @@ void save_lstm(lstm* rlstm, int n){
     
     
     for(j = 0; j < 4; j++){
+        convert_data(rlstm->w[j],sizeof(float),(rlstm->output_size)*(rlstm->input_size));
         i = fwrite(rlstm->w[j],sizeof(float)*(rlstm->output_size)*(rlstm->input_size),1,fw);
-    
+        convert_data(rlstm->w[j],sizeof(float),(rlstm->output_size)*(rlstm->input_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
             exit(1);
         }
-        
+        convert_data(rlstm->u[j],sizeof(float),(rlstm->output_size)*(rlstm->output_size));
         i = fwrite(rlstm->u[j],sizeof(float)*(rlstm->output_size)*(rlstm->output_size),1,fw);
-    
+        convert_data(rlstm->u[j],sizeof(float),(rlstm->output_size)*(rlstm->output_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
             exit(1);
         }
-        
+        convert_data(rlstm->biases[j],sizeof(float),(rlstm->output_size));
         i = fwrite(rlstm->biases[j],sizeof(float)*(rlstm->output_size),1,fw);
-    
+        convert_data(rlstm->biases[j],sizeof(float),(rlstm->output_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
             exit(1);
@@ -780,29 +784,30 @@ void save_lstm(lstm* rlstm, int n){
     
     if(exists_edge_popup_stuff_lstm(rlstm)){
         for(j = 0; j < 4; j++){
+			convert_data(rlstm->w_scores[j],sizeof(float),(rlstm->output_size)*(rlstm->input_size));
             i = fwrite(rlstm->w_scores[j],sizeof(float)*(rlstm->output_size)*(rlstm->input_size),1,fw);
-        
+			convert_data(rlstm->w_scores[j],sizeof(float),(rlstm->output_size)*(rlstm->input_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
-            
+            convert_data(rlstm->w_indices[j],sizeof(int),(rlstm->output_size)*(rlstm->input_size));
             i = fwrite(rlstm->w_indices[j],sizeof(int)*(rlstm->output_size)*(rlstm->input_size),1,fw);
-        
+			convert_data(rlstm->w_indices[j],sizeof(int),(rlstm->output_size)*(rlstm->input_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
-            
+            convert_data(rlstm->u_indices[j],sizeof(int),(rlstm->output_size)*(rlstm->output_size));
             i = fwrite(rlstm->u_indices[j],sizeof(int)*(rlstm->output_size)*(rlstm->output_size),1,fw);
-        
+			convert_data(rlstm->u_indices[j],sizeof(int),(rlstm->output_size)*(rlstm->output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
             }
-            
+            convert_data(rlstm->u_scores[j],sizeof(float),(rlstm->output_size)*(rlstm->output_size));
             i = fwrite(rlstm->u_scores[j],sizeof(float)*(rlstm->output_size)*(rlstm->output_size),1,fw);
-        
+			convert_data(rlstm->u_scores[j],sizeof(float),(rlstm->output_size)*(rlstm->output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a lstm layer\n");
                 exit(1);
@@ -851,19 +856,19 @@ lstm* load_lstm(FILE* fr){
     
     
     i = fread(&feed_forward_flag,sizeof(int),1,fr);
-    
+    convert_data(&feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     i = fread(&k_percentage,sizeof(float),1,fr);
-    
+    convert_data(&k_percentage,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     i = fread(&training_mode,sizeof(int),1,fr);
-    
+    convert_data(&training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
@@ -878,77 +883,77 @@ lstm* load_lstm(FILE* fr){
     }
     
     i = fread(&residual_flag,sizeof(int),1,fr);
-    
+    convert_data(&residual_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&norm_flag,sizeof(int),1,fr);
-    
+    convert_data(&norm_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&n_grouped_cell,sizeof(int),1,fr);
-    
+    convert_data(&n_grouped_cell,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&input_size,sizeof(int),1,fr);
-    
+    convert_data(&input_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&output_size,sizeof(int),1,fr);
-    
+    convert_data(&output_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&layer,sizeof(int),1,fr);
-    
+    convert_data(&layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&dropout_flag_up,sizeof(int),1,fr);
-    
+    convert_data(&dropout_flag_up,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&dropout_flag_right,sizeof(int),1,fr);
-    
+    convert_data(&dropout_flag_right,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&window,sizeof(int),1,fr);
-    
+    convert_data(&window,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&dropout_threshold_up,sizeof(float),1,fr);
-    
+    convert_data(&dropout_threshold_up,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
     }
     
     i = fread(&dropout_threshold_right,sizeof(float),1,fr);
-    
+    convert_data(&dropout_threshold_right,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
         exit(1);
@@ -960,21 +965,21 @@ lstm* load_lstm(FILE* fr){
         biases[j] = (float*)malloc(sizeof(float)*output_size);
         
         i = fread(w[j],sizeof(float)*(output_size)*(input_size),1,fr);
-    
+		convert_data(w[j],sizeof(float),(output_size)*(input_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
             exit(1);
         }
         
         i = fread(u[j],sizeof(float)*(output_size)*(output_size),1,fr);
-    
+		convert_data(u[j],sizeof(float),(output_size)*(output_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
             exit(1);
         }
         
         i = fread(biases[j],sizeof(float)*(output_size),1,fr);
-    
+		convert_data(biases[j],sizeof(float),(output_size));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
             exit(1);
@@ -989,26 +994,26 @@ lstm* load_lstm(FILE* fr){
             u_indices[j] = (int*)malloc(sizeof(int)*output_size*output_size);
             
             i = fread(w_scores[j],sizeof(float)*(input_size)*(output_size),1,fr);
-        
+			convert_data(w_scores[j],sizeof(float),(input_size)*(output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
             i = fread(w_indices[j],sizeof(int)*(input_size)*(output_size),1,fr);
-        
+			convert_data(w_indices[j],sizeof(int),(input_size)*(output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
             i = fread(u_indices[j],sizeof(int)*(output_size)*(output_size),1,fr);
-        
+			convert_data(u_indices[j],sizeof(int),(output_size)*(output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);
             }
             
             i = fread(u_scores[j],sizeof(float)*(output_size)*(output_size),1,fr);
-        
+			convert_data(u_scores[j],sizeof(float),(output_size)*(output_size));
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a lstm layer\n");
                 exit(1);

@@ -382,56 +382,46 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
 //just to know the size without allocating anything
 cl* convolutional_without_arrays(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int group_norm_channels, int convolutional_flag,int training_mode, int feed_forward_flag, int layer){
     if(group_norm_channels < 0 || group_norm_channels > n_kernels || channels <= 0 || input_rows <= 0 || input_cols<=0 || kernel_rows<=0 || kernel_cols<=0 || n_kernels<=0 || stride1_rows<=0 || stride1_cols<=0 || (pooling_flag && (stride2_rows<=0 || stride2_cols<=0))){
-        fprintf(stderr,"Error: channles, input_rows, input_cols, kernel_rows, kernel_cols, n_kernels, stride2_rows stride2_cols, stride2_rows, stride2_cols params must be > 0\n");
-        exit(1);
+        return NULL;
     }
     
     if(padding1_rows!=padding1_cols || padding2_rows != padding2_cols){
-        fprintf(stderr,"Error: padding1_rows must be equal to padding1_cols and padding2_rows must be equal to padding2_cols\n");
-        exit(1);
+        return NULL;
     }
     
     if(padding1_rows && normalization_flag == BATCH_NORMALIZATION){
-        fprintf(stderr,"Error: you cannot pad before the pooling if you have also a batch normalization layer as next computation(you can pad after the pooling: padding2_rows)\n");
-        exit(1);
+        return NULL;
     }
     
     if(convolutional_flag == NO_CONVOLUTION && pooling_flag == NO_POOLING){
-        fprintf(stderr,"Error: you don't apply convolution neither pooling, so why are you using this layer?\n");
-        exit(1);
+        return NULL;
     }
     
     if(convolutional_flag == NO_CONVOLUTION && n_kernels != channels){
-        fprintf(stderr,"Error: if you don't apply convolution, your n_kernels param should be equal to channels, 'cause n_kernels indicates the channel of the current_layer\n");
-        exit(1);
+        return NULL;
     }
     
     if(convolutional_flag != NO_CONVOLUTION && normalization_flag == GROUP_NORMALIZATION){
         if(n_kernels%group_norm_channels){
-            fprintf(stderr,"Error: your normalization channels doesn't divide perfectly the number of kernels of this layer\n");
-            exit(1);
+            return NULL;
         }
     }
     
     if(convolutional_flag == NO_CONVOLUTION && normalization_flag){
-        fprintf(stderr,"Error: you cannot use the convolutional layer only for normalization and pooling, you can use it for only pooling, or only convolution plus activation-normalization-pooling\n");
-        exit(1);
+        return NULL;
     }
     
     if(convolutional_flag == CONVOLUTION){
         if(((input_rows-kernel_rows)%stride1_rows) || ((input_cols-kernel_cols)%stride1_cols)){
-            fprintf(stderr,"Error: sorry only perfect convolution is implemented you stride should divide percetly rows-kernel_rows or cols-kernel_cols!\n");
-            exit(1);
+            return NULL;
         }
         
         if(pooling_flag == MAX_POOLING || pooling_flag == AVERAGE_POOLING){
             if((((input_rows-kernel_rows)/stride1_rows + 1 + 2*padding1_rows)-pooling_rows)%stride2_rows){
-                fprintf(stderr,"Error: sorry the pooling must be perfect can't be outside the input matrix!\n");
-                exit(1);
+                return NULL;
             }
             if((((input_cols-kernel_cols)/stride1_cols + 1 + 2*padding1_cols)-pooling_cols)%stride2_cols){
-                fprintf(stderr,"Error: sorry the pooling must be perfect can't be outside the input matrix!\n");
-                exit(1);
+                return NULL;
             }
         }
         
@@ -439,53 +429,44 @@ cl* convolutional_without_arrays(int channels, int input_rows, int input_cols, i
     
     else if(convolutional_flag == TRANSPOSED_CONVOLUTION){
         if(((float)((input_rows-1)*stride1_rows +kernel_rows - 2*padding1_rows)) <= 0){
-            fprintf(stderr,"Error: sorry can't there be an output with value <= 0\n");
-            exit(1);
+            return NULL;
         }
     }
     
     else if(convolutional_flag == NO_CONVOLUTION){
         if(((input_rows-pooling_rows)%stride2_rows) || ((input_cols-pooling_cols)%stride2_cols)){
-            fprintf(stderr,"Error: sorry the pooling must be perfect can't be outside the input matrix!\n");
-            exit(1);
+            return NULL;
         }
     }
     
     
     
     if(normalization_flag != NO_NORMALIZATION && normalization_flag != GROUP_NORMALIZATION && normalization_flag != LOCAL_RESPONSE_NORMALIZATION){
-        fprintf(stderr,"Error: you should set the normalization flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(convolutional_flag != NO_CONVOLUTION && convolutional_flag != CONVOLUTION && convolutional_flag != TRANSPOSED_CONVOLUTION){
-        fprintf(stderr,"Error: you should set the convolutional flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(activation_flag != NO_ACTIVATION && activation_flag != SIGMOID && activation_flag != TANH && activation_flag != RELU && activation_flag != LEAKY_RELU && activation_flag != ELU){
-        fprintf(stderr,"Error, you must set the activation flag properly!\n");
-        exit(1);
+        return NULL;
     } 
     
     if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
-        fprintf(stderr,"Error, you should set the training mode properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(feed_forward_flag != FULLY_FEED_FORWARD && feed_forward_flag != EDGE_POPUP){
-        fprintf(stderr,"Error: you should set your feed forward flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if((feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP ) && normalization_flag == GROUP_NORMALIZATION){
-        fprintf(stderr,"Error: edge popup should not match with group normalization!\n");
-        exit(1);
+        return NULL;
     }
     
     if(activation_flag == SOFTMAX){
-        fprintf(stderr,"Error: softmax after a convolutional flag doesn't seem appropriate, remmber: convolutional layer extract features in 2d matrices try to add a fcl with softmax after this layer!\n");
-        exit(1);
+        return NULL;
     }
     
     
@@ -582,6 +563,14 @@ cl* convolutional_without_arrays(int channels, int input_rows, int input_cols, i
             c->group_norm[i] = batch_normalization_without_arrays(group_norm_channels,c->rows1*c->cols1-2*padding1_rows-2*padding1_cols);
             else if(convolutional_flag == TRANSPOSED_CONVOLUTION)
             c->group_norm[i] = batch_normalization_without_arrays(group_norm_channels,c->rows1*c->cols1);
+            if(c->group_norm[i] == NULL){
+                for(j = 0; j < i; j++){
+                    free(c->group_norm[i]);
+                }
+                free(c->group_norm);
+                free(c);
+                return NULL;
+            }
         }
     }
     return c;
@@ -1120,205 +1109,205 @@ void save_cl(cl* f, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&f->k_percentage,sizeof(float),1);
     i = fwrite(&f->k_percentage,sizeof(float),1,fw);
-    
+    convert_data(&f->k_percentage,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->feed_forward_flag,sizeof(int),1);
     i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->training_mode,sizeof(int),1);
     i = fwrite(&f->training_mode,sizeof(int),1,fw);
-    
+    convert_data(&f->training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->group_norm_channels,sizeof(int),1);
     i = fwrite(&f->group_norm_channels,sizeof(int),1,fw);
-    
+    convert_data(&f->group_norm_channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->convolutional_flag,sizeof(int),1);
     i = fwrite(&f->convolutional_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->convolutional_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->channels,sizeof(int),1);
     i = fwrite(&f->channels,sizeof(int),1,fw);
-    
+    convert_data(&f->channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->input_rows,sizeof(int),1);
     i = fwrite(&f->input_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->input_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->input_cols,sizeof(int),1);
     i = fwrite(&f->input_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->input_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->layer,sizeof(int),1);
     i = fwrite(&f->layer,sizeof(int),1,fw);
-    
+    convert_data(&f->layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->kernel_rows,sizeof(int),1);
     i = fwrite(&f->kernel_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->kernel_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->kernel_cols,sizeof(int),1);
     i = fwrite(&f->kernel_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->kernel_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->n_kernels,sizeof(int),1);
     i = fwrite(&f->n_kernels,sizeof(int),1,fw);
-    
+    convert_data(&f->n_kernels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->stride1_rows,sizeof(int),1);
     i = fwrite(&f->stride1_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->stride1_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->stride1_cols,sizeof(int),1);
     i = fwrite(&f->stride1_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->stride1_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->padding1_rows,sizeof(int),1);
     i = fwrite(&f->padding1_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->padding1_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->padding1_cols,sizeof(int),1);
     i = fwrite(&f->padding1_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->padding1_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->stride2_rows,sizeof(int),1);
     i = fwrite(&f->stride2_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->stride2_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->stride2_cols,sizeof(int),1);
     i = fwrite(&f->stride2_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->stride2_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->padding2_rows,sizeof(int),1);
     i = fwrite(&f->padding2_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->padding2_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->padding2_cols,sizeof(int),1);
     i = fwrite(&f->padding2_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->padding2_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->pooling_rows,sizeof(int),1);
     i = fwrite(&f->pooling_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->pooling_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->pooling_cols,sizeof(int),1);
     i = fwrite(&f->pooling_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->pooling_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->normalization_flag,sizeof(int),1);
     i = fwrite(&f->normalization_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->normalization_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->activation_flag,sizeof(int),1);
     i = fwrite(&f->activation_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->activation_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->pooling_flag,sizeof(int),1);
     i = fwrite(&f->pooling_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->pooling_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->rows1,sizeof(int),1);
     i = fwrite(&f->rows1,sizeof(int),1,fw);
-    
+    convert_data(&f->rows1,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->cols1,sizeof(int),1);
     i = fwrite(&f->cols1,sizeof(int),1,fw);
-    
+    convert_data(&f->cols1,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->rows2,sizeof(int),1);
     i = fwrite(&f->rows2,sizeof(int),1,fw);
-    
+    convert_data(&f->rows2,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->cols2,sizeof(int),1);
     i = fwrite(&f->cols2,sizeof(int),1,fw);
-    
+    convert_data(&f->cols2,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
@@ -1326,8 +1315,9 @@ void save_cl(cl* f, int n){
     
     if(exists_kernels_cl(f)){
         for(k = 0; k < f->n_kernels; k++){
+            convert_data(f->kernels[k],sizeof(float),f->channels*f->kernel_rows*f->kernel_cols);
             i = fwrite((f->kernels[k]),sizeof(float)*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
-
+            convert_data(f->kernels[k],sizeof(float),f->channels*f->kernel_rows*f->kernel_cols);
         
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred saving a cl layer\n");
@@ -1337,8 +1327,9 @@ void save_cl(cl* f, int n){
     }
         
     if(exists_biases_cl(f)){
+        convert_data(f->biases,sizeof(float),f->n_kernels);
         i = fwrite(f->biases,sizeof(float)*f->n_kernels,1,fw);
-    
+        convert_data(f->biases,sizeof(float),f->n_kernels);
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a cl layer\n");
             exit(1);
@@ -1346,25 +1337,25 @@ void save_cl(cl* f, int n){
     }
     
     if(exists_edge_popup_stuff_cl(f)){
-        
+        convert_data(f->scores,sizeof(float),f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         i = fwrite(f->scores,sizeof(float)*f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
-        
+        convert_data(f->scores,sizeof(float),f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a cl layer\n");
             exit(1);
         }
-        
+        convert_data(f->indices,sizeof(int),f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         i = fwrite(f->indices,sizeof(int)*f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols,1,fw);
-        
+        convert_data(f->indices,sizeof(int),f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols);
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a cl layer\n");
             exit(1);
         }
     }
     
-    
+    convert_data(f->used_kernels,sizeof(int),f->n_kernels);
     i = fwrite(f->used_kernels,sizeof(int)*f->n_kernels,1,fw);
-    
+    convert_data(f->used_kernels,sizeof(int),f->n_kernels);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a cl layer\n");
         exit(1);
@@ -1443,202 +1434,202 @@ cl* load_cl(FILE* fr){
     float k_percentage;
     
     i = fread(&k_percentage,sizeof(float),1,fr);
-    
+    convert_data(&k_percentage,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     i = fread(&feed_forward_flag,sizeof(int),1,fr);
-    
+    convert_data(&feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&training_mode,sizeof(int),1,fr);
-    
+    convert_data(&training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&group_norm_channels,sizeof(int),1,fr);
-    
+    convert_data(&group_norm_channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&convolutional_flag,sizeof(int),1,fr);
-    
+    convert_data(&convolutional_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&channels,sizeof(int),1,fr);
-    
+    convert_data(&channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&input_rows,sizeof(int),1,fr);
-    
+    convert_data(&input_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&input_cols,sizeof(int),1,fr);
-    
+    convert_data(&input_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&layer,sizeof(int),1,fr);
-    
+    convert_data(&layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&kernel_rows,sizeof(int),1,fr);
-    
+    convert_data(&kernel_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&kernel_cols,sizeof(int),1,fr);
-    
+    convert_data(&kernel_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&n_kernels,sizeof(int),1,fr);
-    
+    convert_data(&n_kernels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride1_rows,sizeof(int),1,fr);
-    
+    convert_data(&stride1_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride1_cols,sizeof(int),1,fr);
-    
+    convert_data(&stride1_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding1_rows,sizeof(int),1,fr);
-    
+    convert_data(&padding1_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding1_cols,sizeof(int),1,fr);
-    
+    convert_data(&padding1_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride2_rows,sizeof(int),1,fr);
-    
+    convert_data(&stride2_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&stride2_cols,sizeof(int),1,fr);
-    
+    convert_data(&stride2_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding2_rows,sizeof(int),1,fr);
-    
+    convert_data(&padding2_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&padding2_cols,sizeof(int),1,fr);
-    
+    convert_data(&padding2_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_rows,sizeof(int),1,fr);
-    
+    convert_data(&pooling_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_cols,sizeof(int),1,fr);
-    
+    convert_data(&pooling_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&normalization_flag,sizeof(int),1,fr);
-    
+    convert_data(&normalization_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&activation_flag,sizeof(int),1,fr);
-    
+    convert_data(&activation_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&pooling_flag,sizeof(int),1,fr);
-    
+    convert_data(&pooling_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&rows1,sizeof(int),1,fr);
-    
+    convert_data(&rows1,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&cols1,sizeof(int),1,fr);
-    
+    convert_data(&cols1,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&rows2,sizeof(int),1,fr);
-    
+    convert_data(&rows2,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
     }
     
     i = fread(&cols2,sizeof(int),1,fr);
-    
+    convert_data(&cols2,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);
@@ -1658,7 +1649,7 @@ cl* load_cl(FILE* fr){
         for(k = 0; k < n_kernels; k++){
             kernels[k] = (float*)malloc(sizeof(float)*channels*kernel_rows*kernel_cols);
             i = fread(kernels[k],sizeof(float)*channels*kernel_rows*kernel_cols,1,fr);
-        
+            convert_data(kernels[k],sizeof(float),channels*kernel_rows*kernel_cols);
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a cl layer\n");
                 exit(1);
@@ -1666,7 +1657,7 @@ cl* load_cl(FILE* fr){
         }
         
         i = fread(biases,sizeof(float)*n_kernels,1,fr);
-        
+        convert_data(biases,sizeof(float),n_kernels);
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a cl layer\n");
             exit(1);
@@ -1674,14 +1665,14 @@ cl* load_cl(FILE* fr){
     
         if(feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP){
             i = fread(scores,sizeof(float)*n_kernels*channels*kernel_rows*kernel_cols,1,fr);
-            
+            convert_data(scores,sizeof(float),n_kernels*channels*kernel_rows*kernel_cols);
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a cl layer\n");
                 exit(1);
             }
             
             i = fread(indices,sizeof(int)*n_kernels*channels*kernel_rows*kernel_cols,1,fr);
-            
+            convert_data(indices,sizeof(int),n_kernels*channels*kernel_rows*kernel_cols);
             if(i != 1){
                 fprintf(stderr,"Error: an error occurred loading a cl layer\n");
                 exit(1);
@@ -1693,7 +1684,7 @@ cl* load_cl(FILE* fr){
     }
     
     i = fread(used_kernels,sizeof(int)*n_kernels,1,fr);
-        
+    convert_data(used_kernels,sizeof(int),n_kernels);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a cl layer\n");
         exit(1);

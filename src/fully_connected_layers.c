@@ -235,38 +235,31 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
  * */
 fcl* fully_connected_without_arrays(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
     if(input <= 0 || output <= 0 || layer < 0){
-        fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
-        exit(1);
+        return NULL;
     }
     
     if (dropout_flag != NO_DROPOUT && dropout_flag != DROPOUT && dropout_flag != DROPOUT_TEST){
-        fprintf(stderr,"Error, you must set the dropout flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(activation_flag != NO_ACTIVATION && activation_flag != SIGMOID && activation_flag != TANH && activation_flag != RELU && activation_flag != SOFTMAX && activation_flag != LEAKY_RELU && activation_flag != ELU){
-        fprintf(stderr,"Error, you must set the activation flag properly!\n");
-        exit(1);
+        return NULL;
     } 
     
     if(dropout_threshold > 1 || dropout_threshold < 0){
-        fprintf(stderr,"Error: you should set thedropout_threshold in [0,1]\n");
-        exit(1);
+        return NULL;
     }
     
     if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
-        fprintf(stderr,"Error, you should set the training mode properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(feed_forward_flag != FULLY_FEED_FORWARD && feed_forward_flag != EDGE_POPUP){
-        fprintf(stderr,"Error: you should set your feed forward flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(normalization_flag != GROUP_NORMALIZATION && normalization_flag != LAYER_NORMALIZATION && normalization_flag != LOCAL_RESPONSE_NORMALIZATION && normalization_flag != NO_NORMALIZATION){
-        fprintf(stderr,"Error: you should set your normalization flag properly!\n");
-        exit(1);
+        return NULL;
     }
     
     if(normalization_flag == GROUP_NORMALIZATION)
@@ -274,19 +267,16 @@ fcl* fully_connected_without_arrays(int input, int output, int layer, int dropou
     
     if(normalization_flag == LAYER_NORMALIZATION){
         if(n_groups <= 0 || output<=n_groups || output%n_groups != 0){
-            fprintf(stderr,"Error: your groups must perfectly divide your output neurons\n");
-            exit(1);
+            return NULL;
         }
     }
     
     if (normalization_flag != NO_NORMALIZATION && dropout_flag != NO_DROPOUT){
-        fprintf(stderr,"Error: bad assignement dropout + normalization not recommended!\n");
-        exit(1);
+        return NULL;
     }
     
     if((feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP) && normalization_flag == LAYER_NORMALIZATION){
-        fprintf(stderr,"Error: layer normalization should not be matched with edge popup!\n");
-        exit(1);
+        return NULL;
     }
  
     int i,j;
@@ -310,6 +300,11 @@ fcl* fully_connected_without_arrays(int input, int output, int layer, int dropou
     
     if(normalization_flag == LAYER_NORMALIZATION){
         f->layer_norm = batch_normalization_without_arrays(n_groups,output/n_groups);
+        if(f->layer_norm == NULL){
+            free(f);
+            return NULL;
+        }
+            
     }
     else{
         f->layer_norm = NULL;
@@ -662,94 +657,95 @@ void save_fcl(fcl* f, int n){
     }
     
     
-    
+    convert_data(&f->n_groups,sizeof(int),1);
     i = fwrite(&f->n_groups,sizeof(int),1,fw);
-    
+    convert_data(&f->n_groups,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->normalization_flag,sizeof(int),1);
     i = fwrite(&f->normalization_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->normalization_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->feed_forward_flag,sizeof(int),1);
     i = fwrite(&f->feed_forward_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->training_mode,sizeof(int),1);
     i = fwrite(&f->training_mode,sizeof(int),1,fw);
-    
+    convert_data(&f->training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->input,sizeof(int),1);
     i = fwrite(&f->input,sizeof(int),1,fw);
-    
+    convert_data(&f->input,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->output,sizeof(int),1);
     i = fwrite(&f->output,sizeof(int),1,fw);
-    
+    convert_data(&f->output,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->layer,sizeof(int),1);
     i = fwrite(&f->layer,sizeof(int),1,fw);
-    
+    convert_data(&f->layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->dropout_flag,sizeof(int),1);
     i = fwrite(&f->dropout_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->dropout_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->activation_flag,sizeof(int),1);
     i = fwrite(&f->activation_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->activation_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->dropout_threshold,sizeof(float),1);
     i = fwrite(&f->dropout_threshold,sizeof(float),1,fw);
-    
+    convert_data(&f->dropout_threshold,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
         exit(1);
     }
     
     if(exists_params_fcl(f)){
+        convert_data(f->weights,sizeof(float),(f->input)*(f->output));
         i = fwrite(f->weights,sizeof(float)*(f->input)*(f->output),1,fw);
-        
+        convert_data(f->weights,sizeof(float),(f->input)*(f->output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
             exit(1);
         }
-        
+        convert_data(f->biases,sizeof(float),(f->output));
         i = fwrite(f->biases,sizeof(float)*(f->output),1,fw);
-        
+        convert_data(f->biases,sizeof(float),(f->output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
             exit(1);
         }
-        
+        convert_data(f->active_output_neurons,sizeof(int),(f->output));
         i = fwrite(f->active_output_neurons,sizeof(int)*(f->output),1,fw);
-    
+        convert_data(f->active_output_neurons,sizeof(int),(f->output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
             exit(1);
@@ -757,15 +753,16 @@ void save_fcl(fcl* f, int n){
     }
     
     if(exists_edge_popup_stuff_fcl(f)){
+        convert_data(f->scores,sizeof(float),(f->output)*(f->input));
         i = fwrite(f->scores,sizeof(float)*(f->output)*(f->input),1,fw);
-        
+        convert_data(f->scores,sizeof(float),(f->output)*(f->input));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
             exit(1);
         }
-        
+        convert_data(f->indices,sizeof(int),(f->output)*(f->input));
         i = fwrite(f->indices,sizeof(int)*(f->output)*(f->input),1,fw);
-        
+        convert_data(f->indices,sizeof(int),(f->output)*(f->input));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred saving a fcl layer\n");
             exit(1);
@@ -829,70 +826,70 @@ fcl* load_fcl(FILE* fr){
     bn* layer_norm = NULL;
     
     i = fread(&n_groups,sizeof(int),1,fr);
-    
+    convert_data(&n_groups,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&normalization_flag,sizeof(int),1,fr);
-    
+    convert_data(&normalization_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&feed_forward_flag,sizeof(int),1,fr);
-    
+    convert_data(&feed_forward_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&training_mode,sizeof(int),1,fr);
-    
+    convert_data(&training_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&input,sizeof(int),1,fr);
-    
+    convert_data(&input,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&output,sizeof(int),1,fr);
-    
+    convert_data(&output,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&layer,sizeof(int),1,fr);
-    
+    convert_data(&layer,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&dropout_flag,sizeof(int),1,fr);
-    
+    convert_data(&dropout_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&activation_flag,sizeof(int),1,fr);
-    
+    convert_data(&activation_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
     }
     
     i = fread(&dropout_threshold,sizeof(float),1,fr);
-    
+    convert_data(&dropout_threshold,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
         exit(1);
@@ -911,21 +908,21 @@ fcl* load_fcl(FILE* fr){
     
     if(feed_forward_flag != ONLY_DROPOUT){
         i = fread(weights,sizeof(float)*(input)*(output),1,fr);
-        
+        convert_data(weights,sizeof(float),(input)*(output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
             exit(1);
         }
         
         i = fread(biases,sizeof(float)*(output),1,fr);
-        
+        convert_data(biases,sizeof(float),(output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
             exit(1);
         }
         
         i = fread(active_output_neurons,sizeof(int)*(output),1,fr);
-    
+        convert_data(active_output_neurons,sizeof(int),(output));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
             exit(1);
@@ -934,14 +931,14 @@ fcl* load_fcl(FILE* fr){
     
     if(feed_forward_flag != ONLY_DROPOUT && (feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP)){
         i = fread(scores,sizeof(float)*(output)*(input),1,fr);
-        
+        convert_data(scores,sizeof(float),(output)*(input));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
             exit(1);
         }
         
         i = fread(indices,sizeof(int)*(output)*(input),1,fr);
-        
+        convert_data(indices,sizeof(int),(output)*(input));
         if(i != 1){
             fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
             exit(1);
@@ -1960,8 +1957,8 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
  *             @ fcl* f:= the fully connected layers which bias and weights must be re initialized
  * */
 void reinitialize_w_fcl(fcl* f){
-	if(f == NULL)
-		return;
+    if(f == NULL)
+        return;
     int i;
     for(i = 0; i < f->input*f->output; i++){
         f->weights[i] = random_general_gaussian_xavier_init(f->input);
@@ -2059,4 +2056,8 @@ void make_the_fcl_only_for_ff(fcl* f){
     f->d2_biases = NULL;
     f->d3_biases = NULL;
     f->training_mode = ONLY_FF;
+    if(f->dropout_flag == DROPOUT){
+        f->dropout_flag = DROPOUT_TEST;
+        f->dropout_threshold = 1-f->dropout_threshold;
+    }
 }

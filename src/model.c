@@ -840,30 +840,30 @@ void save_model(model* m, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&m->layers,sizeof(int),1);
     i = fwrite(&m->layers,sizeof(int),1,fw);
-    
+    convert_data(&m->layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_rl,sizeof(int),1);
     i = fwrite(&m->n_rl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_rl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_cl,sizeof(int),1);
     i = fwrite(&m->n_cl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_fcl,sizeof(int),1);
     i = fwrite(&m->n_fcl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_fcl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
@@ -918,30 +918,30 @@ void save_model_given_directory(model* m, int n, char* directory){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&m->layers,sizeof(int),1);
     i = fwrite(&m->layers,sizeof(int),1,fw);
-    
+    convert_data(&m->layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_rl,sizeof(int),1);
     i = fwrite(&m->n_rl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_rl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_cl,sizeof(int),1);
     i = fwrite(&m->n_cl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
     }
-    
+    convert_data(&m->n_fcl,sizeof(int),1);
     i = fwrite(&m->n_fcl,sizeof(int),1,fw);
-    
+    convert_data(&m->n_fcl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the model\n");
         exit(1);
@@ -993,27 +993,28 @@ model* load_model(char* file){
     int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
     
     i = fread(&layers,sizeof(int),1,fr);
+    convert_data(&layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_rl,sizeof(int),1,fr);
-    
+    convert_data(&n_rl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
-    
+    convert_data(&n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_fcl,sizeof(int),1,fr);
-    
+    convert_data(&n_fcl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
@@ -1074,27 +1075,28 @@ model* load_model_with_file_already_opened(FILE* fr){
     int layers = 0,n_cl = 0,n_rl = 0,n_fcl = 0;
     
     i = fread(&layers,sizeof(int),1,fr);
+    convert_data(&layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_rl,sizeof(int),1,fr);
-    
+    convert_data(&n_rl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
-    
+    convert_data(&n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_fcl,sizeof(int),1,fr);
-    
+    convert_data(&n_fcl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
@@ -1315,11 +1317,11 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
 
 }
 
-void ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2){
+int ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2){
     if(f1->output != f2->input){
-        fprintf(stderr,"Error: the sizes between 2 fully-connected layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output,f2->input);
-        exit(1);
+        return 0;
     }
+    return 1;
 }
 /* This function compute the feed forward between 2 fully-connected layer
  * 
@@ -1992,11 +1994,11 @@ void ff_fcl_cl(fcl* f1, cl* f2){
     }    
 }
 
-void ff_fcl_cl_without_arrays(fcl* f1, cl* f2){
+int ff_fcl_cl_without_arrays(fcl* f1, cl* f2){
     if(f1->output != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between an input fully-connected layer and an output convolutional layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->output, f2->channels*f2->input_rows*f2->input_cols);
-        exit(1);
+        return 0;
     }
+    return 1;
 }
 /* This function compute the feed forward between a fully-connected input layer
  * and a convolutional output layer
@@ -2497,16 +2499,15 @@ void ff_fcl_cl_without_learning_parameters(fcl* f1, cl* f2, cl* f3){
     }    
 }
 
-void ff_cl_fcl_without_arrays(cl* f1, fcl* f2){
+int ff_cl_fcl_without_arrays(cl* f1, fcl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2, f2->input);
-        exit(1);
+        return 0;
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->input){
-        fprintf(stderr,"Error: the sizes between an input convolutional layer and an output fully-connected layer don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1, f2->input);
-        exit(1);
+        return 0;
     }
+    return 1;
 }
 
 /* This function compute the feed forward between a convolutional input layer
@@ -2799,16 +2800,15 @@ void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
     
 }
 
-void ff_cl_cl_without_arrays(cl* f1, cl* f2){
+int ff_cl_cl_without_arrays(cl* f1, cl* f2){
     if(f1->pooling_flag && f1->n_kernels*f1->rows2*f1->cols2 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows2*f1->cols2 , f2->channels*f2->input_rows*f2->input_cols);
-        exit(1);
+        return 0;
     }
     
     else if(!f1->pooling_flag && f1->n_kernels*f1->rows1*f1->cols1 != f2->channels*f2->input_rows*f2->input_cols){
-        fprintf(stderr,"Error: the sizes between 2 convolutional layers don't match, layer1: %d, layer2: %d, sizes: %d, %d\n",f1->layer,f2->layer,f1->n_kernels*f1->rows1*f1->cols1 , f2->channels*f2->input_rows*f2->input_cols);
-        exit(1);
+        return 0;
     }
+    return 1;
 }
 /* This function compute the feed forward between 2 convolutional layers
  * 
@@ -7271,6 +7271,378 @@ void model_tensor_input_ff_without_learning_parameters(model* m, model* m2, int 
     }
     
     free(temp);
+}
+
+/* This function computes the feed-forward for a model m. each layer at the index l makes the feed-forward
+ * for the first layer at the index l-1. if the input is a 1d array then you should split its dimension
+ * in 3 dimension to turn the input in a tensor, for example:
+ * I have an input array of legth 59, then i can split this in 3 dimensions: depth = 1, row = 1, cols = 59
+ * 
+ * Input:
+ *             
+ *             @ model* m:= the model with the layers
+ *             @ int tensor_depth:= the depth of the input tensor
+ *             @ int tensor_i:= the number of rows of the tensor
+ *             @ int tensor_j:= the number of columns of the tensor
+ *             @ float* input:= your input array
+ * 
+ * */
+int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input){
+    if(m == NULL)
+        return 0;
+    int i,j,z,w,count,count2,z2,k1 = 0, k2 = 0, k3 = 0;
+    
+    /* Setting the input inside a convolutional structure*/
+    cl* temp = (cl*)malloc(sizeof(cl));
+    temp->normalization_flag = NO_NORMALIZATION;
+    temp->pooling_flag = NO_POOLING;
+    temp->activation_flag = SIGMOID;
+    temp->n_kernels = tensor_depth;
+    temp->rows1 = tensor_i;
+    temp->cols1 = tensor_j;
+    temp->post_activation = input;
+    temp->layer = -1;
+    
+    /* apply the feed forward to the model*/
+    for(i = 0; i < m->layers; i++){
+
+        
+        for(j = 0; j < m->layers && m->sla[i][j] != 0; j++){
+            
+                
+            if(!i){
+                if(m->sla[i][j] == FCLS){
+                    if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+						free(temp);
+                        return 0;
+                    }
+                    
+                    if(!ff_cl_fcl_without_arrays(temp,m->fcls[k1])){
+						free(temp);
+						return 0;
+					}
+                    k1++;
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    if(m->cls[k2]->activation_flag == SOFTMAX){
+						free(temp);
+						return 0;
+                    }
+                    
+                    if(!ff_cl_cl_without_arrays(temp,m->cls[k2])){
+						free(temp);
+						return 0;
+					}
+                    k2++;
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k3; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                
+                    
+                    if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
+                        free(temp);
+                        return 0;
+                    }
+                    
+                    if(k3-count == 0)
+                        m->rls[z]->input = temp->post_activation;
+                    
+                    if(!ff_cl_cl_without_arrays(temp,m->rls[z]->cls[k3-count])){
+						free(temp);
+						return 0;
+					}
+                    
+                    if(k3-count == m->rls[z]->n_cl-1){
+                        if(m->rls[z]->cls[k3-count]->pooling_flag){
+                            float* pooltemp_prev = m->rls[z]->cls[k3-count]->post_pooling;
+                            if(m->rls[z]->cls[k3-count]->convolutional_flag == NO_CONVOLUTION && m->rls[z]->cls[k3-count]->stride2_cols == 1 && m->rls[z]->cls[k3-count]->stride2_rows == 1 && m->rls[z]->cls[k3-count]->padding2_rows == 0 && m->rls[z]->cls[k3-count]->padding2_cols == 0 && m->rls[z]->cls[k3-count]->pooling_rows == 1 && m->rls[z]->cls[k3-count]->pooling_cols == 1){
+                                pooltemp_prev = m->rls[z]->cls[k3-count]->pooltemp;
+                            }
+                            sum1D(m->rls[z]->input,pooltemp_prev,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
+                        }
+                        else if(m->rls[z]->cls[k3-count]->normalization_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        
+                        else if(m->rls[z]->cls[k3-count]->activation_flag){
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        }
+                        else
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU){
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        }
+                        else if(m->rls[z]->cl_output->activation_flag == RELU){
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        }
+                        else if(m->rls[z]->cl_output->activation_flag == ELU)
+                            elu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1,ELU_THRESHOLD);
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                    }
+                    
+                    k3++;
+                    
+                    
+                }
+            }
+            
+            else{
+                
+                if(m->sla[i][j] == FCLS){
+                    if(m->fcls[k1]->activation_flag == SOFTMAX && i != m->layers-1 && m->sla[i+1][0] != 0){
+						free(temp);
+						return 0;
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        if(!ff_fcl_fcl_without_arrays(m->fcls[k1-1],m->fcls[k1])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        if(!ff_cl_fcl_without_arrays(m->cls[k2-1],m->fcls[k1])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k3-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                        
+                        if((k3-1-count2) == m->rls[z2]->n_cl-1){
+                            if(!ff_cl_fcl_without_arrays(m->rls[z2]->cl_output,m->fcls[k1])){
+								free(temp);
+								return 0;
+							}
+						}
+                        else {   
+                            if(!ff_cl_fcl_without_arrays(m->rls[z2]->cls[k3-1-count2],m->fcls[k1])){
+								free(temp);
+								return 0;
+							}
+                        }
+                            
+                    }
+                    
+                    k1++;
+                }
+                
+                else if(m->sla[i][j] == CLS){
+                    if(m->cls[k2]->activation_flag == SOFTMAX){
+                        free(temp);
+                        return 0;
+                    }
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        if(!ff_fcl_cl_without_arrays(m->fcls[k1-1],m->cls[k2])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        if(!ff_cl_cl_without_arrays(m->cls[k2-1],m->cls[k2])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k3-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                    
+                        if((k3-1-count2) == m->rls[z2]->n_cl-1){
+                            if(!ff_cl_cl_without_arrays(m->rls[z2]->cl_output,m->cls[k2])){
+								free(temp);
+								return 0;
+							}
+                        }
+                        else{
+                            if(!ff_cl_cl_without_arrays(m->rls[z2]->cls[k3-1-count2],m->cls[k2])){
+								free(temp);
+								return 0;
+							}
+						}
+                    }
+                    k2++;
+                }
+                
+                else if(m->sla[i][j] == RLS){
+                    count = 0;
+                    for(z = 0; z < m->n_rl && count <= k3; z++){
+                        count+=m->rls[z]->n_cl;
+                    }
+                    
+                    
+                    z--;
+                    count-=m->rls[z]->n_cl;
+                
+                    
+                    if(m->rls[z]->cls[k3-count]->activation_flag == SOFTMAX){
+                        free(temp);
+                        return 0;
+                    }
+                    
+                    
+                    if(m->sla[i-1][0] == FCLS){
+                        if(k3-count == 0){
+                            if(m->fcls[k1-1]->dropout_flag){
+                                if(m->fcls[k1-1]->activation_flag){
+                                    dot1D(m->fcls[k1-1]->post_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
+                                }
+                                else{
+                                    dot1D(m->fcls[k1-1]->pre_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
+                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
+                                }
+                            }
+                            else{
+                                
+                                if(m->fcls[k1-1]->normalization_flag){
+                                    m->rls[z]->input = m->fcls[k1-1]->post_normalization;
+                                }
+                                
+                                else if(m->fcls[k1-1]->activation_flag){
+                                    m->rls[z]->input = m->fcls[k1-1]->post_activation;
+                                }
+                                else{
+                                    m->rls[z]->input = m->fcls[k1-1]->pre_activation;
+                                }
+                            }
+                        }
+                    
+                        if(!ff_fcl_cl_without_arrays(m->fcls[k1-1],m->rls[z]->cls[k3-count])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    else if(m->sla[i-1][0] == CLS){
+                        if(k3-count == 0){
+                            if(m->cls[k2-1]->pooling_flag){
+                                float* pooltemp_prev = m->cls[k2-1]->post_pooling;
+                                if(m->cls[k2-1]->convolutional_flag == NO_CONVOLUTION && m->cls[k2-1]->stride2_cols == 1 && m->cls[k2-1]->stride2_rows == 1 && m->cls[k2-1]->padding2_rows == 0 && m->cls[k2-1]->padding2_cols == 0 && m->cls[k2-1]->pooling_rows == 1 && m->cls[k2-1]->pooling_cols == 1){
+                                    pooltemp_prev = m->cls[k2-1]->pooltemp;
+                                }
+                                m->rls[z]->input = pooltemp_prev;
+                            }
+                            else if(m->cls[k2-1]->normalization_flag){
+                                m->rls[z]->input = m->cls[k2-1]->post_normalization;
+                            }
+                            
+                            else if(m->cls[k2-1]->activation_flag){
+                                m->rls[z]->input = m->cls[k2-1]->post_activation;
+                            }
+                            else{
+                                m->rls[z]->input = m->cls[k2-1]->pre_activation;
+                            }
+                        }
+                        if(!ff_cl_cl_without_arrays(m->cls[k2-1],m->rls[z]->cls[k3-count])){
+							free(temp);
+							return 0;
+						}
+                    }
+                    
+                    if(m->sla[i-1][0] == RLS){
+                        count2 = 0;
+                        for(z2 = 0; z2 < m->n_rl && count2 <= k3-1; z2++){
+                            count2+=m->rls[z2]->n_cl;
+                        }
+                        
+                        z2--;
+                        count2-=m->rls[z2]->n_cl;
+                        
+                        if(k3-count == 0){
+                            if(m->rls[z2]->cl_output->activation_flag)
+                                m->rls[z]->input = m->rls[z2]->cl_output->post_activation;
+                            else
+                                m->rls[z]->input = m->rls[z2]->cl_output->pre_activation;
+                        }
+                        if(z2!=z){
+                            if(!ff_cl_cl_without_arrays(m->rls[z2]->cl_output,m->rls[z]->cls[k3-count])){
+								free(temp);
+								return 0;
+							}
+
+                        }
+                        else{
+                            if(!ff_cl_cl_without_arrays(m->rls[z2]->cls[k3-1-count2],m->rls[z]->cls[k3-count])){
+								free(temp);
+								return 0;
+							}
+                        }
+                    }
+                    
+                    if(k3-count == m->rls[z]->n_cl-1){
+                        if(m->rls[z]->cls[k3-count]->pooling_flag){
+                            float* pooltemp_prev = m->rls[z]->cls[k3-count]->post_pooling;
+                            if(m->rls[z]->cls[k3-count]->convolutional_flag == NO_CONVOLUTION && m->rls[z]->cls[k3-count]->stride2_cols == 1 && m->rls[z]->cls[k3-count]->stride2_rows == 1 && m->rls[z]->cls[k3-count]->padding2_rows == 0 && m->rls[z]->cls[k3-count]->padding2_cols == 0 && m->rls[z]->cls[k3-count]->pooling_rows == 1 && m->rls[z]->cls[k3-count]->pooling_cols == 1){
+                                pooltemp_prev = m->rls[z]->cls[k3-count]->pooltemp;
+                            }
+                            sum1D(m->rls[z]->input,pooltemp_prev,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
+                            //printf("summing from previous pooling\n");
+                        }
+                        else if(m->rls[z]->cls[k3-count]->normalization_flag)
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        else if(m->rls[z]->cls[k3-count]->activation_flag){
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                            //printf("summing from previous activation\n");
+                        }
+                        else
+                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
+                        
+                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU){
+                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            //printf("applying leaky relu rls\n");
+                        }
+                        else if(m->rls[z]->cl_output->activation_flag == RELU){
+                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                            //printf("applying relu rls\n");
+                        }
+                        else if(m->rls[z]->cl_output->activation_flag == ELU)
+                            elu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1,ELU_THRESHOLD);
+                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
+                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+                        else if(m->rls[z]->cl_output->activation_flag == TANH)
+                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
+
+                    }
+                    
+                    k3++;
+                    
+                    
+                }
+                
+            }
+            
+        }
+    }
+    
+    free(temp);
+    return 1;
 }
 
 

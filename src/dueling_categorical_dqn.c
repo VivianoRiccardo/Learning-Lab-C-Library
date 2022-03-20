@@ -152,98 +152,78 @@ dueling_categorical_dqn* dueling_categorical_dqn_init(int input_size, int action
 
 dueling_categorical_dqn* dueling_categorical_dqn_init_without_arrays(int input_size, int action_size, int n_atoms, float v_min, float v_max, model* shared_hidden_layers, model* v_hidden_layers, model* a_hidden_layers, model* v_linear_last_layer, model* a_linear_last_layer){
     if(shared_hidden_layers == NULL || v_hidden_layers == NULL || a_hidden_layers == NULL || v_linear_last_layer == NULL || a_linear_last_layer == NULL){
-        fprintf(stderr,"Error: you cannot have null model passed as input!\n");
-        exit(1);
+        return NULL;
     }
     
     if(shared_hidden_layers->layers <= 0 || v_hidden_layers->layers <= 0 || a_hidden_layers->layers <= 0 || v_linear_last_layer->layers != 1 || a_linear_last_layer->layers != 1){
-        fprintf(stderr,"Error: your number of layers for some of your model is not correct! Remember: for linear models you can only have 1 layer and no activation should be performed!\n");
-        exit(1);
+        return NULL;
     }
     
     if(input_size <= 0){
-        fprintf(stderr,"Error: invalid input size (must be > 0)\n");
-        exit(1);
+        return NULL;
     }
     
     if(n_atoms <= 1){
-        fprintf(stderr,"Error: atmos must be > 1\n");
-        exit(1);
+        return NULL;
     }
     
     if(action_size <= 0){
-        fprintf(stderr,"error: action size must be > 0\n");
-        exit(1);
+        return NULL;
     }
     
     if(v_min > v_max){
-        fprintf(stderr,"Error: v_min should be <= v_max\n");
-        exit(1);
+        return NULL;
     }
     
     if(get_input_layer_size(shared_hidden_layers) != input_size){
-        fprintf(stderr,"Error: invalid input size: it doesn't match the shared model!\n");
-        exit(1);
+        return NULL;
     }
     
     if(action_size*n_atoms != a_linear_last_layer->output_dimension){
-        fprintf(stderr,"Error: you action size* n_atoms doesn't match the output dimension of action_linear model!\n");
-        exit(1);
+        return NULL;
     }
     
     if(v_linear_last_layer->output_dimension != n_atoms){
-        fprintf(stderr,"Error: you v linear model should have an output dimension of 1!\n");
-        exit(1);
+        return NULL;
     }
     
     if(v_linear_last_layer->n_cl != 0 || v_linear_last_layer->n_rl != 0 || v_linear_last_layer->n_fcl != 1){
-        fprintf(stderr,"Error: your v linear model should have only a fully connected layer!\n");
-        exit(1);
+        return NULL;
     }
     
     if(a_linear_last_layer->n_cl != 0 || a_linear_last_layer->n_rl != 0 || a_linear_last_layer->n_fcl != 1){
-        fprintf(stderr,"Error: your a linear model should have only a fully connected layer!\n");
-        exit(1);
+        return NULL;
     }
     
     if(v_linear_last_layer->fcls[0]->activation_flag || v_linear_last_layer->fcls[0]->normalization_flag){
-        fprintf(stderr,"Error: you should not have activation neither normalization for your last fully connected layers!\n");
-        exit(1);
+        return NULL;
     }
     if(a_linear_last_layer->fcls[0]->activation_flag || a_linear_last_layer->fcls[0]->normalization_flag){
-        fprintf(stderr,"Error: you should not have activation neither normalization for your last fully connected layers!\n");
-        exit(1);
+        return NULL;
     }
     
     if(shared_hidden_layers->output_dimension != get_input_layer_size(v_hidden_layers)){
-        fprintf(stderr,"Error: final dimension of shared hidden layers doesn't match the input dimension of the v_hidden_layers!\n"),
-        exit(1);
+        return NULL;
     }
     if(shared_hidden_layers->output_dimension != get_input_layer_size(a_hidden_layers)){
-        fprintf(stderr,"Error: final dimension of shared hidden layers doesn't match the input dimension of the a_hidden_layers!\n"),
-        exit(1);
+        return NULL;
     }
     if(v_hidden_layers->output_dimension != get_input_layer_size(v_linear_last_layer)){
-        fprintf(stderr,"Error: final dimension of v_hidden_layers doesn't match the input dimension of the v linear last layer!\n"),
-        exit(1);
+        return NULL;
     }
     if(a_hidden_layers->output_dimension != get_input_layer_size(a_linear_last_layer)){
-        fprintf(stderr,"Error: final dimension of a_hidden_layers doesn't match the input dimension of the a linear last layer!\n"),
-        exit(1);
+        return NULL;
     }
     if(shared_hidden_layers->beta1_adam != v_hidden_layers->beta1_adam || shared_hidden_layers->beta1_adam != v_linear_last_layer->beta1_adam || shared_hidden_layers->beta1_adam != a_hidden_layers->beta1_adam || shared_hidden_layers->beta1_adam != a_linear_last_layer->beta1_adam){
-        fprintf(stderr,"Error: all hyperparameters must be equals in the models!\n");
-        exit(1);
+        return NULL;
     }
     
     if(shared_hidden_layers->beta2_adam != v_hidden_layers->beta2_adam || shared_hidden_layers->beta2_adam != v_linear_last_layer->beta2_adam || shared_hidden_layers->beta2_adam != a_hidden_layers->beta2_adam || shared_hidden_layers->beta2_adam != a_linear_last_layer->beta2_adam){
-        fprintf(stderr,"Error: all hyperparameters must be equals in the models!\n");
-        exit(1);
+        return NULL;
     }
     
     if(shared_hidden_layers->beta3_adamod != v_hidden_layers->beta3_adamod || shared_hidden_layers->beta3_adamod != v_linear_last_layer->beta3_adamod || shared_hidden_layers->beta3_adamod != a_hidden_layers->beta3_adamod || shared_hidden_layers->beta3_adamod != a_linear_last_layer->beta3_adamod){
-        fprintf(stderr,"Error: all hyperparameters must be equals in the models!\n");
-        exit(1);
+        return NULL;
     }
     dueling_categorical_dqn* dqn = (dueling_categorical_dqn*)malloc(sizeof(dueling_categorical_dqn));
     dqn->shared_hidden_layers = shared_hidden_layers;
@@ -276,35 +256,37 @@ void save_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&dqn->input_size,sizeof(int),1);
     i = fwrite(&dqn->input_size,sizeof(int),1,fw);
-    
+    convert_data(&dqn->input_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
-    
+    convert_data(&dqn->action_size,sizeof(int),1);
     i = fwrite(&dqn->action_size,sizeof(int),1,fw);
-    
+    convert_data(&dqn->action_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
-    i = fwrite(&dqn->n_atoms,sizeof(int),1,fw);
-    
+    convert_data(&dqn->action_size,sizeof(int),1);
+    i = fwrite(&dqn->action_size,sizeof(int),1,fw);
+    convert_data(&dqn->action_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
+    convert_data(&dqn->v_min,sizeof(float),1);
     i = fwrite(&dqn->v_min,sizeof(float),1,fw);
-    
+    convert_data(&dqn->v_min,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
-    
+    convert_data(&dqn->v_max,sizeof(float),1);
     i = fwrite(&dqn->v_max,sizeof(float),1,fw);
-    
+    convert_data(&dqn->v_max,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
@@ -341,27 +323,32 @@ dueling_categorical_dqn* load_dueling_categorical_dqn(char* file){
     float v_min,v_max;
     
     i = fread(&input_size,sizeof(int),1,fr);
+    convert_data(&input_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     i = fread(&action_size,sizeof(int),1,fr);
+    convert_data(&action_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     
     i = fread(&n_atoms,sizeof(int),1,fr);
+    convert_data(&n_atoms,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     i = fread(&v_min,sizeof(float),1,fr);
+    convert_data(&v_min,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
     i = fread(&v_max,sizeof(float),1,fr);
+    convert_data(&v_max,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
@@ -405,35 +392,37 @@ void save_dueling_categorical_dqn_given_directory(dueling_categorical_dqn* dqn, 
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&dqn->input_size,sizeof(int),1);
     i = fwrite(&dqn->input_size,sizeof(int),1,fw);
-    
+    convert_data(&dqn->input_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
-    
+    convert_data(&dqn->action_size,sizeof(int),1);
     i = fwrite(&dqn->action_size,sizeof(int),1,fw);
-    
+    convert_data(&dqn->action_size,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
+    convert_data(&dqn->n_atoms,sizeof(int),1);
     i = fwrite(&dqn->n_atoms,sizeof(int),1,fw);
-    
+    convert_data(&dqn->n_atoms,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
+    convert_data(&dqn->v_min,sizeof(float),1);
     i = fwrite(&dqn->v_min,sizeof(float),1,fw);
-    
+    convert_data(&dqn->v_min,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);
     }
-    
+    convert_data(&dqn->v_max,sizeof(float),1);
     i = fwrite(&dqn->v_max,sizeof(float),1,fw);
-    
+    convert_data(&dqn->v_max,sizeof(float),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the dqn\n");
         exit(1);

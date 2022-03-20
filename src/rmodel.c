@@ -336,30 +336,30 @@ void save_rmodel(rmodel* m, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&m->layers,sizeof(int),1);
     i = fwrite(&m->layers,sizeof(int),1,fw);
-    
+    convert_data(&m->layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the rmodel\n");
         exit(1);
     }
-    
+    convert_data(&m->n_lstm,sizeof(int),1);
     i = fwrite(&m->n_lstm,sizeof(int),1,fw);
-    
+    convert_data(&m->n_lstm,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the rmodel\n");
         exit(1);
     }
-    
+    convert_data(&m->window,sizeof(int),1);
     i = fwrite(&m->window,sizeof(int),1,fw);
-    
+    convert_data(&m->window,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the rmodel\n");
         exit(1);
     }
-    
+    convert_data(&m->hidden_state_mode,sizeof(int),1);
     i = fwrite(&m->hidden_state_mode,sizeof(int),1,fw);
-    
+    convert_data(&m->hidden_state_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving the rmodel\n");
         exit(1);
@@ -403,26 +403,28 @@ rmodel* load_rmodel(char* file){
     int layers = 0,n_lstm = 0, window = 0, hidden_state_mode = 0;
     
     i = fread(&layers,sizeof(int),1,fr);
+    convert_data(&layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&n_lstm,sizeof(int),1,fr);
-    
+    convert_data(&n_lstm,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&window,sizeof(int),1,fr);
+    convert_data(&window,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&hidden_state_mode,sizeof(int),1,fr);
-    
+    convert_data(&hidden_state_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
@@ -468,26 +470,28 @@ rmodel* load_rmodel_with_file_already_opened(FILE* fr){
     int layers = 0,n_lstm = 0, window = 0, hidden_state_mode = 0,i;
     
     i = fread(&layers,sizeof(int),1,fr);
+    convert_data(&layers,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&n_lstm,sizeof(int),1,fr);
-    
+    convert_data(&n_lstm,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&window,sizeof(int),1,fr);
+    convert_data(&window,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);
     }
     
     i = fread(&hidden_state_mode,sizeof(int),1,fr);
-    
+    convert_data(&hidden_state_mode,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading the rmodel\n");
         exit(1);

@@ -1307,3 +1307,39 @@ uint weighted_random_sample_rewards(float* cumulative_values, int* current_value
     }
     
 }
+
+
+int is_little_endian(){
+    unsigned int x = 1;
+    return ((int) (((char *)&x)[0]) == 1);
+}
+
+
+void reverse_ptr(void* ptr, uint64_t size){
+    if(size <= 1)
+        return;
+   char* array = (char*) ptr;
+   uint64_t i, len = size/2;
+   for(i = 0; i < len; i++){
+       char temp = array[i];
+       array[i] = array[size-1-i];
+       array[size-1-i] = temp;
+   }
+   return;
+}
+
+
+void swap_array_bytes_order(void* ptr, uint64_t size, uint64_t len){
+    if(size <= 1 || !len)
+        return;
+    char* array = (char*) &ptr;
+    uint64_t i;
+    for(i = 0; i < len; i++){
+		reverse_ptr(array + i*size,size);
+	}
+}
+
+void convert_data(void* ptr, uint64_t size, uint64_t len){
+	if(!is_little_endian())
+		swap_array_bytes_order(ptr,size,len);
+}

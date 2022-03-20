@@ -48,27 +48,50 @@ int save_genome(genome* g, int global_inn_numb_connections, int numb){
     
     write_ptr = fopen(string,"wb");
     
-
+    convert_data(&g->number_input,sizeof(int),1);
     fwrite(&g->number_input,sizeof(int),1,write_ptr);
+    convert_data(&g->number_input,sizeof(int),1);
+    convert_data(&g->number_output,sizeof(int),1);
     fwrite(&g->number_output,sizeof(int),1,write_ptr);
+    convert_data(&g->number_output,sizeof(int),1);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
     fwrite(&g->number_total_nodes,sizeof(int),1,write_ptr);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
+    convert_data(&g->fitness,sizeof(float),1);
     fwrite(&g->fitness,sizeof(float),1,write_ptr);
+    convert_data(&g->fitness,sizeof(float),1);
     
     for(i = 0; i < g->number_total_nodes; i++){
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
         fwrite(&g->all_nodes[i]->in_conn_size,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
         fwrite(&g->all_nodes[i]->out_conn_size,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
         fwrite(&g->all_nodes[i]->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
     }
-    
+    convert_data(&n,sizeof(int),1);
     fwrite(&n,sizeof(int),1,write_ptr);
-    
+    convert_data(&n,sizeof(int),1);
     
     for(i = 0; i < n; i++){
+        convert_data(&c[i]->innovation_number,sizeof(int),1);
         fwrite(&c[i]->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->in_node->innovation_number,sizeof(int),1);
         fwrite(&c[i]->in_node->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->in_node->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->out_node->innovation_number,sizeof(int),1);
         fwrite(&c[i]->out_node->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->out_node->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->weight,sizeof(float),1);
         fwrite(&c[i]->weight,sizeof(float),1,write_ptr);
+        convert_data(&c[i]->weight,sizeof(float),1);
+        convert_data(&c[i]->flag,sizeof(int),1);
         fwrite(&c[i]->flag,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->flag,sizeof(int),1);
     }
     
     free(c);
@@ -84,39 +107,63 @@ char* get_genome_array(genome* g, int global_inn_numb_connections){
     n = get_numb_connections(g,global_inn_numb_connections);
     
     char* c = (char*)malloc(sizeof(int)*3 + sizeof(int)*3*g->number_total_nodes + sizeof(int) + sizeof(int)*4*n + sizeof(float)+ sizeof(float)*n);
-    
+    convert_data(&(g->number_input),sizeof(int),1);
     memcpy(c+sum,&(g->number_input),sizeof(int));
+    convert_data(&(g->number_input),sizeof(int),1);
     sum+=sizeof(int);
+    convert_data(&(g->number_output),sizeof(int),1);
     memcpy(c+sum,&(g->number_output),sizeof(int));
+    convert_data(&(g->number_output),sizeof(int),1);
     sum+=sizeof(int);
+    convert_data(&(g->number_total_nodes),sizeof(int),1);
     memcpy(c+sum,&(g->number_total_nodes),sizeof(int));
+    convert_data(&(g->number_total_nodes),sizeof(int),1);
     sum+=sizeof(int);
+    convert_data(&(g->fitness),sizeof(float),1);
     memcpy(c+sum,&(g->fitness),sizeof(float));
+    convert_data(&(g->fitness),sizeof(float),1);
     sum+=sizeof(float);
     
     for(i = 0; i < g->number_total_nodes; i++){
+        convert_data(&(g->all_nodes[i]->in_conn_size),sizeof(int),1);
         memcpy(c+sum,&(g->all_nodes[i]->in_conn_size),sizeof(int));
+        convert_data(&(g->all_nodes[i]->in_conn_size),sizeof(int),1);
         sum+=sizeof(int);
+        convert_data(&(g->all_nodes[i]->in_conn_size),sizeof(int),1);
         memcpy(c+sum,&(g->all_nodes[i]->out_conn_size),sizeof(int));
+        convert_data(&(g->all_nodes[i]->in_conn_size),sizeof(int),1);
         sum+=sizeof(int);
+        convert_data(&(g->all_nodes[i]->innovation_number),sizeof(int),1);
         memcpy(c+sum,&(g->all_nodes[i]->innovation_number),sizeof(int));
+        convert_data(&(g->all_nodes[i]->innovation_number),sizeof(int),1);
         sum+=sizeof(int);
     }
-    
+    convert_data(&(n),sizeof(int),1);
     memcpy(c+sum,&(n),sizeof(int));
+    convert_data(&(n),sizeof(int),1);
     sum+=sizeof(int);
     
     
     for(i = 0; i < n; i++){
+        convert_data(&(cc[i]->innovation_number),sizeof(int),1);
         memcpy(c+sum,&(cc[i]->innovation_number),sizeof(int));
+        convert_data(&(cc[i]->innovation_number),sizeof(int),1);
         sum+=sizeof(int);
+        convert_data(&(cc[i]->in_node->innovation_number),sizeof(int),1);
         memcpy(c+sum,&(cc[i]->in_node->innovation_number),sizeof(int));
+        convert_data(&(cc[i]->in_node->innovation_number),sizeof(int),1);
         sum+=sizeof(int);
+        convert_data(&(cc[i]->out_node->innovation_number),sizeof(int),1);
         memcpy(c+sum,&(cc[i]->out_node->innovation_number),sizeof(int));
+        convert_data(&(cc[i]->out_node->innovation_number),sizeof(int),1);
         sum+=sizeof(int);
+        convert_data(&(cc[i]->weight),sizeof(float),1);
         memcpy(c+sum,&(cc[i]->weight),sizeof(float));
+        convert_data(&(cc[i]->weight),sizeof(float),1);
         sum+=sizeof(float);
+        convert_data(&(cc[i]->flag),sizeof(int),1);
         memcpy(c+sum,&(cc[i]->flag),sizeof(int));
+        convert_data(&(cc[i]->flag),sizeof(int),1);
         sum+=sizeof(int);
     }
     
@@ -144,22 +191,29 @@ genome* init_genome_from_array(int global_inn_numb_connections, char* g_array){
     genome* g = (genome*)malloc(sizeof(genome));
     
     memcpy(&(g->number_input),g_array+sum,sizeof(int));
+    convert_data(&(g->number_input),sizeof(int),1);
     sum+=sizeof(int);
     memcpy(&(g->number_output),g_array+sum,sizeof(int));
+    convert_data(&(g->number_output),sizeof(int),1);
     sum+=sizeof(int);
     memcpy(&(g->number_total_nodes),g_array+sum,sizeof(int));
+    convert_data(&(g->number_total_nodes),sizeof(int),1);
     sum+=sizeof(int);
     memcpy(&(g->fitness),g_array+sum,sizeof(float));
+    convert_data(&(g->fitness),sizeof(float),1);
     sum+=sizeof(float);
     g->all_nodes = (node**)malloc(sizeof(node*)*g->number_total_nodes);
     
     for(i = 0; i < g->number_total_nodes; i++){
         g->all_nodes[i] = (node*)malloc(sizeof(node));
         memcpy(&(g->all_nodes[i]->in_conn_size),g_array+sum,sizeof(int));
+        convert_data(&(g->all_nodes[i]->in_conn_size),sizeof(int),1);
         sum+=sizeof(int);
         memcpy(&(g->all_nodes[i]->out_conn_size),g_array+sum,sizeof(int));
+        convert_data(&(g->all_nodes[i]->out_conn_size),sizeof(int),1);
         sum+=sizeof(int);
         memcpy(&(g->all_nodes[i]->innovation_number),g_array+sum,sizeof(int));
+        convert_data(&(g->all_nodes[i]->innovation_number),sizeof(int),1);
         sum+=sizeof(int);
         g->all_nodes[i]->actual_value = 0;
         g->all_nodes[i]->stored_value = 0;
@@ -168,29 +222,35 @@ genome* init_genome_from_array(int global_inn_numb_connections, char* g_array){
     }
     
     memcpy(&n,g_array+sum,sizeof(int));
+    convert_data(&n,sizeof(int),1);
     sum+=sizeof(int);
     
     for(i = 0; i < n; i++){
         memcpy(&(inn),g_array+sum,sizeof(int));
+        convert_data(&(inn),sizeof(int),1);
         sum+=sizeof(int);
         free(c[inn-1]);
         c[inn-1] = (connection*)malloc(sizeof(connection));
         c[inn-1]->innovation_number = inn;
         memcpy(&(inn2),g_array+sum,sizeof(int));
+        convert_data(&(inn2),sizeof(int),1);
         sum+=sizeof(int);
         for(j = 0; j < g->number_total_nodes; j++){
             if(g->all_nodes[j]->innovation_number == inn2)
                 c[inn-1]->in_node = g->all_nodes[j];
         }
         memcpy(&(inn2),g_array+sum,sizeof(int));
+        convert_data(&(inn2),sizeof(int),1);
         sum+=sizeof(int);
         for(j = 0; j < g->number_total_nodes; j++){
             if(g->all_nodes[j]->innovation_number == inn2)
                 c[inn-1]->out_node = g->all_nodes[j];
         }
         memcpy(&c[inn-1]->weight,g_array+sum,sizeof(float));
+        convert_data(&c[inn-1]->weight,sizeof(float),1);
         sum+=sizeof(float);
         memcpy(&c[inn-1]->flag,g_array+sum,sizeof(int));
+        convert_data(&c[inn-1]->flag,sizeof(int),1);
         sum+=sizeof(int);
     }
     
@@ -243,16 +303,23 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
     genome* g = (genome*)malloc(sizeof(genome));
     
     k = fread(&g->number_input,sizeof(int),1,read_ptr);
+    convert_data(&g->number_input,sizeof(int),1);
     k = fread(&g->number_output,sizeof(int),1,read_ptr);
+    convert_data(&g->number_output,sizeof(int),1);
     k = fread(&g->number_total_nodes,sizeof(int),1,read_ptr);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
     k = fread(&g->fitness,sizeof(float),1,read_ptr);
+    convert_data(&g->fitness,sizeof(float),1);
     g->all_nodes = (node**)malloc(sizeof(node*)*g->number_total_nodes);
     
     for(i = 0; i < g->number_total_nodes; i++){
         g->all_nodes[i] = (node*)malloc(sizeof(node));
         k = fread(&g->all_nodes[i]->in_conn_size,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
         k = fread(&g->all_nodes[i]->out_conn_size,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
         k = fread(&g->all_nodes[i]->innovation_number,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
         g->all_nodes[i]->actual_value = 0;
         g->all_nodes[i]->stored_value = 0;
         g->all_nodes[i]->in_connections = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->in_conn_size);
@@ -260,25 +327,30 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
     }
     
     k = fread(&n,sizeof(int),1,read_ptr);
-
+    convert_data(&n,sizeof(int),1);
     for(i = 0; i < n; i++){
         k = fread(&inn,sizeof(int),1,read_ptr);
+        convert_data(&inn,sizeof(int),1);
         free(c[inn-1]);
         c[inn-1] = (connection*)malloc(sizeof(connection));
         c[inn-1]->innovation_number = inn;
         k = fread(&inn2,sizeof(int),1,read_ptr);
+        convert_data(&inn2,sizeof(int),1);
         for(j = 0; j < g->number_total_nodes; j++){
             if(g->all_nodes[j]->innovation_number == inn2)
                 c[inn-1]->in_node = g->all_nodes[j];
         }
         k = fread(&inn2,sizeof(int),1,read_ptr);
+        convert_data(&inn2,sizeof(int),1);
         for(j = 0; j < g->number_total_nodes; j++){
             if(g->all_nodes[j]->innovation_number == inn2)
                 c[inn-1]->out_node = g->all_nodes[j];
         }
         
         k = fread(&c[inn-1]->weight,sizeof(float),1,read_ptr);
+        convert_data(&c[inn-1]->weight,sizeof(float),1);
         k = fread(&c[inn-1]->flag,sizeof(int),1,read_ptr);
+        convert_data(&c[inn-1]->flag,sizeof(int),1);
     }
     
     for(i = 0; i < g->number_total_nodes; i++){

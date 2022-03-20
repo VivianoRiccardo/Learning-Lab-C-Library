@@ -116,9 +116,10 @@ void set_k_percentage_of_ith_layer_model(model* m, int ith, float k_percentage);
 void set_model_beta_adamod(model* m, float beta);
 float get_beta3_from_model(model* m);
 int get_input_layer_size(model* m);
-void ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2);
-void ff_fcl_cl_without_arrays(fcl* f1, cl* f2);
-void ff_cl_fcl_without_arrays(cl* f1, fcl* f2);
-void ff_cl_cl_without_arrays(cl* f1, cl* f2);
+int ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2);
+int ff_fcl_cl_without_arrays(fcl* f1, cl* f2);
+int ff_cl_fcl_without_arrays(cl* f1, fcl* f2);
+int ff_cl_cl_without_arrays(cl* f1, cl* f2);
+int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
 
 #endif

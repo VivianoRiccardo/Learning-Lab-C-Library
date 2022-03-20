@@ -461,22 +461,30 @@ char* get_neat_in_char_vector(neat* nes){
     sum+=2*sizeof(int)+nes->global_inn_numb_connections*2*sizeof(int)+nes->global_inn_numb_connections*sizeof(int)+nes->global_inn_numb_nodes*sizeof(int)*2+sum_genome;
     char* c = (char*)malloc(sum);
     sum = 0;
+    convert_data(&nes->global_inn_numb_connections,sizeof(int),1);
     memcpy(c+sum,&(nes->global_inn_numb_connections),sizeof(int));
+    convert_data(&nes->global_inn_numb_connections,sizeof(int),1);
     sum+=sizeof(int);
-    
+    convert_data(&nes->global_inn_numb_nodes,sizeof(int),1);
     memcpy(c+sum,&(nes->global_inn_numb_nodes),sizeof(int));
+    convert_data(&nes->global_inn_numb_nodes,sizeof(int),1);
     sum+=sizeof(int);
     
     for(i = 0; i < nes->global_inn_numb_connections; i++){
+        convert_data(nes->matrix_connections[i],sizeof(int),2);
         memcpy(c+sum,nes->matrix_connections[i],sizeof(int)*2);
+        convert_data(nes->matrix_connections[i],sizeof(int),2);
         sum+=sizeof(int)*2;
     }
-    
+    convert_data(nes->dict_connections,sizeof(int),nes->global_inn_numb_connections);
     memcpy(c+sum,nes->dict_connections,sizeof(int)*nes->global_inn_numb_connections);
+    convert_data(nes->dict_connections,sizeof(int),nes->global_inn_numb_connections);
     sum+=sizeof(int)*nes->global_inn_numb_connections;
     
     for(i = 0; i < nes->global_inn_numb_nodes; i++){
+        convert_data(nes->matrix_nodes[i],sizeof(int),2);
         memcpy(c+sum,nes->matrix_nodes[i],sizeof(int)*2);
+        convert_data(nes->matrix_nodes[i],sizeof(int),2);
         sum+=sizeof(int)*2;
     }
     char* cc = get_genome_array(nes->gg[nes->actual_genomes-1],nes->global_inn_numb_connections);
@@ -616,8 +624,10 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
     int summ = 0;
     
     memcpy(&global_inn_numb_connections,neat_c+summ,sizeof(int));
+    convert_data(&global_inn_numb_connections,sizeof(int),1);
     summ+=sizeof(int);
     memcpy(&global_inn_numb_nodes,neat_c+summ,sizeof(int));
+    convert_data(&global_inn_numb_nodes,sizeof(int),1);
     summ+=sizeof(int);
     matrix_connections = (int**)malloc(sizeof(int*)*global_inn_numb_connections);
     dict_connections = (int*)malloc(sizeof(int)*global_inn_numb_connections);
@@ -626,15 +636,18 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
     for(i = 0; i < global_inn_numb_connections; i++){
         matrix_connections[i] = (int*)malloc(sizeof(int)*2);
         memcpy(matrix_connections[i],neat_c+summ,sizeof(int)*2);
+        convert_data(matrix_connections[i],sizeof(int),2);
         summ+=sizeof(int)*2;
     }
     
     memcpy(dict_connections,neat_c+summ,sizeof(int)*global_inn_numb_connections);
+    convert_data(dict_connections,sizeof(int),global_inn_numb_connections);
     summ+=sizeof(int)*global_inn_numb_connections;
     
     for(i = 0; i < global_inn_numb_nodes; i++){
         matrix_nodes[i] = (int*)malloc(sizeof(int)*2);
         memcpy(matrix_nodes[i],neat_c+summ,sizeof(int)*2);
+        convert_data(matrix_nodes[i],sizeof(int),2);
         summ+=sizeof(int)*2;
     }
     

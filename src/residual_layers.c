@@ -45,7 +45,7 @@ SOFTWARE.
 rl* residual(int channels, int input_rows, int input_cols, int n_cl, cl** cls){
     if(channels<=0 || input_rows<=0 || input_cols<=0 || n_cl<=0 || cls == NULL){
         fprintf(stderr,"Error: channels, input rows, input cols params must be > 0 and or n_cl or n_fcl must be > 0\n");
-        exit(1);
+        return NULL;
     }
     rl* r = (rl*)malloc(sizeof(rl));
     r->channels = channels;
@@ -127,37 +127,37 @@ void save_rl(rl* f, int n){
         fprintf(stderr,"Error: error during the opening of the file %s\n",s);
         exit(1);
     }
-    
+    convert_data(&f->cl_output->activation_flag,sizeof(int),1);
     i = fwrite(&f->cl_output->activation_flag,sizeof(int),1,fw);
-    
+    convert_data(&f->cl_output->activation_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a rl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->channels,sizeof(int),1);
     i = fwrite(&f->channels,sizeof(int),1,fw);
-    
+    convert_data(&f->channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a rl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->input_rows,sizeof(int),1);
     i = fwrite(&f->input_rows,sizeof(int),1,fw);
-    
+    convert_data(&f->input_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a rl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->input_cols,sizeof(int),1);
     i = fwrite(&f->input_cols,sizeof(int),1,fw);
-    
+    convert_data(&f->input_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a rl layer\n");
         exit(1);
     }
-    
+    convert_data(&f->n_cl,sizeof(int),1);
     i = fwrite(&f->n_cl,sizeof(int),1,fw);
-    
+    convert_data(&f->n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred saving a rl layer\n");
         exit(1);
@@ -193,35 +193,35 @@ rl* load_rl(FILE* fr){
     cl** cls;
     
     i = fread(&act_flag,sizeof(int),1,fr);
-    
+    convert_data(&act_flag,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&channels,sizeof(int),1,fr);
-    
+    convert_data(&channels,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&input_rows,sizeof(int),1,fr);
-    
+    convert_data(&input_rows,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&input_cols,sizeof(int),1,fr);
-    
+    convert_data(&input_cols,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
     }
     
     i = fread(&n_cl,sizeof(int),1,fr);
-    
+    convert_data(&n_cl,sizeof(int),1);
     if(i != 1){
         fprintf(stderr,"Error: an error occurred loading a rl layer\n");
         exit(1);
