@@ -38,10 +38,6 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
         exit(1);
     }
     
-    if(sampling_flag == UNIFORM_SAMPLING || sampling_flag == REWARD_SAMPLING){
-        beta_priorization = 0;
-        beta_priorization_increase = 0;
-    }
     
     if(beta_priorization_increase < 0 || beta_priorization_increase > 1){
         fprintf(stderr,"Error: beta_priorization_increase should be in range [0,1]\n"),
@@ -313,6 +309,7 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
         r->positive_batch = NULL;
         r->negative_batch = NULL;
         r->neutral_batch = NULL;
+        r->uniform_sampling_indices = NULL;
     }
     else if(sampling_flag == REWARD_SAMPLING){
         r->error_priorization =NULL;
@@ -335,6 +332,7 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
         r->positive_reverse_indices = NULL;
         r->negative_reverse_indices = NULL;
         r->neutral_reverse_indices = NULL;
+        r->uniform_sampling_indices = NULL;
     }
     
     else if(sampling_flag == UNIFORM_SAMPLING){
@@ -358,6 +356,7 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
         r->positive_batch = NULL;
         r->negative_batch = NULL;
         r->neutral_batch = NULL;
+        r->uniform_sampling_indices = (int*)calloc(r->max_buffer_size,sizeof(int));
     }
     
     r->diversity_driven_threshold = diversity_driven_threshold;// the threshold used to update alpha for the diversity driven exploration rule
@@ -445,6 +444,8 @@ void free_rainbow(rainbow* r){
     free(r->positive_batch);
     free(r->negative_batch);
     free(r->neutral_batch);
+    free(r->uniform_sampling_indices);
+    // cython could cause problem when dereferencing rainbow object as well as dueling categorical dqns
     //free_dueling_categorical_dqn(r->online_net);
     //free_dueling_categorical_dqn(r->target_net);
     //for(i = 0; i < r->threads; i++){
@@ -481,23 +482,30 @@ void free_rainbow(rainbow* r){
     return;
 }
 
+void update_exploration_probability(rainbow* r){
+    r->epsilon *= exp(-r->epsilon_decay);
+    if(r->epsilon < r->min_epsilon)
+        r->epsilon = r->min_epsilon;
+    if(r->epsilon > r->max_epsilon)
+        r->epsilon = r->max_epsilon;
+    return;
+}
+
+
 int get_action_rainbow(rainbow* r, float* state_t, int input_size, int free_state){
     float p = r2();
     if(r->action_taken_iteration < r->stop_epsilon_greedy && p <= r->epsilon){
         r->action_taken_iteration++;
-        r->epsilon = r->epsilon*exp(-r->epsilon_decay);
-        if(r->epsilon < r->min_epsilon)
-            r->epsilon = r->min_epsilon;
-        if(r->epsilon > r->max_epsilon)
-            r->epsilon = r->max_epsilon;
         if(free_state)
             free(state_t);
-        return rand()%r->online_net->action_size;
+        int n = rand()%r->online_net->action_size;
+        return n;
     }
     else{
+        inference_dqn(r->online_net);
         compute_probability_distribution(state_t , input_size, r->online_net);
         int action = argmax(compute_q_functions(r->online_net),r->online_net->action_size);
-        
+        train_dqn(r->online_net);
         if(r->action_taken_iteration >= r->stop_epsilon_greedy){
             copy_array(r->online_net->q_functions,r->diversity_driven_q_functions_buffer+r->diversity_driven_q_functions_counter*r->online_net->action_size,r->online_net->action_size);
             free(r->diversity_driven_states[r->diversity_driven_q_functions_counter]);
@@ -779,6 +787,23 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
     r->rewards[r->buffer_current_index] = reward;
     r->actions[r->buffer_current_index] = action;
     r->nonterminal_state_t_1[r->buffer_current_index] = nonterminal_s_t_1;
+    
+    int i;
+    /*
+    printf("c code\n");
+    for(i = 0; i < get_input_layer_size_dueling_categorical_dqn(r->online_net); i++){
+        printf("%f ",r->buffer_state_t[r->buffer_current_index][i]);
+    }
+    printf("\n");
+    for(i = 0; i < get_input_layer_size_dueling_categorical_dqn(r->online_net); i++){
+        printf("%f ",r->buffer_state_t_1[r->buffer_current_index][i]);
+    }
+    printf("\n");
+    printf("%d\n",action);
+    printf("%f\n",reward);
+    printf("%d\n",nonterminal_s_t_1);
+    */
+    
     if(r->sampling_flag == RANKED_SAMPLING){
         if(was_null)
             add_buffer_state(r, r->buffer_current_index);
@@ -794,6 +819,10 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
         
         else
             update_buffer_state_reward_sampling(r, r->buffer_current_index, previous_reward);
+    }
+    
+    else if(was_null && r->sampling_flag == UNIFORM_SAMPLING){
+        r->uniform_sampling_indices[r->buffer_current_index] = r->buffer_current_index;
     }
     
   
@@ -833,27 +862,6 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         double negative_sum = r->negative_sum_error_priorization_buffer;
         double positive_sum = r->positive_sum_error_priorization_buffer;
         double neutral_sum = r->neutral_sum_error_priorization_buffer;
-        /*
-        for(i = 0; i < r->max_buffer_size; i++){
-            //if(r->positive_ranked_values[i] > 0){
-                printf("positive value %d ",r->positive_ranked_values[i]);
-                printf("positive value2 %f ",r->positive_recursive_cumulative_ranked_values[i]);
-                printf("positive pow %f ",pow(((double)1.0/((double)r->positive_ranked_values[i])),r->alpha_priorization));
-                printf("positive index %d\n",i);
-            //}
-        }
-        printf("positive sum: %lf\n",r->positive_sum_error_priorization_buffer);
-        
-        for(i = 0; i < r->max_buffer_size; i++){
-            //if(r->negative_ranked_values[i] > 0){
-                printf("negative value %d ",r->negative_ranked_values[i]);
-                printf("negative value2 %f ",r->negative_recursive_cumulative_ranked_values[i]);
-                printf("negative pow %f ",pow(((double)1.0/((double)r->negative_ranked_values[i])),r->alpha_priorization));
-                printf("negative index %d\n",i);
-            //}
-        }
-        printf("negative sum: %lf\n",r->negative_sum_error_priorization_buffer);
-        * */
         
         for(i = 0; i < r->batch_size; i++){
             float samp = r2();
@@ -869,15 +877,20 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             if(neutral_rewards < r->neutral_rewards_length){
                 neutr_prob_sum = (1.0/((double)r->neutral_rewards_length));
             }
+            
+            neg_prob_sum = pow(neg_prob_sum,r->beta_priorization);
+            pos_prob_sum = pow(pos_prob_sum,r->beta_priorization);
+            neutr_prob_sum = pow(neutr_prob_sum,r->beta_priorization);
             prob_sum = neg_prob_sum+pos_prob_sum+neutr_prob_sum;
             neg_prob_sum = neg_prob_sum/prob_sum;
             pos_prob_sum = pos_prob_sum/prob_sum;
             neutr_prob_sum = neutr_prob_sum/prob_sum;
-            //printf("ok %f\n",p);
+
             if(negative_rewards < r->negative_rewards_length){
                 if(samp <= neg_prob_sum){
                     uint val = weighted_random_sample_rewards(r->negative_recursive_cumulative_ranked_values,r->negative_ranked_values,0,r->max_buffer_size,p,negative_sum,r->negative_batch,negative_rewards,r->alpha_priorization);
-                    negative_sum-=pow(((double)1.0/((double)r->negative_ranked_values[val])),r->alpha_priorization);
+                    if (!index_is_inside_buffer(r->batch,i,val))
+                        negative_sum-=pow(((double)1.0/((double)r->negative_ranked_values[val])),r->alpha_priorization);
                     r->batch[i] = val;
                     r->negative_batch[negative_rewards] = val;
                     negative_rewards++;
@@ -885,14 +898,16 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
                 else if(positive_rewards < r->positive_rewards_length){
                     if(samp-neg_prob_sum <= pos_prob_sum){
                         uint val = weighted_random_sample_rewards(r->positive_recursive_cumulative_ranked_values,r->positive_ranked_values,0,r->max_buffer_size,p,positive_sum,r->positive_batch,positive_rewards,r->alpha_priorization);
-                        positive_sum-=pow(((double)1.0/((double)r->positive_ranked_values[val])),r->alpha_priorization);
+                        if (!index_is_inside_buffer(r->batch,i,val))
+                            positive_sum-=pow(((double)1.0/((double)r->positive_ranked_values[val])),r->alpha_priorization);
                         r->batch[i] = val;
                         r->positive_batch[positive_rewards] = val;
                         positive_rewards++;
                     }
                     else{
                         uint val = weighted_random_sample_rewards(r->neutral_recursive_cumulative_ranked_values,r->neutral_ranked_values,0,r->max_buffer_size,p,neutral_sum,r->neutral_batch,neutral_rewards,r->alpha_priorization);
-                        neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
+                        if (!index_is_inside_buffer(r->batch,i,val))
+                            neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
                         r->batch[i] = val;
                         r->neutral_batch[neutral_rewards] = val;
                         neutral_rewards++;
@@ -900,7 +915,8 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
                 }
                 else{
                     uint val = weighted_random_sample_rewards(r->neutral_recursive_cumulative_ranked_values,r->neutral_ranked_values,0,r->max_buffer_size,p,neutral_sum,r->neutral_batch,neutral_rewards,r->alpha_priorization);
-                    neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
+                    if (!index_is_inside_buffer(r->batch,i,val))
+                        neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
                     r->batch[i] = val;
                     r->neutral_batch[neutral_rewards] = val;
                     neutral_rewards++;
@@ -909,14 +925,16 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             else if(positive_rewards < r->positive_rewards_length){
                 if(samp <= pos_prob_sum){
                     uint val = weighted_random_sample_rewards(r->positive_recursive_cumulative_ranked_values,r->positive_ranked_values,0,r->max_buffer_size,p,positive_sum,r->positive_batch,positive_rewards,r->alpha_priorization);
-                    positive_sum-=pow(((double)1.0/((double)r->positive_ranked_values[val])),r->alpha_priorization);
+                    if (!index_is_inside_buffer(r->batch,i,val))
+                        positive_sum-=pow(((double)1.0/((double)r->positive_ranked_values[val])),r->alpha_priorization);
                     r->batch[i] = val;
                     r->positive_batch[positive_rewards] = val;
                     positive_rewards++;
                 }
                 else{
                     uint val = weighted_random_sample_rewards(r->neutral_recursive_cumulative_ranked_values,r->neutral_ranked_values,0,r->max_buffer_size,p,neutral_sum,r->neutral_batch,neutral_rewards,r->alpha_priorization);
-                    neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
+                    if (!index_is_inside_buffer(r->batch,i,val))    
+                        neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
                     r->batch[i] = val;
                     r->neutral_batch[neutral_rewards] = val;
                     neutral_rewards++;
@@ -924,46 +942,18 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             }
             else{
                 uint val = weighted_random_sample_rewards(r->neutral_recursive_cumulative_ranked_values,r->neutral_ranked_values,0,r->max_buffer_size,p,neutral_sum,r->neutral_batch,neutral_rewards,r->alpha_priorization);
-                neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
+                if (!index_is_inside_buffer(r->batch,i,val))
+                    neutral_sum-=pow(((double)1.0/((double)r->neutral_ranked_values[val])),r->alpha_priorization);
                 r->batch[i] = val;
                 r->neutral_batch[neutral_rewards] = val;
                 neutral_rewards++;
             }
-           /* 
-           printf("%d\n",r->batch[i]);
-           printf("pos: %d\n",positive_rewards);
-           printf("neg: %d\n",negative_rewards);
-           printf("neu: %d\n",neutral_rewards);
-            */
         }
     }
     else if(r->sampling_flag == UNIFORM_SAMPLING){
+        shuffle_int_array_until_length(r->uniform_sampling_indices,length,r->batch_size);
         for(i = 0; i < r->batch_size; i++){
-            uint n = rand()%length;
-            if(index_is_inside_buffer(r->batch,i,n)){
-                int flag = 1;
-                for(j = n+1; j < length; j++){
-                    if(!index_is_inside_buffer(r->batch,i,j)){
-                        flag = 0;
-                        r->batch[i] = j;
-                        break;
-                    }
-                }
-                if(flag){
-                    for(j = n-1; j >= 0; j--){
-                        if(!index_is_inside_buffer(r->batch,i,j)){
-                            flag = 0;
-                            r->batch[i] = j;
-                            break;
-                        }
-                        if(!j)
-                            break;
-                    }    
-                }
-            }
-            else{
-                r->batch[i] = n;
-            }
+            r->batch[i] = r->uniform_sampling_indices[i];
         }
     }
     // n step forward sampling
@@ -977,10 +967,12 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             index = (r->batch[i]+j)%r->max_buffer_size;
             reward+=lambda*r->rewards[index];
             if(!r->nonterminal_state_t_1[index]){
+                //printf("uzzioo\n");
                 r->temp_states_t_1[i] = r->buffer_state_t_1[index];
                 r->temp_nonterminal_state_t_1[i] = r->nonterminal_state_t_1[index];
                 break;
             }
+            //printf("lezz\n");
             lambda*=r->lambda_value;
         }
         if(r->temp_states_t_1[i] == NULL){
@@ -996,7 +988,6 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         else
             r->weighted_errors[i] = 1;
     }
-    
     if(r->sampling_flag == RANKED_SAMPLING){
         // maximum weight
         float maximum = 1.0/(pow(1.0/(((float)(length))*(r->ranked_values[length-1]/r->sum_error_priorization_buffer)),r->beta_priorization));
@@ -1049,7 +1040,6 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
                 dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
             }
             ret/=r->batch_size;
-            real_ret = ret;
             if(ret < 0)
                 ret = -ret;
             if(ret < r->diversity_driven_threshold)
@@ -1063,23 +1053,22 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             if(r->diversity_driven_threshold > r->diversity_driven_maximum)
                 r->diversity_driven_threshold = r->diversity_driven_maximum;
     }
-    
     // adaptive clipping gradient
     if(r->adaptive_clipping_flag)
         adaptive_gradient_clipping_dueling_categorical_dqn(r->online_net,r->adaptive_clipping_gradient_value,1e-3);
     // update and reset online net
     update_dueling_categorical_dqn(r->online_net,r->lr,r->momentum,r->batch_size,r->gd_flag,&r->beta1,&r->beta2,NO_REGULARIZATION,0,0,(unsigned long long int*)&r->train_iteration);
-    reset_dueling_categorical_dqn(r->online_net);
+    
     // copy for dobule dqn
     if(r->train_iteration && !(r->train_iteration%r->epochs_to_copy_target)){
         slow_paste_dueling_categorical_dqn(r->online_net,r->target_net,r->tau_copying);
-        reset_dueling_categorical_dqn(r->target_net);
     }
     // update learning rate
     update_lr(&r->lr,r->lr_minimum,r->lr_maximum,r->initial_lr,r->lr_decay,r->train_iteration,r->lr_epoch_threshold,r->lr_decay_flag);
     // update training parameters
     update_training_parameters(&r->beta1,&r->beta2,(unsigned long long int*)&r->train_iteration,r->online_net->shared_hidden_layers->beta1_adam,r->online_net->shared_hidden_layers->beta2_adam);
-    
+    reset_dueling_categorical_dqn(r->online_net);
+    reset_dueling_categorical_dqn(r->target_net);
     // if ranked based sampling we must update the errors
     if(r->sampling_flag == RANKED_SAMPLING){
         for(i = 0; i < r->batch_size; i++){

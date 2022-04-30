@@ -459,6 +459,28 @@ int shuffle_int_array(int* m,int n){
     return 0;
 }
 
+/* Function used to shuffle randomly the pointers of the matrix m
+ * 
+ * Input:
+ *             @char** m:= a matrix
+ *                         dimensions: n*k
+ *             @int n:= number of pointers char* of m
+ * */
+int shuffle_int_array_until_length(int* m,int n, int length){
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < length - 1; i++) 
+        {
+          size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = m[j];
+          m[j] = m[i];
+          m[i] = t;
+        }
+    
+    }
+    return 0;
+}
+
 
 /* Function used to shuffle randomly the pointers of the 2 matrices m and m1
  * 
@@ -800,6 +822,38 @@ void quick_sort(float A[], int I[], int lo, int hi){
         }
         quick_sort(A, I, lo, j);
         quick_sort(A, I, j + 1, hi);
+    }
+}
+
+/* this function given a float array and a int array of indices from 0 to hi 
+ * already sorted will sort the array of indices based on the float a
+ * 
+ * input:
+ * 
+ *                 @ float A[]:= the array of values
+ *                 @ int I[]:= the array of indices
+ *                 @ int lo:= 0
+ *                 int hi:= len-1
+ * */
+void quick_sort_int(int A[], int I[], int lo, int hi){
+    if (lo < hi)
+    {
+        int pivot = A[I[lo + (hi - lo) / 2]];
+        int t;
+        int i = lo - 1;
+        int j = hi + 1;
+        while (1)
+        {
+            while (A[I[++i]] < pivot);
+            while (A[I[--j]] > pivot);
+            if (i >= j)
+                break;
+            t = I[i];
+            I[i] = I[j];
+            I[j] = t;
+        }
+        quick_sort_int(A, I, lo, j);
+        quick_sort_int(A, I, j + 1, hi);
     }
 }
 
@@ -1200,7 +1254,7 @@ float subtracted_value_rewards(uint index, int* current_values, uint* taken_valu
     float ret = 0;
     uint i;
     for(i = 0; i < taken_values_length; i++){
-        if(!index_is_inside_buffer(taken_values,i,taken_values[i])){
+        if(!index_is_inside_buffer(taken_values,i,taken_values[i]) && current_values[taken_values[i]] > 0){
             if(value_is_child(taken_values[i],index))
                 ret+=pow(((double)1/((double)current_values[taken_values[i]])),alpha);
             //printf("i, ret: %d, %f\n",taken_values[i],ret);
@@ -1279,12 +1333,19 @@ uint weighted_random_sample_rewards(float* cumulative_values, int* current_value
     uint right = index*2+2;
     random_value-=v;
     if(left >= size){
-        return index;
+        if(current_values[index]>0)
+            return index;
+        else
+            return size;
     }
     
     if(right >= size){
         uint i;
-        return left;
+        if(current_values[left] > 0)
+            return left;
+        else
+            return size;
+            
     }
     if(current_values[left] > 0 && !index_is_inside_buffer(taken_values,taken_values_length,left)){
         v_left = pow(((double)1/((double)current_values[left])),alpha);
@@ -1296,13 +1357,17 @@ uint weighted_random_sample_rewards(float* cumulative_values, int* current_value
     if(random_value <= ((v_left+cumulative_values[left]-sub)/sum)){
         returned_index = weighted_random_sample_rewards(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length,alpha);
         if(returned_index == size)
-            return weighted_random_sample_rewards(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length,alpha);
+            returned_index = weighted_random_sample_rewards(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length,alpha);
+        if(current_values[index] > 0 && returned_index == size)
+            return index;
         return returned_index;
     }
     else{
         returned_index = weighted_random_sample_rewards(cumulative_values, current_values, right, size, random_value-((v_left+cumulative_values[left]-sub)/sum), sum,taken_values,taken_values_length,alpha);
         if(returned_index == size)
-            return weighted_random_sample_rewards(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length,alpha);
+            returned_index = weighted_random_sample_rewards(cumulative_values, current_values, left, size, random_value, sum,taken_values,taken_values_length,alpha);
+        if(current_values[index] > 0 && returned_index == size)
+            return index;
         return returned_index;
     }
     
@@ -1335,11 +1400,11 @@ void swap_array_bytes_order(void* ptr, uint64_t size, uint64_t len){
     char* array = (char*) &ptr;
     uint64_t i;
     for(i = 0; i < len; i++){
-		reverse_ptr(array + i*size,size);
-	}
+        reverse_ptr(array + i*size,size);
+    }
 }
 
 void convert_data(void* ptr, uint64_t size, uint64_t len){
-	if(!is_little_endian())
-		swap_array_bytes_order(ptr,size,len);
+    if(!is_little_endian())
+        swap_array_bytes_order(ptr,size,len);
 }

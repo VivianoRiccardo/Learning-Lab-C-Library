@@ -2061,3 +2061,21 @@ void make_the_fcl_only_for_ff(fcl* f){
         f->dropout_threshold = 1-f->dropout_threshold;
     }
 }
+
+void inference_fcl(fcl* f){
+    if(f == NULL)
+        return;
+    if(f->dropout_flag == DROPOUT){
+        f->dropout_flag = DROPOUT_TEST;
+        f->dropout_threshold = 1-f->dropout_threshold;
+    }
+}
+
+void train_fcl(fcl* f){
+    if(f == NULL)
+        return;
+    if(f->dropout_flag == DROPOUT_TEST){
+        f->dropout_flag = DROPOUT;
+        f->dropout_threshold = 1-f->dropout_threshold;
+    }
+}

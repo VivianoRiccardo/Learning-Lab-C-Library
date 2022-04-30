@@ -47,6 +47,7 @@ int round_up(float num);
 char* get_genome_array(genome* g, int global_inn_numb_connections);
 genome* init_genome_from_array(int global_inn_numb_connections, char* g_array);
 int get_genome_array_size(genome* g, int global_inn_numb_connections);
+void adjust_genome(genome* g);
 
 
 // Functions defined in mutations.c

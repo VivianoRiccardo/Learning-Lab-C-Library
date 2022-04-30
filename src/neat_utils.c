@@ -337,14 +337,18 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
         k = fread(&inn2,sizeof(int),1,read_ptr);
         convert_data(&inn2,sizeof(int),1);
         for(j = 0; j < g->number_total_nodes; j++){
-            if(g->all_nodes[j]->innovation_number == inn2)
+            if(g->all_nodes[j]->innovation_number == inn2){
                 c[inn-1]->in_node = g->all_nodes[j];
+                break;
+            }
         }
         k = fread(&inn2,sizeof(int),1,read_ptr);
         convert_data(&inn2,sizeof(int),1);
         for(j = 0; j < g->number_total_nodes; j++){
-            if(g->all_nodes[j]->innovation_number == inn2)
+            if(g->all_nodes[j]->innovation_number == inn2){
                 c[inn-1]->out_node = g->all_nodes[j];
+                break;
+            }
         }
         
         k = fread(&c[inn-1]->weight,sizeof(float),1,read_ptr);
@@ -674,5 +678,61 @@ int get_numb_connections(genome* g, int global_inn_numb_connections){
     free(temp);
     return counter;
     
+}
+
+void adjust_genome(genome* g){
+    int i,j;
+    int* nodes = (int*)malloc(sizeof(int)*g->number_total_nodes);
+    int* nodes_indices = (int*)malloc(sizeof(int)*g->number_total_nodes);
+    int* connections;
+    int* connections_indices;
+    connection** conn;
+    for(i = 0; i < g->number_total_nodes; i++){
+        nodes[i] = g->all_nodes[i]->innovation_number;
+        nodes_indices[i] = i;
+    }
+    quick_sort_int(nodes,nodes_indices,0,g->number_total_nodes-1);
+    node** all_nodes = (node**)malloc(sizeof(node*)*g->number_total_nodes);
+    for(i = 0; i < g->number_total_nodes; i++){
+        all_nodes[i] = g->all_nodes[nodes_indices[i]];
+    }
+    free(g->all_nodes);
+    g->all_nodes = all_nodes;
+    free(nodes);
+    free(nodes_indices);
+    for(i = 0; i < g->number_total_nodes; i++){
+        connections = (int*)malloc(sizeof(int)*g->all_nodes[i]->in_conn_size);
+        connections_indices = (int*)malloc(sizeof(int)*g->all_nodes[i]->in_conn_size);
+        for(j = 0; j < g->all_nodes[i]->in_conn_size; j++){
+            connections[j] = g->all_nodes[i]->in_connections[j]->innovation_number;
+            connections_indices[j] = j;
+        }
+        quick_sort_int(connections,connections_indices,0,g->all_nodes[i]->in_conn_size-1);
+        conn = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->in_conn_size);
+        for(j = 0; j < g->all_nodes[i]->in_conn_size; j++){
+            conn[j] = g->all_nodes[i]->in_connections[connections_indices[j]];
+        }
+        free(connections);
+        free(connections_indices);
+        free(g->all_nodes[i]->in_connections);
+        g->all_nodes[i]->in_connections = conn;
+        
+        connections = (int*)malloc(sizeof(int)*g->all_nodes[i]->out_conn_size);
+        connections_indices = (int*)malloc(sizeof(int)*g->all_nodes[i]->out_conn_size);
+        for(j = 0; j < g->all_nodes[i]->out_conn_size; j++){
+            connections[j] = g->all_nodes[i]->out_connections[j]->innovation_number;
+            connections_indices[j] = j;
+        }
+        quick_sort_int(connections,connections_indices,0,g->all_nodes[i]->out_conn_size-1);
+        conn = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->out_conn_size);
+        for(j = 0; j < g->all_nodes[i]->out_conn_size; j++){
+            conn[j] = g->all_nodes[i]->out_connections[connections_indices[j]];
+        }
+        free(connections);
+        free(connections_indices);
+        free(g->all_nodes[i]->out_connections);
+        g->all_nodes[i]->out_connections = conn;
+        
+    }
 }
 

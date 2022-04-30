@@ -809,6 +809,7 @@ typedef struct rainbow{
     float** diversity_driven_states;
     float* last_errors_dqn;
     float* last_errors_diversity_driven;
+    int* uniform_sampling_indices;
     int* positive_rewards;
     int* negative_rewards;
     int* neutral_rewards;
@@ -852,7 +853,6 @@ typedef struct rainbow{
 
 #include "attention.h"
 #include "batch_norm_layers.h"
-#include "client.h"
 #include "clipping_gradient.h"
 #include "convolutional.h"
 #include "convolutional_layers.h"
@@ -882,7 +882,6 @@ typedef struct rainbow{
 #include "rmodel.h"
 #include "positional_encoding.h"
 #include "scaled_l2_norm_layers.h"
-#include "server.h"
 #include "struct_conn.h"
 #include "struct_conn_handler.h"
 #include "training.h"

@@ -429,6 +429,7 @@ void neat_generation_run(neat* nes){
     nes->count+=nes->actual_genomes;
     for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
         gg[nes->i]->fitness = 0;
+        adjust_genome(gg[nes->i]);
     }
 }
 

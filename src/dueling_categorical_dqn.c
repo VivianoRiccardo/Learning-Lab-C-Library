@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "dueling_categorical_dqn.h"
 
+
 dueling_categorical_dqn* dueling_categorical_dqn_init(int input_size, int action_size, int n_atoms, float v_min, float v_max, model* shared_hidden_layers, model* v_hidden_layers, model* a_hidden_layers, model* v_linear_last_layer, model* a_linear_last_layer){
     if(shared_hidden_layers == NULL || v_hidden_layers == NULL || a_hidden_layers == NULL || v_linear_last_layer == NULL || a_linear_last_layer == NULL){
         fprintf(stderr,"Error: you cannot have null model passed as input!\n");
@@ -1360,6 +1361,10 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
     // used to rescale alpha that is the most important part)
     * */
     clip_vector(error,-clip,clip,online_net->action_size);
+    /*for(i = 0; i < online_net->action_size; i++){
+        printf("%f ",error[i]);
+    }
+    printf("\n");*/
     // we got the partial derivatives of the q functions, now we need to compute the partial derivatives respect to the softmax final layer of the network
     for(i = 0; i < online_net->action_size; i++){
         for(j = 0; j < online_net->n_atoms; j++){
@@ -1507,4 +1512,20 @@ int get_input_layer_size_dueling_categorical_dqn(dueling_categorical_dqn* dqn){
     if(dqn == NULL)
         return 0;
     return get_input_layer_size(dqn->shared_hidden_layers);
+}
+
+void inference_dqn(dueling_categorical_dqn* dqn){
+	inference_model(dqn->shared_hidden_layers);
+	inference_model(dqn->a_hidden_layers);
+	inference_model(dqn->v_hidden_layers);
+	inference_model(dqn->a_linear_last_layer);
+	inference_model(dqn->v_linear_last_layer);
+}
+
+void train_dqn(dueling_categorical_dqn* dqn){
+	train_model(dqn->shared_hidden_layers);
+	train_model(dqn->a_hidden_layers);
+	train_model(dqn->v_hidden_layers);
+	train_model(dqn->a_linear_last_layer);
+	train_model(dqn->v_linear_last_layer);
 }

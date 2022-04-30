@@ -121,5 +121,7 @@ int ff_fcl_cl_without_arrays(fcl* f1, cl* f2);
 int ff_cl_fcl_without_arrays(cl* f1, fcl* f2);
 int ff_cl_cl_without_arrays(cl* f1, cl* f2);
 int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
+void inference_model(model* m);
+void train_model(model* m);
 
 #endif

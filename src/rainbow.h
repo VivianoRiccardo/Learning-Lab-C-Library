@@ -42,5 +42,6 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
 void train_rainbow(rainbow* r, int last_t_1_was_terminal);
 void add_buffer_state_reward_sampling(rainbow* r, uint index);
 void update_buffer_state_reward_sampling(rainbow* r, uint index, float previous_reward);
+void update_exploration_probability(rainbow* r);
 
 #endif

@@ -7360,36 +7360,7 @@ int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_
 						return 0;
 					}
                     
-                    if(k3-count == m->rls[z]->n_cl-1){
-                        if(m->rls[z]->cls[k3-count]->pooling_flag){
-                            float* pooltemp_prev = m->rls[z]->cls[k3-count]->post_pooling;
-                            if(m->rls[z]->cls[k3-count]->convolutional_flag == NO_CONVOLUTION && m->rls[z]->cls[k3-count]->stride2_cols == 1 && m->rls[z]->cls[k3-count]->stride2_rows == 1 && m->rls[z]->cls[k3-count]->padding2_rows == 0 && m->rls[z]->cls[k3-count]->padding2_cols == 0 && m->rls[z]->cls[k3-count]->pooling_rows == 1 && m->rls[z]->cls[k3-count]->pooling_cols == 1){
-                                pooltemp_prev = m->rls[z]->cls[k3-count]->pooltemp;
-                            }
-                            sum1D(m->rls[z]->input,pooltemp_prev,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
-                        }
-                        else if(m->rls[z]->cls[k3-count]->normalization_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        
-                        else if(m->rls[z]->cls[k3-count]->activation_flag){
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        }
-                        else
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        
-                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU){
-                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        }
-                        else if(m->rls[z]->cl_output->activation_flag == RELU){
-                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        }
-                        else if(m->rls[z]->cl_output->activation_flag == ELU)
-                            elu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1,ELU_THRESHOLD);
-                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
-                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        else if(m->rls[z]->cl_output->activation_flag == TANH)
-                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                    }
+
                     
                     k3++;
                     
@@ -7508,31 +7479,7 @@ int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_
                     
                     
                     if(m->sla[i-1][0] == FCLS){
-                        if(k3-count == 0){
-                            if(m->fcls[k1-1]->dropout_flag){
-                                if(m->fcls[k1-1]->activation_flag){
-                                    dot1D(m->fcls[k1-1]->post_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
-                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
-                                }
-                                else{
-                                    dot1D(m->fcls[k1-1]->pre_activation,m->fcls[k1-1]->dropout_mask,m->fcls[k1-1]->dropout_temp,m->rls[z]->channels*m->rls[z]->input_rows*m->rls[z]->input_cols);
-                                    m->rls[z]->input = m->fcls[k1-1]->dropout_temp;
-                                }
-                            }
-                            else{
-                                
-                                if(m->fcls[k1-1]->normalization_flag){
-                                    m->rls[z]->input = m->fcls[k1-1]->post_normalization;
-                                }
-                                
-                                else if(m->fcls[k1-1]->activation_flag){
-                                    m->rls[z]->input = m->fcls[k1-1]->post_activation;
-                                }
-                                else{
-                                    m->rls[z]->input = m->fcls[k1-1]->pre_activation;
-                                }
-                            }
-                        }
+
                     
                         if(!ff_fcl_cl_without_arrays(m->fcls[k1-1],m->rls[z]->cls[k3-count])){
 							free(temp);
@@ -7541,25 +7488,7 @@ int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_
                     }
                     
                     else if(m->sla[i-1][0] == CLS){
-                        if(k3-count == 0){
-                            if(m->cls[k2-1]->pooling_flag){
-                                float* pooltemp_prev = m->cls[k2-1]->post_pooling;
-                                if(m->cls[k2-1]->convolutional_flag == NO_CONVOLUTION && m->cls[k2-1]->stride2_cols == 1 && m->cls[k2-1]->stride2_rows == 1 && m->cls[k2-1]->padding2_rows == 0 && m->cls[k2-1]->padding2_cols == 0 && m->cls[k2-1]->pooling_rows == 1 && m->cls[k2-1]->pooling_cols == 1){
-                                    pooltemp_prev = m->cls[k2-1]->pooltemp;
-                                }
-                                m->rls[z]->input = pooltemp_prev;
-                            }
-                            else if(m->cls[k2-1]->normalization_flag){
-                                m->rls[z]->input = m->cls[k2-1]->post_normalization;
-                            }
-                            
-                            else if(m->cls[k2-1]->activation_flag){
-                                m->rls[z]->input = m->cls[k2-1]->post_activation;
-                            }
-                            else{
-                                m->rls[z]->input = m->cls[k2-1]->pre_activation;
-                            }
-                        }
+
                         if(!ff_cl_cl_without_arrays(m->cls[k2-1],m->rls[z]->cls[k3-count])){
 							free(temp);
 							return 0;
@@ -7596,40 +7525,7 @@ int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_
                         }
                     }
                     
-                    if(k3-count == m->rls[z]->n_cl-1){
-                        if(m->rls[z]->cls[k3-count]->pooling_flag){
-                            float* pooltemp_prev = m->rls[z]->cls[k3-count]->post_pooling;
-                            if(m->rls[z]->cls[k3-count]->convolutional_flag == NO_CONVOLUTION && m->rls[z]->cls[k3-count]->stride2_cols == 1 && m->rls[z]->cls[k3-count]->stride2_rows == 1 && m->rls[z]->cls[k3-count]->padding2_rows == 0 && m->rls[z]->cls[k3-count]->padding2_cols == 0 && m->rls[z]->cls[k3-count]->pooling_rows == 1 && m->rls[z]->cls[k3-count]->pooling_cols == 1){
-                                pooltemp_prev = m->rls[z]->cls[k3-count]->pooltemp;
-                            }
-                            sum1D(m->rls[z]->input,pooltemp_prev,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows2*m->rls[z]->cls[k3-count]->cols2);
-                            //printf("summing from previous pooling\n");
-                        }
-                        else if(m->rls[z]->cls[k3-count]->normalization_flag)
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_normalization,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        else if(m->rls[z]->cls[k3-count]->activation_flag){
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->post_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                            //printf("summing from previous activation\n");
-                        }
-                        else
-                            sum1D(m->rls[z]->input,m->rls[z]->cls[k3-count]->pre_activation,m->rls[z]->cl_output->pre_activation,m->rls[z]->cls[k3-count]->n_kernels*m->rls[z]->cls[k3-count]->rows1*m->rls[z]->cls[k3-count]->cols1);
-                        
-                        if(m->rls[z]->cl_output->activation_flag == LEAKY_RELU){
-                            leaky_relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                            //printf("applying leaky relu rls\n");
-                        }
-                        else if(m->rls[z]->cl_output->activation_flag == RELU){
-                            relu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                            //printf("applying relu rls\n");
-                        }
-                        else if(m->rls[z]->cl_output->activation_flag == ELU)
-                            elu_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1,ELU_THRESHOLD);
-                        else if(m->rls[z]->cl_output->activation_flag == SIGMOID)
-                            sigmoid_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-                        else if(m->rls[z]->cl_output->activation_flag == TANH)
-                            tanhh_array(m->rls[z]->cl_output->pre_activation,m->rls[z]->cl_output->post_activation, m->rls[z]->cl_output->n_kernels*m->rls[z]->cl_output->rows1*m->rls[z]->cl_output->cols1);
-
-                    }
+                    
                     
                     k3++;
                     
@@ -9205,6 +9101,24 @@ void make_the_model_only_for_ff(model* m){
             make_the_cl_only_for_ff(m->rls[i]->cls[j]);
         }
         
+    }
+}
+
+void inference_model(model* m){
+    if(m == NULL)
+        return;
+    int i,j;
+    for(i = 0; i < m->n_fcl; i++){
+        inference_fcl(m->fcls[i]);
+    }
+}
+
+void train_model(model* m){
+    if(m == NULL)
+        return;
+    int i,j;
+    for(i = 0; i < m->n_fcl; i++){
+        train_fcl(m->fcls[i]);
     }
 }
 
