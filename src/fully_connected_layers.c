@@ -1614,7 +1614,7 @@ uint64_t get_array_size_params(fcl* f){
  *                 @ flc* f:= the fully-connected layer
  * */
 uint64_t get_array_size_scores_fcl(fcl* f){
-    if(f == NULL || !exists_edge_popup_stuff_fcl(f))
+    if(f == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return 0;
     return (uint64_t)f->input*f->output;
 }
@@ -1628,7 +1628,7 @@ uint64_t get_array_size_scores_fcl(fcl* f){
  *                 @ flc* f:= the fully-connected layer
  * */
 uint64_t get_array_size_weights(fcl* f){
-    if(f == NULL || !exists_params_fcl(f))
+    if(f == NULL || !exists_params_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return 0;
     uint64_t sum = 0;
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1665,7 +1665,7 @@ void memcopy_vector_to_params(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_scores(fcl* f, float* vector){
-    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f))
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(f->scores,vector,f->input*f->output*sizeof(float));
 }
@@ -1698,7 +1698,7 @@ void memcopy_params_to_vector(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_weights_to_vector(fcl* f, float* vector){
-    if(f == NULL || !exists_params_fcl(f) || vector == NULL)
+    if(f == NULL || !exists_params_fcl(f) || vector == NULL || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1716,7 +1716,7 @@ void memcopy_weights_to_vector(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_vector_to_weights(fcl* f, float* vector){
-    if(f == NULL || !exists_params_fcl(f) || vector == NULL)
+    if(f == NULL || !exists_params_fcl(f) || vector == NULL || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1734,7 +1734,7 @@ void memcopy_vector_to_weights(fcl* f, float* vector){
  *                 @ float* vector:= the vector where is copyed everything
  * */
 void memcopy_scores_to_vector(fcl* f, float* vector){
-    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f))
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(vector,f->scores,f->input*f->output*sizeof(float));
 }

@@ -1318,7 +1318,7 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
 }
 
 int ff_fcl_fcl_without_arrays(fcl* f1, fcl* f2){
-    if(f1->output != f2->input){
+    if(f1->output != f2->input || f2->feed_forward_flag == ONLY_DROPOUT){
         return 0;
     }
     return 1;

@@ -101,6 +101,80 @@ int save_genome(genome* g, int global_inn_numb_connections, int numb){
     
 }
 
+int save_genome_complete(genome* g, int global_inn_numb_connections, int global_inn_numb_nodes, int numb){
+    
+    int i,n;
+    connection** c = get_connections(g,global_inn_numb_connections);
+    n = get_numb_connections(g,global_inn_numb_connections);
+    char string[20];
+    char *s = ".bin";
+    FILE *write_ptr;
+    
+    itoa(numb, string);
+    
+    strcat(string,s);
+    
+    write_ptr = fopen(string,"wb");
+    convert_data(&global_inn_numb_connections,sizeof(int),1);
+    fwrite(&global_inn_numb_connections,sizeof(int),1,write_ptr);
+    convert_data(&global_inn_numb_connections,sizeof(int),1);
+    convert_data(&global_inn_numb_nodes,sizeof(int),1);
+    fwrite(&global_inn_numb_nodes,sizeof(int),1,write_ptr);
+    convert_data(&global_inn_numb_nodes,sizeof(int),1);
+    
+    convert_data(&g->number_input,sizeof(int),1);
+    fwrite(&g->number_input,sizeof(int),1,write_ptr);
+    convert_data(&g->number_input,sizeof(int),1);
+    convert_data(&g->number_output,sizeof(int),1);
+    fwrite(&g->number_output,sizeof(int),1,write_ptr);
+    convert_data(&g->number_output,sizeof(int),1);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
+    fwrite(&g->number_total_nodes,sizeof(int),1,write_ptr);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
+    convert_data(&g->fitness,sizeof(float),1);
+    fwrite(&g->fitness,sizeof(float),1,write_ptr);
+    convert_data(&g->fitness,sizeof(float),1);
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
+        fwrite(&g->all_nodes[i]->in_conn_size,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
+        fwrite(&g->all_nodes[i]->out_conn_size,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
+        fwrite(&g->all_nodes[i]->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
+    }
+    convert_data(&n,sizeof(int),1);
+    fwrite(&n,sizeof(int),1,write_ptr);
+    convert_data(&n,sizeof(int),1);
+    
+    for(i = 0; i < n; i++){
+        convert_data(&c[i]->innovation_number,sizeof(int),1);
+        fwrite(&c[i]->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->in_node->innovation_number,sizeof(int),1);
+        fwrite(&c[i]->in_node->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->in_node->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->out_node->innovation_number,sizeof(int),1);
+        fwrite(&c[i]->out_node->innovation_number,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->out_node->innovation_number,sizeof(int),1);
+        convert_data(&c[i]->weight,sizeof(float),1);
+        fwrite(&c[i]->weight,sizeof(float),1,write_ptr);
+        convert_data(&c[i]->weight,sizeof(float),1);
+        convert_data(&c[i]->flag,sizeof(int),1);
+        fwrite(&c[i]->flag,sizeof(int),1,write_ptr);
+        convert_data(&c[i]->flag,sizeof(int),1);
+    }
+    
+    free(c);
+    i = fclose(write_ptr);
+    
+    return i;
+    
+}
+
 char* get_genome_array(genome* g, int global_inn_numb_connections){
     int i,n, sum=0;
     connection** cc = get_connections(g,global_inn_numb_connections);
@@ -393,6 +467,132 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
         exit(1);
     }
     
+    return g;
+    
+    
+}
+
+int get_global_innovation_number_connections_from_genome(genome* g){
+	return g->global_inn_numb_connections;
+}
+int get_global_innovation_number_nodes_from_genome(genome* g){
+	return g->global_inn_numb_nodes;
+}
+
+genome* load_genome_complete(char* filename){
+    int i,j,n,inn,inn2,k;
+    char input[256];
+    FILE *read_ptr = fopen(filename,"r");
+    if(read_ptr == NULL){
+        fprintf(stderr,"Error no such a file\n");
+        exit(1);
+    }
+    
+    int global_inn_numb_connections,global_inn_numb_nodes;
+    k = fread(&global_inn_numb_connections,sizeof(int),1,read_ptr);
+    convert_data(&global_inn_numb_connections,sizeof(int),1);
+    k = fread(&global_inn_numb_nodes,sizeof(int),1,read_ptr);
+    convert_data(&global_inn_numb_nodes,sizeof(int),1);
+    
+    
+    connection** c = (connection**)malloc(sizeof(connection*)*global_inn_numb_connections);
+    for(i = 0; i < global_inn_numb_connections; i++){
+        c[i] = NULL;
+    }
+    genome* g = (genome*)malloc(sizeof(genome));
+    
+    k = fread(&g->number_input,sizeof(int),1,read_ptr);
+    convert_data(&g->number_input,sizeof(int),1);
+    k = fread(&g->number_output,sizeof(int),1,read_ptr);
+    convert_data(&g->number_output,sizeof(int),1);
+    k = fread(&g->number_total_nodes,sizeof(int),1,read_ptr);
+    convert_data(&g->number_total_nodes,sizeof(int),1);
+    k = fread(&g->fitness,sizeof(float),1,read_ptr);
+    convert_data(&g->fitness,sizeof(float),1);
+    g->all_nodes = (node**)malloc(sizeof(node*)*g->number_total_nodes);
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        g->all_nodes[i] = (node*)malloc(sizeof(node));
+        k = fread(&g->all_nodes[i]->in_conn_size,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->in_conn_size,sizeof(int),1);
+        k = fread(&g->all_nodes[i]->out_conn_size,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->out_conn_size,sizeof(int),1);
+        k = fread(&g->all_nodes[i]->innovation_number,sizeof(int),1,read_ptr);
+        convert_data(&g->all_nodes[i]->innovation_number,sizeof(int),1);
+        g->all_nodes[i]->actual_value = 0;
+        g->all_nodes[i]->stored_value = 0;
+        g->all_nodes[i]->in_connections = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->in_conn_size);
+        g->all_nodes[i]->out_connections = (connection**)malloc(sizeof(connection*)*g->all_nodes[i]->out_conn_size);
+    }
+    
+    k = fread(&n,sizeof(int),1,read_ptr);
+    convert_data(&n,sizeof(int),1);
+    for(i = 0; i < n; i++){
+        k = fread(&inn,sizeof(int),1,read_ptr);
+        convert_data(&inn,sizeof(int),1);
+        free(c[inn-1]);
+        c[inn-1] = (connection*)malloc(sizeof(connection));
+        c[inn-1]->innovation_number = inn;
+        k = fread(&inn2,sizeof(int),1,read_ptr);
+        convert_data(&inn2,sizeof(int),1);
+        for(j = 0; j < g->number_total_nodes; j++){
+            if(g->all_nodes[j]->innovation_number == inn2){
+                c[inn-1]->in_node = g->all_nodes[j];
+                break;
+            }
+        }
+        k = fread(&inn2,sizeof(int),1,read_ptr);
+        convert_data(&inn2,sizeof(int),1);
+        for(j = 0; j < g->number_total_nodes; j++){
+            if(g->all_nodes[j]->innovation_number == inn2){
+                c[inn-1]->out_node = g->all_nodes[j];
+                break;
+            }
+        }
+        
+        k = fread(&c[inn-1]->weight,sizeof(float),1,read_ptr);
+        convert_data(&c[inn-1]->weight,sizeof(float),1);
+        k = fread(&c[inn-1]->flag,sizeof(int),1,read_ptr);
+        convert_data(&c[inn-1]->flag,sizeof(int),1);
+    }
+    
+    for(i = 0; i < g->number_total_nodes; i++){
+        inn = 0;
+        inn2 = 0;
+        for(j = 0; j < global_inn_numb_connections; j++){
+            if(c[j]!=NULL){
+                if(c[j]->in_node->innovation_number == g->all_nodes[i]->innovation_number){
+                    g->all_nodes[i]->out_connections[inn] = c[j];
+                    inn++;
+                }
+                if(c[j]->out_node->innovation_number == g->all_nodes[i]->innovation_number){
+
+                    g->all_nodes[i]->in_connections[inn2] = c[j];
+                    inn2++;
+                }
+                
+            }
+        }
+            
+        
+    }
+    
+    for(j = 0; j < global_inn_numb_connections; j++){
+        if(c[j] == NULL)
+            free(c[j]);
+    }
+    
+    free(c);
+    
+    i = fclose(read_ptr);
+    
+    
+    if(i == EOF){
+        printf("error closing the file, the process will end\n");
+        exit(1);
+    }
+    g->global_inn_numb_connections = global_inn_numb_connections;
+    g->global_inn_numb_nodes = global_inn_numb_nodes;
     return g;
     
     

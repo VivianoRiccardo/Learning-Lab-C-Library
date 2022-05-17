@@ -221,7 +221,7 @@ void neat_generation_run(neat* nes){
 
     //save best genome of the generation in a file
     if(nes->k%nes->saving == 0 || nes->k == nes->generations)
-        save_genome(gg[nes->j],nes->global_inn_numb_connections,nes->k+1);
+        save_genome_complete(gg[nes->j],nes->global_inn_numb_connections,nes->global_inn_numb_nodes, nes->k+1);
     
     // if we have reached the number of generations then just end
     if(nes->k == nes->generations)

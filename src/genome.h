@@ -45,6 +45,7 @@ typedef struct connection{
 typedef struct genome{
     struct node** all_nodes; /*the first nodes are inputs and outputs*/ 
     int number_input,number_output, number_total_nodes,specie_rip;
+    int global_inn_numb_connections, global_inn_numb_nodes;
     float fitness;
 }genome;
 
