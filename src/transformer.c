@@ -291,7 +291,7 @@ void save_transf(transformer* t, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* tt = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,tt);
     
     fw = fopen(s,"a+");

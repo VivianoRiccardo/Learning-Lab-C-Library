@@ -24,18 +24,26 @@ SOFTWARE.
 
 #include "llab.h"
 
-int min(int x, int y) {
-    return (x < y) ? x : y;
+int min_int(int x, int y) {
+	if(x < y)
+		return x;
+	return y;
 }
 float min_float(float x, float y) {
-    return (x < y) ? x : y;
+    if(x < y)
+		return x;
+	return y;
 }
 
-int max(int x, int y) {
-    return (x > y) ? x : y;
+int max_int(int x, int y) {
+    if(x > y)
+		return x;
+	return y;
 }
 float max_float(float x, float y) {
-    return (x > y) ? x : y;
+    if(x > y)
+		return x;
+	return y;
 }
 
 float mean(float* v, int size){

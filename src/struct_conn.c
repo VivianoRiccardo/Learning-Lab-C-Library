@@ -375,12 +375,12 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = s->m1->output_layer;
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(out_size,s->r2->lstms[i]->output_size));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(out_size,s->r2->lstms[i]->output_size));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_down[i]],s->inputs[i],min(out_size,s->r2->lstms[0]->input_size));
+                    copy_array(&output[s->rmodel_input_down[i]],s->inputs[i],min_int(out_size,s->r2->lstms[0]->input_size));
                 }
             }
         }
@@ -388,12 +388,12 @@ void struct_connection_input_arrays(struct_conn* s){
         else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(s->temporal_m[s->rmodel_input_left[i]]->output_layer,s->h[i],min(s->r2->lstms[i]->output_size,s->temporal_m[s->rmodel_input_left[i]]->output_dimension));
+                    copy_array(s->temporal_m[s->rmodel_input_left[i]]->output_layer,s->h[i],min_int(s->r2->lstms[i]->output_size,s->temporal_m[s->rmodel_input_left[i]]->output_dimension));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1)
-                    copy_array(s->temporal_m[s->rmodel_input_left[i]]->output_layer,s->inputs[i],min(s->r2->lstms[0]->input_size,s->temporal_m[s->rmodel_input_left[i]]->output_dimension));
+                    copy_array(s->temporal_m[s->rmodel_input_left[i]]->output_layer,s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->temporal_m[s->rmodel_input_left[i]]->output_dimension));
                 
             }
         }
@@ -401,12 +401,12 @@ void struct_connection_input_arrays(struct_conn* s){
         else if(s->input1_type == RMODEL){
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(get_ith_output_cell(s->r1,s->rmodel_input_left[i]),s->h[i],min(s->r2->lstms[i]->output_size,s->r1->lstms[s->r1->n_lstm-1]->output_size));
+                    copy_array(get_ith_output_cell(s->r1,s->rmodel_input_left[i]),s->h[i],min_int(s->r2->lstms[i]->output_size,s->r1->lstms[s->r1->n_lstm-1]->output_size));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(get_ith_output_cell(s->r1,i),s->inputs[i],min(s->r2->lstms[0]->input_size,s->r1->lstms[s->r1->n_lstm-1]->output_size));
+                    copy_array(get_ith_output_cell(s->r1,i),s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->r1->lstms[s->r1->n_lstm-1]->output_size));
                 }
             }
         }
@@ -415,12 +415,12 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->e1);
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(s->r2->lstms[i]->output_size,s->e1->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(s->r2->lstms[i]->output_size,s->e1->m->output_dimension));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min(s->r2->lstms[0]->input_size,s->e1->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->e1->m->output_dimension));
                 }
             }
         }
@@ -429,12 +429,12 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->d1->e);
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(s->r2->lstms[i]->output_size,s->d1->e->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(s->r2->lstms[i]->output_size,s->d1->e->m->output_dimension));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min(s->r2->lstms[0]->input_size,s->d1->e->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->d1->e->m->output_dimension));
                 }
             }
         }
@@ -442,12 +442,12 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e);
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(s->r2->lstms[i]->output_size,s->t1->td[s->t1->n_td-1]->e->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(s->r2->lstms[i]->output_size,s->t1->td[s->t1->n_td-1]->e->m->output_dimension));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min(s->r2->lstms[0]->input_size,s->t1->td[s->t1->n_td-1]->e->m->output_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->t1->td[s->t1->n_td-1]->e->m->output_dimension));
                 }
             }
         }
@@ -455,12 +455,12 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = s->l1->output;
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(s->r2->lstms[i]->output_size,s->l1->input_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(s->r2->lstms[i]->output_size,s->l1->input_dimension));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min(s->r2->lstms[0]->input_size,s->l1->input_dimension));
+                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->l1->input_dimension));
                 }
             }
         }
@@ -469,12 +469,12 @@ void struct_connection_input_arrays(struct_conn* s){
             int i;
             for(i = 0; i < s->r2->n_lstm; i++){
                 if(s->rmodel_input_left[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min(s->r2->lstms[i]->output_size,s->v1->output_size));
+                    copy_array(&output[s->rmodel_input_left[i]],s->h[i],min_int(s->r2->lstms[i]->output_size,s->v1->output_size));
                 }
             }
             for(i = 0; i < s->r2->lstms[0]->window; i++){
                 if(s->rmodel_input_down[i] != -1){
-                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min(s->r2->lstms[0]->input_size,s->v1->output_size));
+                    copy_array(&output[s->rmodel_input_left[i]],s->inputs[i],min_int(s->r2->lstms[0]->input_size,s->v1->output_size));
                 }
             }
         }
@@ -487,7 +487,7 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->m1->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->m1->output_dimension);
                     copy_array(&s->m1->output_layer[s->input_encoder_indeces[i]],&s->encoder_input[i],minimum);
                 }
             }
@@ -495,7 +495,7 @@ void struct_connection_input_arrays(struct_conn* s){
         else if(s->input1_type == TEMPORAL_ENCODING_MODEL){
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->temporal_m[s->input_encoder_indeces[i]]->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->temporal_m[s->input_encoder_indeces[i]]->output_dimension);
                     copy_array(s->temporal_m[s->input_encoder_indeces[i]]->output_layer,&s->encoder_input[i],minimum);
                 }
             }
@@ -504,7 +504,7 @@ void struct_connection_input_arrays(struct_conn* s){
         else if(s->input1_type == RMODEL){
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
+                    minimum = min_int(s->transf_enc_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
                     copy_array(get_ith_output_cell(s->r1,s->input_encoder_indeces[i]),&s->encoder_input[i],minimum);
                 }
             }
@@ -514,7 +514,7 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->e1);
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->e1->m->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->e1->m->output_dimension);
                     copy_array(output,&s->encoder_input[i],minimum);
                 }
                 
@@ -525,7 +525,7 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->d1->e);
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->d1->e->m->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->d1->e->m->output_dimension);
                     copy_array(output,&s->encoder_input[i],minimum);
                 }
             }
@@ -534,7 +534,7 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = get_output_layer_from_encoder_transf(s->t1->td[s->t1->n_td-1]->e);
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->t1->td[s->t1->n_td-1]->e->m->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->t1->td[s->t1->n_td-1]->e->m->output_dimension);
                     copy_array(output,&s->encoder_input[i],minimum);
                 }
             }
@@ -543,7 +543,7 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = s->l1->output;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->l1->input_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->l1->input_dimension);
                     copy_array(output,&s->encoder_input[i],minimum);
                 }
             }
@@ -552,7 +552,7 @@ void struct_connection_input_arrays(struct_conn* s){
             float* output = s->v1->output;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->v1->output_size);
+                    minimum = min_int(s->transf_enc_input-i,s->v1->output_size);
                     copy_array(output,&s->encoder_input[i],minimum);
                 }
             }
@@ -564,13 +564,13 @@ void struct_connection_input_arrays(struct_conn* s){
         if(s->input1_type == MODEL){
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,s->m1->output_dimension);
+                    minimum = min_int(s->decoder_down_input-i,s->m1->output_dimension);
                     copy_array(&s->m1->output_layer[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,s->m1->output_dimension);
+                    minimum = min_int(s->decoder_left_input-i,s->m1->output_dimension);
                     copy_array(&s->m1->output_layer[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -579,13 +579,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,s->temporal_m[s->input_decoder_indeces_down[i]]->output_dimension);
+                    minimum = min_int(s->decoder_down_input-i,s->temporal_m[s->input_decoder_indeces_down[i]]->output_dimension);
                     copy_array(s->temporal_m[s->input_decoder_indeces_down[i]]->output_layer,&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,s->temporal_m[s->input_decoder_indeces_left[i]]->output_dimension);
+                    minimum = min_int(s->decoder_left_input-i,s->temporal_m[s->input_decoder_indeces_left[i]]->output_dimension);
                     copy_array(s->temporal_m[s->input_decoder_indeces_left[i]]->output_layer,&s->decoder_input_left[i],minimum);
                 }
             }
@@ -595,13 +595,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
+                    minimum = min_int(s->decoder_down_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
                     copy_array(get_ith_output_cell(s->r1,s->input_decoder_indeces_down[i]),&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
+                    minimum = min_int(s->decoder_left_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
                     copy_array(get_ith_output_cell(s->r1,s->input_decoder_indeces_left[i]),&s->decoder_input_left[i],minimum);
                 }
             }
@@ -614,13 +614,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,out_size);
+                    minimum = min_int(s->decoder_down_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,out_size);
+                    minimum = min_int(s->decoder_left_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -631,13 +631,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->d1->e->m->output_dimension;
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,out_size);
+                    minimum = min_int(s->decoder_down_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,out_size);
+                    minimum = min_int(s->decoder_left_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -647,13 +647,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->t1->td[s->t1->n_td-1]->e->m->output_dimension;
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,out_size);
+                    minimum = min_int(s->decoder_down_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,out_size);
+                    minimum = min_int(s->decoder_left_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -663,13 +663,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->l1->input_dimension;
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,out_size);
+                    minimum = min_int(s->decoder_down_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,out_size);
+                    minimum = min_int(s->decoder_left_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -679,13 +679,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->v1->output_size;
             for(i = 0; i < s->decoder_down_input; i++){
                 if(s->input_decoder_indeces_down[i] != -1){
-                    minimum = min(s->decoder_down_input-i,out_size);
+                    minimum = min_int(s->decoder_down_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_down[i]],&s->decoder_input_down[i],minimum);
                 }
             }
             for(i = 0; i < s->decoder_left_input; i++){
                 if(s->input_decoder_indeces_left[i] != -1){
-                    minimum = min(s->decoder_left_input-i,out_size);
+                    minimum = min_int(s->decoder_left_input-i,out_size);
                     copy_array(&output[s->input_decoder_indeces_left[i]],&s->decoder_input_left[i],minimum);
                 }
             }
@@ -697,13 +697,13 @@ void struct_connection_input_arrays(struct_conn* s){
         if(s->input1_type == MODEL){
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->m1->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->m1->output_dimension);
                     copy_array(&s->m1->output_layer[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,s->m1->output_dimension);
+                    minimum = min_int(s->transf_dec_input-i,s->m1->output_dimension);
                     copy_array(&s->m1->output_layer[s->input_transf_decoder_indeces[i]],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -712,13 +712,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->temporal_m[s->input_transf_encoder_indeces[i]]->output_dimension);
+                    minimum = min_int(s->transf_enc_input-i,s->temporal_m[s->input_transf_encoder_indeces[i]]->output_dimension);
                     copy_array(s->temporal_m[s->input_transf_encoder_indeces[i]]->output_layer,&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,s->temporal_m[s->input_transf_decoder_indeces[i]]->output_dimension);
+                    minimum = min_int(s->transf_dec_input-i,s->temporal_m[s->input_transf_decoder_indeces[i]]->output_dimension);
                     copy_array(s->temporal_m[s->input_transf_decoder_indeces[i]]->output_layer,&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -728,13 +728,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
+                    minimum = min_int(s->transf_enc_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
                     copy_array(get_ith_output_cell(s->r1,s->input_transf_encoder_indeces[i]),&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
+                    minimum = min_int(s->transf_dec_input-i,s->r1->lstms[s->r1->n_lstm-1]->output_size);
                     copy_array(get_ith_output_cell(s->r1,s->input_transf_decoder_indeces[i]),&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -747,13 +747,13 @@ void struct_connection_input_arrays(struct_conn* s){
             
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,out_size);
+                    minimum = min_int(s->transf_enc_input-i,out_size);
                     copy_array(&output[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,out_size);
+                    minimum = min_int(s->transf_dec_input-i,out_size);
                     copy_array(&output[s->input_transf_decoder_indeces[i]],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -764,13 +764,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->d1->e->m->output_dimension;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,out_size);
+                    minimum = min_int(s->transf_enc_input-i,out_size);
                     copy_array(&output[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,out_size);
+                    minimum = min_int(s->transf_dec_input-i,out_size);
                     copy_array(&output[s->input_transf_decoder_indeces[i]],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -780,13 +780,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->t1->td[s->t1->n_td-1]->e->m->output_dimension;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,out_size);
+                    minimum = min_int(s->transf_enc_input-i,out_size);
                     copy_array(&output[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,out_size);
+                    minimum = min_int(s->transf_dec_input-i,out_size);
                     copy_array(&output[s->input_transf_decoder_indeces[i]],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -796,13 +796,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->l1->input_dimension;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,out_size);
+                    minimum = min_int(s->transf_enc_input-i,out_size);
                     copy_array(&output[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,out_size);
+                    minimum = min_int(s->transf_dec_input-i,out_size);
                     copy_array(&output[s->input_transf_decoder_indeces[i] ],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -812,13 +812,13 @@ void struct_connection_input_arrays(struct_conn* s){
             int out_size = s->v1->output_size;
             for(i = 0; i < s->transf_enc_input; i++){
                 if(s->input_transf_encoder_indeces[i] != -1){
-                    minimum = min(s->transf_enc_input-i,out_size);
+                    minimum = min_int(s->transf_enc_input-i,out_size);
                     copy_array(&output[s->input_transf_encoder_indeces[i]],&s->transformer_input_encoder[i],minimum);
                 }
             }
             for(i = 0; i < s->transf_dec_input; i++){
                 if(s->input_transf_decoder_indeces[i] != -1){
-                    minimum = min(s->transf_dec_input-i,out_size);
+                    minimum = min_int(s->transf_dec_input-i,out_size);
                     copy_array(&output[s->input_transf_decoder_indeces[i]],&s->transformer_input_decoder[i],minimum);
                 }
             }
@@ -1303,7 +1303,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
         
         err = (float*)calloc(s->m2->output_dimension,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->m2->output_dimension - e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->m2->output_dimension - e->e[j]->reference_index,e->e[j]->size));
         }
         if(s->input1_type == MODEL){
             h->ret_error = model_tensor_input_bp(s->m2,1,1,s->m1->output_dimension,&s->m1->output_layer[s->model_input_index], err,s->m2->output_dimension);
@@ -1350,7 +1350,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
             temp_err[j] = (float*)calloc(s->temporal_m[j]->output_dimension,sizeof(float));
         }
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],min(s->temporal_m[e->e[j]->reference_index]->output_dimension,e->e[j]->size));
+            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],min_int(s->temporal_m[e->e[j]->reference_index]->output_dimension,e->e[j]->size));
         }
         
         
@@ -1501,7 +1501,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
 
             err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->e2->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->e2->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = encoder_transformer_bp(s->encoder_input,s->e2,s->transf_enc_input,err);
             for(i = 0, n = 0; i < s->transf_enc_input; i++){
@@ -1540,7 +1540,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
 
             err = (float*)calloc(s->d2->e->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->d2->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->d2->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = decoder_transformer_bp(s->decoder_input_down,s->decoder_input_left,s->d2,s->decoder_down_input,s->decoder_left_input,err, input2_error);
             for(i = 0, n = 0; i < s->decoder_down_input; i++){
@@ -1587,7 +1587,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
 
             err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->t2->td[s->t2->n_td-1]->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->t2->td[s->t2->n_td-1]->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = transf_bp(s->t2,s->transformer_input_encoder,s->transf_enc_input,s->transformer_input_decoder,s->transf_dec_input,err,transformer_flag);
             for(i = 0, n = 0; i < s->transf_enc_input; i++){
@@ -1612,7 +1612,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
         
         err = (float*)calloc(s->l2->input_dimension,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->l2->input_dimension-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->l2->input_dimension-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){
@@ -1660,7 +1660,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
         float* ret;
         err = (float*)calloc(s->v2->output_size,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v2->output_size-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->v2->output_size-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){
@@ -1712,7 +1712,7 @@ error_super_struct* bp_struc_conn(struct_conn* s, int transformer_flag, error_su
         float* ret;
         err = (float*)calloc(s->v3->output_size,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v3->output_size-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->v3->output_size-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){
@@ -1823,7 +1823,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
         
         err = (float*)calloc(s->m2->output_dimension,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->m2->output_dimension - e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->m2->output_dimension - e->e[j]->reference_index,e->e[j]->size));
         }
         if(s->input1_type == MODEL){
             h->ret_error = model_tensor_input_bp_without_learning_parameters(s->m2,real_s->m2,1,1,s->m1->output_dimension,&s->m1->output_layer[s->model_input_index], err,s->m2->output_dimension);
@@ -1870,7 +1870,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
             temp_err[j] = (float*)calloc(s->temporal_m[j]->output_dimension,sizeof(float));
         }
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],min(s->temporal_m[e->e[j]->reference_index]->output_dimension,e->e[j]->size));
+            sum1D(temp_err[e->e[j]->reference_index],e->e[j]->ret_error,temp_err[e->e[j]->reference_index],min_int(s->temporal_m[e->e[j]->reference_index]->output_dimension,e->e[j]->size));
         }
         
         
@@ -2021,7 +2021,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
 
             err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->e2->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->e2->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = encoder_transformer_bp_opt(s->encoder_input,s->e2,s->transf_enc_input,err,real_s->e2);
             for(i = 0, n = 0; i < s->transf_enc_input; i++){
@@ -2060,7 +2060,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
 
             err = (float*)calloc(s->d2->e->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->d2->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->d2->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = decoder_transformer_bp_opt(s->decoder_input_down,s->decoder_input_left,s->d2,s->decoder_down_input,s->decoder_left_input,err, input2_error,real_s->d2);
             for(i = 0, n = 0; i < s->decoder_down_input; i++){
@@ -2107,7 +2107,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
 
             err = (float*)calloc(s->e2->m->output_dimension,sizeof(float));
             for(j = 0; j < e->n_error_handlers; j++){
-                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->t2->td[s->t2->n_td-1]->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
+                sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->t2->td[s->t2->n_td-1]->e->m->output_dimension-e->e[j]->reference_index,e->e[j]->size));
             }
             float* ret = transf_bp_opt(s->t2,s->transformer_input_encoder,s->transf_enc_input,s->transformer_input_decoder,s->transf_dec_input,err,transformer_flag, real_s->t2);
             for(i = 0, n = 0; i < s->transf_enc_input; i++){
@@ -2132,7 +2132,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
         
         err = (float*)calloc(s->l2->input_dimension,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->l2->input_dimension-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->l2->input_dimension-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){
@@ -2180,7 +2180,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
         float* ret;
         err = (float*)calloc(s->v2->output_size,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v2->output_size-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->v2->output_size-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){
@@ -2232,7 +2232,7 @@ error_super_struct* bp_struc_conn_opt(struct_conn* real_s, struct_conn* s, int t
         float* ret;
         err = (float*)calloc(s->v3->output_size,sizeof(float));
         for(j = 0; j < e->n_error_handlers; j++){
-            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min(s->v3->output_size-e->e[j]->reference_index,e->e[j]->size));
+            sum1D(&err[e->e[j]->reference_index],e->e[j]->ret_error,&err[e->e[j]->reference_index],min_int(s->v3->output_size-e->e[j]->reference_index,e->e[j]->size));
         }
         
         if(s->input1_type == MODEL){

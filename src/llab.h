@@ -25,6 +25,12 @@ SOFTWARE.
 #ifndef __LLAB_H__
 #define __LLAB_H__
 
+#ifdef _WIN32
+typedef unsigned int uint;
+#else
+//typedef unsigned int uint;
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>

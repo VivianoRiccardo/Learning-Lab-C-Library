@@ -831,7 +831,7 @@ void save_model(model* m, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* t = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,t);
     
     fw = fopen(s,"a+");
@@ -908,7 +908,7 @@ void save_model_given_directory(model* m, int n, char* directory){
     char* ss = (char*)malloc(sizeof(char)*256);
     ss[0] = '\0';
     char* t = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,t);
     ss = strcat(ss,directory);
     ss = strcat(ss,s);

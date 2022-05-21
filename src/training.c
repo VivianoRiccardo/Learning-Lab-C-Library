@@ -52,7 +52,7 @@ void save_training(training* t, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* temp = ".bin";
-    s = itoa(count,s);
+    s = itoa_n(count,s);
     s = strcat(s,temp);
     
     fw = fopen(s,"w");
@@ -178,7 +178,7 @@ void standard_save_training(training* t, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* temp = ".bin";
-    s = itoa(count,s);
+    s = itoa_n(count,s);
     s = strcat(s,temp);
     
     fw = fopen(s,"w");

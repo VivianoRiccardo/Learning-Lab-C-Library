@@ -118,7 +118,7 @@ void save_rl(rl* f, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* t = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,t);
     
     fw = fopen(s,"a+");

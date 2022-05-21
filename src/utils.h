@@ -30,7 +30,7 @@ void get_dropout_array(int size, float* mask, float* input, float* output);
 void set_dropout_mask(int size, float* mask, float threshold); 
 void ridge_regression(float *dw, float w, float lambda_value, int n);
 int read_files(char** name, char* directory);
-char* itoa(int i, char b[]);
+char* itoa_n(int i, char b[]);
 int shuffle_char_matrix(char** m,int n);
 int bool_is_real(float d);
 int shuffle_float_matrix(float** m,int n);

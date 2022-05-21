@@ -42,7 +42,7 @@ int save_genome(genome* g, int global_inn_numb_connections, int numb){
     char *s = ".bin";
     FILE *write_ptr;
     
-    itoa(numb, string);
+    itoa_n(numb, string);
     
     strcat(string,s);
     
@@ -110,7 +110,7 @@ int save_genome_complete(genome* g, int global_inn_numb_connections, int global_
     char *s = ".bin";
     FILE *write_ptr;
     
-    itoa(numb, string);
+    itoa_n(numb, string);
     
     strcat(string,s);
     

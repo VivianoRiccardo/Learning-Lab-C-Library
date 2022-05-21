@@ -248,7 +248,7 @@ void save_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* t = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,t);
     
     fw = fopen(s,"a+");
@@ -383,7 +383,7 @@ void save_dueling_categorical_dqn_given_directory(dueling_categorical_dqn* dqn, 
     char* ss = (char*)malloc(sizeof(char)*256);
     ss[0] = '\0';
     char* t = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,t);
     ss = strcat(ss,directory);
     ss = strcat(ss,s);

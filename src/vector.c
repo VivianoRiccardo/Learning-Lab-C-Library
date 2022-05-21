@@ -106,7 +106,7 @@ void save_vector(vector_struct* v, int n){
     FILE* fw;
     char* s = (char*)malloc(sizeof(char)*256);
     char* tt = ".bin";
-    s = itoa(n,s);
+    s = itoa_n(n,s);
     s = strcat(s,tt);
     
     fw = fopen(s,"a+");
@@ -364,7 +364,7 @@ void ff_vector(float* input1,float* input2, vector_struct* v){
         
         else if(v->action == RESIZE){
             v->output = &input1[v->index];
-            //copy_array(&input1[v->index],v->output,min(v->input_size-v->index,v->output_size));
+            //copy_array(&input1[v->index],v->output,min_int(v->input_size-v->index,v->output_size));
         }
         
         else if(v->activation_flag == SIGMOID){
@@ -459,7 +459,7 @@ float* bp_vector(float* input1,float* input2, vector_struct* v, float* output_er
         }
         
         else if(v->action == RESIZE){
-            copy_array(output_error,&v->input_error[v->index],min(v->output_size,v->input_size));
+            copy_array(output_error,&v->input_error[v->index],min_int(v->output_size,v->input_size));
         }
         
         
