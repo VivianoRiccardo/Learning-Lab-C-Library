@@ -152,5 +152,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 - recurrent computation optimization
 - computational optimization for arrays following numpy tutorial
 - Opencl computations
+- Fixing the transformers
+- Diffusion models
 
 
