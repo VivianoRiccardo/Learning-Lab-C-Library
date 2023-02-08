@@ -125,8 +125,8 @@ neat* init(int input, int output, int initial_population, int species_threshold,
     /*filling the gg list with init genome, we allocate a big space for gg.
      * gg is a list filled with genomes for each generation, this number of genomes
      * could vary during the generations*/
-    gg = (genome**)malloc(sizeof(genome*)*max_population*2);
-    temp_gg2 = (genome**)malloc(sizeof(genome*)*max_population*2);//is used for crossover
+    gg = (genome**)malloc(sizeof(genome*)*max_population*3*20*children*4);
+    temp_gg2 = (genome**)malloc(sizeof(genome*)*max_population*3*20*children*4);//is used for crossover
     
     gg[0] = copy_genome(g);
     free_genome(g,global_inn_numb_connections);
@@ -135,9 +135,15 @@ neat* init(int input, int output, int initial_population, int species_threshold,
     
     for(i = 1; i < initial_population; i++){
         gg[i] = copy_genome(gg[0]);
-        add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+        for(j = 0; j < input*output; j++){
+            add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+        }
+        connections_mutation(gg[i],global_inn_numb_connections, connection_mutation_rate,new_connection_assignment_rate);
     }
-    
+    for(j = 0; j < input*output; j++){
+        add_random_connection(gg[0],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+    }
+    connections_mutation(gg[0],global_inn_numb_connections, connection_mutation_rate,new_connection_assignment_rate);
     
     
     /*initialize first species*/
@@ -178,17 +184,36 @@ neat* init(int input, int output, int initial_population, int species_threshold,
     nes->last_fitness = -1;
     nes->fitness_counter = 0;
     nes->same_fitness_limit = same_fitness_limit;
-    nes->keep_parents = 0;
+    nes->keep_parents = keep_parents;
     nes->age_significance = age_significance;
+    nes->i = 0;
+    // added for communication
+    nes->used_genomes = NULL;
     return nes;
 }
+
+void set_generation_iter(neat* nes, int gen){
+    nes->k = gen;
+}
+
+void set_max_population(neat* nes, int max_population){
+	nes->max_population = max_population;
+}
+
+int get_generation_iter(neat* nes){
+    return nes->k;
+}
+
 void neat_generation_run(neat* nes){
     
     genome** gg = nes->gg;
     
     //save best genome in nes->n its fitness and nes->j its index
-    nes->n = -1;
-    for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
+    nes->n = gg[0]->fitness;
+    nes->j = 0;
+    double worst_fitness = gg[0]->fitness, best_fitness = 0;
+    
+    for(nes->i = 1; nes->i < nes->actual_genomes; nes->i++){
         if(gg[nes->i]->fitness > nes->n){
             nes->j = nes->i;
             nes->n = gg[nes->i]->fitness;
@@ -221,11 +246,12 @@ void neat_generation_run(neat* nes){
 
     //save best genome of the generation in a file
     if(nes->k%nes->saving == 0 || nes->k == nes->generations)
-        save_genome_complete(gg[nes->j],nes->global_inn_numb_connections,nes->global_inn_numb_nodes, nes->k+1);
+        save_genome_complete(gg[nes->j],nes->global_inn_numb_connections,nes->global_inn_numb_nodes,nes->k+1);
     
     // if we have reached the number of generations then just end
     if(nes->k == nes->generations)
     return;
+    
     
     // if the population is higher then max_population param then we eliminate the weakest genomes
     if(nes->actual_genomes > nes->new_max_pop){
@@ -238,6 +264,15 @@ void neat_generation_run(neat* nes){
         }
         free(nes->temp_gg1);
         nes->actual_genomes = nes->new_max_pop;
+    }
+    
+    // normalize the fitnesses
+    double fract = (nes->n-worst_fitness);
+    if(fract == 0)
+        fract = 0.0001;
+    
+    for(nes->i = 0; nes->i < nes->actual_genomes; nes->i++){
+        gg[nes->i]->fitness  = (gg[nes->i]->fitness-worst_fitness)/fract;
     }
     
     /*speciation*/
@@ -265,12 +300,14 @@ void neat_generation_run(neat* nes){
         if(nes->s[nes->i].numb_all_other_genomes > nes->max)
             nes->max = nes->s[nes->i].numb_all_other_genomes;
     }
-
+    
     nes->sum/=(float)nes->z;// avarage size of a specie
     nes->n_species = nes->z;// number of species useless parameter is same as nes_total_species
-    
+    // compute best fitness and worst fitness for specie fitness normalization
+    best_fitness = get_best_specie_fitness(nes->s,nes->n_species,oldest_age,nes->age_significance);
+    worst_fitness = get_worst_specie_fitness(nes->s,nes->n_species,oldest_age,nes->age_significance);
     // compute the man fitness, age significance of a specie is also important
-    nes->a = get_mean_fitness(nes->s,nes->total_species,oldest_age,nes->age_significance);
+    nes->a = get_mean_fitness(nes->s,nes->total_species,oldest_age,nes->age_significance, worst_fitness,best_fitness);
     
     // some init parameter
     nes->actual_genomes = 0;nes->temp_gg2_counter = 0;
@@ -278,9 +315,22 @@ void neat_generation_run(neat* nes){
     for(nes->i = 0; nes->i < nes->total_species; nes->i++){
         /*compute mean fitnesses of specie*/
         
-        nes->b = get_mean_specie_fitness(nes->s,nes->i,oldest_age,nes->age_significance);
-        nes->b/=nes->a;//nes->b>=1 is higher then mean fitness among species
-        
+        nes->b = get_mean_specie_fitness(nes->s,nes->i,oldest_age,nes->age_significance, worst_fitness, best_fitness);
+        if(nes->b == nes->a){
+            nes->b = 1;
+        }
+        else{
+            if(nes->a == (float)(0))
+                nes->a = 0.001;
+            nes->b/=nes->a;
+            
+            
+            if (nes->b > 20)
+                nes->b = 20;
+            else if(nes->b == (float)(0)){
+                nes->b = 0.0001;
+            }
+        }
         //nes->temp_gg1 has the sorted genomes of this specie (temp_gg1[k]->fitness > temp_gg1[k+1]->fitness for each k)
         nes->temp_gg1 = sort_genomes_by_fitness(nes->s[nes->i].all_other_genomes,nes->s[nes->i].numb_all_other_genomes);
         
@@ -305,7 +355,7 @@ void neat_generation_run(neat* nes){
             }
             
             /*in temp_gg2 we save the best genome of this specie if the specie is higher than the mean fitness*/
-            if(nes->b >= 1){
+            if(nes->b >= nes->a){
                 nes->temp_gg2[nes->temp_gg2_counter] = copy_genome(nes->temp_gg1[0]);
                 nes->temp_gg2_counter++;
             }
@@ -314,7 +364,7 @@ void neat_generation_run(neat* nes){
             // nes->b is how well this specie is doing respect to the other species
             // we mutiply it by 3.67
             // then the value will be mutiplied for children
-            double bb = round_up(nes->b*3.67);
+            double bb = round_up((nes->b)*2.5);
             
             // we get the mutations from the nes->percentage_survivors_per_specie best genomes
             for(nes->z = 0; nes->z < (nes->children*(bb)); nes->z+=round_up(nes->s[nes->i].numb_all_other_genomes*nes->percentage_survivors_per_specie)){
@@ -373,9 +423,9 @@ void neat_generation_run(neat* nes){
                         }
                     }
                             
-                    if(r2() < nes->add_node_specie_rate)
+                    if(r2() < nes->add_node_specie_rate){
                         split_random_connection(gg[nes->actual_genomes],&nes->global_inn_numb_nodes,&nes->global_inn_numb_connections,&nes->dict_connections,&nes->matrix_nodes,&nes->matrix_connections);
-                    
+                    }
                     
                     
                     nes->actual_genomes++;    
@@ -431,9 +481,12 @@ void neat_generation_run(neat* nes){
         gg[nes->i]->fitness = 0;
         adjust_genome(gg[nes->i]);
     }
+    nes->i = 0;
 }
 
 void free_neat(neat* nes){
+    if(nes == NULL)
+        return;
     free_species(nes->s,nes->total_species,nes->global_inn_numb_connections);
     free(nes->temp_gg2);
     
@@ -453,15 +506,23 @@ void free_neat(neat* nes){
     free(nes->matrix_nodes);
     free(nes->matrix_connections);
     free(nes->dict_connections);
+    free(nes->used_genomes);
     free(nes);
 }
 
 
 char* get_neat_in_char_vector(neat* nes){
-    int i,sum=0,sum_genome = get_genome_array_size(nes->gg[nes->actual_genomes-1],nes->global_inn_numb_connections);
-    sum+=2*sizeof(int)+nes->global_inn_numb_connections*2*sizeof(int)+nes->global_inn_numb_connections*sizeof(int)+nes->global_inn_numb_nodes*sizeof(int)*2+sum_genome;
+    uint64_t i,sum=0, sum_genome = 0;
+    for(i = 0; i < nes->actual_genomes; i++){
+        sum_genome+=get_genome_array_size(nes->gg[i],nes->global_inn_numb_connections);
+    }
+    sum+=3*sizeof(int)+nes->global_inn_numb_connections*2*sizeof(int)+nes->global_inn_numb_connections*sizeof(int)+nes->global_inn_numb_nodes*sizeof(int)*2+sum_genome;
     char* c = (char*)malloc(sum);
     sum = 0;
+    convert_data(&nes->actual_genomes,sizeof(int),1);
+    memcpy(c+sum,&(nes->actual_genomes),sizeof(int));
+    convert_data(&nes->actual_genomes,sizeof(int),1);
+    sum+=sizeof(int);
     convert_data(&nes->global_inn_numb_connections,sizeof(int),1);
     memcpy(c+sum,&(nes->global_inn_numb_connections),sizeof(int));
     convert_data(&nes->global_inn_numb_connections,sizeof(int),1);
@@ -488,16 +549,24 @@ char* get_neat_in_char_vector(neat* nes){
         convert_data(nes->matrix_nodes[i],sizeof(int),2);
         sum+=sizeof(int)*2;
     }
-    char* cc = get_genome_array(nes->gg[nes->actual_genomes-1],nes->global_inn_numb_connections);
-    memcpy(c+sum,cc,sum_genome);
-    free(cc);
+    for(i = 0; i < nes->actual_genomes; i++){
+        sum_genome=get_genome_array_size(nes->gg[i],nes->global_inn_numb_connections);
+        char* cc = get_genome_array(nes->gg[i],nes->global_inn_numb_connections);
+        memcpy(c+sum,cc,sum_genome);
+        free(cc);
+        sum+=sum_genome;
+    }
     return c;
     
 }
 
-int get_lenght_of_char_neat(neat* nes){
-    int sum_genome = get_genome_array_size(nes->gg[nes->actual_genomes-1],nes->global_inn_numb_connections);
-    return 2*sizeof(int)+nes->global_inn_numb_connections*2*sizeof(int)+nes->global_inn_numb_connections*sizeof(int)+nes->global_inn_numb_nodes*sizeof(int)*2+sum_genome;
+uint64_t get_length_of_char_neat(neat* nes){
+    int i;
+    uint64_t sum_genome = 0;
+    for(i = 0; i < nes->actual_genomes; i++){
+        sum_genome += get_genome_array_size(nes->gg[i],nes->global_inn_numb_connections);
+    }
+    return 3*sizeof(int)+nes->global_inn_numb_connections*2*sizeof(int)+nes->global_inn_numb_connections*sizeof(int)+nes->global_inn_numb_nodes*sizeof(int)*2+sum_genome;
 }
 
 int get_number_of_genomes(neat* nes){
@@ -609,7 +678,7 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
     
     /*allocation*/
     int i,j,z,k,w,flag,min,max,total_species = 0,count = initial_population;
-    int global_inn_numb_connections = 0,global_inn_numb_nodes = 0, actual_genomes = initial_population, n_survivors,temp_gg2_counter = 0,temp_gg3_counter = 0, n_species;
+    int global_inn_numb_connections = 0,global_inn_numb_nodes = 0, actual_genomes = 0, n_survivors,temp_gg2_counter = 0,temp_gg3_counter = 0, n_species;
     int* dict_connections;
     int** matrix_nodes;
     int** matrix_connections;
@@ -624,6 +693,9 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
     
     int summ = 0;
     
+    memcpy(&actual_genomes,neat_c+summ,sizeof(int));
+    convert_data(&actual_genomes,sizeof(int),1);
+    summ+=sizeof(int);
     memcpy(&global_inn_numb_connections,neat_c+summ,sizeof(int));
     convert_data(&global_inn_numb_connections,sizeof(int),1);
     summ+=sizeof(int);
@@ -652,36 +724,29 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
         summ+=sizeof(int)*2;
     }
     
-    
-    /*initialization empty genome*/
-    g = init_genome_from_array(global_inn_numb_connections,neat_c+summ);
-    
-    
     /*filling the gg list with init genome, we allocate a big space for gg.
      * gg is a list filled with genomes for each generation, this number of genomes
      * could vary during the generations*/
-    gg = (genome**)malloc(sizeof(genome*)*max_population*2);
-    temp_gg2 = (genome**)malloc(sizeof(genome*)*max_population*2);//is used for crossover
+    gg = (genome**)malloc(sizeof(genome*)*max_population*3*20*children*4);
+    temp_gg2 = (genome**)malloc(sizeof(genome*)*max_population*3*20*children*4);//is used for crossover
     
-    gg[0] = copy_genome(g);
-    free_genome(g,global_inn_numb_connections);
-    g = NULL;
-    
-    
-    for(i = 1; i < initial_population; i++){
-        gg[i] = copy_genome(gg[0]);
-        add_random_connection(gg[i],&global_inn_numb_connections,&matrix_connections,&dict_connections);
+    int minimum = actual_genomes;
+    if(minimum > max_population){
+        minimum = max_population;
     }
     
-    
+    for(i = 0; i < minimum; i++){
+        gg[i] = init_genome_from_array(global_inn_numb_connections,neat_c+summ);
+        summ+=get_genome_array_size(gg[i],global_inn_numb_connections);
+    }
     
     /*initialize first species*/
-    s = create_species(gg,initial_population,global_inn_numb_connections,species_threshold,&total_species);
+    s = create_species(gg,minimum,global_inn_numb_connections,species_threshold,&total_species);
     
     neat* nes = (neat*)malloc(sizeof(neat));
     nes->total_species = total_species;
     nes->count = count;
-    nes->actual_genomes = actual_genomes;
+    nes->actual_genomes = minimum;
     nes->global_inn_numb_connections = global_inn_numb_connections;
     nes->global_inn_numb_nodes= global_inn_numb_nodes;
     nes->matrix_connections = matrix_connections;
@@ -715,6 +780,9 @@ neat* init_from_char(char* neat_c, int input, int output, int initial_population
     nes->same_fitness_limit = same_fitness_limit;
     nes->keep_parents = keep_parents;
     nes->age_significance = age_significance;
+    nes->i = 0;
+    // added for communication
+    nes->used_genomes = NULL;
     return nes;
 }
 
@@ -770,6 +838,32 @@ float** feed_forward_iths_genome(neat* nes, float** input, int* indices, int n_g
     return outputs;
 }
 
+float** feed_forward_all_genomes(neat* nes, float** input, int n_genome, int n_threads){
+    int i,j;
+    
+    if(n_genome > nes->actual_genomes){
+        fprintf(stderr,"Error: there are not so many genomes!\n");
+        exit(1);
+    }
+
+    
+    float** outputs = feed_forward_multi_thread_opt(n_genome,n_threads,input,nes->gg,nes->global_inn_numb_nodes,nes->global_inn_numb_connections);
+    return outputs;
+}
+
+float** feed_forward_all_genomes_with_indices(neat* nes, float** input,int* indices, int n_genome, int n_threads){
+    int i,j;
+    
+    if(n_genome > nes->actual_genomes){
+        fprintf(stderr,"Error: there are not so many genomes!\n");
+        exit(1);
+    }
+
+    
+    float** outputs = feed_forward_multi_thread_opt_with_indices(n_genome,n_threads,input,nes->gg,indices,nes->global_inn_numb_nodes,nes->global_inn_numb_connections);
+    return outputs;
+}
+
 void reset_fitness_ith_genome(neat* nes, int index){
     if (index >= nes->actual_genomes){
         fprintf(stderr,"Error: index out of range!\n");
@@ -808,4 +902,27 @@ void save_ith_genome(neat* nes, int index, int n){
 
 float best_fitness(neat* nes){
     return nes->n;
+}
+
+void save_neat(char* filename, neat* nes){
+    int i;
+    FILE* fw = fopen(filename,"w");
+    uint64_t length = get_length_of_char_neat(nes);
+    char* n = get_neat_in_char_vector(nes);
+    i = fwrite(n,length,1,fw);
+    if(!i){
+        fprintf(stderr,"Error: an error occurred saving the neat structure\n");
+        exit(1);
+    }
+    fclose(fw);
+}
+
+neat* load_neat(char* filename, int input, int output, int initial_population, int species_threshold, int max_population,int generations, float percentage_survivors_per_specie, float connection_mutation_rate, float  new_connection_assignment_rate, float add_connection_big_specie_rate, float add_connection_small_specie_rate, float add_node_specie_rate, float activate_connection_rate, float remove_connection_rate, int children, float crossover_rate, int saving, int limiting_species, int limiting_threshold, int same_fitness_limit, int keep_parents, float age_significance){
+    uint64_t size;
+    char** ksource = (char**)malloc(sizeof(char*));
+    uint64t_read_file_in_char_vector(ksource, filename, &size);
+    neat* nes = init_from_char(*ksource, input, output, initial_population, species_threshold, max_population,generations, percentage_survivors_per_specie, connection_mutation_rate, new_connection_assignment_rate, add_connection_big_specie_rate, add_connection_small_specie_rate, add_node_specie_rate, activate_connection_rate, remove_connection_rate, children, crossover_rate, saving, limiting_species, limiting_threshold, same_fitness_limit, keep_parents, age_significance);
+    free(*ksource);
+    free(ksource);
+    return nes;
 }

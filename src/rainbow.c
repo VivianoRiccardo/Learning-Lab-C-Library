@@ -446,14 +446,15 @@ void free_rainbow(rainbow* r){
     free(r->neutral_batch);
     free(r->uniform_sampling_indices);
     // cython could cause problem when dereferencing rainbow object as well as dueling categorical dqns
-    //free_dueling_categorical_dqn(r->online_net);
-    //free_dueling_categorical_dqn(r->target_net);
-    //for(i = 0; i < r->threads; i++){
-    //    free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
-    //    free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
-    //}
-    //free(r->online_net_wlp);
-    //free(r->target_net_wlp);
+    // so the following lines for cython must be commented
+    free_dueling_categorical_dqn(r->online_net);
+    free_dueling_categorical_dqn(r->target_net);
+    for(i = 0; i < r->threads; i++){
+        free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
+        free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
+    }
+    free(r->online_net_wlp);
+    free(r->target_net_wlp);
     
     free(r->batch);
     free(r->reverse_batch);

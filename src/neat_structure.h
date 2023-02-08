@@ -40,6 +40,7 @@ typedef struct neat{
     int* dict_connections;
     int** matrix_nodes;
     int** matrix_connections;
+    int* used_genomes;// used only by the communication to get which genomes has been ok!
     species* s;
     genome* g;
     genome** gg;

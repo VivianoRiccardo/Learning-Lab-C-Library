@@ -30,5 +30,8 @@ SOFTWARE.
 
 void* genome_thread_ff(void* _args);
 float** feed_forward_multi_thread(int threads, float** inputs,genome** g, int global_inn_numb_nodes, int global_inn_numb_connections);
+void* genome_thread_ff_opt(void* _args);
+float** feed_forward_multi_thread_opt(int number_of_genomes, int threads, float** inputs,genome** g, int global_inn_numb_nodes, int global_inn_numb_connections);
+float** feed_forward_multi_thread_opt_with_indices(int number_of_genomes, int threads, float** inputs,genome** g, int* indices, int global_inn_numb_nodes, int global_inn_numb_connections);
 
 #endif

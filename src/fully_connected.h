@@ -31,5 +31,10 @@ void fully_connected_back_prop_edge_popup(float* input, float* output_error, flo
 void fully_connected_feed_forward_edge_popup(float* input, float* output, float* weight,float* bias, int input_size, int output_size, int* indices, int last_n);
 void fully_connected_back_prop_edge_popup_ff_gd_bp(float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size,float* score_error, int* indices, int last_n);
 void paste_w_fcl(fcl* f,fcl* copy);
+void noisy_fully_connected_feed_forward(float* noise_biases, float* new_biases,float* noisy_biases, float* noise, float* new_weights,float* noisy_weights, float* input, float* output, float* weight,float* bias, int input_size, int output_size);
+void noisy_fully_connected_feed_forward_edge_popup(float* noise, float* new_weights,float* noisy_weights, float* input, float* output, float* weight,float* bias, int input_size, int output_size, int* indices, int last_n);
+void noisy_fully_connected_back_prop(float* noise_biases, float* new_biases,float* noisy_biases,float* noisy_biases_error, float* noise, float* new_weights,float* noisy_weights, float* noisy_weights_error, float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size,int training_flag);
+void noisy_fully_connected_back_prop_edge_popup(float* new_weights,float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size,float* score_error, int* indices, int last_n);
+void noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(float* noise, float* new_weights,float* noisy_weights, float* noisy_weights_error,float* input, float* output_error, float* weight,float* input_error, float* weight_error,float* bias_error, int input_size, int output_size,float* score_error, int* indices, int last_n);
 
 #endif

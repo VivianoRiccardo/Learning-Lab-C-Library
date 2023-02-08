@@ -58,4 +58,14 @@ typedef struct thread_args_genome {
     int index;
 } thread_args_genome;
 
+typedef struct thread_args_genome_opt {
+    genome** g;
+    int number_of_genomes;
+    float** input;
+    float** output;
+    int global_inn_numb_nodes;
+    int global_inn_numb_connections;
+    int index;
+} thread_args_genome_opt;
+
 #endif

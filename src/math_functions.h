@@ -117,5 +117,7 @@ void copy_clipped_vector(float* vector, float* output, float maximum, float mini
 void clip_vector(float* vector, float minimum, float maximum, int dimension);
 float mean(float* v, int size);
 void sum_dueling_categorical_dqn_partial_derivatives(dueling_categorical_dqn* m1, dueling_categorical_dqn* m2, dueling_categorical_dqn* m3);
+float factorised_gaussian();
+void set_factorised_noise(int input, int output, float* noise, float* biases_noise);
 
 #endif

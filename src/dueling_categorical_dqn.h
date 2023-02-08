@@ -96,5 +96,6 @@ float compute_kl_dueling_categorical_dqn(dueling_categorical_dqn* online_net, fl
 float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
 void inference_dqn(dueling_categorical_dqn* dqn);
 void train_dqn(dueling_categorical_dqn* dqn);
+void dueling_dqn_eliminate_noisy_layers(dueling_categorical_dqn* dqn);
 
 #endif

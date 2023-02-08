@@ -38,13 +38,12 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
     
     n1 = get_numb_connections(g1,global_inn_numb_connections);
     n2 = get_numb_connections(g2,global_inn_numb_connections);
-    
+    max_n = n2;
     if(n1 > n2)
         max_n = n1;
-    else
-        max_n = n2;
+        
     
-    if(max_n < 20)
+    if(max_n < 20+g1->number_input*g1->number_output)
         max_n = 1;
     
         
@@ -70,7 +69,7 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
             }
             else{
                 matching++;
-                for(j = 0; j<n2; j++){
+                for(j = 0; j<n1; j++){
                     if(c2[i]->innovation_number == c1[j]->innovation_number){
                         if(!c2[i]->flag)
                             tempp = 0;
@@ -130,7 +129,6 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
         m/=matching;
         
     matching = m;
-    
     excess*=v1;
     excess/=max_n;
     
@@ -138,12 +136,10 @@ float compute_species_distance(genome* g1, genome* g2, int global_inn_numb_conne
     disjoint/=max_n;
     
     matching*=v3;
-    
     free(c1);
     free(c2);
     free(array1);
     free(array2);
-    
     return excess+disjoint+matching;
     
 }

@@ -1515,17 +1515,26 @@ int get_input_layer_size_dueling_categorical_dqn(dueling_categorical_dqn* dqn){
 }
 
 void inference_dqn(dueling_categorical_dqn* dqn){
-	inference_model(dqn->shared_hidden_layers);
-	inference_model(dqn->a_hidden_layers);
-	inference_model(dqn->v_hidden_layers);
-	inference_model(dqn->a_linear_last_layer);
-	inference_model(dqn->v_linear_last_layer);
+    inference_model(dqn->shared_hidden_layers);
+    inference_model(dqn->a_hidden_layers);
+    inference_model(dqn->v_hidden_layers);
+    inference_model(dqn->a_linear_last_layer);
+    inference_model(dqn->v_linear_last_layer);
 }
 
 void train_dqn(dueling_categorical_dqn* dqn){
-	train_model(dqn->shared_hidden_layers);
-	train_model(dqn->a_hidden_layers);
-	train_model(dqn->v_hidden_layers);
-	train_model(dqn->a_linear_last_layer);
-	train_model(dqn->v_linear_last_layer);
+    train_model(dqn->shared_hidden_layers);
+    train_model(dqn->a_hidden_layers);
+    train_model(dqn->v_hidden_layers);
+    train_model(dqn->a_linear_last_layer);
+    train_model(dqn->v_linear_last_layer);
 }
+
+void dueling_dqn_eliminate_noisy_layers(dueling_categorical_dqn* dqn){
+    model_eliminate_noisy_layers(dqn->shared_hidden_layers);
+    model_eliminate_noisy_layers(dqn->a_hidden_layers);
+    model_eliminate_noisy_layers(dqn->v_hidden_layers);
+    model_eliminate_noisy_layers(dqn->a_linear_last_layer);
+    model_eliminate_noisy_layers(dqn->v_linear_last_layer);
+}
+

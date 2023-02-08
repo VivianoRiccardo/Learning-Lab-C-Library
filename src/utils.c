@@ -70,6 +70,20 @@ void set_dropout_mask(int size, float* mask, float threshold){
     }
 }
 
+/* this function initializes all the values of an array with a gaussian
+ * 
+ * Inputs:
+ * 
+ * 		@float* array:= the array that will be filled
+ * 		@int size:= the size of the array
+ * */
+void set_array_random_normal(float* array, int size){
+	int i;
+	for(i = 0; i < size; i++){
+		array[i] = random_normal();
+	}
+}
+
 /* This function add the l2regularization noise to a single weight derivative
  * 
  * Input:
@@ -550,6 +564,41 @@ int read_file_in_char_vector(char** ksource, char* fname, int* size){
     (*size) = kfilesize;
     return 0;
 }
+/* this function read a file and store the content in a char* vector
+ * 
+ * Input:
+ *             @char** ksource:= the space where must be stored the file
+ *             @char* fname:= the name of the file
+ *             @int* size:= the size of the file that will be filled
+ * 
+ * */
+uint64_t uint64t_read_file_in_char_vector(char** ksource, char* fname, uint64_t* size){
+    int i;
+    FILE *kfile;
+    uint64_t kfilesize;
+  
+    kfile = fopen(fname, "r" );
+    
+    
+    
+    if(kfile == NULL){
+        fprintf(stderr,"Error opening file %s\n",fname);
+        return 1;
+    }
+    
+    
+    
+    
+    fseek( kfile, 0, SEEK_END );
+    kfilesize = ((uint64_t)ftell(kfile));
+    rewind( kfile );
+    
+    (*ksource) = (char*)malloc(kfilesize*sizeof(char));
+    i = fread((*ksource), 1, kfilesize, kfile );
+    fclose( kfile );
+    (*size) = kfilesize;
+    return 0;
+}
 
 
 
@@ -917,7 +966,7 @@ void merge(float* values, int* indices, int temp[], int from_index, int mid, int
     }
 }
  
-void mergesort(float* values, int* indices, int low, int high){
+void merge_sort(float* values, int* indices, int low, int high){
     int i,m,from,mid,to,length = high-low + 1;
     int* temp = (int*)calloc(length,sizeof(int));
     for(i = 0; i < length; i++){
@@ -937,7 +986,7 @@ void mergesort(float* values, int* indices, int low, int high){
 
 void sort(float* values, int* indices, int low, int high){
     if(high-low > SORT_SWITCH_THRESHOLD)
-        mergesort(values,indices,low,high);
+        merge_sort(values,indices,low,high);
     else
         quick_sort(values,indices,low,high);
 }
@@ -1405,6 +1454,11 @@ void swap_array_bytes_order(void* ptr, uint64_t size, uint64_t len){
 }
 
 void convert_data(void* ptr, uint64_t size, uint64_t len){
+    if(!is_little_endian())
+        swap_array_bytes_order(ptr,size,len);
+}
+
+void convert_communication_data(void* ptr, uint64_t size, uint64_t len){
     if(!is_little_endian())
         swap_array_bytes_order(ptr,size,len);
 }

@@ -38,8 +38,9 @@ SOFTWARE.
  *             @ int normalization_flag:= either NO_NORMALIZATION or LAYER_NORMALIZATION 
  *             @ int training_mode:= either FREEZE_TRAINING or GRADIENT_DESCENT or EDGE_POPUP or FREEZE_BIASES [NOT COMPLETELY IMPLEMENTED THE LAST ONE]
  *             @ int feed_forward_flag:= either FULLY_FEED_FORWARD or EDGE_POPUP
+ *                @ int mode:= STANDARD, NOISY 
  * */
-fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
+fcl* fully_connected(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag, int mode){
     if(input <= 0 || output <= 0 || layer < 0 || input*output <= 0){
         fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
         exit(1);
@@ -95,12 +96,18 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         exit(1);
     }
     
+    if(mode != STANDARD && mode != NOISY){
+        fprintf(stderr,"Error: the fcl mode should be set to either standard or noisy!\n");
+        exit(1);
+    }
+    
     int i,j;
     
     fcl* f = (fcl*)malloc(sizeof(fcl));
     f->input = input;
     f->output = output;
     f->layer = layer;
+    f->mode = mode;
     f->dropout_flag = dropout_flag;
     f->activation_flag = activation_flag;
     f->dropout_threshold = dropout_threshold;
@@ -109,6 +116,14 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     f->normalization_flag = normalization_flag;
     if(f->feed_forward_flag != ONLY_DROPOUT){
         f->weights = (float*)malloc(sizeof(float)*output*input);
+        if(mode == NOISY){
+            f->noisy_weights = (float*)malloc(sizeof(float)*output*input);// new
+            f->noisy_biases = (float*)calloc(output,sizeof(float));// new
+        }
+        else{
+            f->noisy_weights = NULL;// new
+            f->noisy_biases = NULL;// new
+        }
         f->biases = (float*)calloc(output,sizeof(float));
         f->active_output_neurons = (int*)calloc(output,sizeof(int));
         if(f->training_mode != EDGE_POPUP && f->training_mode != ONLY_FF){
@@ -120,6 +135,26 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
             f->d1_biases = (float*)calloc(output,sizeof(float));
             f->d2_biases = (float*)calloc(output,sizeof(float));
             f->d3_biases = (float*)calloc(output,sizeof(float));
+            if(mode == NOISY){
+                f->d_noisy_weights = (float*)calloc(output*input,sizeof(float));// new
+                f->d1_noisy_weights = (float*)calloc(output*input,sizeof(float));// new
+                f->d2_noisy_weights = (float*)calloc(output*input,sizeof(float));// new
+                f->d3_noisy_weights = (float*)calloc(output*input,sizeof(float));// new
+                f->d_noisy_biases = (float*)calloc(output,sizeof(float));// new
+                f->d1_noisy_biases = (float*)calloc(output,sizeof(float));// new
+                f->d2_noisy_biases = (float*)calloc(output,sizeof(float));// new
+                f->d3_noisy_biases = (float*)calloc(output,sizeof(float));// new
+            }
+            else{
+                f->d_noisy_weights = NULL;// new
+                f->d1_noisy_weights = NULL;// new
+                f->d2_noisy_weights = NULL;// new
+                f->d3_noisy_weights = NULL;// new
+                f->d_noisy_biases = NULL;// new
+                f->d1_noisy_biases = NULL;// new
+                f->d2_noisy_biases = NULL;// new
+                f->d3_noisy_biases = NULL;// new
+            }
         }
         
         else{
@@ -127,6 +162,14 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
             f->d1_weights = NULL;
             f->d2_weights = NULL;
             f->d3_weights = NULL;    
+            f->d_noisy_weights = NULL;// new
+            f->d1_noisy_weights = NULL;// new
+            f->d2_noisy_weights = NULL;// new
+            f->d3_noisy_weights = NULL;// new
+            f->d_noisy_biases = NULL;// new
+            f->d1_noisy_biases = NULL;// new
+            f->d2_noisy_biases = NULL;// new
+            f->d3_noisy_biases = NULL;// new
             f->d_biases = NULL;
             f->d1_biases = NULL;
             f->d2_biases = NULL;
@@ -137,12 +180,22 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     
     else{
         f->weights = NULL;
+        f->noisy_weights = NULL;// new
+        f->noisy_biases = NULL;// new
         f->biases = NULL;
         f->active_output_neurons = NULL;
         f->d_weights = NULL;
         f->d1_weights = NULL;
         f->d2_weights = NULL;
         f->d3_weights = NULL;    
+        f->d_noisy_weights = NULL;// new
+        f->d1_noisy_weights = NULL;// new
+        f->d2_noisy_weights = NULL;// new
+        f->d3_noisy_weights = NULL;// new
+        f->d_noisy_biases = NULL;// new
+        f->d1_noisy_biases = NULL;// new
+        f->d2_noisy_biases = NULL;// new
+        f->d3_noisy_biases = NULL;// new
         f->d_biases = NULL;
         f->d1_biases = NULL;
         f->d2_biases = NULL;
@@ -156,6 +209,21 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
     else{
         f->dropout_temp = NULL;
         f->dropout_mask = NULL;
+    }
+    
+    if(mode == NOISY){
+        f->noise = (float*)calloc(input*output,sizeof(float));// new
+        f->temp_weights = (float*)calloc(input*output,sizeof(float));// new
+        f->noise_biases = (float*)calloc(output,sizeof(float));// new
+        f->temp_biases = (float*)calloc(output,sizeof(float));// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+    }
+    
+    else{
+        f->noise = NULL;
+        f->temp_weights = NULL;
+        f->noise_biases = NULL;
+        f->temp_biases = NULL;
     }
         
     f->temp = (float*)calloc(output,sizeof(float));
@@ -196,9 +264,19 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         f->active_output_neurons[i] = 1;
         for(j = 0; j < input; j++){
             if(f->feed_forward_flag != ONLY_DROPOUT){
-                if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP)
-                f->indices[i*input+j] = i*input+j;
-                f->weights[i*input+j] = random_general_gaussian_xavier_init(input);
+                if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
+					f->indices[i*input+j] = i*input+j;
+					f->weights[i*input+j] = signed_kaiming_constant(input);
+					if(mode == NOISY){
+						f->noisy_weights[i*input+j] = 0.5/(sqrtf(2*input));// not from the paper, different init cause not xavier initialization but signed kaiming constant
+					}
+				}
+				else{
+					f->weights[i*input+j] = random_general_gaussian_xavier_init(input);
+					if(mode == NOISY){
+						f->noisy_weights[i*input+j] = 0.5/(sqrtf(input));// from the paper, in case of xavier initialization
+					}
+				}
             }
         }
         if(dropout_flag)
@@ -233,7 +311,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
  *             @ int training_mode:= either FREEZE_TRAINING or GRADIENT_DESCENT or EDGE_POPUP or FREEZE_BIASES [NOT COMPLETELY IMPLEMENTED THE LAST ONE]
  *             @ int feed_forward_flag:= either FULLY_FEED_FORWARD or EDGE_POPUP
  * */
-fcl* fully_connected_without_arrays(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
+fcl* fully_connected_without_arrays(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag, int mode){
     if(input <= 0 || output <= 0 || layer < 0){
         return NULL;
     }
@@ -278,12 +356,17 @@ fcl* fully_connected_without_arrays(int input, int output, int layer, int dropou
     if((feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP) && normalization_flag == LAYER_NORMALIZATION){
         return NULL;
     }
+    
+    if(mode != STANDARD && mode != NOISY){
+        return NULL;
+    }
  
     int i,j;
     
     fcl* f = (fcl*)malloc(sizeof(fcl));
     f->input = input;
     f->output = output;
+    f->mode = mode;
     f->layer = layer;
     f->dropout_flag = dropout_flag;
     f->activation_flag = activation_flag;
@@ -328,7 +411,7 @@ fcl* fully_connected_without_arrays(int input, int output, int layer, int dropou
  *             @ int n_groups:= a number that divides the output in tot group for the layer normalization
  *             @ int normalization_flag:= either NO_NORMALIZATION or LAYER_NORMALIZATION 
  * */
-fcl* fully_connected_without_learning_parameters(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag){
+fcl* fully_connected_without_learning_parameters(int input, int output, int layer, int dropout_flag, int activation_flag, float dropout_threshold, int n_groups, int normalization_flag, int training_mode, int feed_forward_flag, int mode){
     if(input <= 0 || output <= 0 || layer < 0){
         fprintf(stderr,"Error: input, output params must be > 0 and layer > -1\n");
         exit(1);
@@ -383,6 +466,11 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         fprintf(stderr,"Error: layer normalization should not be matched with edge popup!\n");
         exit(1);
     }
+    
+    if(mode != NOISY && mode != STANDARD){
+        fprintf(stderr,"Error: mode can be only either STANDARD or NOISY!\n");
+        exit(1);
+    }
  
     int i,j;
     
@@ -390,6 +478,7 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     f->input = input;
     f->output = output;
     f->layer = layer;
+    f->mode = mode;
     f->dropout_flag = dropout_flag;
     f->activation_flag = activation_flag;
     f->dropout_threshold = dropout_threshold;
@@ -399,16 +488,40 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     if(f->feed_forward_flag != ONLY_DROPOUT){
         f->weights = NULL;
         f->biases = NULL;
+        f->noisy_weights = NULL;// new
+        f->noisy_biases = NULL;
         f->active_output_neurons = NULL;
         if(f->training_mode != EDGE_POPUP && f->training_mode != ONLY_FF){
             f->d_weights = (float*)calloc(output*input,sizeof(float));
             f->d1_weights = NULL;
             f->d2_weights = NULL;
-            f->d3_weights = NULL;     
+            f->d3_weights = NULL;
             f->d_biases = (float*)calloc(output,sizeof(float));
             f->d1_biases = NULL;
             f->d2_biases = NULL;
             f->d3_biases = NULL;
+            if(mode == NOISY){
+                f->d_noisy_weights = (float*)calloc(output*input,sizeof(float));// new
+                f->d_noisy_biases = (float*)calloc(output,sizeof(float));// new
+            } 
+            
+            else{
+                f->d_noisy_weights = NULL;
+                f->d_noisy_biases = NULL;
+            }
+            
+            f->d1_noisy_weights = NULL;
+            f->d2_noisy_weights = NULL;
+            f->d3_noisy_weights = NULL;
+            f->d1_noisy_biases = NULL;
+            f->d2_noisy_biases = NULL;
+            f->d3_noisy_biases = NULL;
+                
+            f->d1_biases = NULL;
+            f->d2_biases = NULL;
+            f->d3_biases = NULL;
+            
+            
         }
         
         else{
@@ -416,6 +529,14 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
             f->d1_weights = NULL;
             f->d2_weights = NULL;
             f->d3_weights = NULL;    
+            f->d_noisy_weights = NULL;// new
+            f->d1_noisy_weights = NULL;// new
+            f->d2_noisy_weights = NULL;// new
+            f->d3_noisy_weights = NULL;// new
+            f->d_noisy_biases = NULL;// new
+            f->d1_noisy_biases = NULL;// new
+            f->d2_noisy_biases = NULL;// new
+            f->d3_noisy_biases = NULL;// new
             f->d_biases = NULL;
             f->d1_biases = NULL;
             f->d2_biases = NULL;
@@ -426,12 +547,22 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     
     else{
         f->weights = NULL;
+        f->noisy_weights = NULL;// new
+        f->noisy_biases = NULL;// new
         f->biases = NULL;
         f->active_output_neurons = NULL;
         f->d_weights = NULL;
         f->d1_weights = NULL;
         f->d2_weights = NULL;
         f->d3_weights = NULL;    
+        f->d_noisy_weights = NULL;// new
+        f->d1_noisy_weights = NULL;// new
+        f->d2_noisy_weights = NULL;// new
+        f->d3_noisy_weights = NULL;// new
+        f->d_noisy_biases = NULL;// new
+        f->d1_noisy_biases = NULL;// new
+        f->d2_noisy_biases = NULL;// new
+        f->d3_noisy_biases = NULL;// new
         f->d_biases = NULL;
         f->d1_biases = NULL;
         f->d2_biases = NULL;
@@ -446,7 +577,22 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         f->dropout_temp = NULL;
         f->dropout_mask = NULL;
     }
-        
+    
+    if(mode == NOISY){
+        f->noise = (float*)calloc(input*output,sizeof(float));// new
+        f->temp_weights = (float*)calloc(input*output,sizeof(float));// new
+		f->noise_biases = (float*)calloc(output,sizeof(float));// new
+        f->temp_biases = (float*)calloc(output,sizeof(float));// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+    }
+    
+    else{
+        f->noise = NULL;// new
+        f->temp_weights = NULL;// new
+        f->noise_biases = NULL;// new
+        f->temp_biases = NULL;// new
+    }
+    
     f->temp = (float*)calloc(output,sizeof(float));
     f->temp3 = (float*)calloc(output,sizeof(float));
     f->temp2 = (float*)calloc(input,sizeof(float));
@@ -499,6 +645,10 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     return f;
 }
 
+int is_noisy(fcl* f){// new
+    return f->mode == NOISY;
+}
+
 int exists_params_fcl(fcl* f){
     return f->feed_forward_flag != ONLY_DROPOUT;
 }
@@ -539,6 +689,16 @@ void free_fully_connected(fcl* f){
     free(f->d1_weights);
     free(f->d2_weights);
     free(f->d3_weights);
+    free(f->noisy_weights);// new
+    free(f->d_noisy_weights);// new
+    free(f->d1_noisy_weights);// new
+    free(f->d2_noisy_weights);// new
+    free(f->d3_noisy_weights);// new
+    free(f->noisy_biases);// new
+    free(f->d_noisy_biases);// new
+    free(f->d1_noisy_biases);// new
+    free(f->d2_noisy_biases);// new
+    free(f->d3_noisy_biases);// new
     free(f->biases);
     free(f->d_biases);
     free(f->d1_biases);
@@ -549,6 +709,10 @@ void free_fully_connected(fcl* f){
     free(f->post_normalization);
     free(f->dropout_mask);
     free(f->dropout_temp);
+    free(f->noise);// new
+    free(f->temp_weights);// new
+    free(f->noise_biases);// new
+    free(f->temp_biases);// new
     free(f->temp);
     free(f->temp2);
     free(f->temp3);
@@ -593,6 +757,14 @@ void free_fully_connected_for_edge_popup(fcl* f){
     free(f->d1_weights);
     free(f->d2_weights);
     free(f->d3_weights);
+    free(f->d_noisy_weights);// new
+    free(f->d1_noisy_weights);// new
+    free(f->d2_noisy_weights);// new
+    free(f->d3_noisy_weights);// new
+    free(f->d_noisy_biases);// new
+    free(f->d1_noisy_biases);// new
+    free(f->d2_noisy_biases);// new
+    free(f->d3_noisy_biases);// new
     free(f->d_biases);
     free(f->d1_biases);
     free(f->d2_biases);
@@ -610,12 +782,18 @@ void free_fully_connected_complementary_edge_popup(fcl* f){
         return;
     }
     free(f->weights);
+    free(f->noisy_weights);// new
+    free(f->noisy_biases);// new
     free(f->biases);
     free(f->pre_activation);
     free(f->post_activation);
     free(f->post_normalization);
     free(f->dropout_mask);
     free(f->dropout_temp);
+    free(f->noise);// new
+    free(f->temp_weights);// new
+    free(f->noise_biases);// new
+    free(f->temp_biases);// new
     free(f->temp);
     free(f->temp2);
     free(f->temp3);
@@ -656,6 +834,14 @@ void save_fcl(fcl* f, int n){
         exit(1);
     }
     
+    
+    convert_data(&f->mode,sizeof(int),1);// new
+    i = fwrite(&f->mode,sizeof(int),1,fw);// new
+    convert_data(&f->mode,sizeof(int),1);// new
+    if(i != 1){// new
+        fprintf(stderr,"Error: an error occurred saving a fcl layer\n");// new
+        exit(1);// new
+    }
     
     convert_data(&f->n_groups,sizeof(int),1);
     i = fwrite(&f->n_groups,sizeof(int),1,fw);
@@ -752,6 +938,23 @@ void save_fcl(fcl* f, int n){
         }
     }
     
+    if(is_noisy(f)){// new
+        convert_data(f->noisy_weights,sizeof(float),(f->input)*(f->output));// new
+        i = fwrite(f->noisy_weights,sizeof(float)*(f->input)*(f->output),1,fw);// new
+        convert_data(f->noisy_weights,sizeof(float),(f->input)*(f->output));// new
+        if(i != 1){// new
+            fprintf(stderr,"Error: an error occurred saving a fcl layer\n");// new
+            exit(1);// new
+        }// new
+        convert_data(f->noisy_biases,sizeof(float),(f->output));// new
+        i = fwrite(f->noisy_biases,sizeof(float)*(f->output),1,fw);// new
+        convert_data(f->noisy_biases,sizeof(float),(f->output));// new
+        if(i != 1){// new
+            fprintf(stderr,"Error: an error occurred saving a fcl layer\n");// new
+            exit(1);// new
+        }// new
+    }
+    
     if(exists_edge_popup_stuff_fcl(f)){
         convert_data(f->scores,sizeof(float),(f->output)*(f->input));
         i = fwrite(f->scores,sizeof(float)*(f->output)*(f->input),1,fw);
@@ -796,11 +999,15 @@ void save_fcl(fcl* f, int n){
  *             @ float* biases:= the biases that must be copied (size = f->output)
  * 
  * */
-void copy_fcl_params(fcl* f, float* weights, float* biases){
+void copy_fcl_params(fcl* f, float* weights,float* noisy_weights, float* noisy_biases, float* biases){//new
     if(exists_params_fcl(f)){
         copy_array(weights,f->weights,f->input*f->output);
         copy_array(biases,f->biases,f->output);
     }
+    if(is_noisy(f)){// new
+        copy_array(noisy_weights,f->noisy_weights,f->input*f->output);// new
+        copy_array(noisy_biases,f->noisy_biases,f->output);// new
+    }// new
 }
 
 
@@ -817,13 +1024,23 @@ fcl* load_fcl(FILE* fr){
     int i;
     
     int input = 0,output = 0,layer = 0,dropout_flag = 0,activation_flag = 0, training_mode = 0,feed_forward_flag = 0, n_groups = 0, normalization_flag = 0;
+    int mode = STANDARD;// new
     float dropout_threshold = 0;
     float* weights = NULL;
+    float* noisy_weights = NULL;// new
+    float* noisy_biases = NULL;// new
     float* biases = NULL;
     float* scores = NULL;
     int* indices = NULL;
     int* active_output_neurons = NULL;
     bn* layer_norm = NULL;
+    
+    i = fread(&mode,sizeof(int),1,fr);
+    convert_data(&mode,sizeof(int),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading a fcl layer\n");
+        exit(1);
+    }
     
     i = fread(&n_groups,sizeof(int),1,fr);
     convert_data(&n_groups,sizeof(int),1);
@@ -897,6 +1114,10 @@ fcl* load_fcl(FILE* fr){
     
     if(feed_forward_flag != ONLY_DROPOUT){
         weights = (float*)malloc(sizeof(float)*input*output);
+        if(mode == NOISY){// new
+            noisy_weights = (float*)malloc(sizeof(float)*input*output);// new
+            noisy_biases = (float*)malloc(sizeof(float)*output);// new
+        }// new
         active_output_neurons = (int*)malloc(sizeof(int)*output);
         biases = (float*)malloc(sizeof(float)*output);
     }
@@ -929,6 +1150,21 @@ fcl* load_fcl(FILE* fr){
         }
     }
     
+    if(mode == NOISY){// new
+        i = fread(noisy_weights,sizeof(float)*(input)*(output),1,fr);// new
+        convert_data(noisy_weights,sizeof(float),(input)*(output));// new
+        if(i != 1){// new
+            fprintf(stderr,"Error: an error occurred loading a fcl layer\n");// new
+            exit(1);// new
+        }// new
+        i = fread(noisy_biases,sizeof(float)*(output),1,fr);// new
+        convert_data(noisy_biases,sizeof(float),(output));// new
+        if(i != 1){// new
+            fprintf(stderr,"Error: an error occurred loading a fcl layer\n");// new
+            exit(1);// new
+        }// new
+    }// new
+    
     if(feed_forward_flag != ONLY_DROPOUT && (feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP)){
         i = fread(scores,sizeof(float)*(output)*(input),1,fr);
         convert_data(scores,sizeof(float),(output)*(input));
@@ -947,8 +1183,8 @@ fcl* load_fcl(FILE* fr){
     
     
     
-    fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold, n_groups, normalization_flag,training_mode,feed_forward_flag);
-    copy_fcl_params(f,weights,biases);
+    fcl* f = fully_connected(input,output,layer,dropout_flag,activation_flag,dropout_threshold, n_groups, normalization_flag,training_mode,feed_forward_flag,mode);// new
+    copy_fcl_params(f,weights,noisy_weights,noisy_biases, biases);// new
     if(exists_edge_popup_stuff_fcl(f)){
         copy_array(scores,f->scores,input*output);
         copy_int_array(indices,f->indices,input*output);
@@ -956,6 +1192,8 @@ fcl* load_fcl(FILE* fr){
     if(exists_params_fcl(f))
         copy_int_array(active_output_neurons,f->active_output_neurons,output);
     free(weights);
+    free(noisy_weights);// new
+    free(noisy_biases);// new
     free(biases);
     free(indices);
     free(active_output_neurons);
@@ -985,17 +1223,31 @@ fcl* load_fcl(FILE* fr){
 fcl* copy_fcl(fcl* f){
     if(f == NULL)
         return NULL;
-    fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold,f->n_groups,f->normalization_flag, f->training_mode,f->feed_forward_flag);
+    fcl* copy = fully_connected(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold,f->n_groups,f->normalization_flag, f->training_mode,f->feed_forward_flag, f->mode);// new
     if(exists_params_fcl(f)){
         copy_array(f->weights,copy->weights,f->output*f->input);
         copy_array(f->biases,copy->biases,f->output);
         copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
     }
+    if(is_noisy(f)){// new
+        copy_array(f->noisy_weights,copy->noisy_weights,f->output*f->input);// new
+        copy_array(f->noisy_biases,copy->noisy_biases,f->output);// new
+    }// new
     if(exists_d_params_fcl(f)){
         copy_array(f->d_weights,copy->d_weights,f->output*f->input);
         copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
         copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
         copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
+        if(is_noisy(f)){// new
+            copy_array(f->d_noisy_weights,copy->d_noisy_weights,f->output*f->input);// new
+            copy_array(f->d1_noisy_weights,copy->d1_noisy_weights,f->output*f->input);// new
+            copy_array(f->d2_noisy_weights,copy->d2_noisy_weights,f->output*f->input);// new
+            copy_array(f->d3_noisy_weights,copy->d3_noisy_weights,f->output*f->input);// new
+            copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+            copy_array(f->d1_noisy_biases,copy->d1_noisy_biases,f->output);// new
+            copy_array(f->d2_noisy_biases,copy->d2_noisy_biases,f->output);// new
+            copy_array(f->d3_noisy_biases,copy->d3_noisy_biases,f->output);// new
+        }// new
         copy_array(f->d_biases,copy->d_biases,f->output);
         copy_array(f->d1_biases,copy->d1_biases,f->output);
         copy_array(f->d2_biases,copy->d2_biases,f->output);
@@ -1031,10 +1283,14 @@ fcl* copy_fcl(fcl* f){
 fcl* copy_fcl_without_learning_parameters(fcl* f){
     if(f == NULL)
         return NULL;
-    fcl* copy = fully_connected_without_learning_parameters(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold,f->n_groups,f->normalization_flag, f->training_mode,f->feed_forward_flag);
+    fcl* copy = fully_connected_without_learning_parameters(f->input, f->output,f->layer, f->dropout_flag,f->activation_flag,f->dropout_threshold,f->n_groups,f->normalization_flag, f->training_mode,f->feed_forward_flag, f->mode);// new
     if(exists_d_params_fcl(f)){
         copy_array(f->d_weights,copy->d_weights,f->output*f->input);
         copy_array(f->d_biases,copy->d_biases,f->output);
+        if(is_noisy(f)){// new
+            copy_array(f->d_noisy_weights,copy->d_noisy_weights,f->output*f->input);// new
+            copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+        }// new
     }
     
     if(exists_edge_popup_stuff_fcl(f)){
@@ -1095,13 +1351,22 @@ fcl* reset_fcl(fcl* f){
         set_vector_with_value(1,f->dropout_mask,f->output);
         set_vector_with_value(1,f->dropout_temp,f->output);
     }
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     set_vector_with_value(0,f->temp,f->output);
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
     set_vector_with_value(0,f->error2,f->input);
-    if(exists_d_params_fcl(f))
-    set_vector_with_value(0,f->d_weights,size);
-    
+    if(exists_d_params_fcl(f)){
+        set_vector_with_value(0,f->d_weights,size);
+        if(is_noisy(f)){// new
+            set_vector_with_value(0,f->d_noisy_weights,size);// new
+            set_vector_with_value(0,f->d_noisy_biases,f->output);// new
+        }// new
+    }
     if(f->training_mode == EDGE_POPUP){
         for(i = 0; i < f->output*f->input; i++){
                 f->indices[i] = i;
@@ -1146,12 +1411,22 @@ fcl* reset_fcl_without_learning_parameters(fcl* f){
         set_vector_with_value(1,f->dropout_mask,f->output);
         set_vector_with_value(1,f->dropout_temp,f->output);
     }
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     set_vector_with_value(0,f->temp,f->output);
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
     set_vector_with_value(0,f->error2,f->input);
-    if(exists_d_params_fcl(f))
-    set_vector_with_value(0,f->d_weights,size);
+    if(exists_d_params_fcl(f)){
+        set_vector_with_value(0,f->d_weights,size);
+        if(is_noisy(f)){// new
+            set_vector_with_value(0,f->d_noisy_weights,size);// new
+            set_vector_with_value(0,f->d_noisy_biases,f->output);// new
+        }// new
+    }
     
     if(f->training_mode == EDGE_POPUP)
         set_vector_with_value(0,f->d_scores,size);
@@ -1188,6 +1463,11 @@ fcl* reset_fcl_except_partial_derivatives(fcl* f){
         set_vector_with_value(1,f->dropout_mask,f->output);
         set_vector_with_value(1,f->dropout_temp,f->output);
     }
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     set_vector_with_value(0,f->temp,f->output);
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
@@ -1226,6 +1506,11 @@ fcl* reset_fcl_without_dwdb(fcl* f){
         set_vector_with_value(1,f->dropout_mask,f->output);
         set_vector_with_value(1,f->dropout_temp,f->output);
     }
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     set_vector_with_value(0,f->temp,f->output);
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
@@ -1272,6 +1557,11 @@ fcl* reset_fcl_without_dwdb_without_learning_parameters(fcl* f){
         set_vector_with_value(1,f->dropout_mask,f->output);
         set_vector_with_value(1,f->dropout_temp,f->output);
     }
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     set_vector_with_value(0,f->temp,f->output);
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
@@ -1299,7 +1589,7 @@ fcl* reset_fcl_for_edge_popup(fcl* f){
     if(f == NULL)
         return NULL;
     int i;
-    
+    int size = f->input*f->output;
     
     for(i = 0; i < f->output*f->input; i++){
         if(i < f->output){
@@ -1321,15 +1611,24 @@ fcl* reset_fcl_for_edge_popup(fcl* f){
             f->temp2[i] = 0;
             f->error2[i] = 0;
         }
-        if(exists_d_params_fcl(f))
-        f->d_weights[i] = 0;
         
         if(f->training_mode == EDGE_POPUP){
             f->d_scores[i] = 0;
         }
 
     }
-
+    if(is_noisy(f)){// new
+        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
+    if(exists_d_params_fcl(f)){
+        set_vector_with_value(0,f->d_weights,size);
+        if(is_noisy(f)){// new
+            set_vector_with_value(0,f->d_noisy_weights,size);// new
+            set_vector_with_value(0,f->d_noisy_biases,f->output);// new
+        }// new
+    }
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
         reset_bn_except_partial_derivatives(f->layer_norm);
@@ -1350,9 +1649,16 @@ uint64_t size_of_fcls(fcl* f){
     uint64_t sum = 0;
     if(exists_params_fcl(f)){
         sum+=(f->output*2+f->output*f->input)*sizeof(float) + f->output*sizeof(int);
+        if(is_noisy(f)){// new
+            sum+=f->output*f->input*sizeof(float)*4 + f->output*sizeof(float)*4;// new
+        }// new
     }
+    
     if(exists_d_params_fcl(f)){
         sum+=(f->output*f->input + f->output)*4*sizeof(float);
+        if(is_noisy(f)){// new
+            sum+=(f->output*f->input)*4*sizeof(float);// n ew
+        }// new
     }
     if(exists_edge_popup_stuff_fcl(f)){
         sum+=f->output*f->input*5*sizeof(float) +f->output*f->input*sizeof(int);
@@ -1370,7 +1676,9 @@ uint64_t size_of_fcls(fcl* f){
     }
     
     sum+=(f->output+f->input)*2*sizeof(float);
-    
+    if(is_noisy(f)){// new
+        sum+=(f->output*f->input*2*sizeof(float)) + f->output*2*sizeof(float);// new
+    }// new
     return sum;
 }
 /* this function returns the space allocated by the arrays of f (more or less)
@@ -1387,6 +1695,9 @@ uint64_t size_of_fcls_without_learning_parameters(fcl* f){
 
     if(exists_d_params_fcl(f)){
         sum+=(f->output*f->input + f->output)*sizeof(float);
+        if(is_noisy(f)){// new
+            sum+=f->output*f->input*sizeof(float) + f->output*sizeof(float);// n ew
+        }// new
     }
     if(exists_edge_popup_stuff_fcl(f)){
         sum+=f->output*f->input*5*sizeof(float);
@@ -1404,7 +1715,9 @@ uint64_t size_of_fcls_without_learning_parameters(fcl* f){
     }
     
     sum+=(f->output+f->input)*2*sizeof(float);
-    
+    if(is_noisy(f)){// new
+        sum+=(f->output*f->input*2*sizeof(float)) + f->output*2*sizeof(float);// new
+    }// new
     return sum;
 }
 
@@ -1431,13 +1744,26 @@ void paste_fcl(fcl* f,fcl* copy){
         copy_array(f->weights,copy->weights,in_out);
         copy_array(f->biases,copy->biases,f->output);
         copy_int_array(f->active_output_neurons,copy->active_output_neurons,f->output);
+        if(is_noisy(f) && is_noisy(copy)){// new
+            copy_array(f->noisy_weights,copy->noisy_weights,in_out);// new
+            copy_array(f->noisy_biases,copy->noisy_biases,f->output);// new
+        }// new
     }
     if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
         copy_array(f->d_weights,copy->d_weights,in_out);
         copy_array(f->d1_weights,copy->d1_weights,in_out);
         copy_array(f->d2_weights,copy->d2_weights,in_out);
         copy_array(f->d3_weights,copy->d3_weights,in_out);
-        
+        if(is_noisy(f) && is_noisy(copy)){// new
+            copy_array(f->d_noisy_weights,copy->d_noisy_weights,in_out);// new
+            copy_array(f->d1_noisy_weights,copy->d1_noisy_weights,in_out);// new
+            copy_array(f->d2_noisy_weights,copy->d2_noisy_weights,in_out);// new
+            copy_array(f->d3_noisy_weights,copy->d3_noisy_weights,in_out);// new
+            copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+            copy_array(f->d1_noisy_biases,copy->d1_noisy_biases,f->output);// new
+            copy_array(f->d2_noisy_biases,copy->d2_noisy_biases,f->output);// new
+            copy_array(f->d3_noisy_biases,copy->d3_noisy_biases,f->output);// new
+        }// new
         copy_array(f->d_biases,copy->d_biases,f->output);
         copy_array(f->d1_biases,copy->d1_biases,f->output);
         copy_array(f->d2_biases,copy->d2_biases,f->output);
@@ -1480,7 +1806,10 @@ void paste_fcl_without_learning_parameters(fcl* f,fcl* copy){
 
     if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
         copy_array(f->d_weights,copy->d_weights,in_out);
-        
+        if(is_noisy(f) && is_noisy(copy)){// new
+            copy_array(f->d_noisy_weights,copy->d_noisy_weights,in_out);// new
+            copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+        }// new
         copy_array(f->d_biases,copy->d_biases,f->output);
     }
     if(exists_edge_popup_stuff_fcl(f) && exists_edge_popup_stuff_fcl(copy)){
@@ -1510,6 +1839,10 @@ void paste_w_fcl(fcl* f,fcl* copy){
     if(exists_params_fcl(f)){
         copy_array(f->weights,copy->weights,f->output*f->input);
         copy_array(f->biases,copy->biases,f->output);
+        if(is_noisy(f) && is_noisy(copy)){// new
+            copy_array(f->noisy_weights,copy->noisy_weights,f->output*f->input);// new
+            copy_array(f->noisy_biases,copy->noisy_biases,f->output);// new
+        }// new
     }
     if(exists_edge_popup_stuff_fcl(f)){
         copy_array(f->scores,copy->scores,f->input*f->output);
@@ -1550,12 +1883,28 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
                 copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
             }
         }
-        if(exists_params_fcl(f) && exists_params_fcl(copy))
-        copy->weights[i] = tau*f->weights[i] + (1-tau)*copy->weights[i];
+        if(exists_params_fcl(f) && exists_params_fcl(copy)){
+            copy->weights[i] = tau*f->weights[i] + (1-tau)*copy->weights[i];
+            if(is_noisy(f) && is_noisy(copy)){// new
+                copy->noisy_weights[i] = tau*f->noisy_weights[i] + (1-tau)*copy->noisy_weights[i];// new
+                if(i < f->output)
+                copy->noisy_biases[i] = tau*f->noisy_biases[i] + (1-tau)*copy->noisy_biases[i];// new
+            }// new
+        }
         if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
             copy->d1_weights[i] = tau*f->d1_weights[i] + (1-tau)*copy->d1_weights[i];
             copy->d2_weights[i] = tau*f->d2_weights[i] + (1-tau)*copy->d2_weights[i];
             copy->d3_weights[i] = tau*f->d3_weights[i] + (1-tau)*copy->d3_weights[i];
+            if(is_noisy(f) && is_noisy(copy)){// new
+                copy->d1_noisy_weights[i] = tau*f->d1_noisy_weights[i] + (1-tau)*copy->d1_noisy_weights[i];// new
+                copy->d2_noisy_weights[i] = tau*f->d2_noisy_weights[i] + (1-tau)*copy->d2_noisy_weights[i];// new
+                copy->d3_noisy_weights[i] = tau*f->d3_noisy_weights[i] + (1-tau)*copy->d3_noisy_weights[i];// new
+                if(i < f->output){
+					copy->d1_noisy_biases[i] = tau*f->d1_noisy_biases[i] + (1-tau)*copy->d1_noisy_biases[i];// new
+					copy->d2_noisy_biases[i] = tau*f->d2_noisy_biases[i] + (1-tau)*copy->d2_noisy_biases[i];// new
+					copy->d3_noisy_biases[i] = tau*f->d3_noisy_biases[i] + (1-tau)*copy->d3_noisy_biases[i];// new
+				}
+            }// new
         }
         if(exists_edge_popup_stuff_fcl(f) && exists_edge_popup_stuff_fcl(copy)){
             copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
@@ -1602,6 +1951,10 @@ uint64_t get_array_size_params(fcl* f){
     if(f->normalization_flag == LAYER_NORMALIZATION){
         sum += (uint64_t)f->layer_norm->vector_dim*2;
     }
+    if(is_noisy(f)){// new
+        sum+=(uint64_t)f->input*f->output;// new
+        sum+=(uint64_t)f->output;// new
+    }// new
     return (uint64_t)f->input*f->output+f->output+sum;
 }
 
@@ -1634,6 +1987,9 @@ uint64_t get_array_size_weights(fcl* f){
     if(f->normalization_flag == LAYER_NORMALIZATION){
         sum += (uint64_t)f->layer_norm->vector_dim*2;
     }
+    if(is_noisy(f)){// new
+        sum+=(uint64_t)f->input*f->output;// new
+    }// new
     return (uint64_t)f->input*f->output+sum;
 }
 
@@ -1648,11 +2004,20 @@ uint64_t get_array_size_weights(fcl* f){
 void memcopy_vector_to_params(fcl* f, float* vector){
     if(f == NULL || vector == NULL || !exists_params_fcl(f))
         return;
+    
+    int multiplier = 1;
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
-    memcpy(f->biases,&vector[f->input*f->output],f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(f->noisy_weights,&vector[f->input*f->output],f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
+    memcpy(f->biases,&vector[multiplier*f->input*f->output],f->output*sizeof(float));// new
+    if(is_noisy(f)){// new
+        memcpy(f->noisy_biases,&vector[multiplier*f->input*f->output + f->output],f->output*sizeof(float));// new
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(f->layer_norm->gamma,&vector[f->input*f->output+f->output],f->layer_norm->vector_dim*sizeof(float));
-        memcpy(f->layer_norm->beta,&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->gamma,&vector[multiplier*f->input*f->output+multiplier*f->output],f->layer_norm->vector_dim*sizeof(float));// new
+        memcpy(f->layer_norm->beta,&vector[multiplier*f->input*f->output+multiplier*f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));// new
     }
 }
 
@@ -1681,11 +2046,19 @@ void memcopy_vector_to_scores(fcl* f, float* vector){
 void memcopy_params_to_vector(fcl* f, float* vector){
     if(f == NULL || !exists_params_fcl(f) || vector == NULL)
         return;
+    int multiplier = 1;
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
-    memcpy(&vector[f->input*f->output],f->biases,f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(&vector[f->input*f->output],f->noisy_weights,f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
+    memcpy(&vector[multiplier*f->input*f->output],f->biases,f->output*sizeof(float));// new
+    if(is_noisy(f)){// new
+        memcpy(&vector[multiplier*f->input*f->output + f->output],f->noisy_biases,f->output*sizeof(float));// new
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(&vector[f->input*f->output+f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));
-        memcpy(&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[multiplier*f->input*f->output+multiplier*f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));// new
+        memcpy(&vector[multiplier*f->input*f->output+multiplier*f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));// new
     }
 }
 
@@ -1700,10 +2073,15 @@ void memcopy_params_to_vector(fcl* f, float* vector){
 void memcopy_weights_to_vector(fcl* f, float* vector){
     if(f == NULL || !exists_params_fcl(f) || vector == NULL || f->feed_forward_flag == ONLY_DROPOUT)
         return;
+    int multiplier = 1;
     memcpy(vector,f->weights,f->input*f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(&vector[f->input*f->output],f->noisy_weights,f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(&vector[f->input*f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));
-        memcpy(&vector[f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[multiplier*f->input*f->output],f->layer_norm->gamma,f->layer_norm->vector_dim*sizeof(float));// new
+        memcpy(&vector[multiplier*f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->beta,f->layer_norm->vector_dim*sizeof(float));// new
     }
 }
 
@@ -1718,10 +2096,15 @@ void memcopy_weights_to_vector(fcl* f, float* vector){
 void memcopy_vector_to_weights(fcl* f, float* vector){
     if(f == NULL || !exists_params_fcl(f) || vector == NULL || f->feed_forward_flag == ONLY_DROPOUT)
         return;
+    int multiplier = 1;
     memcpy(f->weights,vector,f->input*f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(f->noisy_weights,&vector[f->input*f->output],f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(f->layer_norm->gamma,&vector[f->input*f->output],f->layer_norm->vector_dim*sizeof(float));
-        memcpy(f->layer_norm->beta,&vector[f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->gamma,&vector[multiplier*f->input*f->output],f->layer_norm->vector_dim*sizeof(float));// new
+        memcpy(f->layer_norm->beta,&vector[multiplier*f->input*f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));// new
     }
 }
 
@@ -1749,11 +2132,19 @@ void memcopy_scores_to_vector(fcl* f, float* vector){
 void memcopy_vector_to_derivative_params(fcl* f, float* vector){
     if(f == NULL || !exists_d_params_fcl(f) || vector == NULL)
         return;
+    int multiplier = 1;
     memcpy(f->d_weights,vector,f->input*f->output*sizeof(float));
-    memcpy(f->d_biases,&vector[f->input*f->output],f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(f->d_noisy_weights,&vector[f->input*f->output],f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
+    memcpy(f->d_biases,&vector[multiplier*f->input*f->output],f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(f->d_noisy_biases,&vector[multiplier*f->input*f->output + f->output],f->output*sizeof(float));// new
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(f->layer_norm->d_gamma,&vector[f->input*f->output+f->output],f->layer_norm->vector_dim*sizeof(float));
-        memcpy(f->layer_norm->d_beta,&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->d_gamma,&vector[multiplier*f->input*f->output+multiplier*f->output],f->layer_norm->vector_dim*sizeof(float));
+        memcpy(f->layer_norm->d_beta,&vector[multiplier*f->input*f->output+multiplier*f->output + f->layer_norm->vector_dim],f->layer_norm->vector_dim*sizeof(float));
     }
 }
 
@@ -1769,11 +2160,19 @@ void memcopy_vector_to_derivative_params(fcl* f, float* vector){
 void memcopy_derivative_params_to_vector(fcl* f, float* vector){
     if(f == NULL || !exists_d_params_fcl(f) || vector == NULL)
         return;
+    int multiplier = 1;
     memcpy(vector,f->d_weights,f->input*f->output*sizeof(float));
-    memcpy(&vector[f->input*f->output],f->d_biases,f->output*sizeof(float));
+    if(is_noisy(f)){// new
+        memcpy(&vector[f->input*f->output],f->d_noisy_weights,f->input*f->output*sizeof(float));// new
+        multiplier++;
+    }// new
+    memcpy(&vector[multiplier*f->input*f->output],f->d_biases,f->output*sizeof(float));// new
+    if(is_noisy(f)){// new
+        memcpy(&vector[multiplier*f->input*f->output+f->output],f->d_noisy_biases,f->output*sizeof(float));// new
+    }// new
     if(f->normalization_flag == LAYER_NORMALIZATION){
-        memcpy(&vector[f->input*f->output+f->output],f->layer_norm->d_gamma,f->layer_norm->vector_dim*sizeof(float));
-        memcpy(&vector[f->input*f->output+f->output + f->layer_norm->vector_dim],f->layer_norm->d_beta,f->layer_norm->vector_dim*sizeof(float));
+        memcpy(&vector[multiplier*f->input*f->output+multiplier*f->output],f->layer_norm->d_gamma,f->layer_norm->vector_dim*sizeof(float));// new
+        memcpy(&vector[multiplier*f->input*f->output+multiplier*f->output + f->layer_norm->vector_dim],f->layer_norm->d_beta,f->layer_norm->vector_dim*sizeof(float));// new
     }
 }
 
@@ -1841,9 +2240,9 @@ void compare_score_fcl(fcl* input1, fcl* input2, fcl* output){
         return;
     int i;
     for(i = 0; i < in_out; i++){
-        if(input1->scores[i] > input2->scores[i])
+        if(input1->scores[i] > input2->scores[i] && bool_is_real(input1->scores[i]) && input1->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input1->scores[i];
-        else
+        else if(bool_is_real(input2->scores[i]) && input2->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input2->scores[i];
     }
 }
@@ -1866,9 +2265,9 @@ void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output){
         return;
     int i;
     for(i = 0; i < in_out; i++){
-        if(input1->scores[i] > input2[i])
+        if(input1->scores[i] > input2[i] && bool_is_real(input1->scores[i]) && input1->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input1->scores[i];
-        else
+        else if(bool_is_real(input2[i]) && input2[i] < MAXIMUM_SCORE)
             output->scores[i] = input2[i];
     }
 }
@@ -1945,8 +2344,12 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
     for(i = 0; i < f->input*f->output; i++){
         if(i >= f->input*f->output*percentage)
             return;
-        if(f->scores[f->indices[i]] < goodness)
+        if(f->scores[f->indices[i]] < goodness){
             f->weights[f->indices[i]] = signed_kaiming_constant(f->input);
+            if(is_noisy(f)){// new
+                f->noisy_weights[f->indices[i]] = 0.5/(sqrtf(2*f->input));// new (not as the paper ,because different initialization for weights (signed kaiming constant)
+            }// new
+        }
     }
 }
 
@@ -1962,6 +2365,9 @@ void reinitialize_w_fcl(fcl* f){
     int i;
     for(i = 0; i < f->input*f->output; i++){
         f->weights[i] = random_general_gaussian_xavier_init(f->input);
+        if(is_noisy(f)){// new
+            f->noisy_weights[i] = random_general_gaussian_xavier_init(f->input);// new
+        }// new
     }
 }
 
@@ -2050,7 +2456,7 @@ void make_the_fcl_only_for_ff(fcl* f){
     f->d_weights = NULL;
     f->d1_weights = NULL;
     f->d2_weights = NULL;
-    f->d3_weights = NULL;    
+    f->d3_weights = NULL;     
     f->d_biases = NULL;
     f->d1_biases = NULL;
     f->d2_biases = NULL;
@@ -2069,6 +2475,40 @@ void inference_fcl(fcl* f){
         f->dropout_flag = DROPOUT_TEST;
         f->dropout_threshold = 1-f->dropout_threshold;
     }
+}
+
+void eliminate_noisy_layers(fcl* f){
+    if(is_noisy(f)){// new
+        f->mode = STANDARD;// new
+        free(f->temp_weights);// new
+        free(f->noise);// new
+        free(f->noisy_weights);// new
+        free(f->d_noisy_weights);// new
+        free(f->d1_noisy_weights);// new
+        free(f->d2_noisy_weights);// new
+        free(f->d3_noisy_weights);// new
+        f->temp_weights = NULL;
+        f->noise = NULL;
+        f->noisy_weights = NULL;
+        f->d_noisy_weights = NULL;
+        f->d1_noisy_weights = NULL;
+        f->d2_noisy_weights = NULL;
+        f->d3_noisy_weights = NULL;
+        free(f->temp_biases);// new
+        free(f->noise_biases);// new
+        free(f->noisy_biases);// new
+        free(f->d_noisy_biases);// new
+        free(f->d1_noisy_biases);// new
+        free(f->d2_noisy_biases);// new
+        free(f->d3_noisy_biases);// new
+        f->temp_biases = NULL;
+        f->noise_biases = NULL;
+        f->noisy_biases = NULL;
+        f->d_noisy_biases = NULL;
+        f->d1_noisy_biases = NULL;
+        f->d2_noisy_biases = NULL;
+        f->d3_noisy_biases = NULL;
+    }// new
 }
 
 void train_fcl(fcl* f){

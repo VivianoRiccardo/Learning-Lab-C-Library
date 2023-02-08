@@ -61,7 +61,7 @@ int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);
 int check_nans_matrix(float** m, int rows, int cols);
 void merge(float* values, int* indices, int temp[], int from_index, int mid, int to, int length);
-void mergesort(float* values, int* indices, int low, int high);
+void merge_sort(float* values, int* indices, int low, int high);
 void sort(float* values, int* indices, int low, int high);
 void free_tensor(float*** t, int dim1, int dim2);
 int shuffle_float_matrix_float_tensor(float** m,float*** t,int n);
@@ -88,7 +88,11 @@ int is_little_endian();
 void reverse_ptr(void* ptr, uint64_t size);
 void swap_array_bytes_order(void* ptr, uint64_t size, uint64_t len);
 void convert_data(void* ptr, uint64_t size, uint64_t len);
+void convert_communication_data(void* ptr, uint64_t size, uint64_t len);
 int shuffle_int_array_until_length(int* m,int n, int length);
 void quick_sort_int(int A[], int I[], int lo, int hi);
+uint64_t uint64t_read_file_in_char_vector(char** ksource, char* fname, uint64_t* size);
+void set_array_random_normal(float* array, int size);
+
 
 #endif

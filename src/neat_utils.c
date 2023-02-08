@@ -473,10 +473,10 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
 }
 
 int get_global_innovation_number_connections_from_genome(genome* g){
-	return g->global_inn_numb_connections;
+    return g->global_inn_numb_connections;
 }
 int get_global_innovation_number_nodes_from_genome(genome* g){
-	return g->global_inn_numb_nodes;
+    return g->global_inn_numb_nodes;
 }
 
 genome* load_genome_complete(char* filename){

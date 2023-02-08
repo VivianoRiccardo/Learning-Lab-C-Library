@@ -382,7 +382,7 @@ model* parse_model_file(char* filename){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);// new
                     c_fcls++;
                     flag = 0;
                 }
@@ -565,7 +565,7 @@ model* parse_model_without_learning_parameters_file(char* filename){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected_without_learning_parameters((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected_without_learning_parameters((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);
                     c_fcls++;
                     flag = 0;
                 }
@@ -747,7 +747,7 @@ model* parse_model_without_arrays_file(char* filename){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected_without_arrays((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected_without_arrays((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);
                     c_fcls++;
                     flag = 0;
                 }
@@ -924,7 +924,7 @@ model* parse_model_str(char* ksource, int size){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);// new
                     c_fcls++;
                     flag = 0;
                 }
@@ -1100,7 +1100,7 @@ model* parse_model_without_learning_parameters_str(char* ksource, int size){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected_without_learning_parameters((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected_without_learning_parameters((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);
                     c_fcls++;
                     flag = 0;
                 }
@@ -1277,7 +1277,7 @@ model* parse_model_without_arrays_str(char* ksource, int size){
                 }
                 
                 else if(flag == 2){
-                    fcls[c_fcls] = fully_connected_without_arrays((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9]);
+                    fcls[c_fcls] = fully_connected_without_arrays((int)temp_float[0],(int)temp_float[1],(int)temp_float[2],(int)temp_float[3],(int)temp_float[4],temp_float[5],(int)temp_float[6],(int)temp_float[7],(int)temp_float[8],(int)temp_float[9], (int)temp_float[10]);
                     if(fcls[c_fcls] == NULL)
                         something_went_wrong = 1;
                     c_fcls++;

@@ -30,7 +30,6 @@ typedef unsigned int uint;
 #else
 //typedef unsigned int uint;
 #endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -216,16 +215,23 @@ typedef unsigned int uint;
 
 #define PI 3.14159265358979323846
 
-
+// decay flags
 #define LR_NO_DECAY 0
 #define LR_CONSTANT_DECAY 1
 #define LR_TIME_BASED_DECAY 2
 #define LR_STEP_DECAY 3
 #define LR_ANNEALING_DECAY 4
 
+// rainbow sampling
 #define UNIFORM_SAMPLING 1
 #define RANKED_SAMPLING 2
 #define REWARD_SAMPLING 3
+
+// fully connected-layer modes:
+#define STANDARD 0
+#define NOISY 1 
+
+#define MAXIMUM_SCORE 100
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim;
@@ -257,21 +263,36 @@ typedef struct fcl { //fully-connected-layers
     int input,output,layer,dropout_flag, normalization_flag;//dropout flag = 1 if dropout must be applied
     int activation_flag; // activation flag = 0 -> no activation, flag = 1 -> sigmoid, = 2 -> relu, = 3 -> softmax, 4->tanhh
     int training_mode,feed_forward_flag, n_groups;//GRADIENT_DESCENT, EDGE_POPUP, FREEZE_TRAINING
-    float* weights;// output*input
+    int mode; // STANDARD, NOISY
+    float* weights;// output*input, in case of noisy mode they will be use for the addition part (noisy * epsilon + weights)x 
     float* d_weights;// output*input
     float* d1_weights;// output*input
     float* d2_weights;// output*input
     float* d3_weights;// output*input
+    float* noisy_weights;// output*input NOISY
+    float* d_noisy_weights;// output*input NOISY
+    float* d1_noisy_weights;// output*input NOISY
+    float* d2_noisy_weights;// output*input NOISY
+    float* d3_noisy_weights;// output*input NOISY
     float* biases; //output
     float* d_biases; //output
     float* d1_biases; //output
     float* d2_biases; //output
     float* d3_biases; //output
+    float* noisy_biases; //output
+    float* d_noisy_biases; //output
+    float* d1_noisy_biases; //output
+    float* d2_noisy_biases; //output
+    float* d3_noisy_biases; //output
     float* pre_activation; //output
     float* post_activation; //output
     float* post_normalization; //output
     float* dropout_mask;//output
     float* dropout_temp;//output
+    float* noise;// output*input NOISY
+    float* temp_weights;//output*input NOISY
+    float* noise_biases;// output NOISY
+    float* temp_biases;//output NOISY
     float* temp;//output
     float* temp3;//output
     float* temp2;//input

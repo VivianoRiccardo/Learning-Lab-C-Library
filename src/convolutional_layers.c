@@ -2833,9 +2833,9 @@ void compare_score_cl(cl* input1, cl* input2, cl* output){
     if(n != input2->n_kernels*input2->channels*input2->kernel_rows*input2->kernel_cols || n!= output->n_kernels*output->channels*output->kernel_rows*output->kernel_cols)
         return;
     for(i = 0; i < n; i++){
-        if(input1->scores[i] > input2->scores[i])
+        if(input1->scores[i] > input2->scores[i] && bool_is_real(input1->scores[i]) && input1->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input1->scores[i];
-        else
+        else if(bool_is_real(input2->scores[i]) && input2->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input2->scores[i];
     }
 }
@@ -2857,9 +2857,9 @@ void compare_score_cl_with_vector(cl* input1, float* input2, cl* output){
     if(n!= output->n_kernels*output->channels*output->kernel_rows*output->kernel_cols)
         return;
     for(i = 0; i < n; i++){
-        if(input1->scores[i] > input2[i])
+        if(input1->scores[i] > input2[i] && bool_is_real(input1->scores[i]) && input1->scores[i] < MAXIMUM_SCORE)
             output->scores[i] = input1->scores[i];
-        else
+        else if(bool_is_real(input2[i]) && input2[i] < MAXIMUM_SCORE)
             output->scores[i] = input2[i];
     }
 }

@@ -25,25 +25,25 @@ SOFTWARE.
 #include "llab.h"
 
 int min_int(int x, int y) {
-	if(x < y)
-		return x;
-	return y;
+   if(x < y)
+       return x;
+   return y;
 }
 float min_float(float x, float y) {
     if(x < y)
-		return x;
-	return y;
+       return x;
+   return y;
 }
 
 int max_int(int x, int y) {
-    if(x > y)
-		return x;
-	return y;
+   if(x > y)
+       return x;
+   return y;
 }
 float max_float(float x, float y) {
     if(x > y)
-		return x;
-	return y;
+       return x;
+   return y;
 }
 
 float mean(float* v, int size){
@@ -105,7 +105,7 @@ void softmax(float* input, float* output, int size){
     }
     if(!bool_is_real(sum) || !sum){
         fprintf(stderr,"Error: not real number appeared in a softmax function!\n");
-        exit(1);
+        //exit(1);
     }
     for(i = 0; i < size; i++){
         output[i] = exp(input[i])/sum;
@@ -150,7 +150,8 @@ float sigmoid(float x){
     if(bool_is_real(t) && t)
     return 1/t;
     fprintf(stderr,"Error: not real number appeared in a sigmoid function!\n");
-    exit(1);
+    return 1/t;
+    //exit(1);
 }
 
 float abs_sigmoid(float x){
@@ -158,7 +159,8 @@ float abs_sigmoid(float x){
     if(bool_is_real(t) && t)
     return 1/t;
     fprintf(stderr,"Error: not real number appeared in a abs_sigmoid function!\n");
-    exit(1);
+    //exit(1);
+    return 1/t;
 }
 void sigmoid_array(float* input, float* output, int size){
     int i;
@@ -1018,5 +1020,31 @@ void sum_vae_model_partial_derivatives(vaemodel* vm, vaemodel* vm2, vaemodel* vm
     }
     sum_model_partial_derivatives(vm->encoder,vm2->encoder,vm3->encoder);
     sum_model_partial_derivatives(vm->decoder,vm2->decoder,vm3->decoder);
+}
+
+float factorised_gaussian(){
+    float x = random_general_gaussian(0,1);
+    float sgn = 1;
+    if(x < 0){
+        sgn = -1;
+        x = -x;
+    }
+    return sgn*sqrtf(x);
+    
+}
+
+void set_factorised_noise(int input, int output, float* noise, float* biases_noise){
+	
+    int i,j;
+    for(i = 0; i < input; i++){
+        float f_x = factorised_gaussian();
+        float f_y;
+        for(j = 0; j < output; j++){
+            if(!i)
+                biases_noise[j] = factorised_gaussian();
+            f_y = biases_noise[j];
+            noise[j*input+i] = f_x*f_y;
+        }
+    }
 }
 

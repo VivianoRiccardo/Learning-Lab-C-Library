@@ -87,8 +87,9 @@ void update_best_specie_fitnesses(species* s, int total_species);
 
 // Functions defined in fitness.c
 
-float get_mean_fitness(species* s, int n_species, int oldest_age, float age_significance);
-float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_significance);
+float get_mean_fitness(species* s, int n_species, int oldest_age, float age_significance, double worst, double best);
+float get_mean_specie_fitness(species* s, int i,int oldest_age, float age_significance, double worst, double best);
+float get_mean_specie_fitness_no_norm(species* s, int i,int oldest_age, float age_significance);
 genome** sort_genomes_by_fitness(genome** g, int size);
 
 // Functions defined in neat.c
@@ -106,7 +107,17 @@ float get_fitness_of_ith_genome(neat* nes, int index);
 void increment_fitness_of_genome_ith(neat* nes, int index, float increment);
 int get_global_innovation_number_nodes(neat* nes);
 int get_global_innovation_number_connections(neat* nes);
-int get_lenght_of_char_neat(neat* nes);
+uint64_t get_length_of_char_neat(neat* nes);
 int get_number_of_genomes(neat* nes);
 void save_ith_genome(neat* nes, int index, int n);
 float best_fitness(neat* nes);
+void set_generation_iter(neat* nes, int gen);
+int get_generation_iter(neat* nes);
+float** feed_forward_all_genomes(neat* nes, float** input, int n_genome, int n_threads);
+float** feed_forward_all_genomes_with_indices(neat* nes, float** input,int* indices, int n_genome, int n_threads);
+double get_worst_specie_fitness(species* s, int n_species, int oldest_age, float age_significance);
+double get_best_specie_fitness(species* s, int n_species, int oldest_age, float age_significance);
+void save_neat(char* filename, neat* nes);
+neat* load_neat(char* filename, int input, int output, int initial_population, int species_threshold, int max_population,int generations, float percentage_survivors_per_specie, float connection_mutation_rate, float  new_connection_assignment_rate, float add_connection_big_specie_rate, float add_connection_small_specie_rate, float add_node_specie_rate, float activate_connection_rate, float remove_connection_rate, int children, float crossover_rate, int saving, int limiting_species, int limiting_threshold, int same_fitness_limit, int keep_parents, float age_significance);
+void set_max_population(neat* nes, int max_population);
+

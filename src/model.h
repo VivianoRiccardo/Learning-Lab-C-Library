@@ -123,5 +123,6 @@ int ff_cl_cl_without_arrays(cl* f1, cl* f2);
 int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input);
 void inference_model(model* m);
 void train_model(model* m);
+void model_eliminate_noisy_layers(model* m);
 
 #endif
