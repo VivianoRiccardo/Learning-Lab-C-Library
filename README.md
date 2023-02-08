@@ -114,6 +114,7 @@ https://www.cygwin.com/
   -  + n step reward
   -  + diversity driven exploration (better than noisy nets of 2017 rainbow paper)
 - Uniform and Reward sampling for rainbow training (17/03/2022)
+- Noisy nets for Fully-connected-layers (08/02/2023)
 
 # Python Version
 
