@@ -86,6 +86,7 @@ void inference_fcl(fcl* f);
 void train_fcl(fcl* f);
 int is_noisy(fcl* f);
 void eliminate_noisy_layers(fcl* f);
-    
+void assign_noise_arrays(fcl* f, float** noise_biases, float** noise, int index);
+
 
 #endif

@@ -124,5 +124,6 @@ int model_tensor_input_ff_without_arrays(model* m, int tensor_depth, int tensor_
 void inference_model(model* m);
 void train_model(model* m);
 void model_eliminate_noisy_layers(model* m);
+void assign_noise_arrays_model(model* m, float** noise_biases, float** noise);
 
 #endif

@@ -97,5 +97,6 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
 void inference_dqn(dueling_categorical_dqn* dqn);
 void train_dqn(dueling_categorical_dqn* dqn);
 void dueling_dqn_eliminate_noisy_layers(dueling_categorical_dqn* dqn);
+void assign_noise_arrays_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float** noise_biases1, float** noise1,float** noise_biases2, float** noise2,float** noise_biases3, float** noise3,float** noise_biases4, float** noise4,float** noise_biases5, float** noise5);
 
 #endif

@@ -1028,10 +1028,15 @@ float* compute_q_functions(dueling_categorical_dqn* dqn){
 }
 
 float* get_loss_for_dueling_categorical_dqn(dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1){
-    compute_probability_distribution(state_t_1,state_sizes,online_net);
     compute_probability_distribution(state_t_1,state_sizes,target_net);
     compute_q_functions(target_net);
     int action_index = argmax(target_net->q_functions,target_net->action_size);
+    compute_probability_distribution(state_t_1,state_sizes,online_net);// new
+    compute_q_functions(online_net);// new
+    float* q_functions_array = (float*)calloc(online_net->n_atoms,sizeof(float));// new
+    copy_array(&online_net->softmax_layer[action_index*online_net->n_atoms],q_functions_array,online_net->n_atoms);// new
+    
+    
     int i;
     float* tzj = (float*)calloc(online_net->n_atoms,sizeof(float));
     float* b = (float*)calloc(online_net->n_atoms,sizeof(float));
@@ -1042,6 +1047,8 @@ float* get_loss_for_dueling_categorical_dqn(dueling_categorical_dqn* online_net,
         else
             tzj[i] = reward_t;
     }
+    reset_dueling_categorical_dqn(online_net);// new
+    compute_probability_distribution(state_t,state_sizes,online_net);// new
     clip_vector(tzj,online_net->v_min,online_net->v_max,online_net->n_atoms);
     for(i = 0; i < online_net->n_atoms; i++){
         b[i] = (tzj[i]-online_net->v_min)/online_net->z_delta;
@@ -1055,8 +1062,8 @@ float* get_loss_for_dueling_categorical_dqn(dueling_categorical_dqn* online_net,
             u = l+1;
         }
         if(nonterminal_s_t_1){
-            m[l] += target_net->softmax_layer[action_index*online_net->n_atoms+i]*((float)u-b[i]);
-            m[u] += target_net->softmax_layer[action_index*online_net->n_atoms+i]*(b[i]-(float)l);
+            m[l] += q_functions_array[i]*((float)u-b[i]);// new
+            m[u] += q_functions_array[i]*(b[i]-(float)l);// new
         }
         else{
             m[l] += ((float)u-b[i])/((float)(target_net->n_atoms));
@@ -1072,6 +1079,7 @@ float* get_loss_for_dueling_categorical_dqn(dueling_categorical_dqn* online_net,
             online_net->error[action_t*online_net->n_atoms+i] = -m[i]/online_net->softmax_layer[action_t*online_net->n_atoms+i];
         
     }
+    free(q_functions_array);
     free(tzj);
     free(b);
     free(m);
@@ -1079,10 +1087,16 @@ float* get_loss_for_dueling_categorical_dqn(dueling_categorical_dqn* online_net,
 }
 
 float* get_loss_for_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, dueling_categorical_dqn* target_net, dueling_categorical_dqn* target_net_wlp, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1){
-    compute_probability_distribution_opt(state_t,state_sizes,online_net, online_net_wlp);
     compute_probability_distribution_opt(state_t_1,state_sizes,target_net,target_net_wlp);
     compute_q_functions(target_net_wlp);
     int action_index = argmax(target_net_wlp->q_functions,target_net_wlp->action_size);
+    compute_probability_distribution_opt(state_t_1,state_sizes,online_net, online_net_wlp);// new
+    compute_q_functions(online_net_wlp);// new
+    float* q_functions_array = (float*)calloc(online_net->n_atoms,sizeof(float));// new
+    copy_array(&online_net_wlp->softmax_layer[action_index*online_net->n_atoms],q_functions_array,online_net->n_atoms);// new
+    
+    
+    
     int i;
     float* tzj = (float*)calloc(online_net->n_atoms,sizeof(float));
     float* b = (float*)calloc(online_net->n_atoms,sizeof(float));
@@ -1095,6 +1109,8 @@ float* get_loss_for_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_
             tzj[i] = reward_t;
         }
     }
+    reset_dueling_categorical_dqn_without_learning_parameters(online_net_wlp);// new
+    compute_probability_distribution_opt(state_t,state_sizes,online_net, online_net_wlp);// new
     clip_vector(tzj,online_net_wlp->v_min,online_net_wlp->v_max,online_net_wlp->n_atoms);
     for(i = 0; i < online_net->n_atoms; i++){
         b[i] = (tzj[i]-online_net->v_min)/online_net->z_delta;
@@ -1108,8 +1124,8 @@ float* get_loss_for_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_
             u = l+1;
         }
         if(nonterminal_s_t_1){
-            m[l] += target_net_wlp->softmax_layer[action_index*online_net->n_atoms+i]*((float)u-b[i]);
-            m[u] += target_net_wlp->softmax_layer[action_index*online_net->n_atoms+i]*(b[i]-(float)l);
+            m[l] += q_functions_array[i]*((float)u-b[i]);// new
+            m[u] += q_functions_array[i]*(b[i]-(float)l);// new
         }
         else{
             m[l] += ((float)u-b[i])/((float)(target_net_wlp->n_atoms));
@@ -1124,6 +1140,7 @@ float* get_loss_for_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_
         else
             online_net_wlp->error[action_t*online_net->n_atoms+i] = -m[i]/online_net_wlp->softmax_layer[action_t*online_net->n_atoms+i];
     }
+    free(q_functions_array);
     free(tzj);
     free(b);
     free(m);
@@ -1538,3 +1555,10 @@ void dueling_dqn_eliminate_noisy_layers(dueling_categorical_dqn* dqn){
     model_eliminate_noisy_layers(dqn->v_linear_last_layer);
 }
 
+void assign_noise_arrays_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float** noise_biases1, float** noise1,float** noise_biases2, float** noise2,float** noise_biases3, float** noise3,float** noise_biases4, float** noise4,float** noise_biases5, float** noise5){
+	assign_noise_arrays_model(dqn->shared_hidden_layers, noise_biases1, noise1);
+	assign_noise_arrays_model(dqn->a_hidden_layers, noise_biases2, noise2);
+	assign_noise_arrays_model(dqn->v_hidden_layers, noise_biases3, noise3);
+	assign_noise_arrays_model(dqn->a_linear_last_layer, noise_biases4, noise4);
+	assign_noise_arrays_model(dqn->v_linear_last_layer, noise_biases5, noise5);
+}

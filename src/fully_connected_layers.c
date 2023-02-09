@@ -2519,3 +2519,15 @@ void train_fcl(fcl* f){
         f->dropout_threshold = 1-f->dropout_threshold;
     }
 }
+
+void assign_noise_arrays(fcl* f, float** noise_biases, float** noise, int index){
+	if(is_noisy(f)){
+		float* noise_temp = f->noise;
+		float* noise_biases_temp = f->noise_biases;
+		f->noise = noise[index];
+		f->noise_biases = noise_biases[index];
+		noise[index] = noise_temp;
+		noise_biases[index] = noise_biases_temp;
+	}
+	return;
+}
