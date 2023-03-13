@@ -194,7 +194,7 @@ int main(int argc, char** argv){
                         temp3[2] = 'i';
                         temp3[3] = 'n';
                         temp3[4] = '\0';
-                        itoa(100+j*training_instances/TRAINING_INSTANCES_PER_CLIENT+i/TRAINING_INSTANCES_PER_CLIENT,temp2);
+                        itoa_n(100+j*training_instances/TRAINING_INSTANCES_PER_CLIENT+i/TRAINING_INSTANCES_PER_CLIENT,temp2);
                         strcat(temp2,temp3);
                         printf("writing file %s\n",temp2);
                         FILE* fil = fopen(temp2,"w");

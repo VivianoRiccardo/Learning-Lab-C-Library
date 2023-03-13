@@ -28,17 +28,17 @@ int main(){
     lstm** l = (lstm**)malloc(sizeof(lstm*)*n_layers);
     
     for(i = 0; i < n_layers-1; i++){
-        l[i] = recurrent_lstm(rmodel_size,NO_DROPOUT,0.1,NO_DROPOUT,0.1,i,window,LSTM_RESIDUAL,GROUP_NORMALIZATION,4,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+        l[i] = recurrent_lstm(rmodel_size,rmodel_size, NO_DROPOUT,0.1,NO_DROPOUT,0.1,i,window,LSTM_RESIDUAL,GROUP_NORMALIZATION,4,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
     }
 
-    l[i] = recurrent_lstm(rmodel_size,NO_DROPOUT,0.1,NO_DROPOUT,0.1,i,window,LSTM_RESIDUAL,NO_NORMALIZATION,0,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    l[i] = recurrent_lstm(rmodel_size,rmodel_size,NO_DROPOUT,0.1,NO_DROPOUT,0.1,i,window,LSTM_RESIDUAL,NO_NORMALIZATION,0,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
     rmodel* r = recurrent_network(n_layers,n_layers,l,28,STATEFUL);
     
     rmodel** batch_r = (rmodel**)malloc(sizeof(rmodel*)*batch_size);
     
     
     fcl** fcls = (fcl**)malloc(sizeof(fcl*));
-    fcls[0] = fully_connected(rmodel_size,output_dimension,0,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[0] = fully_connected(rmodel_size,output_dimension,0,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
     model* m = network(1,0,0,1,NULL,NULL,fcls);
     set_model_error(m,FOCAL_LOSS,0,0,2,NULL,output_dimension);
     
@@ -183,7 +183,7 @@ int main(){
     free_tensor(c,batch_size,n_layers);
     free_tensor(inputs_rmodel,training_instances,window);
     free_tensor(error_lstms,batch_size,window);
-    free_matrix(outputs_rmodel,batch_size);
+    free_matrix((void**)outputs_rmodel,batch_size);
     free(ret_model_error);
     free(dfioc);
     free(computed_error);
@@ -251,10 +251,10 @@ int main(){
         temp3[2] = 'i';
         temp3[3] = 'n';
         temp3[4] = '\0';
-        itoa(k,temp2);
+        itoa_n(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
-        itoa(k+1,temp2);
+        itoa_n(k+1,temp2);
         strcat(temp2,temp3);
         test_r = load_rmodel(temp2);
         for(i = 0; i < testing_instances; i++){
@@ -298,7 +298,7 @@ int main(){
     free(outputs_test);
     free_tensor(inputs_rmodel,testing_instances,window);
     free(outputs_rmodel2),
-    free_matrix(h2,n_layers);
-    free_matrix(c2,n_layers);
+    free_matrix((void**)h2,n_layers);
+    free_matrix((void**)c2,n_layers);
 }
 

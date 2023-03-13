@@ -34,7 +34,7 @@ int main(){
     
     // last layer after the decoder
     fcl** model_fcl = (fcl**)malloc(sizeof(fcl*));
-    model_fcl[0] = fully_connected(100,28,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
+    model_fcl[0] = fully_connected(100,28,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
     model_fcl[0]->training_mode = FREEZE_TRAINING;
     // you can freeze the training of the logit units and watch how only the transformer tries to adapt to learn
     model* final_model = network(1,0,0,1,NULL,NULL,model_fcl);
@@ -61,28 +61,28 @@ int main(){
     
     // encoder linear after attention
     fcl** fcl_en = (fcl**)malloc(sizeof(fcl*));
-    fcl_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
+    fcl_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
     fcl_en[0]->training_mode = FREEZE_TRAINING;
     model* m_en = network(1,0,0,1,NULL,NULL,fcl_en);
     
     // decoder linear after attention
     fcl** fcl_de = (fcl**)malloc(sizeof(fcl*));
-    fcl_de[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION, FREEZE_BIASES,FULLY_FEED_FORWARD);
+    fcl_de[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION, FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
     model* m_de = network(1,0,0,1,NULL,NULL,fcl_de);
     
     // decoder linear after second attention
     fcl** fcl_de_en = (fcl**)malloc(sizeof(fcl*));
-    fcl_de_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION, FREEZE_TRAINING,FULLY_FEED_FORWARD);
+    fcl_de_en[0] = fully_connected(100,100,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION, FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
     model* m_de_en = network(1,0,0,1,NULL,NULL,fcl_de_en);
     
     // encoder linear fcls
     fcl** fcls2 = (fcl**)malloc(sizeof(fcl*)*6);
-    fcls2[0] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
-    fcls2[1] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
-    fcls2[2] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
-    fcls2[3] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
-    fcls2[4] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
-    fcls2[5] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD);
+    fcls2[0] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
+    fcls2[1] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
+    fcls2[2] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
+    fcls2[3] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
+    fcls2[4] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
+    fcls2[5] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_BIASES,FULLY_FEED_FORWARD, STANDARD);
     /*
     fcls2[0]->training_mode = FREEZE_TRAINING;
     fcls2[1]->training_mode = FREEZE_TRAINING;
@@ -108,18 +108,18 @@ int main(){
     
     // decoder linear fcls
     fcl** fcls3 = (fcl**)malloc(sizeof(fcl*)*12);
-    fcls3[0] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[1] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[2] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[3] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[4] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[5] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[6] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[7] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[8] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[9] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[10] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls3[11] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
+    fcls3[0] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[1] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[2] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[3] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[4] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[5] = fully_connected(28*28,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[6] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[7] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[8] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[9] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[10] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls3[11] = fully_connected(100,50,0,NO_DROPOUT,NO_ACTIVATION,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
     
     // decoder normalization
     scaled_l2_norm** l3 = (scaled_l2_norm**)malloc(sizeof(scaled_l2_norm*)*3);
@@ -223,12 +223,12 @@ int main(){
         printf("Model N. %d/%d\n",i+1,epochs);
         // Loading the logit models
         for(j = 0; j < 28; j++){
-            itoa(i*29+j,temp2);
+            itoa_n(i*29+j,temp2);
             strcat(temp2,temp3);
             mm[j] = load_model(temp2);
         }
         // loading the transformer
-        itoa(i*29+28,temp2);
+        itoa_n(i*29+28,temp2);
         strcat(temp2,temp3);
         FILE* fi = fopen(temp2,"r");
         transformer* tt = load_transf(fi);

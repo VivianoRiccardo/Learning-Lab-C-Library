@@ -56,8 +56,8 @@ int main(){
     rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
     rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls3);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
-    fcls[1] = fully_connected(middle_neurons,2*output_dimension,6,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
+    fcls[1] = fully_connected(middle_neurons,2*output_dimension,6,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
     model* encoder = network(n_layers,2,1,2,rls,cls,fcls);// encoder
     
     // Decoder Architecture
@@ -71,9 +71,9 @@ int main(){
     drls[0] = residual(20,56,56,2,dcls2);
     drls[1] = residual(20,56,56,2,dcls3);
     fcl** dfcls = (fcl**)malloc(sizeof(fcl*)*3);
-    dfcls[0] = fully_connected(output_dimension,middle_neurons,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
-    dfcls[1] = fully_connected(middle_neurons,drls[0]->channels*drls[0]->input_rows*drls[0]->input_cols,1,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
-    dfcls[2] = fully_connected(56*20*56,1*28*28,6,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    dfcls[0] = fully_connected(output_dimension,middle_neurons,0,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
+    dfcls[1] = fully_connected(middle_neurons,drls[0]->channels*drls[0]->input_rows*drls[0]->input_cols,1,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
+    dfcls[2] = fully_connected(56*20*56,1*28*28,6,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
     
     model* decoder = network(n_layers,2,0,3,drls,NULL,dfcls);// decoder
     
@@ -209,7 +209,7 @@ int main(){
         temp3[2] = 'i';
         temp3[3] = 'n';
         temp3[4] = '\0';
-        itoa(k,temp2);
+        itoa_n(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
         //for(i = 0; i < testing_instances; i++){

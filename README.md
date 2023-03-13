@@ -131,7 +131,7 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
 
 - From test 1 to 6 there are different model* networks with different optimization algorithms, trained on supervised learning.
 - Test 7 is a vae model trained on unsupervised learning.
-- Test 8 is the test 6 trained on distributed systems client-server. To run it you have to connect 5 clients.
+- Test 8 is the test 6 trained on distributed systems client-server. To run it you have to connect 5 clients (IS NOT UP TO DATE WITH NEW VERSION).
 - Test 9 is trained with look ahead algorithm
 - Test 10 is the Neat algorithm. it has been tested on the xor with the same parameter settings of the original paper:
   http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf except for the feed forward (output node has a bias of 1) and the bias input node.
@@ -144,7 +144,8 @@ The tests are trained on the CIFAR-10 Dataset that you can find in the data.tar.
   Pay attention the structure of the genome is different from the structure of the deep learning networks.
   The test 10 can be taken as neat template, you need only to change the compute fitness function.
 - Test 11 is test 6 trained with edge popup algorithm.
-- Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), must be reset.
+- Test 14 is not available at the moment
+- Test 15 is the test for the transformer treated as an autoencoder that tries to replicate the input (the digit images), (NEED FURTHER TUNING).
 - From test 16 to test 18 there are recurrent networks with normalization, adaptive gradient clipping and also edge popup
 - Dueling Categorical DQN and Rainbow have been tested on cartpole v1 in pyllab
 

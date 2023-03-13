@@ -29,8 +29,8 @@ int main(){
     }
     // Model Architecture
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(input_dimension,middle_neurons,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,1,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD);
+    fcls[0] = fully_connected(input_dimension,middle_neurons,0,NO_DROPOUT,SIGMOID,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,1,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT,FULLY_FEED_FORWARD, STANDARD);
     model* m = network(n_layers,0,0,2,NULL,NULL,fcls);
     model** batch_m = (model**)malloc(sizeof(model*)*batch_size);
     float** ret_err = (float**)malloc(sizeof(float*)*batch_size);
@@ -148,7 +148,7 @@ int main(){
         temp3[2] = 'i';
         temp3[3] = 'n';
         temp3[4] = '\0';
-        itoa(k,temp2);
+        itoa_n(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
         for(i = 0; i < testing_instances; i++){

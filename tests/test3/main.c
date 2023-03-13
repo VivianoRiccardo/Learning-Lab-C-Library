@@ -34,11 +34,12 @@ int main(){
     }
     // Model Architecture
     cl** cls = (cl**)malloc(sizeof(cl*)*2);
-    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,0,0,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,0);
-    cls[1] = convolutional(20,28,28,1,1,20,1,1,0,0,2,2,0,0,2,2,NO_NORMALIZATION,RELU,AVARAGE_POOLING,0,NO_CONVOLUTION,1);
+
+    cls[0] = convolutional(1,28,28,3,3,20,1,1,1,1,2,2,0,0,0,0,GROUP_NORMALIZATION,RELU,NO_POOLING,5,CONVOLUTION,GRADIENT_DESCENT, FULLY_FEED_FORWARD, 0);
+    cls[1] = convolutional(20,28,28,1,1,20,1,1,0,0,2,2,0,0,2,2,NO_NORMALIZATION,RELU,AVERAGE_POOLING,0,NO_CONVOLUTION,GRADIENT_DESCENT, FULLY_FEED_FORWARD,1);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(cls[1]->rows2*cls[1]->cols2*cls[1]->n_kernels,middle_neurons,2,NO_DROPOUT,SIGMOID,0.3,0,NO_NORMALIZATION);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,3,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION);
+    fcls[0] = fully_connected(cls[1]->rows2*cls[1]->cols2*cls[1]->n_kernels,middle_neurons,2,NO_DROPOUT,SIGMOID,0.3,0,NO_NORMALIZATION,GRADIENT_DESCENT, FULLY_FEED_FORWARD, STANDARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,3,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,GRADIENT_DESCENT, FULLY_FEED_FORWARD, STANDARD);
     fcls[0]->training_mode = FREEZE_TRAINING;
     fcls[1]->training_mode = FREEZE_TRAINING;
     model* m = network(n_layers,0,2,2,NULL,cls,fcls);
@@ -155,7 +156,7 @@ int main(){
         temp3[2] = 'i';
         temp3[3] = 'n';
         temp3[4] = '\0';
-        itoa(k,temp2);
+        itoa_n(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
         for(i = 0; i < testing_instances; i++){

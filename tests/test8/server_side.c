@@ -247,7 +247,7 @@ int main(){
             temp3[2] = 'i';
             temp3[3] = 'n';
             temp3[4] = '\0';
-            itoa(k,temp2);
+            itoa_n(k,temp2);
             strcat(temp2,temp3);
             test_m = load_model(temp2);
             //for(i = 0; i < testing_instances; i++){

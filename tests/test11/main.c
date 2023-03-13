@@ -51,8 +51,8 @@ int main(){
     rls[0] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls2);
     rls[1] = residual(cls[0]->n_kernels,cls[0]->rows2,cls[0]->cols2,2,cls3);
     fcl** fcls = (fcl**)malloc(sizeof(fcl*)*2);
-    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
-    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD);
+    fcls[0] = fully_connected(rls[0]->channels*rls[0]->input_rows*rls[0]->input_cols,middle_neurons,5,NO_DROPOUT,RELU,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
+    fcls[1] = fully_connected(middle_neurons,output_dimension,6,NO_DROPOUT,SOFTMAX,0,0,NO_NORMALIZATION,FREEZE_TRAINING,FULLY_FEED_FORWARD, STANDARD);
     model* m = network(n_layers,2,1,2,rls,cls,fcls);
     set_model_training_edge_popup(m,0.5);
     m->fcls[1]->k_percentage = 0.8;
@@ -191,7 +191,7 @@ int main(){
         temp3[2] = 'i';
         temp3[3] = 'n';
         temp3[4] = '\0';
-        itoa(k,temp2);
+        itoa_n(k,temp2);
         strcat(temp2,temp3);
         test_m = load_model(temp2);
         set_model_training_edge_popup(test_m,0.5);

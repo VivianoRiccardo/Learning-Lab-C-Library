@@ -11,13 +11,14 @@ T4:=test4/
 T5:=test5/
 T6:=test6/
 T7:=test7/
-T8:=test8/
 T9:=test9/
 T10:=test10/
 T11:=test11/
 T12:=test12/
 T13:=test13/
-T15:=test15/
+T16:=test16/
+T17:=test17/
+T18:=test18/
 
 
 SRCS = $(wildcard $(DIR)*.c)
@@ -48,11 +49,11 @@ test: $(DIRTEST)
 	$(CC) -o $(DIRTEST)$(T5)$(EXEC) $(DIRTEST)$(T5)*.c $(LABLIB) $(LDLIBS) $(CFLAGS) 
 	$(CC) -o $(DIRTEST)$(T6)$(EXEC) $(DIRTEST)$(T6)*.c $(LABLIB) $(LDLIBS) $(CFLAGS) 
 	$(CC) -o $(DIRTEST)$(T7)$(EXEC) $(DIRTEST)$(T7)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
-	$(CC) -o $(DIRTEST)$(T8)$(EXEC8_1) $(DIRTEST)$(T8)server_side.c $(LABLIB) $(LDLIBS) $(CFLAGS) 
-	$(CC) -o $(DIRTEST)$(T8)$(EXEC8_2) $(DIRTEST)$(T8)client_side.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T9)$(EXEC) $(DIRTEST)$(T9)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T10)$(EXEC) $(DIRTEST)$(T10)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T11)$(EXEC) $(DIRTEST)$(T11)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T12)$(EXEC) $(DIRTEST)$(T12)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
 	$(CC) -o $(DIRTEST)$(T13)$(EXEC) $(DIRTEST)$(T13)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
-	$(CC) -o $(DIRTEST)$(T15)$(EXEC) $(DIRTEST)$(T15)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
+	$(CC) -o $(DIRTEST)$(T16)$(EXEC) $(DIRTEST)$(T16)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
+	$(CC) -o $(DIRTEST)$(T17)$(EXEC) $(DIRTEST)$(T17)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)
+	$(CC) -o $(DIRTEST)$(T18)$(EXEC) $(DIRTEST)$(T18)*.c $(LABLIB) $(LDLIBS) $(CFLAGS)

@@ -132,7 +132,7 @@ int main(){
             temp3[2] = 'i';
             temp3[3] = 'n';
             temp3[4] = '\0';
-            itoa(100+file_number,temp2);
+            itoa_n(100+file_number,temp2);
             strcat(temp2,temp3);
             printf("reading file %s\n",temp2);
             FILE* fil = fopen(temp2,"r");
