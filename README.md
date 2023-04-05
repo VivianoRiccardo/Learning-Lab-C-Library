@@ -115,6 +115,7 @@ https://www.cygwin.com/
   -  + diversity driven exploration (better than noisy nets of 2017 rainbow paper)
 - Uniform and Reward sampling for rainbow training (17/03/2022)
 - Noisy nets for Fully-connected-layers (08/02/2023)
+- L1 distance for diversity driven exploration (05/04/2023) [set as default for rainbow dde]
 
 # Python Version
 
