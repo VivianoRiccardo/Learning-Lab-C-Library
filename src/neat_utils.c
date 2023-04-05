@@ -463,7 +463,7 @@ genome* load_genome(int global_inn_numb_connections, char* filename){
     
     
     if(i == EOF){
-        printf("error closing the file, the process will end\n");
+        fprintf(stderr,"error closing the file, the process will end\n");
         exit(1);
     }
     
@@ -588,7 +588,7 @@ genome* load_genome_complete(char* filename){
     
     
     if(i == EOF){
-        printf("error closing the file, the process will end\n");
+        fprintf(stderr,"error closing the file, the process will end\n");
         exit(1);
     }
     g->global_inn_numb_connections = global_inn_numb_connections;

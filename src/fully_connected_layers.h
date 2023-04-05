@@ -87,6 +87,14 @@ void train_fcl(fcl* f);
 int is_noisy(fcl* f);
 void eliminate_noisy_layers(fcl* f);
 void assign_noise_arrays(fcl* f, float** noise_biases, float** noise, int index);
-
+void reinitialize_weights_according_to_scores_and_inner_info_fcl(fcl* f);
+void memcopy_vector_to_indices(fcl* f, int* vector);
+void memcopy_scores_to_indices(fcl* f, int* vector);
+void free_scores(fcl* f);
+void free_indices(fcl* f);
+void assign_vector_to_scores(fcl* f, float* vector);
+void set_null_scores(fcl* f);
+void set_null_indices(fcl* f);
+void memcopy_indices_to_vector(fcl* f, int* vector);
 
 #endif

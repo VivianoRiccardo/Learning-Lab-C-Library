@@ -1083,6 +1083,24 @@ void free_convolutional_without_learning_parameters(cl* c){
     free(c);
 }
 
+void free_scores_cl(cl* f){
+	free(f->scores);
+	f->scores = NULL;
+}
+
+void free_indices_cl(cl* f){
+	free(f->indices);
+	f->indices = NULL;
+}
+
+void set_null_scores_cl(cl* f){
+	f->scores = NULL;
+}
+
+void set_null_indices_cl(cl* f){
+	f->indices = NULL;
+}
+
 
 /* This function saves a convolutional layer on a .bin file with name n.bin
  * 
@@ -2694,6 +2712,21 @@ void memcopy_scores_to_vector_cl(cl* f, float* vector){
     
 }
 
+/* this function pastes the cl structure indices in a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_indices_to_vector_cl(cl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_cl(f))
+        return;
+    memcpy(vector,f->indices,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*sizeof(int));    
+    
+}
+
 /* this function pastes the weights and biases from a vector in a cl structure
  * 
  * Inputs:
@@ -2706,6 +2739,34 @@ void memcopy_vector_to_scores_cl(cl* f, float* vector){
     if(f == NULL || vector == NULL || !exists_edge_popup_stuff_cl(f))
         return;
     memcpy(f->scores,vector,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*sizeof(float));    
+}
+
+/* this function pastes the weights and biases from a vector in a cl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void assign_vector_to_scores_cl(cl* f, float* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_cl(f))
+        return;
+    f->scores=vector;    
+}
+
+/* this function points to from a vector in a cl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices_cl(cl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_cl(f))
+        return;
+    f->indices = vector;    
 }
 
 /* this function pastes the vector in the the dweights and dbiases of a cl structure
@@ -2915,14 +2976,36 @@ void reinitialize_weights_according_to_scores_cl(cl* f, float percentage, float 
         return;
     if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
         int i,j;
-        for(i = 0; i < f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols; i++){
-            if(i >= f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*percentage)
-                return;
+        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1; i < (int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*percentage); i--){
             if(f->scores[f->indices[i]] < goodness){
                 f->kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))][f->indices[i]%(f->channels*f->kernel_rows*f->kernel_cols)] = signed_kaiming_constant((float)f->channels*f->input_rows*f->input_cols);
-                
-            } 
+                f->scores[f->indices[i]] = goodness;
+            }
+            else
+                return;
         }
+    }
+}
+
+/* This function re initialize the weights which scores is < of a goodness (range [0,1])
+ * or the weights are among the worst scores in the total_scores*percentage (range percentage [0,1])
+ * The re initialization happens with the signed kaiming constant (the best initialization for edge-popup according to the paper)
+ * 
+ * Input:
+ * 
+ *                     @ cl* f:= the convolutional layer
+ *                     @ float percentage:= the percentage
+ *                    @ float goodness:= the goodness value
+ * */
+void reinitialize_weights_according_to_scores_and_inner_info_cl(cl* f){
+    if(f->convolutional_flag == NO_CONVOLUTION)
+        return;
+    if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
+        if((int)(f->channels*f->kernel_rows*f->kernel_cols*f->n_kernels*f->k_percentage) == 0)
+            return;
+        float goodness = f->scores[f->indices[(int)(f->channels*f->kernel_rows*f->kernel_cols*f->n_kernels*f->k_percentage)-1]];
+        float percentage = f->k_percentage;
+        reinitialize_weights_according_to_scores_cl(f,percentage,goodness);
     }
 }
 
@@ -3006,3 +3089,4 @@ void set_feed_forward_flag(cl* c, int feed_forward_flag){
         return;
     c->feed_forward_flag = feed_forward_flag;
 }
+

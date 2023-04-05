@@ -78,7 +78,13 @@ void free_residual_without_learning_parameters(rl* r);
 rl* reset_rl_without_dwdb_without_learning_patameters(rl* f);
 uint64_t count_weights_rl(rl* r);
 void free_residual_without_arrays(rl* r);
-
-
+void reinitialize_weights_according_to_scores_and_inner_info_rl(rl* f);
+void memcopy_vector_to_indices_rl(rl* f, int* vector);
+void memcopy_indices_to_vector_rl(rl* f, int* vector);
+void free_scores_rl(rl* r);
+void free_indices_rl(rl* r);
+void assign_vector_to_scores_rl(rl* f, float* vector);
+void set_null_scores_rl(rl* r);
+void set_null_indices_rl(rl* r);
 
 #endif

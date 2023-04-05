@@ -84,6 +84,13 @@ void make_the_cl_only_for_ff(cl* c);
 void set_feed_forward_flag(cl* c, int feed_forward_flag);
 cl* convolutional_without_arrays(int channels, int input_rows, int input_cols, int kernel_rows, int kernel_cols, int n_kernels, int stride1_rows, int stride1_cols, int padding1_rows, int padding1_cols, int stride2_rows, int stride2_cols, int padding2_rows, int padding2_cols, int pooling_rows, int pooling_cols, int normalization_flag, int activation_flag, int pooling_flag, int group_norm_channels, int convolutional_flag,int training_mode, int feed_forward_flag, int layer);
 void free_convolutional_without_arrays(cl* c);
-
+void reinitialize_weights_according_to_scores_and_inner_info_cl(cl* f);
+void memcopy_indices_to_vector_cl(cl* f, int* vector);
+void memcopy_vector_to_indices_cl(cl* f, int* vector);
+void free_scores_cl(cl* f);
+void free_indices_cl(cl* f);
+void assign_vector_to_scores_cl(cl* f, float* vector);
+void set_null_scores_cl(cl* f);
+void set_null_indices_cl(cl* f);
 
 #endif

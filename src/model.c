@@ -412,6 +412,57 @@ void free_model_without_arrays(model* m){
 }
 
 
+void free_scores_model(model* m){
+	int i;
+	for(i = 0; i < m->n_fcl; i++){
+		free_scores(m->fcls[i]);
+	}
+	for(i = 0; i < m->n_cl; i++){
+		free_scores_cl(m->cls[i]);
+	}
+	for(i = 0; i < m->n_fcl; i++){
+		free_scores_rl(m->rls[i]);
+	}
+}
+
+void free_indices_model(model* m){
+	int i;
+	for(i = 0; i < m->n_fcl; i++){
+		free_indices(m->fcls[i]);
+	}
+	for(i = 0; i < m->n_cl; i++){
+		free_indices_cl(m->cls[i]);
+	}
+	for(i = 0; i < m->n_fcl; i++){
+		free_indices_rl(m->rls[i]);
+	}
+}
+
+void set_null_scores_model(model* m){
+	int i;
+	for(i = 0; i < m->n_fcl; i++){
+		set_null_scores(m->fcls[i]);
+	}
+	for(i = 0; i < m->n_cl; i++){
+		set_null_scores_cl(m->cls[i]);
+	}
+	for(i = 0; i < m->n_fcl; i++){
+		set_null_scores_rl(m->rls[i]);
+	}
+}
+
+void set_null_indices_model(model* m){
+	int i;
+	for(i = 0; i < m->n_fcl; i++){
+		set_null_indices(m->fcls[i]);
+	}
+	for(i = 0; i < m->n_cl; i++){
+		set_null_indices_cl(m->cls[i]);
+	}
+	for(i = 0; i < m->n_fcl; i++){
+		set_null_indices_rl(m->rls[i]);
+	}
+}
 
 float* get_output_layer_from_model(model* m){
     return m->output_layer;
@@ -1186,43 +1237,43 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
                     fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
-				if(is_noisy(f2)){
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                if(is_noisy(f2)){
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 }
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f2->post_normalization,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -1232,48 +1283,48 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
         if(f1->dropout_flag == NO_DROPOUT){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f2->pre_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -1282,50 +1333,50 @@ void ff_fcl_fcl(fcl* f1, fcl* f2){
     else{
         if(f1->dropout_flag == NO_DROPOUT){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 //printf("computing pre softmax linear matrix multiplication, layers: %d %d\n",f1->layer, f2->layer);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("ok we are computing the feed forward edge popup, layers: %d %d\n",f1->layer,f2->layer);
             }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f1->post_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -1429,48 +1480,48 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
     if(f1->normalization_flag == LAYER_NORMALIZATION || f1->normalization_flag == LOCAL_RESPONSE_NORMALIZATION){
         if(f1->dropout_flag == NO_DROPOUT){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-				else
-					fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-			}
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                else
+                    fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f2->post_normalization,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -1480,47 +1531,47 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
         if(f1->dropout_flag == NO_DROPOUT){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f2->pre_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -1530,49 +1581,49 @@ void ff_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3){
         if(f1->dropout_flag == NO_DROPOUT){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 //printf("computing pre softmax linear matrix multiplication, layers: %d %d\n",f1->layer, f2->layer);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("ok we are computing the feed forward edge popup, layers: %d %d\n",f1->layer,f2->layer);
             }
         }
         else{
             if(f1->dropout_flag == DROPOUT){
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-					else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    else
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
             
             else if(f1->dropout_flag == DROPOUT_TEST){
                 mul_value(f1->post_activation,f1->dropout_threshold,f1->dropout_temp,f2->input);
                 if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-					if(is_noisy(f2))
-						noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    if(is_noisy(f2))
+                        noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                     else
-						fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-				}
+                        fully_connected_feed_forward(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                }
                 else if(f2->feed_forward_flag == EDGE_POPUP){
                     if(is_noisy(f2))
-						noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                        noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                     else
-						fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-				}
+                        fully_connected_feed_forward_edge_popup(f1->dropout_temp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                }
             }
         }
     }
@@ -2685,63 +2736,63 @@ void ff_cl_fcl(cl* f1, fcl* f2){
             }
             
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                    fully_connected_feed_forward(pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(pooltemp, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* no pooling for f1, but normalization*/
         else if(f1->normalization_flag){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* no pooling, no normalization for f1, but activation*/
         else if(f1->activation_flag){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("computing pre relu linear matrix multiplication\n");
             }
         }
         /* no pooling, no normalization, no activation for f1*/
         else{
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f2->noisy_biases,f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f2->noisy_weights,f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f2->weights,f2->biases, f2->input, f2->output,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* computing the activation for f2 (if the activation_flag is > 0)*/
         if(f2->activation_flag == SIGMOID){
@@ -2860,63 +2911,63 @@ void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
                 pooltemp = f1->pooltemp;
             }
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                    fully_connected_feed_forward(pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
             }
             else if(f2->feed_forward_flag == EDGE_POPUP){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(pooltemp, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* no pooling for f1, but normalization*/
         else if(f1->normalization_flag){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->post_normalization, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* no pooling, no normalization for f1, but activation*/
         else if(f1->activation_flag){
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_feed_forward_edge_popup(f1->post_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("computing pre relu linear matrix multiplication\n");
             }
         }
         /* no pooling, no normalization, no activation for f1*/
         else{
             if(f2->feed_forward_flag == FULLY_FEED_FORWARD){
-				if(is_noisy(f2))
-					noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+                if(is_noisy(f2))
+                    noisy_fully_connected_feed_forward(f2->noise_biases,f2->temp_biases,f3->noisy_biases,f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
                 else
-					fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
-			}
+                    fully_connected_feed_forward(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output);
+            }
             else if(f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_feed_forward_edge_popup(f2->noise,f2->temp_weights,f3->noisy_weights,f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_feed_forward_edge_popup(f1->pre_activation, f2->pre_activation, f3->weights,f3->biases, f2->input, f2->output,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
         }
         /* computing the activation for f2 (if the activation_flag is > 0)*/
         if(f2->activation_flag == SIGMOID){
@@ -2998,10 +3049,10 @@ void ff_cl_fcl_without_learning_parameters(cl* f1, fcl* f2, fcl* f3){
 }
 
 void model_eliminate_noisy_layers(model* m){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		eliminate_noisy_layers(m->fcls[i]);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        eliminate_noisy_layers(m->fcls[i]);
+    }
 }
 
 int ff_cl_cl_without_arrays(cl* f1, cl* f2){
@@ -3806,29 +3857,29 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
     /* computing the weight and bias derivatives for f2 applied to f1 output*/
     if(f1->dropout_flag){
         if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
-			if(is_noisy(f2))
-				noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+            if(is_noisy(f2))
+                noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             else
-				fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
         }
         else if(f2->training_mode == FREEZE_BIASES){
-			if(is_noisy(f2))
-				noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+            if(is_noisy(f2))
+                noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
             else
-				fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-		}
+                fully_connected_back_prop(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+        }
         else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
             if(is_noisy(f2))
-				noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             else
-				fully_connected_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                fully_connected_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
         }
         else if(f2->training_mode == EDGE_POPUP){
             float* weights = f2->weights;
             if(is_noisy(f2))
-				weights = f2->temp_weights;
+                weights = f2->temp_weights;
             fully_connected_back_prop_edge_popup(f1->dropout_temp, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-		}
+        }
     }
     
     else{
@@ -3836,28 +3887,28 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
+                float* weights = f2->weights;
             if(is_noisy(f2))
-				weights = f2->temp_weights;
+                weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_normalization, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         
         else if(f1->activation_flag){
@@ -3865,26 +3916,26 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 //printf("pre softmax bp\n");
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+            }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("pre relu bp, layers: %d, %d\n",f1->layer,f2->layer);
             }
@@ -3893,28 +3944,28 @@ float* bp_fcl_fcl(fcl* f1, fcl* f2, float* error){
         else{
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             }
             if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
     }
     f2->temp = temp;
@@ -4074,28 +4125,28 @@ float* bp_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3, float* 
     if(f1->dropout_flag){
         if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
             if(is_noisy(f2))
-				noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             else
-				fully_connected_back_prop(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                fully_connected_back_prop(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
         }
         else if(f2->training_mode == FREEZE_BIASES){
             if(is_noisy(f2))
-				noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-			else	
-				fully_connected_back_prop(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-		}
+                noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+            else    
+                fully_connected_back_prop(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+        }
         else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
             if(is_noisy(f2))
-				noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             else
-				fully_connected_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                fully_connected_back_prop_edge_popup_ff_gd_bp(f1->dropout_temp, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
         }
         else if(f2->training_mode == EDGE_POPUP){
-			float* weights = f3->weights;
+            float* weights = f3->weights;
             if(is_noisy(f2))
-				weights = f2->temp_weights;
+                weights = f2->temp_weights;
             fully_connected_back_prop_edge_popup(f1->dropout_temp, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-		}
+        }
     }
     
     else{
@@ -4103,28 +4154,28 @@ float* bp_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3, float* 
         if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-				else	
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
-			}
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                else    
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_normalization, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         
         else if(f1->activation_flag){
@@ -4132,26 +4183,26 @@ float* bp_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3, float* 
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 //printf("pre softmax bp\n");
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-				else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                else
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+            }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("pre relu bp, layers: %d, %d\n",f1->layer,f2->layer);
             }
@@ -4160,28 +4211,28 @@ float* bp_fcl_fcl_without_learning_parameters(fcl* f1, fcl* f2, fcl* f3, float* 
         else{
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->training_mode);
             }
             if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input,f2->output,f2->training_mode);
             }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights, f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights, f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input,f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
     }
     f2->temp = temp;
@@ -6703,79 +6754,79 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
             }
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    fully_connected_back_prop(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 
             }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(pooltemp_prev, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(pooltemp_prev, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         else if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-				else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                else
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_normalization, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         else if(f1->activation_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("pre relu first layer bp \n");
             }
@@ -6783,28 +6834,28 @@ float* bp_cl_fcl(cl* f1, fcl* f2, float* error){
         else{
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f2->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f2->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f2->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f2->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f2->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f2->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
     return f2->error2;
     
@@ -6954,79 +7005,79 @@ float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* err
             }
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    fully_connected_back_prop(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 
             }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(pooltemp_prev, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(pooltemp_prev, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         else if(f1->normalization_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_normalization, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_normalization, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
         else if(f1->activation_flag){
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->post_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->post_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 //printf("pre relu first layer bp \n");
             }
@@ -7034,28 +7085,28 @@ float* bp_cl_fcl_without_learning_parameters(cl* f1, fcl* f2,fcl* f3, float* err
         else{
             if((f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == FULLY_FEED_FORWARD ) || f2->training_mode == FREEZE_TRAINING){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == FREEZE_BIASES){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+                    noisy_fully_connected_back_prop(f2->noise_biases, f2->temp_biases,f3->noisy_biases, f2->d_noisy_biases,f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
                 else
-					fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
-			}
+                    fully_connected_back_prop(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,NULL, f2->input, f2->output,f2->training_mode);
+            }
             else if(f2->training_mode == GRADIENT_DESCENT && f2->feed_forward_flag == EDGE_POPUP ){
                 if(is_noisy(f2))
-					noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    noisy_fully_connected_back_prop_edge_popup_ff_gd_bp(f2->noise, f2->temp_weights,f3->noisy_weights, f2->d_noisy_weights,f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
                 else
-					fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
+                    fully_connected_back_prop_edge_popup_ff_gd_bp(f1->pre_activation, f2->temp, f3->weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
             }
             else if(f2->training_mode == EDGE_POPUP){
-				float* weights = f3->weights;
-				if(is_noisy(f2))
-					weights = f2->temp_weights;
+                float* weights = f3->weights;
+                if(is_noisy(f2))
+                    weights = f2->temp_weights;
                 fully_connected_back_prop_edge_popup(f1->pre_activation, f2->temp, weights,f2->error2, f2->d_weights,f2->d_biases, f2->input, f2->output,f2->d_scores,f3->indices,f2->input*f2->output*f2->k_percentage);
-			}
+            }
         }
     return f2->error2;
     
@@ -8846,6 +8897,58 @@ void memcopy_vector_to_scores_model(model* f, float* vector){
     }
 }
 
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void assign_vector_to_scores_model(model* f, float* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        assign_vector_to_scores(f->fcls[i],&vector[sum]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        assign_vector_to_scores_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        assign_vector_to_scores_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_scores_rl(f->rls[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
+void memcopy_vector_to_indices_model(model* f, int* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_indices(f->fcls[i],&vector[sum]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_indices_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_indices_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_scores_rl(f->rls[i]);
+    }
+}
+
 /* this function paste the vector in the weights and biases of the model
  * 
  * Inputs:
@@ -8916,6 +9019,30 @@ void memcopy_scores_to_vector_model(model* f, float* vector){
     }
     for(i = 0; i < f->n_rl; i++){
         memcopy_scores_to_vector_rl(f->rls[i],&vector[sum]);
+        sum += get_array_size_scores_rl(f->rls[i]);
+    }
+}
+
+/* this function paste the vector in the weights and biases of the model
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_indices_to_vector_model(model* f, int* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_indices_to_vector(f->fcls[i],&vector[sum]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_indices_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_indices_to_vector_rl(f->rls[i],&vector[sum]);
         sum += get_array_size_scores_rl(f->rls[i]);
     }
 }
@@ -9460,6 +9587,20 @@ void reinitialize_weights_according_to_scores_model(model* m, float percentage, 
     }
 }
 
+/* look at reinitialize_scores_cl function in convolutional_layers.c formore details*/
+void reinitialize_weights_according_to_scores_and_inner_info_model(model* m){
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reinitialize_weights_according_to_scores_and_inner_info_fcl(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reinitialize_weights_according_to_scores_and_inner_info_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reinitialize_weights_according_to_scores_and_inner_info_rl(m->rls[i]);
+    }
+}
+
 /* look at reinitialize_w_cl function in convolutional_layers.c formore details*/
 void reinitialize_w_model(model* m){
     int i;
@@ -9696,9 +9837,9 @@ int get_input_layer_size(model* m){
 }
 
 void assign_noise_arrays_model(model* m, float** noise_biases, float** noise){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		assign_noise_arrays(m->fcls[i], noise_biases, noise, i);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        assign_noise_arrays(m->fcls[i], noise_biases, noise, i);
+    }
 }
 

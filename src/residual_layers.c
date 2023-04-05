@@ -99,7 +99,41 @@ void free_residual_without_arrays(rl* r){
     free(r);
 }
 
+void free_scores_rl(rl* r){
+	if(r == NULL)
+		return;
+	int i;
+	for(i = 0; i < r->n_cl; i++){
+		free_scores_cl(r->cls[i]);
+	}
+}
 
+void free_indices_rl(rl* r){
+	if(r == NULL)
+		return;
+	int i;
+	for(i = 0; i < r->n_cl; i++){
+		free_indices_cl(r->cls[i]);
+	}
+}
+
+void set_null_scores_rl(rl* r){
+	if(r == NULL)
+		return;
+	int i;
+	for(i = 0; i < r->n_cl; i++){
+		set_null_scores_cl(r->cls[i]);
+	}
+}
+
+void set_null_indices_rl(rl* r){
+	if(r == NULL)
+		return;
+	int i;
+	for(i = 0; i < r->n_cl; i++){
+		set_null_indices_cl(r->cls[i]);
+	}
+}
 
 
 /* This function saves a residual layer on a .bin file with name n.bin
@@ -692,6 +726,41 @@ void memcopy_vector_to_scores_rl(rl* f, float* vector){
         sum += get_array_size_scores_cl(f->cls[i]);
     }
 }
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void assign_vector_to_scores_rl(rl* f, float* vector){
+    if(f == NULL || vector == NULL)
+        return;
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        assign_vector_to_scores_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices_rl(rl* f, int* vector){
+    if(f == NULL || vector == NULL)
+        return;
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_indices_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+}
 /* this function paste the vector in the weights and biases of the rl
  * 
  * Inputs:
@@ -742,6 +811,24 @@ void memcopy_scores_to_vector_rl(rl* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
         memcopy_scores_to_vector_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+}
+
+/* this function paste the vector in the weights and biases of the rl
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_indices_to_vector_rl(rl* f, int* vector){
+    if(f == NULL || vector == NULL)
+        return;
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_indices_to_vector_cl(f->cls[i],&vector[sum]);
         sum += get_array_size_scores_cl(f->cls[i]);
     }
 }
@@ -923,6 +1010,19 @@ void reinitialize_weights_according_to_scores_rl(rl* f, float percentage, float 
     int i;
     for(i = 0; i < f->n_cl; i++){
         reinitialize_weights_according_to_scores_cl(f->cls[i],percentage,goodness);
+    }
+}
+
+/* this function reinitialize the worst weights inside each cl layer
+ * layer inside the residual one look at reinitialize_scores_cl function in convolutional_layers.c
+ * for more details
+ * */
+void reinitialize_weights_according_to_scores_and_inner_info_rl(rl* f){
+    if(f == NULL)
+        return;
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reinitialize_weights_according_to_scores_and_inner_info_cl(f->cls[i]);
     }
 }
 

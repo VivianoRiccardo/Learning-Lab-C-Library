@@ -125,5 +125,13 @@ void inference_model(model* m);
 void train_model(model* m);
 void model_eliminate_noisy_layers(model* m);
 void assign_noise_arrays_model(model* m, float** noise_biases, float** noise);
+void reinitialize_weights_according_to_scores_and_inner_info_model(model* m);
+void memcopy_vector_to_indices_model(model* f, int* vector);
+void memcopy_indices_to_vector_model(model* f, int* vector);
+void free_scores_model(model* m);
+void free_indices_model(model* m);
+void assign_vector_to_scores_model(model* f, float* vector);
+void set_null_scores_model(model* m);
+void set_null_indices_model(model* m);
 
 #endif

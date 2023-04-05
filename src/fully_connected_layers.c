@@ -265,18 +265,18 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         for(j = 0; j < input; j++){
             if(f->feed_forward_flag != ONLY_DROPOUT){
                 if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
-					f->indices[i*input+j] = i*input+j;
-					f->weights[i*input+j] = signed_kaiming_constant(input);
-					if(mode == NOISY){
-						f->noisy_weights[i*input+j] = 0.5/(sqrtf(2*input));// not from the paper, different init cause not xavier initialization but signed kaiming constant
-					}
-				}
-				else{
-					f->weights[i*input+j] = random_general_gaussian_xavier_init(input);
-					if(mode == NOISY){
-						f->noisy_weights[i*input+j] = 0.5/(sqrtf(input));// from the paper, in case of xavier initialization
-					}
-				}
+                    f->indices[i*input+j] = i*input+j;
+                    f->weights[i*input+j] = signed_kaiming_constant(input);
+                    if(mode == NOISY){
+                        f->noisy_weights[i*input+j] = 0.5/(sqrtf(2*input));// not from the paper, different init cause not xavier initialization but signed kaiming constant
+                    }
+                }
+                else{
+                    f->weights[i*input+j] = random_general_gaussian_xavier_init(input);
+                    if(mode == NOISY){
+                        f->noisy_weights[i*input+j] = 0.5/(sqrtf(input));// from the paper, in case of xavier initialization
+                    }
+                }
             }
         }
         if(dropout_flag)
@@ -581,7 +581,7 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
     if(mode == NOISY){
         f->noise = (float*)calloc(input*output,sizeof(float));// new
         f->temp_weights = (float*)calloc(input*output,sizeof(float));// new
-		f->noise_biases = (float*)calloc(output,sizeof(float));// new
+        f->noise_biases = (float*)calloc(output,sizeof(float));// new
         f->temp_biases = (float*)calloc(output,sizeof(float));// new
         set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
     }
@@ -1635,6 +1635,24 @@ fcl* reset_fcl_for_edge_popup(fcl* f){
     return f;
 }
 
+void free_scores(fcl* f){
+	free(f->scores);
+	f->scores = NULL;
+}
+
+void free_indices(fcl* f){
+	free(f->indices);
+	f->indices = NULL;
+}
+
+void set_null_scores(fcl* f){
+	f->scores = NULL;
+}
+
+void set_null_indices(fcl* f){
+	f->indices = NULL;
+}
+
 
 /* this function returns the space allocated by the arrays of f (more or less)
  * 
@@ -1900,10 +1918,10 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
                 copy->d2_noisy_weights[i] = tau*f->d2_noisy_weights[i] + (1-tau)*copy->d2_noisy_weights[i];// new
                 copy->d3_noisy_weights[i] = tau*f->d3_noisy_weights[i] + (1-tau)*copy->d3_noisy_weights[i];// new
                 if(i < f->output){
-					copy->d1_noisy_biases[i] = tau*f->d1_noisy_biases[i] + (1-tau)*copy->d1_noisy_biases[i];// new
-					copy->d2_noisy_biases[i] = tau*f->d2_noisy_biases[i] + (1-tau)*copy->d2_noisy_biases[i];// new
-					copy->d3_noisy_biases[i] = tau*f->d3_noisy_biases[i] + (1-tau)*copy->d3_noisy_biases[i];// new
-				}
+                    copy->d1_noisy_biases[i] = tau*f->d1_noisy_biases[i] + (1-tau)*copy->d1_noisy_biases[i];// new
+                    copy->d2_noisy_biases[i] = tau*f->d2_noisy_biases[i] + (1-tau)*copy->d2_noisy_biases[i];// new
+                    copy->d3_noisy_biases[i] = tau*f->d3_noisy_biases[i] + (1-tau)*copy->d3_noisy_biases[i];// new
+                }
             }// new
         }
         if(exists_edge_popup_stuff_fcl(f) && exists_edge_popup_stuff_fcl(copy)){
@@ -1967,7 +1985,7 @@ uint64_t get_array_size_params(fcl* f){
  *                 @ flc* f:= the fully-connected layer
  * */
 uint64_t get_array_size_scores_fcl(fcl* f){
-    if(f == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+	if(f == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return 0;
     return (uint64_t)f->input*f->output;
 }
@@ -2033,6 +2051,49 @@ void memcopy_vector_to_scores(fcl* f, float* vector){
     if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(f->scores,vector,f->input*f->output*sizeof(float));
+}
+
+/* this function pastes the cl structure indices in a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_indices_to_vector(fcl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    memcpy(vector,f->indices,f->input*f->output*sizeof(int));    
+    
+}
+
+/* this function pastes the scores stored in a vector inside a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void assign_vector_to_scores(fcl* f, float* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    f->scores=vector;
+}
+
+/* this function lets point to indices in a vector inside a fcl structure (only for edge popup)
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices(fcl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    f->indices = vector;
 }
 
 /* this function pastes the the weights and biases from a fcl structure into a vector
@@ -2120,6 +2181,20 @@ void memcopy_scores_to_vector(fcl* f, float* vector){
     if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(vector,f->scores,f->input*f->output*sizeof(float));
+}
+
+/* this function pastes the indices from a fcl structure into a vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_scores_to_indices(fcl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    memcpy(vector,f->indices,f->input*f->output*sizeof(int));
 }
 /* this function pastes the dweights and dbiases from a vector into in a fcl structure
  * 
@@ -2341,16 +2416,36 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
     if(f == NULL || !exists_edge_popup_stuff_fcl(f))
         return;
     int i;
-    for(i = 0; i < f->input*f->output; i++){
-        if(i >= f->input*f->output*percentage)
-            return;
+    for(i = 0, i = f->input*f->output;i < (int)(f->input*f->output*percentage); i--){
         if(f->scores[f->indices[i]] < goodness){
             f->weights[f->indices[i]] = signed_kaiming_constant(f->input);
-            if(is_noisy(f)){// new
-                f->noisy_weights[f->indices[i]] = 0.5/(sqrtf(2*f->input));// new (not as the paper ,because different initialization for weights (signed kaiming constant)
-            }// new
+            f->scores[f->indices[i]] = goodness;
+            //if(is_noisy(f)){// new
+            //    f->noisy_weights[f->indices[i]] = 0.5/(sqrtf(2*f->input));// new (not as the paper ,because different initialization for weights (signed kaiming constant)
+            //}// new
         }
+        else
+            return;
     }
+}
+/* thif function reinitialize the weights under the goodness function only if
+ * they are among the f->input*f->output*percentage worst weights according to the scores
+ * percentage and goodness should range in [0,1]
+ * the re initialization uses the signed kaiming constant (the best one for edge popup according to the paper)
+ * Input:
+ * 
+ *                 @ fcl* f:= the fully connected layer
+ *                 @ float percentage:= the percentage of the worst weights
+ *                 @ float goodness:= the goodness function
+ * */
+void reinitialize_weights_according_to_scores_and_inner_info_fcl(fcl* f){
+    if(f == NULL || !exists_edge_popup_stuff_fcl(f))
+        return;
+    if((int)(f->input*f->output*f->k_percentage) == 0)
+        return;
+    float goodness = f->scores[f->indices[(int)(f->input*f->output*f->k_percentage)-1]];
+    float percentage = f->k_percentage;
+    reinitialize_weights_according_to_scores_fcl(f,percentage,goodness);
 }
 
 /* this function re initialize the weights and biases of the fully connected layers to get different values
@@ -2521,13 +2616,13 @@ void train_fcl(fcl* f){
 }
 
 void assign_noise_arrays(fcl* f, float** noise_biases, float** noise, int index){
-	if(is_noisy(f)){
-		float* noise_temp = f->noise;
-		float* noise_biases_temp = f->noise_biases;
-		f->noise = noise[index];
-		f->noise_biases = noise_biases[index];
-		noise[index] = noise_temp;
-		noise_biases[index] = noise_biases_temp;
-	}
-	return;
+    if(is_noisy(f)){
+        float* noise_temp = f->noise;
+        float* noise_biases_temp = f->noise_biases;
+        f->noise = noise[index];
+        f->noise_biases = noise_biases[index];
+        noise[index] = noise_temp;
+        noise_biases[index] = noise_biases_temp;
+    }
+    return;
 }

@@ -98,5 +98,16 @@ void inference_dqn(dueling_categorical_dqn* dqn);
 void train_dqn(dueling_categorical_dqn* dqn);
 void dueling_dqn_eliminate_noisy_layers(dueling_categorical_dqn* dqn);
 void assign_noise_arrays_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float** noise_biases1, float** noise1,float** noise_biases2, float** noise2,float** noise_biases3, float** noise3,float** noise_biases4, float** noise4,float** noise_biases5, float** noise5);
+void reinitialize_weights_according_to_scores_and_inner_info_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
+void memcopy_vector_to_indices_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int* vector);
+void memcopy_indices_to_vector_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int* vector);
+void free_scores_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
+void free_indices_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
+void assign_vector_to_scores_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float* vector);
+void set_null_scores_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
+void set_null_indices_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
+float compute_l1_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+float compute_l1_dueling_categorical_dqn(dueling_categorical_dqn* online_net, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+
 
 #endif

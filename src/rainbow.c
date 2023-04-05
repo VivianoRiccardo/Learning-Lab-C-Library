@@ -387,6 +387,7 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
     r->temp_rewards = (float*)calloc(r->batch_size,sizeof(float));
     r->new_errors = (float*)calloc(r->batch_size,sizeof(float));
     r->weighted_errors = (float*)calloc(r->batch_size,sizeof(float));
+    r->lambdas = (float*)calloc(r->batch_size,sizeof(float));
     r->sampling_flag = sampling_flag;
     r->positive_rewards_counter = 0;
     r->positive_rewards_length = 0;
@@ -420,6 +421,750 @@ rainbow* init_rainbow(int sampling_flag, int gd_flag, int lr_decay_flag, int fee
     return r;
 }
 
+rainbow* copy_rainbow(rainbow* rain, int sampling_flag, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+                      uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
+                      float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
+                      float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
+                      float diversity_driven_threshold, float diversity_driven_decay, float diversity_driven_minimum, float diversity_driven_maximum, float beta_priorization_increase,
+                      dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
+                      dueling_categorical_dqn** target_net_wlp){
+                          
+    
+    if(sampling_flag != UNIFORM_SAMPLING && sampling_flag != REWARD_SAMPLING && sampling_flag != RANKED_SAMPLING){
+        fprintf(stderr,"Error: sampling flag not recognized\n");
+        exit(1);
+    }
+    
+    
+    if(beta_priorization_increase < 0 || beta_priorization_increase > 1){
+        fprintf(stderr,"Error: beta_priorization_increase should be in range [0,1]\n"),
+        exit(1);
+    }
+    if(diversity_driven_decay < 0 || diversity_driven_decay > 1){
+        fprintf(stderr,"Error: diversity driven decay should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_minimum < 0 || diversity_driven_minimum > 1 || diversity_driven_minimum > diversity_driven_maximum){
+        fprintf(stderr,"Error: diversity driven minimum should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_maximum < 0 || diversity_driven_maximum > 1){
+        fprintf(stderr,"Error: diversity driven maximum should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(lr_decay_flag != LR_NO_DECAY && lr_decay_flag != LR_ANNEALING_DECAY && lr_decay_flag != LR_CONSTANT_DECAY && lr_decay_flag != LR_STEP_DECAY && lr_decay_flag != LR_TIME_BASED_DECAY){
+        fprintf(stderr, "Error: no error decay flag recognized\n");
+        exit(1);
+    }
+    
+    if(feed_forward_flag != FULLY_FEED_FORWARD && feed_forward_flag != EDGE_POPUP){
+        fprintf(stderr,"Error: feed forward flag not recognized\n");
+        exit(1);
+    }
+    
+    if(training_mode != GRADIENT_DESCENT && training_mode != EDGE_POPUP){
+        fprintf(stderr,"Error: training mode not recognized\n");
+        exit(1);
+    }
+    
+    if(gd_flag != NESTEROV && gd_flag != ADAM && gd_flag != ADAMOD && gd_flag != RADAM && gd_flag != DIFF_GRAD){
+        fprintf(stderr,"Error: gradient descent flag not recognized\n");
+        exit(1);
+    }
+    
+    if(batch_size <= 0){
+        fprintf(stderr,"Error: batch size can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(threads <= 0){
+        fprintf(stderr,"Error: threads can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(threads > batch_size){
+        fprintf(stderr,"Error: threads should be <= batch size\n");
+        exit(1);
+    }
+    
+    if(max_buffer_size<=1){
+        fprintf(stderr,"Error: buffer size can't be <= 1\n");
+        exit(1);
+    }
+    
+    if(!n_step_rewards){
+        fprintf(stderr,"Error: n step rewards can't be = 0\n");
+        exit(1);
+    }
+    
+    if(max_epsilon > 1){
+        fprintf(stderr,"Error: max epsilon can't be > 1\n");
+        exit(1);
+    }
+    
+    if(min_epsilon <= 0){
+        fprintf(stderr,"Error: min epsilon can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(min_epsilon > max_epsilon){
+        fprintf(stderr,"Error: min epsilond can't me > max epsilon\n");
+        exit(1);
+    }
+    
+    if(epsilon_decay < 0){
+        fprintf(stderr,"Error: epsilon decay can't be < 0\n");
+        exit(1);
+    }
+    
+    if(epsilon < 0 || epsilon > 1){
+        fprintf(stderr,"Error: epsilon range in [0,1]\n");
+        exit(1);
+    }
+    
+    
+    if(diversity_driven_q_functions < batch_size){
+        fprintf(stderr,"Error: diversity driven q functions can't be < batch_size\n");
+        exit(1);
+    }
+    
+    
+    if(alpha_priorization < 0 || alpha_priorization > 1){
+        fprintf(stderr,"Error: alpha_priorization range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta_priorization < 0 || beta_priorization > 1){
+        fprintf(stderr,"Error: beta_priorization range in [0,1]\n");
+        exit(1);
+    }
+    if(lambda_value < 0 || lambda_value > 1){
+        fprintf(stderr,"Error: lambda_value range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(gamma < 0 || gamma > 1){
+        fprintf(stderr,"Error: gamma range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(tau_copying < 0 || tau_copying > 1){
+        fprintf(stderr,"Error: tau_copying range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta1 < 0 || beta1 > 1){
+        fprintf(stderr,"Error: beta1 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta2 < 0 || beta2 > 1){
+        fprintf(stderr,"Error: beta2 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta3 < 0 || beta3 > 1){
+        fprintf(stderr,"Error: beta3 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(k_percentage < 0 || k_percentage > 1){
+        fprintf(stderr,"Error: k_percentage range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(clipping_gradient_value < 0){
+        fprintf(stderr,"Error: clipping_gradient_value must be >= 0\n");
+        exit(1);
+    }
+    
+    if(adaptive_clipping_gradient_value < 0 || adaptive_clipping_gradient_value > 1){
+        fprintf(stderr,"Error: adaptive_clipping_gradient_value range in [0,1]\n");
+        exit(1);
+    }
+    if(lr < 0 || lr > 1){
+        fprintf(stderr,"Error: lr range in [0,1]\n");
+        exit(1);
+    }
+    if(lr_minimum < 0 || lr_minimum > 1){
+        fprintf(stderr,"Error: lr_minimum range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(lr_maximum < 0 || lr_maximum > 1){
+        fprintf(stderr,"Error: lr_maximum range in [0,1]\n");
+        exit(1);
+    }
+    if(lr_decay < 0 || lr_decay > 1){
+        fprintf(stderr,"Error: lr_decay range in [0,1]\n");
+        exit(1);
+    }
+    if(momentum < 0 || momentum > 1){
+        fprintf(stderr,"Error: momentum range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(lr_minimum > lr_maximum){
+        fprintf(stderr,"Error: lr minimum can't be greater than lr maximum\n");
+        exit(1);
+    }
+    
+    if(online_net == NULL || online_net_wlp == NULL || target_net == NULL || target_net_wlp == NULL){
+        fprintf(stderr,"Error: the nets u passed are set to null\n");
+        exit(1);
+    }
+    
+    if(diversity_driven_q_functions >= max_buffer_size){
+        fprintf(stderr,"Error: diversity_driven_q_functions can't be >= max_buffer_size\n");
+        exit(1);
+    }
+    
+    if(!diversity_driven_q_functions){
+        fprintf(stderr,"Error: diversity_driven_q_functions can't be < 1\n");
+        exit(1);
+    }
+    
+    if(diversity_driven_threshold<= 0){
+        fprintf(stderr,"Error: threshold should be > 0\n"),
+        exit(1);
+    }
+    rainbow* r = (rainbow*)malloc(sizeof(rainbow));
+    r->max_epsilon = max_epsilon;// maximum epsilon that epsilon can reach
+    r->min_epsilon = min_epsilon;// minimum epsilon that epsilon can reach
+    r->epsilon_decay = epsilon_decay;// the epsilon decay parameter for the epsilon
+    r->epsilon = epsilon;// the epsilon for the epsilon greedy exploration
+    r->alpha_priorization = alpha_priorization;// alpha priorization usually set to 0.6
+    r->beta_priorization = beta_priorization;// beta priorization to weight the loss coming from the priorization usually set to 0.4 and linear increasing
+    r->lambda_value = lambda_value;// lambda value for the n step reward computation
+    r->tau_copying = tau_copying;// the value that will copied into the target network from the online net
+    r->beta1 = beta1;// the beta1 parameter
+    r->beta2 = beta2;// the beta2 parameter
+    r->beta3 = beta3;// the betamod parameter
+    r->k_percentage = k_percentage;// k percentage for a possible edge popup training
+    r->momentum = momentum;// momentum for gradient descent
+    r->clipping_gradient_value = clipping_gradient_value;// clipping gradient value for the diversity driven
+    r->adaptive_clipping_gradient_value = adaptive_clipping_gradient_value;// value for a possible adaptive clipping gradient
+    r->lr = lr;// learning rate
+    r->initial_lr = lr;// initial learning rate
+    r->lr_minimum = lr_minimum;// minimum learning rate
+    r->lr_maximum = lr_maximum;//  maximum learning rate
+    r->feed_forward_flag = feed_forward_flag;// feed forward flag across the network
+    r->gd_flag = gd_flag;// gradient descent flag for gradient descent
+    r->training_mode = training_mode;// training mode for the whole network
+    r->clipping_flag = clipping_flag;// clipping flag, useless for now
+    r->adaptive_clipping_flag = adaptive_clipping_flag;// adaptive clipping flag, is set we can perform the adaptive clipping gradient
+    r->batch_size = batch_size;// the batch size
+    r->threads  = threads;// the number of threads
+    r->epochs_to_copy_target = epochs_to_copy_target;//after each epochs to copy target we copy target net from online net
+    r->lr_decay_flag = lr_decay_flag;// learning rate decay flag
+    r->sum_error_priorization_buffer = rain->sum_error_priorization_buffer;// the total error ranked priorization over the buffer
+    r->positive_sum_error_priorization_buffer = rain->positive_sum_error_priorization_buffer;// the total error ranked priorization over the buffer
+    r->negative_sum_error_priorization_buffer = rain->negative_sum_error_priorization_buffer;// the total error ranked priorization over the buffer
+    r->neutral_sum_error_priorization_buffer = rain->neutral_sum_error_priorization_buffer;// the total error ranked priorization over the buffer
+    r->action_taken_iteration = rain->action_taken_iteration;// the iteration of the action taken
+    r->max_buffer_size = max_buffer_size;// the maximum size of the buffer where we store transitions
+    r->train_iteration = rain->train_iteration;// the iteration of the update
+    r->buffer_current_index = rain->buffer_current_index;// where we actually will store the next state
+    r->n_step_rewards = n_step_rewards;// n step reward for the td error
+    r->stop_epsilon_greedy = stop_epsilon_greedy;// when we reached stop epsilon greedy iteration from action taken iteration we don't use epsilon greedy anymore
+    r->lr_epoch_threshold = lr_epoch_threshold;//the learning rate epoch threshold to update the learning rate
+    r->buffer_state_t = (float**)calloc(r->max_buffer_size,sizeof(float*));// allocation the buffer of states t
+    r->buffer_state_t_1 = (float**)calloc(r->max_buffer_size,sizeof(float*));// allocation the buffer of states t + 1
+    r->nonterminal_state_t_1 = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation tells us if state t+1 is terminal or not
+    r->actions = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation buffer of actions
+    r->rewards = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation buffer of rewards
+    r->online_net = online_net;// the online net
+    r->online_net_wlp = online_net_wlp;// the online net without learning parameters
+    r->target_net = target_net;// the target net
+    r->target_net_wlp = target_net_wlp;// the target net without learning parameters
+    copy_int_array(rain->nonterminal_state_t_1,r->nonterminal_state_t_1,r->max_buffer_size);
+    copy_int_array(rain->actions,r->actions,r->max_buffer_size);
+    copy_array(rain->rewards,r->rewards,r->max_buffer_size);
+    int i;
+    int length = rain->buffer_current_index;
+    if(rain->buffer_state_t[rain->buffer_current_index] != NULL){
+        length = r->max_buffer_size;
+    }
+    int state_size = get_input_layer_size(r->online_net->shared_hidden_layers);
+    for(i = 0; i < length; i++){
+        r->buffer_state_t[i] = (float*)calloc(state_size,sizeof(float));
+        copy_array(rain->buffer_state_t[i],r->buffer_state_t[i],state_size);
+        if(rain->buffer_state_t_1[i] != NULL){
+            r->buffer_state_t_1[i] = (float*)calloc(state_size,sizeof(float));
+            copy_array(rain->buffer_state_t_1[i],r->buffer_state_t_1[i],state_size);
+        }
+    }
+    
+    
+    r->online_net = online_net;// the online net
+    r->online_net_wlp = online_net_wlp;// the online net without learning parameters
+    r->target_net = target_net;// the target net
+    r->target_net_wlp = target_net_wlp;// the target net without learning parameters
+    r->diversity_driven_q_functions = diversity_driven_q_functions;// number of the last recorded q functions from our net or other nets
+    r->diversity_driven_q_functions_counter = 0;// the index where we will store the next q function
+    r->diversity_driven_q_functions_buffer = (float*)calloc(diversity_driven_q_functions*online_net->action_size,sizeof(float));// allocation the buffer of the last q functions
+    r->diversity_driven_states = (float**)calloc(diversity_driven_q_functions,sizeof(float*));// allocation// the buffer of the last states of the last q functions
+    
+    if(sampling_flag == RANKED_SAMPLING){
+        r->error_priorization = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation where the td errors are stored
+        r->error_indices = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation the indices of the errors from the heap to the buffer of above, error_priorization[error_indices[i]]
+        r->reverse_error_indices = (int*)calloc(r->max_buffer_size,sizeof(int));
+        r->ranked_values = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation buffer of ranked values. we use a heap, ranked values tells us the value of the rank of that ceil
+        r->recursive_cumulative_ranked_values = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation is a recursive tree where the parent of the heap contains as value the sum of the right and left sub trees
+        
+        copy_array(rain->error_priorization,r->error_priorization,r->max_buffer_size);
+        copy_int_array(rain->error_indices,r->error_indices,r->max_buffer_size);
+        copy_int_array(rain->reverse_error_indices,r->reverse_error_indices,r->max_buffer_size);
+        copy_array(rain->ranked_values,r->ranked_values,r->max_buffer_size);
+        copy_array(rain->recursive_cumulative_ranked_values,r->recursive_cumulative_ranked_values,r->max_buffer_size);
+        
+        r->positive_rewards = NULL;
+        r->negative_rewards = NULL;
+        r->neutral_rewards = NULL;
+        r->positive_ranked_values = NULL;
+        r->positive_recursive_cumulative_ranked_values = NULL;
+        r->negative_ranked_values = NULL;
+        r->negative_recursive_cumulative_ranked_values = NULL;
+        r->neutral_ranked_values = NULL;
+        r->neutral_recursive_cumulative_ranked_values = NULL;
+        r->positive_reverse_indices = NULL;
+        r->negative_reverse_indices = NULL;
+        r->neutral_reverse_indices = NULL;
+        r->positive_batch = NULL;
+        r->negative_batch = NULL;
+        r->neutral_batch = NULL;
+        r->uniform_sampling_indices = NULL;
+    }
+    else if(sampling_flag == REWARD_SAMPLING){
+        r->error_priorization =NULL;
+        r->error_indices = NULL;
+        r->reverse_error_indices = NULL;
+        r->ranked_values = NULL;// allocation buffer of ranked values. we use a heap, ranked values tells us the value of the rank of that ceil
+        r->recursive_cumulative_ranked_values = NULL;// allocation is a recursive tree where the parent of the heap contains as value the sum of the right and left sub trees
+        r->positive_rewards = NULL;
+        r->negative_rewards = NULL;
+        r->neutral_rewards = NULL;
+        r->positive_batch = (uint*)calloc(r->batch_size,sizeof(uint));
+        r->negative_batch = (uint*)calloc(r->batch_size,sizeof(uint));
+        r->neutral_batch = (uint*)calloc(r->batch_size,sizeof(uint));
+        
+        r->positive_ranked_values = (int*)calloc(r->max_buffer_size,sizeof(int));
+        r->positive_recursive_cumulative_ranked_values = (float*)calloc(r->max_buffer_size,sizeof(float));
+        r->negative_ranked_values = (int*)calloc(r->max_buffer_size,sizeof(int));
+        r->negative_recursive_cumulative_ranked_values = (float*)calloc(r->max_buffer_size,sizeof(float));
+        r->neutral_ranked_values = (int*)calloc(r->max_buffer_size,sizeof(int));
+        r->neutral_recursive_cumulative_ranked_values = (float*)calloc(r->max_buffer_size,sizeof(float));
+        
+        
+        copy_int_array(rain->positive_ranked_values,r->positive_ranked_values,r->max_buffer_size);
+        copy_array(rain->positive_recursive_cumulative_ranked_values,r->positive_recursive_cumulative_ranked_values,r->max_buffer_size);
+        copy_int_array(rain->negative_ranked_values,r->negative_ranked_values,r->max_buffer_size);
+        copy_array(rain->negative_recursive_cumulative_ranked_values,r->negative_recursive_cumulative_ranked_values,r->max_buffer_size);
+        copy_int_array(rain->neutral_ranked_values,r->neutral_ranked_values,r->max_buffer_size);
+        copy_array(rain->neutral_recursive_cumulative_ranked_values,r->neutral_recursive_cumulative_ranked_values,r->max_buffer_size);
+        
+        r->positive_reverse_indices = NULL;
+        r->negative_reverse_indices = NULL;
+        r->neutral_reverse_indices = NULL;
+        r->uniform_sampling_indices = NULL;
+    }
+    
+    else if(sampling_flag == UNIFORM_SAMPLING){
+        r->error_priorization =NULL;
+        r->error_indices = NULL;
+        r->ranked_values = NULL;// allocation buffer of ranked values. we use a heap, ranked values tells us the value of the rank of that ceil
+        r->recursive_cumulative_ranked_values = NULL;// allocation is a recursive tree where the parent of the heap contains as value the sum of the right and left sub trees
+        r->reverse_error_indices = NULL;
+        r->positive_rewards = NULL;
+        r->negative_rewards = NULL;
+        r->neutral_rewards = NULL;
+        r->positive_ranked_values = NULL;
+        r->positive_recursive_cumulative_ranked_values = NULL;
+        r->negative_ranked_values = NULL;
+        r->negative_recursive_cumulative_ranked_values = NULL;
+        r->neutral_ranked_values = NULL;
+        r->neutral_recursive_cumulative_ranked_values = NULL;
+        r->positive_reverse_indices = NULL;
+        r->negative_reverse_indices = NULL;
+        r->neutral_reverse_indices = NULL;
+        r->positive_batch = NULL;
+        r->negative_batch = NULL;
+        r->neutral_batch = NULL;
+        r->uniform_sampling_indices = (int*)calloc(r->max_buffer_size,sizeof(int));
+        copy_int_array(rain->uniform_sampling_indices,r->uniform_sampling_indices,r->max_buffer_size);
+    }
+    
+    r->diversity_driven_threshold = diversity_driven_threshold;// the threshold used to update alpha for the diversity driven exploration rule
+    r->alpha = 0.1;// the initial alpha value
+
+    r->last_errors_dqn = NULL;
+    r->last_errors_diversity_driven = NULL;
+    
+    r->past_errors = rain->past_errors;
+    r->past_errors_counter = rain->past_errors_counter;
+    r->beta_priorization_increase = beta_priorization_increase;
+    r->diversity_driven_decay = diversity_driven_decay;
+    r->diversity_driven_minimum = diversity_driven_minimum;
+    r->diversity_driven_maximum = diversity_driven_maximum;
+    //r->reverse_error_indices = NULL;
+    
+    
+    // for training
+    r->array_to_shuffle = (int*)calloc(r->diversity_driven_q_functions,sizeof(int));
+    r->batch = (uint*)calloc(r->batch_size,sizeof(uint));
+    r->reverse_batch = (uint*)calloc(r->batch_size,sizeof(uint));
+    r->temp_states_t = (float**)calloc(r->batch_size,sizeof(float*));
+    r->temp_states_t_1 = (float**)calloc(r->batch_size,sizeof(float*));
+    r->temp_diversity_states_t = (float**)calloc(r->batch_size,sizeof(float*));
+    r->qs = (float**)calloc(r->batch_size,sizeof(float*));
+    r->temp_nonterminal_state_t_1 = (int*)calloc(r->batch_size,sizeof(int));
+    r->temp_actions = (int*)calloc(r->batch_size,sizeof(int));
+    r->temp_rewards = (float*)calloc(r->batch_size,sizeof(float));
+    r->new_errors = (float*)calloc(r->batch_size,sizeof(float));
+    r->weighted_errors = (float*)calloc(r->batch_size,sizeof(float));
+    r->lambdas = (float*)calloc(r->batch_size,sizeof(float));
+    r->sampling_flag = sampling_flag;
+    r->positive_rewards_counter = rain->positive_rewards_counter;
+    r->positive_rewards_length = rain->positive_rewards_counter;
+    r->negative_rewards_counter = rain->positive_rewards_counter;
+    r->negative_rewards_length = rain->positive_rewards_counter;
+    r->neutral_rewards_counter = rain->positive_rewards_counter;
+    r->neutral_rewards_length = rain->positive_rewards_counter;
+    
+    
+    for(i = 0; i < r->diversity_driven_q_functions; i++){
+        r->array_to_shuffle[i] = i;
+    }
+    
+    r->gamma = 1;
+    for(i = 0; i < n_step_rewards; i++){
+        r->gamma*=lambda_value;
+    }
+    
+    set_dueling_categorical_dqn_beta(r->online_net,beta1,beta2);
+    set_dueling_categorical_dqn_beta_adamod(r->online_net,beta3);
+    set_dueling_categorical_dqn_beta_adamod(r->target_net,beta3);
+    set_dueling_categorical_dqn_beta(r->target_net,beta1,beta2);
+    if(feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP){
+        set_dueling_categorical_dqn_training_edge_popup(r->online_net,k_percentage);
+        set_dueling_categorical_dqn_training_edge_popup(r->target_net,k_percentage);
+    }
+    else{
+        set_dueling_categorical_dqn_training_gd(r->online_net);
+        set_dueling_categorical_dqn_training_gd(r->target_net);
+    }
+    return r;
+}
+
+
+rainbow* reset_rainbow(rainbow* r, int sampling_flag, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+                      uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
+                      float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
+                      float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
+                      float diversity_driven_threshold, float diversity_driven_decay, float diversity_driven_minimum, float diversity_driven_maximum, float beta_priorization_increase,
+                      dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
+                      dueling_categorical_dqn** target_net_wlp){
+                          
+    
+    if(sampling_flag != UNIFORM_SAMPLING && sampling_flag != REWARD_SAMPLING && sampling_flag != RANKED_SAMPLING){
+        fprintf(stderr,"Error: sampling flag not recognized\n");
+        exit(1);
+    }
+    
+    
+    if(beta_priorization_increase < 0 || beta_priorization_increase > 1){
+        fprintf(stderr,"Error: beta_priorization_increase should be in range [0,1]\n"),
+        exit(1);
+    }
+    if(diversity_driven_decay < 0 || diversity_driven_decay > 1){
+        fprintf(stderr,"Error: diversity driven decay should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_minimum < 0 || diversity_driven_minimum > 1 || diversity_driven_minimum > diversity_driven_maximum){
+        fprintf(stderr,"Error: diversity driven minimum should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(diversity_driven_maximum < 0 || diversity_driven_maximum > 1){
+        fprintf(stderr,"Error: diversity driven maximum should be in range [0,1]\n"),
+        exit(1);
+    }
+    
+    if(lr_decay_flag != LR_NO_DECAY && lr_decay_flag != LR_ANNEALING_DECAY && lr_decay_flag != LR_CONSTANT_DECAY && lr_decay_flag != LR_STEP_DECAY && lr_decay_flag != LR_TIME_BASED_DECAY){
+        fprintf(stderr, "Error: no error decay flag recognized\n");
+        exit(1);
+    }
+    
+    if(feed_forward_flag != FULLY_FEED_FORWARD && feed_forward_flag != EDGE_POPUP){
+        fprintf(stderr,"Error: feed forward flag not recognized\n");
+        exit(1);
+    }
+    
+    if(training_mode != GRADIENT_DESCENT && training_mode != EDGE_POPUP){
+        fprintf(stderr,"Error: training mode not recognized\n");
+        exit(1);
+    }
+    
+    if(gd_flag != NESTEROV && gd_flag != ADAM && gd_flag != ADAMOD && gd_flag != RADAM && gd_flag != DIFF_GRAD){
+        fprintf(stderr,"Error: gradient descent flag not recognized\n");
+        exit(1);
+    }
+    
+    if(batch_size <= 0){
+        fprintf(stderr,"Error: batch size can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(threads <= 0){
+        fprintf(stderr,"Error: threads can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(threads > batch_size){
+        fprintf(stderr,"Error: threads should be <= batch size\n");
+        exit(1);
+    }
+    
+    if(max_buffer_size<=1){
+        fprintf(stderr,"Error: buffer size can't be <= 1\n");
+        exit(1);
+    }
+    
+    if(!n_step_rewards){
+        fprintf(stderr,"Error: n step rewards can't be = 0\n");
+        exit(1);
+    }
+    
+    if(max_epsilon > 1){
+        fprintf(stderr,"Error: max epsilon can't be > 1\n");
+        exit(1);
+    }
+    
+    if(min_epsilon <= 0){
+        fprintf(stderr,"Error: min epsilon can't be <= 0\n");
+        exit(1);
+    }
+    
+    if(min_epsilon > max_epsilon){
+        fprintf(stderr,"Error: min epsilond can't me > max epsilon\n");
+        exit(1);
+    }
+    
+    if(epsilon_decay < 0){
+        fprintf(stderr,"Error: epsilon decay can't be < 0\n");
+        exit(1);
+    }
+    
+    if(epsilon < 0 || epsilon > 1){
+        fprintf(stderr,"Error: epsilon range in [0,1]\n");
+        exit(1);
+    }
+    
+    
+    if(diversity_driven_q_functions < batch_size){
+        fprintf(stderr,"Error: diversity driven q functions can't be < batch_size\n");
+        exit(1);
+    }
+    
+    
+    if(alpha_priorization < 0 || alpha_priorization > 1){
+        fprintf(stderr,"Error: alpha_priorization range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta_priorization < 0 || beta_priorization > 1){
+        fprintf(stderr,"Error: beta_priorization range in [0,1]\n");
+        exit(1);
+    }
+    if(lambda_value < 0 || lambda_value > 1){
+        fprintf(stderr,"Error: lambda_value range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(gamma < 0 || gamma > 1){
+        fprintf(stderr,"Error: gamma range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(tau_copying < 0 || tau_copying > 1){
+        fprintf(stderr,"Error: tau_copying range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta1 < 0 || beta1 > 1){
+        fprintf(stderr,"Error: beta1 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta2 < 0 || beta2 > 1){
+        fprintf(stderr,"Error: beta2 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(beta3 < 0 || beta3 > 1){
+        fprintf(stderr,"Error: beta3 range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(k_percentage < 0 || k_percentage > 1){
+        fprintf(stderr,"Error: k_percentage range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(clipping_gradient_value < 0){
+        fprintf(stderr,"Error: clipping_gradient_value must be >= 0\n");
+        exit(1);
+    }
+    
+    if(adaptive_clipping_gradient_value < 0 || adaptive_clipping_gradient_value > 1){
+        fprintf(stderr,"Error: adaptive_clipping_gradient_value range in [0,1]\n");
+        exit(1);
+    }
+    if(lr < 0 || lr > 1){
+        fprintf(stderr,"Error: lr range in [0,1]\n");
+        exit(1);
+    }
+    if(lr_minimum < 0 || lr_minimum > 1){
+        fprintf(stderr,"Error: lr_minimum range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(lr_maximum < 0 || lr_maximum > 1){
+        fprintf(stderr,"Error: lr_maximum range in [0,1]\n");
+        exit(1);
+    }
+    if(lr_decay < 0 || lr_decay > 1){
+        fprintf(stderr,"Error: lr_decay range in [0,1]\n");
+        exit(1);
+    }
+    if(momentum < 0 || momentum > 1){
+        fprintf(stderr,"Error: momentum range in [0,1]\n");
+        exit(1);
+    }
+    
+    if(lr_minimum > lr_maximum){
+        fprintf(stderr,"Error: lr minimum can't be greater than lr maximum\n");
+        exit(1);
+    }
+    
+    if(online_net == NULL || online_net_wlp == NULL || target_net == NULL || target_net_wlp == NULL){
+        fprintf(stderr,"Error: the nets u passed are set to null\n");
+        exit(1);
+    }
+    
+    if(diversity_driven_q_functions >= max_buffer_size){
+        fprintf(stderr,"Error: diversity_driven_q_functions can't be >= max_buffer_size\n");
+        exit(1);
+    }
+    
+    if(!diversity_driven_q_functions){
+        fprintf(stderr,"Error: diversity_driven_q_functions can't be < 1\n");
+        exit(1);
+    }
+    
+    if(diversity_driven_threshold<= 0){
+        fprintf(stderr,"Error: threshold should be > 0\n"),
+        exit(1);
+    }
+    r->max_epsilon = max_epsilon;// maximum epsilon that epsilon can reach
+    r->min_epsilon = min_epsilon;// minimum epsilon that epsilon can reach
+    r->epsilon_decay = epsilon_decay;// the epsilon decay parameter for the epsilon
+    r->epsilon = epsilon;// the epsilon for the epsilon greedy exploration
+    r->alpha_priorization = alpha_priorization;// alpha priorization usually set to 0.6
+    r->beta_priorization = beta_priorization;// beta priorization to weight the loss coming from the priorization usually set to 0.4 and linear increasing
+    r->lambda_value = lambda_value;// lambda value for the n step reward computation
+    r->tau_copying = tau_copying;// the value that will copied into the target network from the online net
+    r->beta1 = beta1;// the beta1 parameter
+    r->beta2 = beta2;// the beta2 parameter
+    r->beta3 = beta3;// the betamod parameter
+    r->k_percentage = k_percentage;// k percentage for a possible edge popup training
+    r->momentum = momentum;// momentum for gradient descent
+    r->clipping_gradient_value = clipping_gradient_value;// clipping gradient value for the diversity driven
+    r->adaptive_clipping_gradient_value = adaptive_clipping_gradient_value;// value for a possible adaptive clipping gradient
+    r->lr = lr;// learning rate
+    r->initial_lr = lr;// initial learning rate
+    r->lr_minimum = lr_minimum;// minimum learning rate
+    r->lr_maximum = lr_maximum;//  maximum learning rate
+    r->feed_forward_flag = feed_forward_flag;// feed forward flag across the network
+    r->gd_flag = gd_flag;// gradient descent flag for gradient descent
+    r->training_mode = training_mode;// training mode for the whole network
+    r->clipping_flag = clipping_flag;// clipping flag, useless for now
+    r->adaptive_clipping_flag = adaptive_clipping_flag;// adaptive clipping flag, is set we can perform the adaptive clipping gradient
+    r->batch_size = batch_size;// the batch size
+    r->threads  = threads;// the number of threads
+    r->epochs_to_copy_target = epochs_to_copy_target;//after each epochs to copy target we copy target net from online net
+    r->lr_decay_flag = lr_decay_flag;// learning rate decay flag
+    //r->sum_error_priorization_buffer = 0;// the total error ranked priorization over the buffer
+    //r->positive_sum_error_priorization_buffer = 0;// the total error ranked priorization over the buffer
+    //r->negative_sum_error_priorization_buffer = 0;// the total error ranked priorization over the buffer
+    //r->neutral_sum_error_priorization_buffer = 0;// the total error ranked priorization over the buffer
+    //r->action_taken_iteration = 0;// the iteration of the action taken
+    //r->max_buffer_size = max_buffer_size;// the maximum size of the buffer where we store transitions
+    //r->train_iteration = 1;// the iteration of the update
+    //r->buffer_current_index = 0;// where we actually will store the next state
+    r->n_step_rewards = n_step_rewards;// n step reward for the td error
+    r->stop_epsilon_greedy = stop_epsilon_greedy;// when we reached stop epsilon greedy iteration from action taken iteration we don't use epsilon greedy anymore
+    r->lr_epoch_threshold = lr_epoch_threshold;//the learning rate epoch threshold to update the learning rate
+    //r->buffer_state_t = (float**)calloc(r->max_buffer_size,sizeof(float*));// allocation the buffer of states t
+    //r->buffer_state_t_1 = (float**)calloc(r->max_buffer_size,sizeof(float*));// allocation the buffer of states t + 1
+    //r->nonterminal_state_t_1 = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation tells us if state t+1 is terminal or not
+    //r->actions = (int*)calloc(r->max_buffer_size,sizeof(int));// allocation buffer of actions
+    //r->rewards = (float*)calloc(r->max_buffer_size,sizeof(float));// allocation buffer of rewards
+    //r->online_net = online_net;// the online net
+    //r->online_net_wlp = online_net_wlp;// the online net without learning parameters
+    //r->target_net = target_net;// the target net
+    //r->target_net_wlp = target_net_wlp;// the target net without learning parameters
+    r->diversity_driven_q_functions = diversity_driven_q_functions;// number of the last recorded q functions from our net or other nets
+    //r->diversity_driven_q_functions_counter = 0;// the index where we will store the next q function
+    //r->diversity_driven_q_functions_buffer = (float*)calloc(diversity_driven_q_functions*online_net->action_size,sizeof(float));// allocation the buffer of the last q functions
+    //r->diversity_driven_states = (float**)calloc(diversity_driven_q_functions,sizeof(float*));// allocation// the buffer of the last states of the last q functions
+    
+    r->diversity_driven_threshold = diversity_driven_threshold;// the threshold used to update alpha for the diversity driven exploration rule
+    r->alpha = 0.1;// the initial alpha value
+
+    //r->last_errors_dqn = NULL;
+    //r->last_errors_diversity_driven = NULL;
+    
+    //r->past_errors = past_errors;
+    //r->past_errors_counter = 0;
+    r->beta_priorization_increase = beta_priorization_increase;
+    r->diversity_driven_decay = diversity_driven_decay;
+    r->diversity_driven_minimum = diversity_driven_minimum;
+    r->diversity_driven_maximum = diversity_driven_maximum;
+    //r->reverse_error_indices = NULL;
+    
+    int i;
+    r->gamma = 1;
+    for(i = 0; i < n_step_rewards; i++){
+        r->gamma*=lambda_value;
+    }
+    
+    set_dueling_categorical_dqn_beta(r->online_net,beta1,beta2);
+    set_dueling_categorical_dqn_beta_adamod(r->online_net,beta3);
+    set_dueling_categorical_dqn_beta_adamod(r->target_net,beta3);
+    set_dueling_categorical_dqn_beta(r->target_net,beta1,beta2);
+    if(feed_forward_flag == EDGE_POPUP || training_mode == EDGE_POPUP){
+        set_dueling_categorical_dqn_training_edge_popup(r->online_net,k_percentage);
+        set_dueling_categorical_dqn_training_edge_popup(r->target_net,k_percentage);
+    }
+    else{
+        set_dueling_categorical_dqn_training_gd(r->online_net);
+        set_dueling_categorical_dqn_training_gd(r->target_net);
+    }
+    reset_dueling_categorical_dqn(r->online_net);
+    reset_dueling_categorical_dqn(r->target_net);
+    for(i = 0; i < threads; i++){
+        reset_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
+        reset_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
+    }
+    return r;
+}
+
+
 void free_rainbow(rainbow* r){
     if(r == NULL)
         return;
@@ -445,16 +1190,17 @@ void free_rainbow(rainbow* r){
     free(r->negative_batch);
     free(r->neutral_batch);
     free(r->uniform_sampling_indices);
+    free(r->lambdas);
     // cython could cause problem when dereferencing rainbow object as well as dueling categorical dqns
     // so the following lines for cython must be commented
-    free_dueling_categorical_dqn(r->online_net);
-    free_dueling_categorical_dqn(r->target_net);
-    for(i = 0; i < r->threads; i++){
-        free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
-        free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
-    }
-    free(r->online_net_wlp);
-    free(r->target_net_wlp);
+    //free_dueling_categorical_dqn(r->online_net);
+    //free_dueling_categorical_dqn(r->target_net);
+    //for(i = 0; i < r->threads; i++){
+    //    free_dueling_categorical_dqn_without_learning_parameters(r->online_net_wlp[i]);
+    //    free_dueling_categorical_dqn_without_learning_parameters(r->target_net_wlp[i]);
+    //}
+    //free(r->online_net_wlp);
+    //free(r->target_net_wlp);
     
     free(r->batch);
     free(r->reverse_batch);
@@ -503,10 +1249,10 @@ int get_action_rainbow(rainbow* r, float* state_t, int input_size, int free_stat
         return n;
     }
     else{
-        inference_dqn(r->online_net);
+        inference_dqn(r->online_net);// in case of dropout layers we drop the dropout
         compute_probability_distribution(state_t , input_size, r->online_net);
         int action = argmax(compute_q_functions(r->online_net),r->online_net->action_size);
-        train_dqn(r->online_net);
+        train_dqn(r->online_net);// in case of dropout we set again the dropout
         if(r->action_taken_iteration >= r->stop_epsilon_greedy){
             copy_array(r->online_net->q_functions,r->diversity_driven_q_functions_buffer+r->diversity_driven_q_functions_counter*r->online_net->action_size,r->online_net->action_size);
             free(r->diversity_driven_states[r->diversity_driven_q_functions_counter]);
@@ -964,17 +1710,29 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         r->temp_states_t[i] = r->buffer_state_t[r->batch[i]];
         float reward = 0;
         float lambda = 1;
+        int cycled_buffer = 0;// cycled buffer is needed because is possible that we have some states_t_1 with index < of states_t, this happens when the buffer is full and the old transitions has been replaced at the beginning of the buffer with new ones.
         for(j = 0; j < r->n_step_rewards; j++){
             index = (r->batch[i]+j)%r->max_buffer_size;
+            
+            if(!cycled_buffer && index < r->batch[i]+j)
+                cycled_buffer = 1;
+            
+            if(cycled_buffer)
+                if(r->buffer_current_index <= index)
+                    break;
+                    
+            if(r->batch[i] < r->buffer_current_index && r->batch[i]+j >= r->buffer_current_index)
+                break;
+            
             reward+=lambda*r->rewards[index];
+            r->temp_states_t_1[i] = r->buffer_state_t_1[index];
+            r->temp_nonterminal_state_t_1[i] = r->nonterminal_state_t_1[index];
+            
             if(!r->nonterminal_state_t_1[index]){
-                //printf("uzzioo\n");
-                r->temp_states_t_1[i] = r->buffer_state_t_1[index];
-                r->temp_nonterminal_state_t_1[i] = r->nonterminal_state_t_1[index];
                 break;
             }
-            //printf("lezz\n");
             lambda*=r->lambda_value;
+            r->lambdas[i] = lambda;
         }
         if(r->temp_states_t_1[i] == NULL){
             j--;
@@ -1000,13 +1758,13 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         int min = r->threads;
         if(r->batch_size-i < min)
             min = r->batch_size-i;
-        dueling_categorical_dqn_train_with_error(min,r->online_net,r->target_net,r->online_net_wlp,r->target_net_wlp,r->temp_states_t+i,r->temp_rewards+i,r->temp_actions+i,r->temp_states_t_1+i,r->temp_nonterminal_state_t_1+i,r->gamma,get_input_layer_size_dueling_categorical_dqn(r->online_net),r->new_errors+i,r->weighted_errors+i);
+        dueling_categorical_dqn_train_with_error(min,r->online_net,r->target_net,r->online_net_wlp,r->target_net_wlp,r->temp_states_t+i,r->temp_rewards+i,r->temp_actions+i,r->temp_states_t_1+i,r->temp_nonterminal_state_t_1+i,r->lambdas,get_input_layer_size_dueling_categorical_dqn(r->online_net),r->new_errors+i,r->weighted_errors+i);
         sum_dueling_categorical_dqn_partial_derivatives_multithread(r->online_net_wlp,r->online_net,min,0);// log n
         dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
         dueling_categorical_reset_without_learning_parameters_reset(r->target_net_wlp,min);
     }
     
-    // now dd error
+    // now diversity driven exploration error
     // uniform random sampling (we could maybe sample with ranked based priorization as the td sampling is done, maybe future implementation)
     float real_ret = 0;
     if(length >= r->diversity_driven_q_functions){
@@ -1027,19 +1785,11 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             shuffle_int_array(r->array_to_shuffle,r->diversity_driven_q_functions);
         
         if(flag){
-            
             for(i = 0; i < r->batch_size; i++){
                 r->temp_diversity_states_t[i] = r->diversity_driven_states[r->array_to_shuffle[i]];
-                r->qs[i] = &r->diversity_driven_q_functions_buffer[r->array_to_shuffle[i]];
+                r->qs[i] = &r->diversity_driven_q_functions_buffer[r->array_to_shuffle[i]*r->online_net->action_size];
             }
-            for(i = 0; i < r->batch_size; i+=r->threads){
-                int min = r->threads;
-                if(r->batch_size-i < min)
-                    min = r->batch_size-i;
-                ret+=dueling_categorical_dqn_train_kl(min,r->online_net,r->online_net_wlp,r->temp_diversity_states_t+i,r->qs+i,1,r->alpha,r->clipping_gradient_value);
-                sum_dueling_categorical_dqn_partial_derivatives_multithread(r->online_net_wlp,r->online_net,min,0);// log n
-                dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
-            }
+            ret = dueling_categorical_dqn_train_l1(r->batch_size, r->threads, r->online_net, r->online_net_wlp, r->temp_diversity_states_t, r->qs, 1,r->alpha, r->clipping_gradient_value);// l1-norm shows the best performance! suggestion init alpha = 0.1 dd_threshold = 0.05, dd_decay = 0
             ret/=r->batch_size;
             if(ret < 0)
                 ret = -ret;

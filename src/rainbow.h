@@ -43,5 +43,19 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal);
 void add_buffer_state_reward_sampling(rainbow* r, uint index);
 void update_buffer_state_reward_sampling(rainbow* r, uint index, float previous_reward);
 void update_exploration_probability(rainbow* r);
+rainbow* reset_rainbow(rainbow* r, int sampling_flag, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+                      uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
+                      float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
+                      float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
+                      float diversity_driven_threshold, float diversity_driven_decay, float diversity_driven_minimum, float diversity_driven_maximum, float beta_priorization_increase,
+                      dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
+                      dueling_categorical_dqn** target_net_wlp);
+rainbow* copy_rainbow(rainbow* rain, int sampling_flag, int gd_flag, int lr_decay_flag, int feed_forward_flag, int training_mode, int clipping_flag, int adaptive_clipping_flag, int batch_size,int threads, 
+                      uint64_t diversity_driven_q_functions, uint64_t epochs_to_copy_target, uint64_t max_buffer_size, uint64_t n_step_rewards, uint64_t stop_epsilon_greedy, uint64_t past_errors, uint64_t lr_epoch_threshold,
+                      float max_epsilon, float min_epsilon, float epsilon_decay, float epsilon, float alpha_priorization, float beta_priorization, float lambda_value,float gamma, float tau_copying, float beta1, float beta2,
+                      float beta3, float k_percentage, float clipping_gradient_value, float adaptive_clipping_gradient_value, float lr, float lr_minimum, float lr_maximum, float lr_decay, float momentum,
+                      float diversity_driven_threshold, float diversity_driven_decay, float diversity_driven_minimum, float diversity_driven_maximum, float beta_priorization_increase,
+                      dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, dueling_categorical_dqn** online_net_wlp,
+                      dueling_categorical_dqn** target_net_wlp);
 
 #endif

@@ -869,6 +869,7 @@ typedef struct rainbow{
     float** temp_states_t_1;
     float** temp_diversity_states_t;
     float** qs;
+    float* lambdas;
     int* temp_nonterminal_state_t_1;
     int* temp_actions;
     float* temp_rewards;
