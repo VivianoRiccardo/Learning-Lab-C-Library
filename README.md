@@ -116,6 +116,8 @@ https://www.cygwin.com/
 - Uniform and Reward sampling for rainbow training (17/03/2022)
 - Noisy nets for Fully-connected-layers (08/02/2023)
 - L1 distance for diversity driven exploration (05/04/2023) [set as default for rainbow dde]
+- Inverse Q-Learning (04/05/2023)
+- Policy Gradient with Entropy and Dde (04/05/2023)
 
 # Python Version
 
