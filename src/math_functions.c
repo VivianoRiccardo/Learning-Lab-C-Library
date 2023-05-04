@@ -49,13 +49,29 @@ float max_float(float x, float y) {
 float mean(float* v, int size){
     if(v == NULL)
         return 0;
-    float sum = 0;
+    double sum = 0;
     int i;
     for(i = 0; i < size; i++){
         sum+=v[i];
     }
-    return (float)sum/((float)(size));
+    return (float)(sum/((float)(size)));
 }
+
+
+float std(float* v, float mean, int size){
+    int i;
+    double sum = 0;
+    for(i = 0; i < size; i++){
+        float temp = float_abs(v[i]-mean);
+        sum += temp*temp;
+    }
+    return (float)(sum/((double)size));
+}
+
+double normal_cdf(double x) {
+    return 0.5 * (1 + erf(x / sqrt(2)));
+}
+
 double sum_over_input(float* inputs, int dimension){
     double sum = 0;
     int i;
@@ -64,6 +80,38 @@ double sum_over_input(float* inputs, int dimension){
     }
     
     return sum;
+}
+
+int* get_sorted_probability_vector(float* means, float* std, int size, int* index){
+    int i,j, n = size;
+    float* p = (float*)calloc(size*size,sizeof(float));
+    for(i = 0; i < size; i++){
+        for(j = i+1; j < size; j++){
+            float std_diff = sqrtf(std[i]*std[i] + std[j]*std[j]);
+            float mean_diff = means[i] - means[j];
+            float prob_greater = 1 - 0.5 * erf(mean_diff / (sqrtf(2) * std_diff));
+            if(prob_greater > ((float)(1)))
+                prob_greater-=1.0;
+            p[i*size+j] = prob_greater;
+            p[j*size+i] = 1 - p[i*size+j];
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n - 1; j++) {
+            if (j == i) continue;
+            if (p[j*n+i] < p[i*n+j]) {
+                // Swap delle probabilità
+                float temp = p[i*n+j];
+                p[i*n+j] = p[j*n+i];
+                p[j*n+i] = temp;
+                int temp_i = index[i];
+                index[i] = index[j];
+                index[j] = temp_i;
+            }
+        }
+    }
+    //merge_sort_for_probabilities(p,index,0,size-1, size);
+    free(p);
 }
 
 void copy_clipped_vector(float* vector, float* output,float maximum, float minimum, int dimension){
@@ -318,6 +366,26 @@ float cross_entropy(float y_hat, float y){
     
 }
 
+void derivative_inverse_q_function_array(float* current_q, float* next_q, float* output,float* action, float alpha1, float alpha2, float gamma, int size){
+    int i;
+    double y = 0;
+    double denominator = 1;
+    if(gamma > 0){
+        for(i = 0; i < size; i++){
+            y+=exp(next_q[i]/alpha1);
+        }
+        y = alpha1*log(y);
+    }
+    for(i = 0; i < size; i++){
+        if(action[i] > 0){
+            double temp = current_q[i] - y;
+            temp = temp*temp*temp;
+            output[i] = -1 - 2.0/((4.0*alpha2)*temp);
+        }
+    }    
+}
+
+
 void cross_entropy_array(float* y_hat, float* y, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
@@ -411,9 +479,9 @@ float huber_loss(float y_hat, float y, float threshold){
 float derivative_huber_loss(float y_hat, float y, float threshold){
     float v = float_abs(y_hat-y);
     if(v <= threshold)
-        return y_hat-y;
+        return y-y_hat;
     else
-        return threshold*(y_hat-y)/v;
+        return threshold*(y-y_hat)/v;
     
 }
 
@@ -1034,7 +1102,7 @@ float factorised_gaussian(){
 }
 
 void set_factorised_noise(int input, int output, float* noise, float* biases_noise){
-	
+    
     int i,j;
     for(i = 0; i < input; i++){
         float f_x = factorised_gaussian();

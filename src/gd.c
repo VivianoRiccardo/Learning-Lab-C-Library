@@ -88,9 +88,9 @@ void radam_algorithm(float* p,float* delta1, float* delta2, float dp, float lr, 
      float m_t_hat = (*delta1)/(1-bb1);
      long double p_t = p_inf-(long double)2*t*bb2/(1-bb2);
      if(p_t > RADAM_THRESHOLD){
-         float v_t_hat = sqrtf((*delta2)/(1-bb2));
-         float r_t = sqrtf(((p_t-4)*(p_t-2)*p_inf)/((p_inf-4)*(p_inf-2)*p_t));
-         (*p) -= lr*r_t*m_t_hat/v_t_hat;
+         float l_t = sqrtf(1.0-bb2)/(sqrtf((*delta2)) + EPSILON);
+         float r_t = sqrtf(((p_t-4.0)*(p_t-2.0)*p_inf)/((p_inf-4.0)*(p_inf-2.0)*p_t));
+         (*p) -= lr*r_t*m_t_hat*l_t;
      }
      
      else 

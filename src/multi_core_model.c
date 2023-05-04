@@ -371,6 +371,8 @@ void ff_error_bp_model_multicore_opt(model** m, model* m2, int depth, int rows, 
 }
 
 
+
+
 model* sum_models_partial_derivatives_multithread(model** batch_m, model* m, int n, int depth){
     if(depth == 0 && n <=3){
         sum_models_partial_derivatives(m,batch_m,n);

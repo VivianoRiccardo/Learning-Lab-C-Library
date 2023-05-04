@@ -92,5 +92,8 @@ void free_indices_cl(cl* f);
 void assign_vector_to_scores_cl(cl* f, float* vector);
 void set_null_scores_cl(cl* f);
 void set_null_indices_cl(cl* f);
+void reinitialize_weights_according_to_scores_cl_only_percentage(cl* f, float percentage);
+void memcopy_vector_to_indices_cl2(cl* f, int* vector);
+cl* reset_cl_only_for_ff(cl* f);
 
 #endif

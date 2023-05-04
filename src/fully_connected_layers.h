@@ -96,5 +96,8 @@ void assign_vector_to_scores(fcl* f, float* vector);
 void set_null_scores(fcl* f);
 void set_null_indices(fcl* f);
 void memcopy_indices_to_vector(fcl* f, int* vector);
+void reinitialize_weights_according_to_scores_fcl_only_percentage(fcl* f, float percentage);
+void memcopy_vector_to_indices2(fcl* f, int* vector);
+fcl* reset_fcl_only_for_ff(fcl* f);
 
 #endif

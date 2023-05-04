@@ -119,5 +119,11 @@ float mean(float* v, int size);
 void sum_dueling_categorical_dqn_partial_derivatives(dueling_categorical_dqn* m1, dueling_categorical_dqn* m2, dueling_categorical_dqn* m3);
 float factorised_gaussian();
 void set_factorised_noise(int input, int output, float* noise, float* biases_noise);
+float std(float* v, float mean, int size);
+double normal_cdf(double x);
+double calc_prob(double xi, double si, double max_xi);
+int* get_sorted_probability_vector(float* means, float* std, int size, int* index);
+void derivative_inverse_q_function_array(float* current_q, float* next_q, float* output,float* action, float alpha1, float alpha2, float gamma, int size);
+
 
 #endif

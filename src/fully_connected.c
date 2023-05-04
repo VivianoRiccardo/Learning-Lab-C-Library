@@ -87,7 +87,7 @@ void noisy_fully_connected_feed_forward(float* noise_biases, float* new_biases,f
     
     if(bias != NULL){
         for(j = 0; j < output_size; j++){
-			new_biases[j] = noisy_biases[j]*noise_biases[j]+bias[j];
+            new_biases[j] = noisy_biases[j]*noise_biases[j]+bias[j];
             for(i = 0; i < input_size; i++){
                 output[j] += input[i]*new_weights[j*input_size+i];
             }
@@ -249,6 +249,9 @@ void noisy_fully_connected_back_prop(float* noise_biases, float* new_biases,floa
         int i,j;
         for(j = 0; j < output_size; j++){
             for(i = 0; i < input_size; i++){
+				//printf("manz1: %f\n",weight_error[j*input_size+i]);
+				//printf("manz2: %f\n",output_error[j]);
+				//printf("manz3: %f\n",input[i]);
                 weight_error[j*input_size+i] += output_error[j]*input[i];
                 input_error[i] += output_error[j]*new_weights[j*input_size+i];
                 noisy_weights_error[j*input_size+i] += weight_error[j*input_size+i]*noise[j*input_size+i];

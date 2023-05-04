@@ -197,7 +197,7 @@ void set_generation_iter(neat* nes, int gen){
 }
 
 void set_max_population(neat* nes, int max_population){
-	nes->max_population = max_population;
+    nes->max_population = max_population;
 }
 
 int get_generation_iter(neat* nes){

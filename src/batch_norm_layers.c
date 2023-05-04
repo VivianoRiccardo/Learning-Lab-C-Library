@@ -543,17 +543,18 @@ bn* reset_bn_except_partial_derivatives(bn* b){
         set_vector_with_value(0,b->input_vectors[i],b->vector_dim);
         set_vector_with_value(0,b->temp_vectors[i],b->vector_dim);
         set_vector_with_value(0,b->outputs[i],b->vector_dim);
+        if(b->error2 != NULL)
         set_vector_with_value(0,b->error2[i],b->vector_dim);
+        if(b->temp1 != NULL)
         set_vector_with_value(0,b->temp1[i],b->vector_dim);
     }
-    
+    if(b->temp2 != NULL)
     set_vector_with_value(0,b->temp2,b->vector_dim);
     set_vector_with_value(0,b->mean,b->vector_dim);
     set_vector_with_value(0,b->var,b->vector_dim);
     
     
     return b;
-    
 }
 
 /* this function computes the size of the space allocated by the arrays of a batch normalized layer (more or less)
@@ -565,8 +566,8 @@ bn* reset_bn_except_partial_derivatives(bn* b){
  * 
  * */
 uint64_t size_of_bn(bn* b){
-	if (b == NULL)
-		return 0;
+    if (b == NULL)
+        return 0;
     uint64_t sum = 0;
     sum+= (b->batch_size*b->vector_dim*5);
     sum+= (b->vector_dim*13);
@@ -581,8 +582,8 @@ uint64_t size_of_bn(bn* b){
  * 
  * */
 uint64_t size_of_bn_without_learning_parameters(bn* b){
-	if(b == NULL)
-		return 0;
+    if(b == NULL)
+        return 0;
     uint64_t sum = 0;
     sum+= (b->batch_size*b->vector_dim*5);
     sum+= (b->vector_dim*5);

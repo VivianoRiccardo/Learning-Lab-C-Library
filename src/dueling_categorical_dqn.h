@@ -108,6 +108,19 @@ void set_null_scores_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
 void set_null_indices_dueling_categorical_dqn(dueling_categorical_dqn* dqn);
 float compute_l1_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
 float compute_l1_dueling_categorical_dqn(dueling_categorical_dqn* online_net, float* state_t, float* q_functions,  float weight, float alpha, float clip);
-
+void reinitialize_weights_according_to_scores_dueling_categorical_dqn_only_percentage(dueling_categorical_dqn* dqn, float percentage);
+uint64_t get_array_size_scores_index_dueling_categorical_dqn(dueling_categorical_dqn* dqn, uint64_t s);
+void memcopy_vector_to_indices_dueling_categorical_dqn2(dueling_categorical_dqn* dqn, int* vector);
+void compute_probability_distribution_opt(float* input , int input_size, dueling_categorical_dqn* dqn, dueling_categorical_dqn* dqn_wlp);
+void compute_probability_distribution_opt_qr_dqn(float* input , int input_size, dueling_categorical_dqn* dqn, dueling_categorical_dqn* dqn_wlp);
+float* compute_q_functions_qr_dqn(dueling_categorical_dqn* dqn);
+float* get_loss_for_qr_dqn(dueling_categorical_dqn* online_net, dueling_categorical_dqn* target_net, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1);
+float* get_loss_for_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, dueling_categorical_dqn* target_net, dueling_categorical_dqn* target_net_wlp, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1);
+float* get_loss_for_qr_dqn_opt_with_error(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, dueling_categorical_dqn* target_net, dueling_categorical_dqn* target_net_wlp, float* state_t, int action_t, float reward_t, float* state_t_1, float lambda_value, int state_sizes, int nonterminal_s_t_1, float* new_error, float weight_error);
+void set_is_qr(dueling_categorical_dqn* dqn, int is_qr);
+void compute_probability_distribution_qr_dqn(float* input , int input_size, dueling_categorical_dqn* dqn);
+float* bp_qr_dqn_opt(float* input, int input_size, float* error, dueling_categorical_dqn* dqn, dueling_categorical_dqn* dqn_wlp);
+float compute_l1_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+void reset_dueling_categorical_dqn_only_for_ff(dueling_categorical_dqn* dqn);
 
 #endif

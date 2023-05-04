@@ -413,55 +413,55 @@ void free_model_without_arrays(model* m){
 
 
 void free_scores_model(model* m){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		free_scores(m->fcls[i]);
-	}
-	for(i = 0; i < m->n_cl; i++){
-		free_scores_cl(m->cls[i]);
-	}
-	for(i = 0; i < m->n_fcl; i++){
-		free_scores_rl(m->rls[i]);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        free_scores(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        free_scores_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        free_scores_rl(m->rls[i]);
+    }
 }
 
 void free_indices_model(model* m){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		free_indices(m->fcls[i]);
-	}
-	for(i = 0; i < m->n_cl; i++){
-		free_indices_cl(m->cls[i]);
-	}
-	for(i = 0; i < m->n_fcl; i++){
-		free_indices_rl(m->rls[i]);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        free_indices(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        free_indices_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        free_indices_rl(m->rls[i]);
+    }
 }
 
 void set_null_scores_model(model* m){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		set_null_scores(m->fcls[i]);
-	}
-	for(i = 0; i < m->n_cl; i++){
-		set_null_scores_cl(m->cls[i]);
-	}
-	for(i = 0; i < m->n_fcl; i++){
-		set_null_scores_rl(m->rls[i]);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        set_null_scores(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        set_null_scores_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        set_null_scores_rl(m->rls[i]);
+    }
 }
 
 void set_null_indices_model(model* m){
-	int i;
-	for(i = 0; i < m->n_fcl; i++){
-		set_null_indices(m->fcls[i]);
-	}
-	for(i = 0; i < m->n_cl; i++){
-		set_null_indices_cl(m->cls[i]);
-	}
-	for(i = 0; i < m->n_fcl; i++){
-		set_null_indices_rl(m->rls[i]);
-	}
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        set_null_indices(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        set_null_indices_cl(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        set_null_indices_rl(m->rls[i]);
+    }
 }
 
 float* get_output_layer_from_model(model* m){
@@ -675,6 +675,30 @@ model* reset_model(model* m){
     }
     for(i = 0; i < m->n_rl; i++){
         reset_rl(m->rls[i]);
+    }
+    
+    if(m->error != NULL){
+        for(i = 0; i < m->output_dimension; i++){
+            m->error[i] = 0;
+        }
+    }
+    return m;
+}
+/* This function resets a model
+ * returns a model equal to the one as input but with all resetted except for weights and biases
+ * */
+model* reset_model_only_for_ff(model* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reset_fcl_only_for_ff(m->fcls[i]);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reset_cl_only_for_ff(m->cls[i]);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reset_rl_only_for_ff(m->rls[i]);
     }
     
     if(m->error != NULL){
@@ -8803,6 +8827,7 @@ uint64_t get_array_size_scores_model(model* f){
     if(f == NULL)
         return 0;
     uint64_t sum = 0,i;
+
     for(i = 0; i < f->n_fcl; i++){
         sum+=get_array_size_scores_fcl(f->fcls[i]);
     }
@@ -8814,7 +8839,6 @@ uint64_t get_array_size_scores_model(model* f){
     for(i = 0; i < f->n_rl; i++){
         sum+=get_array_size_scores_rl(f->rls[i]);
     }
-    
     return sum;
 }
 /* this function paste the weights and biases in a single vector
@@ -8907,8 +8931,35 @@ void memcopy_vector_to_scores_model(model* f, float* vector){
  * 
  * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
  * */
+void memcopy_vector_to_indices_model2(model* f, int* vector){
+    uint64_t sum = 0,i;
+    for(i = 0; i < f->n_fcl; i++){
+        memcopy_vector_to_indices2(f->fcls[i],&vector[sum]);
+        sum += get_array_size_scores_fcl(f->fcls[i]);
+    }
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_indices_cl2(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+    for(i = 0; i < f->n_rl; i++){
+        memcopy_vector_to_indices_rl2(f->rls[i],&vector[sum]);
+        sum += get_array_size_scores_rl(f->rls[i]);
+    }
+}
+
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ model* f:= the model
+ *                 @ float* vector:= the vector where is copyed everything
+ * 
+ * Pay attention: doesn't take in consideration of batch normalization layers inside fully connected ones
+ * */
 void assign_vector_to_scores_model(model* f, float* vector){
     uint64_t sum = 0,i;
+
     for(i = 0; i < f->n_fcl; i++){
         assign_vector_to_scores(f->fcls[i],&vector[sum]);
         sum += get_array_size_scores_fcl(f->fcls[i]);
@@ -9140,6 +9191,100 @@ void mse_model_error(model* m, float* output){
     derivative_mse_array(m->output_layer,output,m->error,m->output_dimension);     
 }
 
+/* Inverse Q-Leargnin y = [y1,y2,y3,...,yn] where y = next_q (set to gamma to 0 in case the trajectory has done)
+ * Error = -(Q_Current - V_next) + V_current - y + 1/(4*threshold2(Q_current - V_next)**2)
+ * alpha is updated to set to 0 where the action has not been taken and 1 where is taken
+ * threshold1 is used for temperature for V_next = gamma*threshold1*ln(sum(e^(Q_i/temperature)))
+ * threshold2 is used for the thirs part of the equation
+ * gamma is used for the V_next computation
+ * the error should be 
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void inverse_q_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in cross entropy model error something is null\n");
+        exit(1);
+    }
+    
+    derivative_inverse_q_function_array(m->output_layer,output,m->error,m->error_alpha, m->error_threshold1, m->error_threshold2, m->error_gamma, m->output_dimension);     
+}
+
+/* 
+ * Alpha should be the rewards, threshold1 is the discount factor for entropy, threshold2 is the discount factor for diversity driven exploration
+ * gamma is the temperature of the softmax, output are the outputs from other moodels (they are not policy yet, softmax must be computed)
+ * 
+ * Inputs:
+ * 
+ *             @ model* m:= the model
+ *             @ float* output:= the output (dimension:m->output_dimension)
+ * 
+ * */
+void policy_gradient_model_error(model* m, float* output){
+    if(m == NULL || m->error == NULL){
+        fprintf(stderr,"Error: in cross entropy model error something is null\n");
+        exit(1);
+    }
+    
+    float* error = (float*)calloc(m->output_dimension,sizeof(float));
+    
+    float* temp = (float*)calloc(m->output_dimension,sizeof(float));
+    float* q = (float*)calloc(m->output_dimension,sizeof(float));
+    float* temp2 = NULL;
+    float* q2 = NULL;
+    if(m->error_threshold2 > 0){
+        temp2 = (float*)calloc(m->output_dimension,sizeof(float));
+        q2 = (float*)calloc(m->output_dimension,sizeof(float));
+        mul_value(output,1.0/m->error_gamma,temp2,m->output_dimension);
+        softmax(temp2,q2,m->output_dimension);
+    }
+    
+    mul_value(m->output_layer,1.0/m->error_gamma,temp,m->output_dimension);
+    softmax(temp,q,m->output_dimension);
+    
+    
+    int i;
+    for(i = 0; i < m->output_dimension; i++){// policy gradient 
+        error[i] = -1/temp[i]*m->error_alpha[i];
+    }
+    
+    if(m->error_threshold1 > 0){// entropy
+        if(q[i] == 0)
+            error[i]-=m->error_threshold1*(1.0-999);
+        else
+            error[i]-=m->error_threshold1*(1.0+log(q[i]));
+    }
+    
+    double sum = 0;
+    if(m->error_threshold2 > 0){// diversity driven exploration with l2 distance
+        for(i = 0; i < m->output_dimension; i++){
+            float t = q2[i]-q[i];
+            sum+=t*t;
+        }
+        sum = sqrtf(sum);
+        if(sum > 0){
+            for(i = 0; i < m->output_dimension; i++){
+                error[i] -= m->error_threshold2*(q[i]-q2[i])/sum;
+            }
+        }
+    }
+    
+    derivative_softmax(m->error, q, error, m->output_dimension);
+    mul_value(m->error, 1.0/m->error_gamma, m->error, m->output_dimension);
+    
+    free(error);
+    free(temp);
+    free(q);
+    free(temp2);
+    free(q2);
+    
+    
+}
+
 /* Given a model and an output, this function computes the cross entropy derivative in m->error_vector
  * 
  * Inputs:
@@ -9267,6 +9412,10 @@ void compute_model_error(model* m, float* output){
         kl_model_error(m,output);
     else if(m->error_flag == ENTROPY_LOSS)
         entropy_model_error(m,output);            
+    else if(m->error_flag == INVERSE_Q_LEARNING)
+        inverse_q_model_error(m,output);            
+    else if(m->error_flag == POLICY_GRADIENT)
+        policy_gradient_model_error(m,output);            
 }
 
 
@@ -9584,6 +9733,22 @@ void reinitialize_weights_according_to_scores_model(model* m, float percentage, 
     }
     for(i = 0; i < m->n_rl; i++){
         reinitialize_weights_according_to_scores_rl(m->rls[i],percentage,goodness);
+    }
+}
+
+/* look at reinitialize_scores_cl function in convolutional_layers.c formore details*/
+void reinitialize_weights_according_to_scores_model_only_percentage(model* m, float percentage){
+    if(m == NULL || percentage > 1 || percentage < 0)
+        return;
+    int i;
+    for(i = 0; i < m->n_fcl; i++){
+        reinitialize_weights_according_to_scores_fcl_only_percentage(m->fcls[i],percentage);
+    }
+    for(i = 0; i < m->n_cl; i++){
+        reinitialize_weights_according_to_scores_cl_only_percentage(m->cls[i],percentage);
+    }
+    for(i = 0; i < m->n_rl; i++){
+        reinitialize_weights_according_to_scores_rl_only_percentage(m->rls[i],percentage);
     }
 }
 

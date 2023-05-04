@@ -74,14 +74,14 @@ void set_dropout_mask(int size, float* mask, float threshold){
  * 
  * Inputs:
  * 
- * 		@float* array:= the array that will be filled
- * 		@int size:= the size of the array
+ *         @float* array:= the array that will be filled
+ *         @int size:= the size of the array
  * */
 void set_array_random_normal(float* array, int size){
-	int i;
-	for(i = 0; i < size; i++){
-		array[i] = random_normal();
-	}
+    int i;
+    for(i = 0; i < size; i++){
+        array[i] = random_normal();
+    }
 }
 
 /* This function add the l2regularization noise to a single weight derivative
@@ -663,6 +663,8 @@ void copy_char_array(char* input, char* output, int size){
  * 
  * */
 void free_matrix(void** m, int n){
+    if(m == NULL)
+        return;
     int i;
     for(i = 0; i < n; i++){
         if(m[i] != NULL)
@@ -1462,3 +1464,204 @@ void convert_communication_data(void* ptr, uint64_t size, uint64_t len){
     if(!is_little_endian())
         swap_array_bytes_order(ptr,size,len);
 }
+
+
+void merge_for_probabilities(float* p, int* index, int left, int middle, int right, int n) {
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+
+    // Copia i dati negli array temporanei
+    float L[n1], R[n2];
+    int L_index[n1], R_index[n2];
+    for (i = 0; i < n1; i++) {
+        L[i] = p[(left + i) * n + middle + i];
+        L_index[i] = index[left + i];
+    }
+    for (j = 0; j < n2; j++) {
+        R[j] = p[(middle + 1 + j) * n + right + j];
+        R_index[j] = index[middle + 1 + j];
+    }
+
+    // Unione delle due metà ordinate
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] < R[j]) {
+            p[k * n + k + middle + j + 1] = L[i];
+            index[k] = L_index[i];
+            i++;
+        } else {
+            p[(k + j + 1) * n + right] = R[j];
+            index[k] = R_index[j];
+            j++;
+        }
+        k++;
+    }
+
+    // Copia gli elementi rimanenti della metà sinistra
+    while (i < n1) {
+        p[k * n + k + middle + j + 1] = L[i];
+        index[k] = L_index[i];
+        i++;
+        k++;
+    }
+
+    // Copia gli elementi rimanenti della metà destra
+    while (j < n2) {
+        p[(k + j + 1) * n + right] = R[j];
+        index[k] = R_index[j];
+        j++;
+        k++;
+    }
+}
+
+void merge_sort_for_probabilities(float* p, int* index, int left, int right, int n) {
+    if (left < right) {
+        int middle = left + (right - left) / 2;
+        merge_sort_for_probabilities(p, index, left, middle, n);
+        merge_sort_for_probabilities(p, index, middle + 1, right, n);
+        merge_for_probabilities(p, index, left, middle, right, n);
+    }
+}
+
+void readapt_scores(int** indices, int* index, int size_1, int size_2, dueling_categorical_dqn* dqn){
+    int i,j;
+    float* means = (float*)calloc(size_2,sizeof(float));
+    float* std = (float*)calloc(size_2,sizeof(float));
+    uint64_t last_sum, sum = 0;
+    // go with means
+    for(i = 0; i < size_2; i++){
+        for(j = 0; j < size_1; j++){
+            means[i]+=((float)indices[j][i]);
+        }
+    }
+    
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        for(i = last_sum; i < sum; i++){
+            means[i]/=(double)(sum-last_sum);
+        }
+    }while(last_sum != sum);
+    
+    // go with std
+    for(i = 0; i < size_2; i++){
+        for(j = 0; j < size_1; j++){
+            float temp = (((float)indices[j][i])-means[i]);
+            temp*=temp;
+            std[i]+=temp;
+        }
+    }
+    sum = 0;
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        for(i = last_sum; i < sum; i++){
+            index[i] = i-last_sum;
+            std[i]/=(double)(sum-last_sum);
+        }
+        if(last_sum != sum){
+            get_sorted_probability_vector(means+last_sum, std+last_sum, sum-last_sum, index+last_sum);
+        }
+    }while(last_sum != sum);
+    
+    
+    
+    free(means);
+    free(std);
+}
+
+void readapt_scores_float(float** indices, int* index, int size_1, int size_2, dueling_categorical_dqn* dqn){
+    int i,j;
+    float* means = (float*)calloc(size_2,sizeof(float));
+    float* std = (float*)calloc(size_2,sizeof(float));
+    uint64_t last_sum, sum = 0;
+    // go with means
+    for(i = 0; i < size_2; i++){
+        for(j = 0; j < size_1; j++){
+            means[i]+=((float)indices[j][i]);
+        }
+    }
+    
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        for(i = last_sum; i < sum; i++){
+            means[i]/=(double)(sum-last_sum);
+        }
+    }while(last_sum != sum);
+        
+    // go with std
+    for(i = 0; i < size_2; i++){
+        for(j = 0; j < size_1; j++){
+            float temp = (((float)indices[j][i])-means[i]);
+            temp*=temp;
+            std[i]+=temp;
+        }
+    }
+    sum = 0;
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        for(i = last_sum; i < sum; i++){
+            index[i] = i-last_sum;
+            std[i]/=(double)(sum-last_sum);
+        }
+        if(last_sum != sum){
+            get_sorted_probability_vector(means+last_sum, std+last_sum, sum-last_sum, index+last_sum);
+        }
+    }while(last_sum != sum);
+    
+    
+    
+    free(means);
+    free(std);
+}
+
+// increasing order
+void set_float_vector_to_int_vector(float* v1, int* v2, int size, float step){
+    int i;
+    for(i = 0; i < size; i++){
+        v1[v2[i]] = (float)((i)*step);
+    }
+}
+
+void scores_and_indices_readapter(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn){
+    readapt_scores(indices, indices[0], size_1, size_2, dqn);
+    uint64_t last_sum, sum = 0;
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        set_float_vector_to_int_vector(scores[0]+last_sum, indices[0]+last_sum, sum-last_sum,step);
+    }while(last_sum != sum);
+    int i;
+    for(i = 1; i < size_1; i++){
+        copy_array(scores[0], scores[i],size_2);
+        copy_int_array(indices[0], indices[i],size_2);
+    }
+    return;
+
+
+}
+
+void scores_and_indices_readapter_float(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn){
+    readapt_scores_float(scores, indices[0], size_1, size_2, dqn);
+    uint64_t last_sum, sum = 0;
+    do{
+        last_sum = sum;
+        sum=get_array_size_scores_index_dueling_categorical_dqn(dqn, sum);
+        set_float_vector_to_int_vector(scores[0]+last_sum, indices[0]+last_sum, sum-last_sum,step);
+    }while(last_sum != sum);
+    int i;
+    for(i = 1; i < size_1; i++){
+        copy_array(scores[0], scores[i],size_2);
+        copy_int_array(indices[0], indices[i],size_2);
+    }
+    return;
+
+
+}
+
+

@@ -133,5 +133,10 @@ void free_indices_model(model* m);
 void assign_vector_to_scores_model(model* f, float* vector);
 void set_null_scores_model(model* m);
 void set_null_indices_model(model* m);
+void reinitialize_weights_according_to_scores_model_only_percentage(model* m, float percentage);
+void memcopy_vector_to_indices_model2(model* f, int* vector);
+void inverse_q_model_error(model* m, float* output);
+void policy_gradient_model_error(model* m, float* output);
+model* reset_model_only_for_ff(model* m);
 
 #endif

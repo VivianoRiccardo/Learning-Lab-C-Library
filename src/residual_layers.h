@@ -86,5 +86,9 @@ void free_indices_rl(rl* r);
 void assign_vector_to_scores_rl(rl* f, float* vector);
 void set_null_scores_rl(rl* r);
 void set_null_indices_rl(rl* r);
+void reinitialize_weights_according_to_scores_rl_only_percentage(rl* f, float percentage);
+void memcopy_vector_to_indices_rl2(rl* f, int* vector);
+void make_the_rl_only_for_ff(rl* r);
+rl* reset_rl_only_for_ff(rl* f);
 
 #endif

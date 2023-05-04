@@ -100,39 +100,39 @@ void free_residual_without_arrays(rl* r){
 }
 
 void free_scores_rl(rl* r){
-	if(r == NULL)
-		return;
-	int i;
-	for(i = 0; i < r->n_cl; i++){
-		free_scores_cl(r->cls[i]);
-	}
+    if(r == NULL)
+        return;
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        free_scores_cl(r->cls[i]);
+    }
 }
 
 void free_indices_rl(rl* r){
-	if(r == NULL)
-		return;
-	int i;
-	for(i = 0; i < r->n_cl; i++){
-		free_indices_cl(r->cls[i]);
-	}
+    if(r == NULL)
+        return;
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        free_indices_cl(r->cls[i]);
+    }
 }
 
 void set_null_scores_rl(rl* r){
-	if(r == NULL)
-		return;
-	int i;
-	for(i = 0; i < r->n_cl; i++){
-		set_null_scores_cl(r->cls[i]);
-	}
+    if(r == NULL)
+        return;
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        set_null_scores_cl(r->cls[i]);
+    }
 }
 
 void set_null_indices_rl(rl* r){
-	if(r == NULL)
-		return;
-	int i;
-	for(i = 0; i < r->n_cl; i++){
-		set_null_indices_cl(r->cls[i]);
-	}
+    if(r == NULL)
+        return;
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        set_null_indices_cl(r->cls[i]);
+    }
 }
 
 
@@ -350,6 +350,30 @@ rl* reset_rl(rl* f){
     }
     
     reset_cl_without_learning_parameters(f->cl_output);
+
+    return f;
+}
+/* this function reset all the arrays of a residual layer
+ * used during the feed forward and backpropagation
+ * You have a rl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * Input:
+ * 
+ *             @ rl* f:= a rl* f layer
+ * 
+ * */
+rl* reset_rl_only_for_ff(rl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reset_cl_only_for_ff(f->cls[i]);
+    }
+    
+    reset_cl_only_for_ff(f->cl_output);
 
     return f;
 }
@@ -673,6 +697,13 @@ uint64_t get_array_size_weights_rl(rl* f){
     
     return sum;
 }
+
+void make_the_rl_only_for_ff(rl* r){
+	int i;
+	for(i = 0; i < r->n_cl; i++){
+		make_the_cl_only_for_ff(r->cls[i]);
+	}
+}
 /* this function paste the weights and biases in a single vector
  * 
  * Inputs:
@@ -723,6 +754,23 @@ void memcopy_vector_to_scores_rl(rl* f, float* vector){
     int sum = 0,i;
     for(i = 0; i < f->n_cl; i++){
         memcopy_vector_to_scores_cl(f->cls[i],&vector[sum]);
+        sum += get_array_size_scores_cl(f->cls[i]);
+    }
+}
+/* this function paste the weights and biases in a single vector
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ rl* f:= the residual layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices_rl2(rl* f, int* vector){
+    if(f == NULL || vector == NULL)
+        return;
+    int sum = 0,i;
+    for(i = 0; i < f->n_cl; i++){
+        memcopy_vector_to_indices_cl2(f->cls[i],&vector[sum]);
         sum += get_array_size_scores_cl(f->cls[i]);
     }
 }
@@ -1010,6 +1058,19 @@ void reinitialize_weights_according_to_scores_rl(rl* f, float percentage, float 
     int i;
     for(i = 0; i < f->n_cl; i++){
         reinitialize_weights_according_to_scores_cl(f->cls[i],percentage,goodness);
+    }
+}
+
+/* this function reinitialize the worst weights inside each cl layer
+ * layer inside the residual one look at reinitialize_scores_cl function in convolutional_layers.c
+ * for more details
+ * */
+void reinitialize_weights_according_to_scores_rl_only_percentage(rl* f, float percentage){
+    if(f == NULL)
+        return;
+    int i;
+    for(i = 0; i < f->n_cl; i++){
+        reinitialize_weights_according_to_scores_cl_only_percentage(f->cls[i],percentage);
     }
 }
 

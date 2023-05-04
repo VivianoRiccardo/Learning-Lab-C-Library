@@ -1249,9 +1249,16 @@ int get_action_rainbow(rainbow* r, float* state_t, int input_size, int free_stat
         return n;
     }
     else{
+        int action;
         inference_dqn(r->online_net);// in case of dropout layers we drop the dropout
-        compute_probability_distribution(state_t , input_size, r->online_net);
-        int action = argmax(compute_q_functions(r->online_net),r->online_net->action_size);
+        if(!r->online_net->is_qr){
+            compute_probability_distribution(state_t , input_size, r->online_net);
+            action = argmax(compute_q_functions(r->online_net),r->online_net->action_size);
+        }
+        else{
+            compute_probability_distribution_qr_dqn(state_t , input_size, r->online_net);
+            action = argmax(compute_q_functions_qr_dqn(r->online_net),r->online_net->action_size);
+        }
         train_dqn(r->online_net);// in case of dropout we set again the dropout
         if(r->action_taken_iteration >= r->stop_epsilon_greedy){
             copy_array(r->online_net->q_functions,r->diversity_driven_q_functions_buffer+r->diversity_driven_q_functions_counter*r->online_net->action_size,r->online_net->action_size);
@@ -1265,7 +1272,7 @@ int get_action_rainbow(rainbow* r, float* state_t, int input_size, int free_stat
             free(state_t);
             
         
-        reset_dueling_categorical_dqn(r->online_net);
+        reset_dueling_categorical_dqn_only_for_ff(r->online_net);
         
         return action;
     }
@@ -1534,7 +1541,6 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
     r->rewards[r->buffer_current_index] = reward;
     r->actions[r->buffer_current_index] = action;
     r->nonterminal_state_t_1[r->buffer_current_index] = nonterminal_s_t_1;
-    
     int i;
     /*
     printf("c code\n");
@@ -1550,7 +1556,6 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
     printf("%f\n",reward);
     printf("%d\n",nonterminal_s_t_1);
     */
-    
     if(r->sampling_flag == RANKED_SAMPLING){
         if(was_null)
             add_buffer_state(r, r->buffer_current_index);
@@ -1558,8 +1563,8 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
         else
             update_buffer_state(r, r->reverse_error_indices[r->buffer_current_index], r->error_priorization[r->error_indices[0]]);
     }
-    
     else if(r->sampling_flag == REWARD_SAMPLING){
+        
         //printf("counter: %d\n",r->buffer_current_index);
         if(was_null)
             add_buffer_state_reward_sampling(r, r->buffer_current_index);
@@ -1567,18 +1572,17 @@ void add_experience(rainbow* r, float* state_t, float* state_t_1, int action, fl
         else
             update_buffer_state_reward_sampling(r, r->buffer_current_index, previous_reward);
     }
-    
     else if(was_null && r->sampling_flag == UNIFORM_SAMPLING){
-        r->uniform_sampling_indices[r->buffer_current_index] = r->buffer_current_index;
+        if(was_null)
+            r->uniform_sampling_indices[r->buffer_current_index] = r->buffer_current_index;
     }
-    
   
     r->buffer_current_index++;
     r->buffer_current_index = r->buffer_current_index%r->max_buffer_size;
 }
 
 void train_rainbow(rainbow* r, int last_t_1_was_terminal){
-    // only after each episode we train
+    // lat_t_1_was_terminal is just a flag that tells us ok train
     if(!last_t_1_was_terminal)
         return;
     // checking the buffer current size    
@@ -1588,7 +1592,7 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
     // if the buffer current size is less then the batch size we don't train yet
     if(length < r->batch_size)
         return;
-    // prioritized sampling (ranked based for simplicity)
+    // prioritized sampling (ranked based for simplicity of implementation)
     uint i,j,index;
     double over_sum = r->sum_error_priorization_buffer;
     if(r->sampling_flag == RANKED_SAMPLING){
@@ -1602,6 +1606,7 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             }
         }
     }
+    // reward sampling gives the priority to probability of got rewards splitting the negative/positive/neutral rewards
     if(r->sampling_flag == REWARD_SAMPLING){
         int positive_rewards =0;
         int negative_rewards = 0;
@@ -1697,8 +1702,9 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
             }
         }
     }
+    // uniform sampling just shuffle
     else if(r->sampling_flag == UNIFORM_SAMPLING){
-        shuffle_int_array_until_length(r->uniform_sampling_indices,length,r->batch_size);
+        shuffle_int_array(r->uniform_sampling_indices,length);
         for(i = 0; i < r->batch_size; i++){
             r->batch[i] = r->uniform_sampling_indices[i];
         }
@@ -1761,7 +1767,7 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
         dueling_categorical_dqn_train_with_error(min,r->online_net,r->target_net,r->online_net_wlp,r->target_net_wlp,r->temp_states_t+i,r->temp_rewards+i,r->temp_actions+i,r->temp_states_t_1+i,r->temp_nonterminal_state_t_1+i,r->lambdas,get_input_layer_size_dueling_categorical_dqn(r->online_net),r->new_errors+i,r->weighted_errors+i);
         sum_dueling_categorical_dqn_partial_derivatives_multithread(r->online_net_wlp,r->online_net,min,0);// log n
         dueling_categorical_reset_without_learning_parameters_reset(r->online_net_wlp,min);
-        dueling_categorical_reset_without_learning_parameters_reset(r->target_net_wlp,min);
+        dueling_categorical_reset_without_learning_parameters_reset(r->target_net_wlp,min);// set reset for only feed forward
     }
     
     // now diversity driven exploration error
@@ -1830,6 +1836,7 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
                 update_buffer_state(r,r->reverse_batch[i],err);
             }
         }
+        set_vector_with_value(0,r->new_errors,r->batch_size);
         r->beta_priorization*=exp(r->beta_priorization_increase);
         if(r->beta_priorization > 1)
             r->beta_priorization = 1;

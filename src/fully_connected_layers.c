@@ -1339,20 +1339,25 @@ fcl* reset_fcl(fcl* f){
         return NULL;
     int i;
     int size = f->input*f->output;
-    if(exists_params_fcl(f))
-    set_vector_with_value(0,f->pre_activation,f->output);
-    if(exists_activation_fcl(f))
-    set_vector_with_value(0,f->post_activation,f->output);
-    if(exists_normalization_fcl(f))
-    set_vector_with_value(0,f->post_normalization,f->output);
-    if(exists_d_params_fcl(f))
-    set_vector_with_value(0,f->d_biases,f->output);
+    if(exists_params_fcl(f)){
+    set_vector_with_value(0,f->pre_activation,f->output);}
+    if(exists_activation_fcl(f)){
+    set_vector_with_value(0,f->post_activation,f->output);}
+    if(exists_normalization_fcl(f)){
+    set_vector_with_value(0,f->post_normalization,f->output);}
+    if(exists_d_params_fcl(f)){
+    set_vector_with_value(0,f->d_biases,f->output);}
     if(exists_dropout_stuff_fcl(f)){
-        set_vector_with_value(1,f->dropout_mask,f->output);
-        set_vector_with_value(1,f->dropout_temp,f->output);
+        if(f->dropout_mask != NULL){
+            set_vector_with_value(1,f->dropout_mask,f->output);
+        }
+        if(f->dropout_temp != NULL){
+            set_vector_with_value(1,f->dropout_temp,f->output);
+        }
     }
     if(is_noisy(f)){// new
-        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        if(f->noise != NULL && f->noise_biases != NULL)
+            set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
         set_vector_with_value(0,f->temp_weights,size);// new
         set_vector_with_value(0,f->temp_biases,f->output);// new
     }// new
@@ -1363,8 +1368,9 @@ fcl* reset_fcl(fcl* f){
     if(exists_d_params_fcl(f)){
         set_vector_with_value(0,f->d_weights,size);
         if(is_noisy(f)){// new
-            set_vector_with_value(0,f->d_noisy_weights,size);// new
-            set_vector_with_value(0,f->d_noisy_biases,f->output);// new
+            if(f->d_noisy_weights != NULL && f->d_noisy_biases != NULL)
+                set_vector_with_value(0,f->d_noisy_weights,size);// new
+                set_vector_with_value(0,f->d_noisy_biases,f->output);// new
         }// new
     }
     if(f->training_mode == EDGE_POPUP){
@@ -1376,6 +1382,48 @@ fcl* reset_fcl(fcl* f){
         free(f->active_output_neurons);
         f->active_output_neurons = get_used_outputs(f,NULL,FCLS,f->output);
     }
+    
+    if(f->normalization_flag == LAYER_NORMALIZATION)
+        reset_bn(f->layer_norm);
+    return f;
+}
+/* this function resets all the arrays of a fully-connected layer
+ * used during the feed forward and backpropagation
+ * You have a fcl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * but the weights and D1 and D2 don't change
+ * 
+ * 
+ * Input:
+ * 
+ *             @ fcl* f:= a fcl* f layer
+ * 
+ * */
+fcl* reset_fcl_only_for_ff(fcl* f){
+    if(f == NULL)
+        return NULL;
+    int i;
+    int size = f->input*f->output;
+    if(exists_params_fcl(f)){
+    set_vector_with_value(0,f->pre_activation,f->output);}
+    if(exists_activation_fcl(f)){
+    set_vector_with_value(0,f->post_activation,f->output);}
+    if(exists_normalization_fcl(f)){
+    set_vector_with_value(0,f->post_normalization,f->output);}
+    if(exists_dropout_stuff_fcl(f)){
+        if(f->dropout_mask != NULL){
+            set_vector_with_value(1,f->dropout_mask,f->output);
+        }
+        if(f->dropout_temp != NULL){
+            set_vector_with_value(1,f->dropout_temp,f->output);
+        }
+    }
+    if(is_noisy(f)){// new
+        if(f->noise != NULL && f->noise_biases != NULL)
+            set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        set_vector_with_value(0,f->temp_weights,size);// new
+        set_vector_with_value(0,f->temp_biases,f->output);// new
+    }// new
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
         reset_bn(f->layer_norm);
@@ -1408,11 +1456,14 @@ fcl* reset_fcl_without_learning_parameters(fcl* f){
     if(exists_d_params_fcl(f))
     set_vector_with_value(0,f->d_biases,f->output);
     if(exists_dropout_stuff_fcl(f)){
-        set_vector_with_value(1,f->dropout_mask,f->output);
-        set_vector_with_value(1,f->dropout_temp,f->output);
+        if(f->dropout_mask != NULL)
+            set_vector_with_value(1,f->dropout_mask,f->output);
+        if(f->dropout_temp != NULL)
+            set_vector_with_value(1,f->dropout_temp,f->output);
     }
     if(is_noisy(f)){// new
-        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        if(f->noise != NULL && f->noise_biases != NULL)
+            set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
         set_vector_with_value(0,f->temp_weights,size);// new
         set_vector_with_value(0,f->temp_biases,f->output);// new
     }// new
@@ -1453,18 +1504,23 @@ fcl* reset_fcl_except_partial_derivatives(fcl* f){
         return NULL;
     int i;
     int size = f->input*f->output;
-    if(exists_params_fcl(f))
-    set_vector_with_value(0,f->pre_activation,f->output);
-    if(exists_activation_fcl(f))
-    set_vector_with_value(0,f->post_activation,f->output);
-    if(exists_normalization_fcl(f))
-    set_vector_with_value(0,f->post_normalization,f->output);
+    if(exists_params_fcl(f)){
+    set_vector_with_value(0,f->pre_activation,f->output);}
+    if(exists_activation_fcl(f)){
+    set_vector_with_value(0,f->post_activation,f->output);}
+    if(exists_normalization_fcl(f)){
+    set_vector_with_value(0,f->post_normalization,f->output);}
     if(exists_dropout_stuff_fcl(f)){
-        set_vector_with_value(1,f->dropout_mask,f->output);
-        set_vector_with_value(1,f->dropout_temp,f->output);
+        if(f->dropout_mask != NULL){
+            set_vector_with_value(1,f->dropout_mask,f->output);
+        }
+        if(f->dropout_temp != NULL){
+            set_vector_with_value(1,f->dropout_temp,f->output);
+        }
     }
     if(is_noisy(f)){// new
-        set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
+        if(f->noise != NULL && f->noise_biases != NULL)
+            set_factorised_noise(f->input, f->output, f->noise, f->noise_biases);
         set_vector_with_value(0,f->temp_weights,size);// new
         set_vector_with_value(0,f->temp_biases,f->output);// new
     }// new
@@ -1472,7 +1528,7 @@ fcl* reset_fcl_except_partial_derivatives(fcl* f){
     set_vector_with_value(0,f->temp3,f->output);
     set_vector_with_value(0,f->temp2,f->input);
     set_vector_with_value(0,f->error2,f->input);
-    
+
     
     if(f->normalization_flag == LAYER_NORMALIZATION)
         reset_bn_except_partial_derivatives(f->layer_norm);
@@ -1636,21 +1692,21 @@ fcl* reset_fcl_for_edge_popup(fcl* f){
 }
 
 void free_scores(fcl* f){
-	free(f->scores);
-	f->scores = NULL;
+    free(f->scores);
+    f->scores = NULL;
 }
 
 void free_indices(fcl* f){
-	free(f->indices);
-	f->indices = NULL;
+    free(f->indices);
+    f->indices = NULL;
 }
 
 void set_null_scores(fcl* f){
-	f->scores = NULL;
+    f->scores = NULL;
 }
 
 void set_null_indices(fcl* f){
-	f->indices = NULL;
+    f->indices = NULL;
 }
 
 
@@ -1985,7 +2041,7 @@ uint64_t get_array_size_params(fcl* f){
  *                 @ flc* f:= the fully-connected layer
  * */
 uint64_t get_array_size_scores_fcl(fcl* f){
-	if(f == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+    if(f == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return 0;
     return (uint64_t)f->input*f->output;
 }
@@ -2051,6 +2107,20 @@ void memcopy_vector_to_scores(fcl* f, float* vector){
     if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
         return;
     memcpy(f->scores,vector,f->input*f->output*sizeof(float));
+}
+
+/* this function pastes the scores stored in a vector inside a fcl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ fcl* f:= the fully-connecteed layer
+ *                 @ float* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices2(fcl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_fcl(f) || f->feed_forward_flag == ONLY_DROPOUT)
+        return;
+    memcpy(f->indices,vector,f->input*f->output*sizeof(int));
 }
 
 /* this function pastes the cl structure indices in a vector
@@ -2321,15 +2391,7 @@ void compare_score_fcl(fcl* input1, fcl* input2, fcl* output){
             output->scores[i] = input2->scores[i];
     }
 }
-/* this function stores in the output the best scores according to input1 and input2
- * 
- * Input:
- * 
- * 
- *                 @ fcl* input1:= the first input fcl layer
- *                 @ float* input2:= the vecotr
- *                 @ fcl* output:= the output fcl layer
- * */
+
 void compare_score_fcl_with_vector(fcl* input1, float* input2, fcl* output){
     if(input1 == NULL || input2 == NULL || output == NULL)
         return;
@@ -2416,7 +2478,7 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
     if(f == NULL || !exists_edge_popup_stuff_fcl(f))
         return;
     int i;
-    for(i = 0, i = f->input*f->output;i < (int)(f->input*f->output*percentage); i--){
+    for(i = f->input*f->output-1;i > (int)(f->input*f->output*percentage); i--){
         if(f->scores[f->indices[i]] < goodness){
             f->weights[f->indices[i]] = signed_kaiming_constant(f->input);
             f->scores[f->indices[i]] = goodness;
@@ -2426,6 +2488,32 @@ void reinitialize_weights_according_to_scores_fcl(fcl* f, float percentage, floa
         }
         else
             return;
+    }
+}
+
+/* thif function reinitialize the weights under the goodness function only if
+ * they are among the f->input*f->output*percentage worst weights according to the scores
+ * percentage and goodness should range in [0,1]
+ * the re initialization uses the signed kaiming constant (the best one for edge popup according to the paper)
+ * Input:
+ * 
+ *                 @ fcl* f:= the fully connected layer
+ *                 @ float percentage:= the percentage of the worst weights
+ *                 @ float goodness:= the goodness function
+ * */
+void reinitialize_weights_according_to_scores_fcl_only_percentage(fcl* f, float percentage){
+    if(f == NULL || !exists_edge_popup_stuff_fcl(f))
+        return;
+    if((int)(f->input*f->output*f->k_percentage) == 0)
+        return;
+    int val = 0;
+    if((int)(f->input*f->output*f->k_percentage) == f->input*f->output)
+        val = 1;
+    int i;
+    float score = f->scores[f->indices[(int)(f->input*f->output*f->k_percentage)-val]]-0.0000001;
+    for(i = 0;i < (int)(f->input*f->output*percentage); i++){
+        f->weights[f->indices[i]] = signed_kaiming_constant(f->input);
+        f->scores[f->indices[i]] = score;
     }
 }
 /* thif function reinitialize the weights under the goodness function only if
@@ -2539,7 +2627,7 @@ int* get_used_outputs(fcl* f, int* used_output, int flag, int output_size){
 void make_the_fcl_only_for_ff(fcl* f){
     if(f == NULL)
         return;
-    
+    // make it also for noisy layers
     free(f->d_weights);
     free(f->d1_weights);
     free(f->d2_weights);
@@ -2548,6 +2636,10 @@ void make_the_fcl_only_for_ff(fcl* f){
     free(f->d1_biases);
     free(f->d2_biases);
     free(f->d3_biases);
+    free(f->temp);//output
+    free(f->temp3);//output
+    free(f->temp2);//input
+    free(f->error2);//input
     f->d_weights = NULL;
     f->d1_weights = NULL;
     f->d2_weights = NULL;
@@ -2556,6 +2648,10 @@ void make_the_fcl_only_for_ff(fcl* f){
     f->d1_biases = NULL;
     f->d2_biases = NULL;
     f->d3_biases = NULL;
+    f->temp = NULL;
+    f->temp2 = NULL;
+    f->temp3 = NULL;
+    f->error2 = NULL;
     f->training_mode = ONLY_FF;
     if(f->dropout_flag == DROPOUT){
         f->dropout_flag = DROPOUT_TEST;

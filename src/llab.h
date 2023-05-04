@@ -150,6 +150,8 @@ typedef unsigned int uint;
 #define ENTROPY_LOSS 1 << 6
 #define TOTAL_VARIATION_LOSS_2D 1 << 7
 #define CONTRASTIVE_2D_LOSS 1 << 8
+#define INVERSE_Q_LEARNING 1 << 9
+#define POLICY_GRADIENT 1 << 10
 
 //look ahead algorithm hyperparameters
 #define LOOK_AHEAD_ALPHA 0.8
@@ -770,6 +772,7 @@ typedef struct dueling_categorical_dqn{
     int input_size;
     int action_size;
     int n_atoms;
+    int is_qr;
     float v_max, v_min, z_delta;
     model* shared_hidden_layers;
     model* v_hidden_layers;
@@ -878,6 +881,35 @@ typedef struct rainbow{
     
 }rainbow;
 
+typedef struct iq{
+    float** states;//size X state_size
+    int* action_t;// size
+    int* done;// size
+    int* index;// size
+    float* output_actions;// output_size model
+    uint64_t size, state_size, batch_size, threads;
+    int feed_forward_flag, training_mode, adaptive_clipping_flag,  gd_flag, lr_decay_flag, lr_epoch_threshold;
+    float momentum, alpha1, alpha2, gamma;
+    float beta1, beta2, beta3, k_percentage,  adaptive_clipping_gradient_value;
+    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay;
+    model* q_network;
+    model** q_networks;// threads
+}iq;
+
+
+typedef struct policy_gradient{
+    uint64_t batch_size, threads;
+    int feed_forward_flag, training_mode, adaptive_clipping_flag,  gd_flag, lr_decay_flag, lr_epoch_threshold, entropy_flag, dde_flag;
+    float momentum, entropy_alpha, softmax_temperature;
+    float beta1, beta2, beta3, k_percentage,  adaptive_clipping_gradient_value;
+    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, dde_alpha;
+    float** states;
+    float** states_dde;
+    float* rewards;
+    model* m;
+    model** ms;// threads
+}policy_gradient;
+
 
 #include "attention.h"
 #include "batch_norm_layers.h"
@@ -890,6 +922,7 @@ typedef struct rainbow{
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
 #include "gd.h"
+#include "iq.h"
 #include "initialization.h"
 #include "learning_rate_decay.h"
 #include "math_functions.h"

@@ -492,19 +492,19 @@ void update_fully_connected_layer_nesterov(model* m, float lr, float momentum, i
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES){
-						nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
-						if(is_noisy(m->fcls[i]))
-							nesterov_momentum(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k]);
+                        nesterov_momentum(&m->fcls[i]->weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k]);
+                        if(is_noisy(m->fcls[i]))
+                            nesterov_momentum(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k]);
 
                     }
                     if(m->fcls[i]->training_mode == EDGE_POPUP)
                     nesterov_momentum(&m->fcls[i]->scores[j*m->fcls[i]->input+k], lr, momentum, mini_batch_size, m->fcls[i]->d_scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k]);
                 }
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
-					nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
-					if(is_noisy(m->fcls[i]))
-						nesterov_momentum(&m->fcls[i]->noisy_biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j]);
-				}
+                    nesterov_momentum(&m->fcls[i]->biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_biases[j],&m->fcls[i]->d1_biases[j]);
+                    if(is_noisy(m->fcls[i]))
+                        nesterov_momentum(&m->fcls[i]->noisy_biases[j], lr, momentum, mini_batch_size, m->fcls[i]->d_noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j]);
+                }
             }
             if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
                 update_batch_normalized_layer_nesterov(&m->fcls[i]->layer_norm,1,lr,momentum,mini_batch_size);
@@ -561,18 +561,18 @@ void update_fully_connected_layer_adam(model* m, float lr, int mini_batch_size, 
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES){
-						adam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-						if(is_noisy(m->fcls[i]))
-							adam_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                        adam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                        if(is_noisy(m->fcls[i]))
+                            adam_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                     }
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adam_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
                 }
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
-					adam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-					if(is_noisy(m->fcls[i]))
-						adam_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
-				}
+                    adam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                    if(is_noisy(m->fcls[i]))
+                        adam_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size);
+                }
             }
         
             if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
@@ -610,18 +610,18 @@ void update_fully_connected_layer_adamod(model* m, float lr, int mini_batch_size
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT  || m->fcls[i]->training_mode == FREEZE_BIASES){
-						adamod(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
-						if(is_noisy(m->fcls[i]))
-							adamod(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_noisy_weights[j*m->fcls[i]->input+k]);
+                        adamod(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
+                        if(is_noisy(m->fcls[i]))
+                            adamod(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_noisy_weights[j*m->fcls[i]->input+k]);
                     }
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adamod(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_scores[j*m->fcls[i]->input+k]);
                 }
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
-					adamod(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_biases[j]);
-					if(is_noisy(m->fcls[i]))
-						adamod(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_noisy_biases[j]);
-				}
+                    adamod(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_biases[j]);
+                    if(is_noisy(m->fcls[i]))
+                        adamod(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,beta3_adamod,&m->fcls[i]->d3_noisy_biases[j]);
+                }
             }
         
             if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
@@ -653,18 +653,18 @@ void update_fully_connected_layer_adam_diff_grad(model* m, float lr, int mini_ba
             for(j = 0; j < m->fcls[i]->output; j++){
                 for(k = 0; k < m->fcls[i]->input; k++){
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES){
-						adam_diff_grad_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
-						if(is_noisy(m->fcls[i]))
-							adam_diff_grad_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_noisy_weights[j*m->fcls[i]->input+k]);
+                        adam_diff_grad_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_weights[j*m->fcls[i]->input+k]);
+                        if(is_noisy(m->fcls[i]))
+                            adam_diff_grad_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_noisy_weights[j*m->fcls[i]->input+k]);
                     }
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                     adam_diff_grad_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_scores[j*m->fcls[i]->input+k]);
                 }
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
-					adam_diff_grad_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_biases[j]);
-					if(is_noisy(m->fcls[i]))
-						adam_diff_grad_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_noisy_biases[j]);
-				}
+                    adam_diff_grad_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_biases[j]);
+                    if(is_noisy(m->fcls[i]))
+                        adam_diff_grad_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,&m->fcls[i]->d3_noisy_biases[j]);
+                }
             }
         
             if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)
@@ -700,17 +700,17 @@ void update_fully_connected_layer_radam(model* m, float lr, int mini_batch_size,
                     if(m->fcls[i]->training_mode == GRADIENT_DESCENT || m->fcls[i]->training_mode == FREEZE_BIASES){
                         radam_algorithm(&m->fcls[i]->weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                         if(is_noisy(m->fcls[i]))
-							radam_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                            radam_algorithm(&m->fcls[i]->noisy_weights[j*m->fcls[i]->input+k],&m->fcls[i]->d1_noisy_weights[j*m->fcls[i]->input+k], &m->fcls[i]->d2_noisy_weights[j*m->fcls[i]->input+k], m->fcls[i]->d_noisy_weights[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
                     }
                     else if(m->fcls[i]->training_mode == EDGE_POPUP)
                         radam_algorithm(&m->fcls[i]->scores[j*m->fcls[i]->input+k],&m->fcls[i]->d1_scores[j*m->fcls[i]->input+k], &m->fcls[i]->d2_scores[j*m->fcls[i]->input+k], m->fcls[i]->d_scores[j*m->fcls[i]->input+k], lr, beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
 
                 }
                 if(m->fcls[i]->training_mode == GRADIENT_DESCENT){
-					radam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-					if(is_noisy(m->fcls[i]))
-						radam_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
-				}
+                    radam_algorithm(&m->fcls[i]->biases[j],&m->fcls[i]->d1_biases[j], &m->fcls[i]->d2_biases[j], m->fcls[i]->d_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                    if(is_noisy(m->fcls[i]))
+                        radam_algorithm(&m->fcls[i]->noisy_biases[j],&m->fcls[i]->d1_noisy_biases[j], &m->fcls[i]->d2_noisy_biases[j], m->fcls[i]->d_noisy_biases[j],lr,beta1_adam,beta2_adam,b1,b2,EPSILON_ADAM,mini_batch_size,t);
+                }
             }
             
             if(m->fcls[i]->normalization_flag == LAYER_NORMALIZATION)

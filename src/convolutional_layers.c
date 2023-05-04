@@ -909,7 +909,7 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
 /* these functions just give an insight on what is allocated or not*/
 
 int exists_d_kernels_cl(cl* c){
-    return c->training_mode != EDGE_POPUP && c->training_mode != ONLY_FF && c->convolutional_flag != NO_CONVOLUTION;
+    return c->training_mode != EDGE_POPUP && c->training_mode != ONLY_FF && c->convolutional_flag != NO_CONVOLUTION && c->d_kernels != NULL;
 }
 
 int exists_d_biases_cl(cl* c){
@@ -1084,21 +1084,21 @@ void free_convolutional_without_learning_parameters(cl* c){
 }
 
 void free_scores_cl(cl* f){
-	free(f->scores);
-	f->scores = NULL;
+    free(f->scores);
+    f->scores = NULL;
 }
 
 void free_indices_cl(cl* f){
-	free(f->indices);
-	f->indices = NULL;
+    free(f->indices);
+    f->indices = NULL;
 }
 
 void set_null_scores_cl(cl* f){
-	f->scores = NULL;
+    f->scores = NULL;
 }
 
 void set_null_indices_cl(cl* f){
-	f->indices = NULL;
+    f->indices = NULL;
 }
 
 
@@ -1936,6 +1936,44 @@ cl* reset_cl(cl* f){
     }
     return f;
 }
+/* this function resets all the arrays of a convolutional layer
+ * used during the feed forward and backpropagation
+ * You have a cl* f structure, this function resets all the arrays used
+ * for the feed forward and back propagation with partial derivatives D inculded
+ * 
+ * Input:
+ * 
+ *             @ cl* f:= a cl* f layer
+ * 
+ * */
+cl* reset_cl_only_for_ff(cl* f){
+    if(f == NULL)
+        return NULL;
+    
+    int i,j;
+    
+    if(exists_bp_handler_arrays(f) || exists_pre_activation_cl(f) || exists_post_activation_cl(f) || exists_normalization_cl(f)){
+        int size = f->n_kernels*f->rows1*f->cols1;
+        if(exists_pre_activation_cl(f))
+        set_vector_with_value(0,f->pre_activation,size);
+        if(exists_post_activation_cl(f))
+        set_vector_with_value(0,f->post_activation,size);
+        if(exists_normalization_cl(f))
+        set_vector_with_value(0,f->post_normalization,size);
+    }
+    
+    if(exists_pooling(f)){
+        set_vector_with_value(0,f->post_pooling,f->n_kernels*f->rows2*f->cols2);
+    }
+    
+    if(f->normalization_flag == GROUP_NORMALIZATION){
+        int size = f->n_kernels/f->group_norm_channels;
+        for(i = 0; i < size; i++){
+            reset_bn(f->group_norm[i]);
+        }
+    }
+    return f;
+}
 /* this function resets all the arrays of a convolutional layer wthout learning parameters
  * used during the feed forward and backpropagation
  * You have a cl* f structure, this function resets all the arrays used
@@ -2006,11 +2044,11 @@ cl* reset_cl_without_learning_parameters(cl* f){
  * 
  * */
 cl* reset_cl_except_partial_derivatives(cl* f){
-    fprintf(stderr,"You are using a deprecated function: cl* reset_cl_except_partial_derivatives(cl* f)\n");
     if(f == NULL)
         return NULL;
     
     int i,j;
+
     
     if(exists_bp_handler_arrays(f) || exists_pre_activation_cl(f) || exists_post_activation_cl(f) || exists_normalization_cl(f)){
         int size = f->n_kernels*f->rows1*f->cols1;
@@ -2031,9 +2069,8 @@ cl* reset_cl_except_partial_derivatives(cl* f){
         set_vector_with_value(0,f->post_pooling,f->n_kernels*f->rows2*f->cols2);
     }
     
-    
+    if(exists_bp_handler_arrays(f))
     set_vector_with_value(0,f->error2,f->channels*f->input_rows*f->input_cols);
-    
     
     
     if(f->normalization_flag == GROUP_NORMALIZATION){
@@ -2042,7 +2079,7 @@ cl* reset_cl_except_partial_derivatives(cl* f){
             reset_bn_except_partial_derivatives(f->group_norm[i]);
         }
     }
-    
+
     return f;
 }
 
@@ -2769,6 +2806,20 @@ void memcopy_vector_to_indices_cl(cl* f, int* vector){
     f->indices = vector;    
 }
 
+/* this function points to from a vector in a cl structure
+ * 
+ * Inputs:
+ * 
+ * 
+ *                 @ cl* f:= the convolutional layer
+ *                 @ int* vector:= the vector where is copyed everything
+ * */
+void memcopy_vector_to_indices_cl2(cl* f, int* vector){
+    if(f == NULL || vector == NULL || !exists_edge_popup_stuff_cl(f))
+        return;
+    memcpy(f->indices,vector,f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*sizeof(int));    
+}
+
 /* this function pastes the vector in the the dweights and dbiases of a cl structure
  * 
  * Inputs:
@@ -2976,13 +3027,41 @@ void reinitialize_weights_according_to_scores_cl(cl* f, float percentage, float 
         return;
     if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
         int i,j;
-        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1; i < (int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*percentage); i--){
+        for(i = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols-1; i > (int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*percentage); i--){
             if(f->scores[f->indices[i]] < goodness){
                 f->kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))][f->indices[i]%(f->channels*f->kernel_rows*f->kernel_cols)] = signed_kaiming_constant((float)f->channels*f->input_rows*f->input_cols);
                 f->scores[f->indices[i]] = goodness;
             }
             else
                 return;
+        }
+    }
+}
+
+/* This function re initialize the weights which scores is < of a goodness (range [0,1])
+ * or the weights are among the worst scores in the total_scores*percentage (range percentage [0,1])
+ * The re initialization happens with the signed kaiming constant (the best initialization for edge-popup according to the paper)
+ * 
+ * Input:
+ * 
+ *                     @ cl* f:= the convolutional layer
+ *                     @ float percentage:= the percentage
+ *                    @ float goodness:= the goodness value
+ * */
+void reinitialize_weights_according_to_scores_cl_only_percentage(cl* f, float percentage){
+    if(f->convolutional_flag == NO_CONVOLUTION)
+        return;
+    if(f->feed_forward_flag == EDGE_POPUP || f->training_mode == EDGE_POPUP){
+        int i,j;
+        if ((int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage) == 0)
+            return;
+        int val = 0;
+        if ((int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage) == f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols)
+            val = 1;
+        float score = f->scores[f->indices[(int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*f->k_percentage)]]-0.000001;
+        for(i = 0; i < (int)(f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols*percentage); i++){
+            f->kernels[(int)(f->indices[i]/(f->channels*f->kernel_rows*f->kernel_cols))][f->indices[i]%(f->channels*f->kernel_rows*f->kernel_cols)] = signed_kaiming_constant((float)f->channels*f->input_rows*f->input_cols);
+            f->scores[f->indices[i]] = score;
         }
     }
 }
@@ -3077,6 +3156,22 @@ void make_the_cl_only_for_ff(cl* c){
     free(c->temp2);
     free(c->temp3);
     free(c->error2);
+    free_matrix((void**)c->d_kernels,c->n_kernels);
+    free_matrix((void**)c->d1_kernels,c->n_kernels);
+    free_matrix((void**)c->d2_kernels,c->n_kernels);
+    free_matrix((void**)c->d3_kernels,c->n_kernels);
+    free(c->d_biases); //n_kernels
+    free(c->d1_biases); //n_kernels
+    free(c->d2_biases); //n_kernels
+    free(c->d3_biases); //n_kernels
+    c->d_kernels = NULL;
+    c->d1_kernels = NULL;
+    c->d2_kernels = NULL;
+    c->d3_kernels = NULL;
+    c->d_biases = NULL;
+    c->d1_biases = NULL;
+    c->d2_biases = NULL;
+    c->d3_biases = NULL;
     c->training_mode = ONLY_FF;
     c->temp = NULL;
     c->temp2 = NULL;

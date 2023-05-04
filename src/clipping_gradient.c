@@ -274,9 +274,9 @@ void clipping_gradient(model* m, float threshold) {
 }
 
 void dueling_categorical_dqn_clipping_gradient(dueling_categorical_dqn* dqn, float threshold){
-	if(dqn == NULL)
-		return;
-	double sum = 0;
+    if(dqn == NULL)
+        return;
+    double sum = 0;
      sum += sum_all_quadratic_derivative_weights_fcls(dqn->shared_hidden_layers->fcls, dqn->shared_hidden_layers->n_fcl);
      sum += sum_all_quadratic_derivative_weights_cls(dqn->shared_hidden_layers->cls, dqn->shared_hidden_layers->n_cl);
      sum += sum_all_quadratic_derivative_weights_rls(dqn->shared_hidden_layers->rls, dqn->shared_hidden_layers->n_rl);

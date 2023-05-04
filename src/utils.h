@@ -93,6 +93,13 @@ int shuffle_int_array_until_length(int* m,int n, int length);
 void quick_sort_int(int A[], int I[], int lo, int hi);
 uint64_t uint64t_read_file_in_char_vector(char** ksource, char* fname, uint64_t* size);
 void set_array_random_normal(float* array, int size);
+void merge_for_probabilities(float* p, int* index, int left, int middle, int right, int n);
+void merge_sort_for_probabilities(float* p, int* index, int left, int right, int n);
+void set_float_vector_to_int_vector(float* v1, int* v2, int size, float step);
+void readapt_scores(int** indices, int* index, int size_1, int size_2, dueling_categorical_dqn* dqn);
+void scores_and_indices_readapter(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn);
+void readapt_scores_float(float** indices, int* index, int size_1, int size_2, dueling_categorical_dqn* dqn);
+void scores_and_indices_readapter_float(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn);
 
 
 #endif
