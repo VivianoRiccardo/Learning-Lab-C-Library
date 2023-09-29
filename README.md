@@ -119,6 +119,8 @@ https://www.cygwin.com/
 - Inverse Q-Learning (04/05/2023)
 - Policy Gradient with Entropy and Dde (04/05/2023)
 - QR-DQN-1 for Rainbow (04/05/2023)
+- X-SWING Algorithm (29/09/2023)
+- EfficientZero Structure & EfficientZero MCTS (29/09/2023)
 
 # Python Version
 
