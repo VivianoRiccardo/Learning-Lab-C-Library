@@ -22,12 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __IQ_H__
-#define __IQ_H__
+#ifndef __POLICY_GRADIENT_H__
+#define __POLICY_GRADIENT_H__
 
 policy_gradient* init_policy_gradient(model* m, model** ms, uint64_t batch_size, uint64_t threads,
             int feed_forward_flag, int training_mode, int adaptive_clipping_flag, int gd_flag, int lr_decay_flag, int lr_epoch_threshold,
             float momentum, float beta1, float beta2, float beta3, float k_percentage, float adaptive_clipping_gradient_value,
             float lr, float lr_minimum, float lr_maximum, float lr_decay, float softmax_temperature, int entropy_flag, float entropy_alpha, int dde_flag, float dde_alpha);
-void policy_gradient_training_passage(policy_gradient* pg, float** states, float* rewards, float** states_for_dde);
+void policy_gradient_training_passage(policy_gradient* pg, float** states, float* rewards, int* actions, float** states_for_dde, int length, int batch_size);
+float** get_policies(policy_gradient* pg, float** inputs, int size);
+int sample_action_from_output_layer(policy_gradient* pg);
+
 #endif

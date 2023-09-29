@@ -60,7 +60,7 @@ void copy_int_array(int* input, int* output, int size);
 int shuffle_int_array(int* m,int n);
 char** get_files(int index1, int n_files);
 int check_nans_matrix(float** m, int rows, int cols);
-void merge(float* values, int* indices, int temp[], int from_index, int mid, int to, int length);
+void merge(float* values, int* indices, int left, int middle, int right);
 void merge_sort(float* values, int* indices, int low, int high);
 void sort(float* values, int* indices, int low, int high);
 void free_tensor(float*** t, int dim1, int dim2);
@@ -100,6 +100,9 @@ void readapt_scores(int** indices, int* index, int size_1, int size_2, dueling_c
 void scores_and_indices_readapter(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn);
 void readapt_scores_float(float** indices, int* index, int size_1, int size_2, dueling_categorical_dqn* dqn);
 void scores_and_indices_readapter_float(int** indices, float** scores, int size_1, int size_2, float step, dueling_categorical_dqn* dqn);
+void sort_double(double* values, int* indices, int low, int high);
+void merge_sort_double(double* values, int* indices, int low, int high);
+void merge_double(double* values, int* indices, int left, int middle, int right);
 
 
 #endif

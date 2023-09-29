@@ -1795,7 +1795,7 @@ void train_rainbow(rainbow* r, int last_t_1_was_terminal){
                 r->temp_diversity_states_t[i] = r->diversity_driven_states[r->array_to_shuffle[i]];
                 r->qs[i] = &r->diversity_driven_q_functions_buffer[r->array_to_shuffle[i]*r->online_net->action_size];
             }
-            ret = dueling_categorical_dqn_train_l1(r->batch_size, r->threads, r->online_net, r->online_net_wlp, r->temp_diversity_states_t, r->qs, 1,r->alpha, r->clipping_gradient_value);// l1-norm shows the best performance! suggestion init alpha = 0.1 dd_threshold = 0.05, dd_decay = 0
+            ret = dueling_categorical_dqn_train_l_infinite(r->batch_size, r->threads, r->online_net, r->online_net_wlp, r->temp_diversity_states_t, r->qs, 1,r->alpha, r->clipping_gradient_value);// l1-norm shows the best performance! suggestion init alpha = 0.1 dd_threshold = 0.05, dd_decay = 0
             ret/=r->batch_size;
             if(ret < 0)
                 ret = -ret;

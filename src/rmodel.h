@@ -68,5 +68,10 @@ void memcopy_weights_to_vector_rmodel(rmodel* f, float* vector);
 void memcopy_scores_to_vector_rmodel(rmodel* f, float* vector);
 rmodel* load_rmodel_with_file_already_opened(FILE* fr);
 float* get_ith_output_cell(rmodel* r, int ith);
+rmodel* reset_rmodel_only_for_ff(rmodel* m);
+void make_the_rmodel_only_for_ff(rmodel* m);
+void set_rmodel_beta(rmodel* m, float b1, float b2);
+void set_rmodel_beta_adamod(rmodel* m, float beta);
+void set_rmodel_training_edge_popup(rmodel* f, float k_percentage);
 
 #endif

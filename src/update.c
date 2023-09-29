@@ -1091,6 +1091,25 @@ void update_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float lr, floa
 
 }
 
+void update_efficientzero_model(efficientzeromodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda_value, unsigned long long int* t){
+    if(m == NULL)
+        return;
+    if(m->p1 != NULL)
+    update_model(m->p1,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    if(m->p1 != NULL)
+    update_model(m->p2,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->rapresentation_h,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->prediction_f,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->prediction_f_policy,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->prediction_f_value,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->dynamics_g,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->reward_prediction_model,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_model(m->reward_prediction_temporal_model,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    update_rmodel(m->reward_prediction_rmodel,lr,momentum,mini_batch_size,gradient_descent_flag,b1,b2,regularization,total_number_weights,lambda_value,t);
+    return;
+
+}
+
 
 /* This function can update the rmodel of the network using the adam algorithm or the nesterov momentum
  * 

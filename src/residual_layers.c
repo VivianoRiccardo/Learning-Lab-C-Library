@@ -699,10 +699,10 @@ uint64_t get_array_size_weights_rl(rl* f){
 }
 
 void make_the_rl_only_for_ff(rl* r){
-	int i;
-	for(i = 0; i < r->n_cl; i++){
-		make_the_cl_only_for_ff(r->cls[i]);
-	}
+    int i;
+    for(i = 0; i < r->n_cl; i++){
+        make_the_cl_only_for_ff(r->cls[i]);
+    }
 }
 /* this function paste the weights and biases in a single vector
  * 

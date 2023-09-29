@@ -946,7 +946,7 @@ char** get_files(int index1, int n_files){
      return 0;
  }
  
- 
+ /*
 void merge(float* values, int* indices, int temp[], int from_index, int mid, int to, int length){
     int k = from_index, i = from_index, j = mid + 1;
  
@@ -967,7 +967,118 @@ void merge(float* values, int* indices, int temp[], int from_index, int mid, int
         indices[i] = temp[i];
     }
 }
- 
+*/
+
+void merge_sort(float* values, int* indices, int low, int high) {
+    int left = low;
+    int right = high;
+    if (left < right) {
+        int middle = left + (right - left) / 2;
+        merge_sort(values, indices, left, middle);
+        merge_sort(values, indices, middle + 1, right);
+        merge(values, indices, left, middle, right);
+    }
+}
+
+void merge_sort_double(double* values, int* indices, int low, int high) {
+    int left = low;
+    int right = high;
+    if (left < right) {
+        int middle = left + (right - left) / 2;
+        merge_sort_double(values, indices, left, middle);
+        merge_sort_double(values, indices, middle + 1, right);
+        merge_double(values, indices, left, middle, right);
+    }
+}
+
+
+void merge(float* values, int* indices, int left, int middle, int right) {
+    int leftSize = middle - left + 1;
+    int rightSize = right - middle;
+
+    int leftArray[leftSize];
+    int rightArray[rightSize];
+    int leftIndices[leftSize];
+    int rightIndices[rightSize];
+
+    for (int i = 0; i < leftSize; i++) {
+        leftArray[i] = values[left + i];
+        leftIndices[i] = indices[left + i];
+    }
+    for (int j = 0; j < rightSize; j++) {
+        rightArray[j] = values[middle + 1 + j];
+        rightIndices[j] = indices[middle + 1 + j];
+    }
+
+    int i = 0, j = 0, k = left;
+    while (i < leftSize && j < rightSize) {
+        if (leftArray[i] <= rightArray[j]) {
+            indices[k] = leftIndices[i];
+            i++;
+        } else {
+            indices[k] = rightIndices[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < leftSize) {
+        indices[k] = leftIndices[i];
+        i++;
+        k++;
+    }
+
+    while (j < rightSize) {
+        indices[k] = rightIndices[j];
+        j++;
+        k++;
+    }
+}
+void merge_double(double* values, int* indices, int left, int middle, int right) {
+    int leftSize = middle - left + 1;
+    int rightSize = right - middle;
+
+    int leftArray[leftSize];
+    int rightArray[rightSize];
+    int leftIndices[leftSize];
+    int rightIndices[rightSize];
+
+    for (int i = 0; i < leftSize; i++) {
+        leftArray[i] = values[left + i];
+        leftIndices[i] = indices[left + i];
+    }
+    for (int j = 0; j < rightSize; j++) {
+        rightArray[j] = values[middle + 1 + j];
+        rightIndices[j] = indices[middle + 1 + j];
+    }
+
+    int i = 0, j = 0, k = left;
+    while (i < leftSize && j < rightSize) {
+        if (leftArray[i] <= rightArray[j]) {
+            indices[k] = leftIndices[i];
+            i++;
+        } else {
+            indices[k] = rightIndices[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < leftSize) {
+        indices[k] = leftIndices[i];
+        i++;
+        k++;
+    }
+
+    while (j < rightSize) {
+        indices[k] = rightIndices[j];
+        j++;
+        k++;
+    }
+}
+
+
+/*
 void merge_sort(float* values, int* indices, int low, int high){
     int i,m,from,mid,to,length = high-low + 1;
     int* temp = (int*)calloc(length,sizeof(int));
@@ -984,13 +1095,20 @@ void merge_sort(float* values, int* indices, int low, int high){
     }
     free(temp);
 }
-
+*/
 
 void sort(float* values, int* indices, int low, int high){
-    if(high-low > SORT_SWITCH_THRESHOLD)
-        merge_sort(values,indices,low,high);
-    else
-        quick_sort(values,indices,low,high);
+    //if(high-low < SORT_SWITCH_THRESHOLD)
+    merge_sort(values,indices,low,high);
+    //else
+    //    quick_sort(values,indices,low,high);
+}
+
+void sort_double(double* values, int* indices, int low, int high){
+    //if(high-low < SORT_SWITCH_THRESHOLD)
+    merge_sort_double(values,indices,low,high);
+    //else
+    //    quick_sort(values,indices,low,high);
 }
 
 

@@ -64,5 +64,6 @@ void update_transformer_encoder(transformer_encoder* t, float lr, float momentum
 void update_vae_model(vaemodel* vm, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda, unsigned long long int* t);
 void update_training_parameters(float* beta1, float* beta2, long long unsigned int* time_step, float start_beta1, float start_beta2);
 void update_dueling_categorical_dqn(dueling_categorical_dqn* dqn, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda_value, unsigned long long int* t);
+void update_efficientzero_model(efficientzeromodel* m, float lr, float momentum, int mini_batch_size, int gradient_descent_flag, float* b1, float* b2, int regularization, uint64_t total_number_weights, float lambda_value, unsigned long long int* t);
 
 #endif

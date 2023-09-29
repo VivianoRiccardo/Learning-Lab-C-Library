@@ -468,17 +468,29 @@ void free_recurrent_lstm(lstm* rlstm){
         free(rlstm->w[i]);
         free(rlstm->u[i]);
         if(exists_d_params_lstm(rlstm)){
+            if(rlstm->d_w != NULL)
             free(rlstm->d_w[i]);
+            if(rlstm->d1_w != NULL)
             free(rlstm->d1_w[i]);
+            if(rlstm->d2_w != NULL)
             free(rlstm->d2_w[i]);
+            if(rlstm->d3_w != NULL)
             free(rlstm->d3_w[i]);
+            if(rlstm->d_u != NULL)
             free(rlstm->d_u[i]);
+            if(rlstm->d1_u != NULL)
             free(rlstm->d1_u[i]);
+            if(rlstm->d2_u != NULL)
             free(rlstm->d2_u[i]);
+            if(rlstm->d3_u != NULL)
             free(rlstm->d3_u[i]);
+            if(rlstm->d_biases != NULL)
             free(rlstm->d_biases[i]);
+            if(rlstm->d1_biases != NULL)
             free(rlstm->d1_biases[i]);
+            if(rlstm->d2_biases != NULL)
             free(rlstm->d2_biases[i]);
+            if(rlstm->d3_biases != NULL)
             free(rlstm->d3_biases[i]);
         }
         free(rlstm->biases[i]);
@@ -487,14 +499,22 @@ void free_recurrent_lstm(lstm* rlstm){
         
         if(exists_edge_popup_stuff_lstm(rlstm)){
             free(rlstm->w_scores[i]);
+            if(rlstm->d_w_scores != NULL)
             free(rlstm->d_w_scores[i]);
+            if(rlstm->d1_w_scores != NULL)
             free(rlstm->d1_w_scores[i]);
+            if(rlstm->d1_u_scores != NULL)
             free(rlstm->d1_u_scores[i]);
+            if(rlstm->d2_w_scores != NULL)
             free(rlstm->d2_w_scores[i]);
+            if(rlstm->d2_u_scores != NULL)
             free(rlstm->d2_u_scores[i]);
+            if(rlstm->d3_w_scores != NULL)
             free(rlstm->d3_w_scores[i]);
+            if(rlstm->d3_u_scores != NULL)
             free(rlstm->d3_u_scores[i]);
             free(rlstm->u_scores[i]);
+            if(rlstm->d_u_scores != NULL)
             free(rlstm->d_u_scores[i]);
             free(rlstm->w_indices[i]);
             free(rlstm->u_indices[i]);
@@ -574,14 +594,19 @@ void free_recurrent_lstm_without_learning_parameters(lstm* rlstm){
     
     for(i = 0; i < 4; i++){
         if(exists_d_params_lstm(rlstm)){
+            if(rlstm->d_w != NULL)
             free(rlstm->d_w[i]);
+            if(rlstm->d_u != NULL)
             free(rlstm->d_u[i]);
+            if(rlstm->d_biases != NULL)
             free(rlstm->d_biases[i]);
         }
         
         
         if(exists_edge_popup_stuff_lstm(rlstm)){
+            if(rlstm->d_w_scores != NULL)
             free(rlstm->d_w_scores[i]);
+            if(rlstm->d_u_scores != NULL)
             free(rlstm->d_u_scores[i]);
         }
         
@@ -1109,32 +1134,56 @@ lstm* copy_lstm(lstm* l){
         copy_int_array(l->u_active_output_neurons[i],copy->u_active_output_neurons[i],l->output_size*l->output_size);
         
         if(exists_d_params_lstm(l)){
+            if(l->d_w != NULL)
             copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            if(l->d1_w != NULL)
             copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
+            if(l->d2_w != NULL)
             copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
+            if(l->d3_w != NULL)
             copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
+            if(l->d_u != NULL)
             copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            if(l->d1_u != NULL)
             copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
+            if(l->d2_u != NULL)
             copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
+            if(l->d3_u != NULL)
             copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
+            if(l->d_biases != NULL)
             copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
+            if(l->d1_biases != NULL)
             copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
+            if(l->d2_biases != NULL)
             copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
+            if(l->d3_biases != NULL)
             copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
         }
         copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_edge_popup_stuff_lstm(l)){
+            if(l->w_scores != NULL)
             copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
+            if(l->u_scores != NULL)
             copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
+            if(l->d_w_scores != NULL)
             copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            if(l->d1_w_scores != NULL)
             copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
+            if(l->d2_w_scores != NULL)
             copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
+            if(l->d3_w_scores != NULL)
             copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
+            if(l->d_u_scores != NULL)
             copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
+            if(l->d1_u_scores != NULL)
             copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
+            if(l->d2_u_scores != NULL)
             copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
+            if(l->d3_u_scores != NULL)
             copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
+            if(l->u_indices != NULL)
             copy_int_array(l->u_indices[i],copy->u_indices[i],l->output_size*l->output_size);
+            if(l->w_indices != NULL)
             copy_int_array(l->w_indices[i],copy->w_indices[i],l->output_size*l->input_size);
         }
     }
@@ -1224,33 +1273,57 @@ void paste_lstm(lstm* l,lstm* copy){
         copy_int_array(l->u_active_output_neurons[i],copy->u_active_output_neurons[i],l->output_size*l->output_size);
         copy_array(l->biases[i],copy->biases[i],l->output_size);
         if(exists_d_params_lstm(l)){
+			if(l->d_w != NULL)
             copy_array(l->d_w[i],copy->d_w[i],l->output_size*l->input_size);
+            if(l->d1_w != NULL)
             copy_array(l->d1_w[i],copy->d1_w[i],l->output_size*l->input_size);
+            if(l->d2_w != NULL)
             copy_array(l->d2_w[i],copy->d2_w[i],l->output_size*l->input_size);
+            if(l->d3_w != NULL)
             copy_array(l->d3_w[i],copy->d3_w[i],l->output_size*l->input_size);
+            if(l->d_u != NULL)
             copy_array(l->d_u[i],copy->d_u[i],l->output_size*l->output_size);
+            if(l->d1_u != NULL)
             copy_array(l->d1_u[i],copy->d1_u[i],l->output_size*l->output_size);
+            if(l->d2_u != NULL)
             copy_array(l->d2_u[i],copy->d2_u[i],l->output_size*l->output_size);
+            if(l->d3_u != NULL)
             copy_array(l->d3_u[i],copy->d3_u[i],l->output_size*l->output_size);
+            if(l->d_biases != NULL)
             copy_array(l->d_biases[i],copy->d_biases[i],l->output_size);
+            if(l->d1_biases != NULL)
             copy_array(l->d1_biases[i],copy->d1_biases[i],l->output_size);
+            if(l->d2_biases != NULL)
             copy_array(l->d2_biases[i],copy->d2_biases[i],l->output_size);
+            if(l->d3_biases != NULL)
             copy_array(l->d3_biases[i],copy->d3_biases[i],l->output_size);
 
         }
         
         if(exists_edge_popup_stuff_lstm(l)){
+			if(l->w_scores != NULL)
             copy_array(l->w_scores[i],copy->w_scores[i],l->output_size*l->input_size);
+            if(l->u_scores != NULL)
             copy_array(l->u_scores[i],copy->u_scores[i],l->output_size*l->output_size);
+            if(l->d_w_scores != NULL)
             copy_array(l->d_w_scores[i],copy->d_w_scores[i],l->output_size*l->input_size);
+            if(l->d1_w_scores != NULL)
             copy_array(l->d1_w_scores[i],copy->d1_w_scores[i],l->output_size*l->input_size);
+            if(l->d2_w_scores != NULL)
             copy_array(l->d2_w_scores[i],copy->d2_w_scores[i],l->output_size*l->input_size);
+            if(l->d3_w_scores != NULL)
             copy_array(l->d3_w_scores[i],copy->d3_w_scores[i],l->output_size*l->input_size);
+            if(l->d_u_scores != NULL)
             copy_array(l->d_u_scores[i],copy->d_u_scores[i],l->output_size*l->output_size);
+            if(l->d1_u_scores != NULL)
             copy_array(l->d1_u_scores[i],copy->d1_u_scores[i],l->output_size*l->output_size);
+            if(l->d2_u_scores != NULL)
             copy_array(l->d2_u_scores[i],copy->d2_u_scores[i],l->output_size*l->output_size);
+            if(l->d3_u_scores != NULL)
             copy_array(l->d3_u_scores[i],copy->d3_u_scores[i],l->output_size*l->output_size);
+            if(l->u_indices != NULL)
             copy_int_array(l->u_indices[i],copy->u_indices[i],l->output_size*l->output_size);
+            if(l->w_indices != NULL)
             copy_int_array(l->w_indices[i],copy->w_indices[i],l->output_size*l->input_size);
             
         }
@@ -1349,52 +1422,77 @@ void slow_paste_lstm(lstm* l,lstm* copy, float tau){
         for(j = 0; j < l->output_size*l->input_size; j++){
             copy->w[i][j] = tau*l->w[i][j] + (1-tau)*copy->w[i][j];
             if(exists_d_params_lstm(l)){
+				if(l->d1_w != NULL)
                 copy->d1_w[i][j] = tau*l->d1_w[i][j] + (1-tau)*copy->d1_w[i][j];
+                if(l->d2_w != NULL)
                 copy->d2_w[i][j] = tau*l->d2_w[i][j] + (1-tau)*copy->d2_w[i][j];
+                if(l->d3_w != NULL)
                 copy->d3_w[i][j] = tau*l->d3_w[i][j] + (1-tau)*copy->d3_w[i][j];
             }
             
             
             if(exists_edge_popup_stuff_lstm(l)){
+                if(l->w_scores != NULL)
                 copy->w_scores[i][j] = tau*l->w_scores[i][j] + (1-tau)*copy->w_scores[i][j];
+                if(l->d_w_scores != NULL)
                 copy->d_w_scores[i][j] = tau*l->d_w_scores[i][j] + (1-tau)*copy->d_w_scores[i][j];
+                if(l->d1_w_scores != NULL)
                 copy->d1_w_scores[i][j] = tau*l->d1_w_scores[i][j] + (1-tau)*copy->d1_w_scores[i][j];
+                if(l->d2_w_scores != NULL)
                 copy->d2_w_scores[i][j] = tau*l->d2_w_scores[i][j] + (1-tau)*copy->d2_w_scores[i][j];
+                if(l->d3_w_scores != NULL)
                 copy->d3_w_scores[i][j] = tau*l->d3_w_scores[i][j] + (1-tau)*copy->d3_w_scores[i][j];
+                if(l->w_indices != NULL)
                 copy->w_indices[i][j] = j;
             }
         }
         for(j = 0; j < l->output_size*l->output_size; j++){
             copy->u[i][j] = tau*l->u[i][j] + (1-tau)*copy->u[i][j];
             if(exists_d_params_lstm(l)){
+				if(l->d1_u != NULL)
                 copy->d1_u[i][j] = tau*l->d1_u[i][j] + (1-tau)*copy->d1_u[i][j];
+                if(l->d2_u != NULL)
                 copy->d2_u[i][j] = tau*l->d2_u[i][j] + (1-tau)*copy->d2_u[i][j];
+                if(l->d3_u != NULL)
                 copy->d3_u[i][j] = tau*l->d3_u[i][j] + (1-tau)*copy->d3_u[i][j];
             }
             
             if(j < l->output_size){
                 copy->biases[i][j] = tau*l->biases[i][j] + (1-tau)*copy->biases[i][j];
                 if(exists_d_params_lstm(l)){
+					if(l->d1_biases != NULL)
                     copy->d1_biases[i][j] = tau*l->d1_biases[i][j] + (1-tau)*copy->d1_biases[i][j];
+                    if(l->d2_biases != NULL)
                     copy->d2_biases[i][j] = tau*l->d2_biases[i][j] + (1-tau)*copy->d2_biases[i][j];
+                    if(l->d3_biases != NULL)
                     copy->d3_biases[i][j] = tau*l->d3_biases[i][j] + (1-tau)*copy->d3_biases[i][j];
                 }
             }
             
             if(exists_edge_popup_stuff_lstm(l)){
+				if(l->u_scores != NULL)
                 copy->u_scores[i][j] = tau*l->u_scores[i][j] + (1-tau)*copy->u_scores[i][j];
+                if(l->d_u_scores != NULL)
                 copy->d_u_scores[i][j] = tau*l->d_u_scores[i][j] + (1-tau)*copy->d_u_scores[i][j];
+                if(l->d1_u_scores != NULL)
                 copy->d1_u_scores[i][j] = tau*l->d1_u_scores[i][j] + (1-tau)*copy->d1_u_scores[i][j];
+                if(l->d2_u_scores != NULL)
                 copy->d2_u_scores[i][j] = tau*l->d2_u_scores[i][j] + (1-tau)*copy->d2_u_scores[i][j];
+                if(l->d3_u_scores != NULL)
                 copy->d3_u_scores[i][j] = tau*l->d3_u_scores[i][j] + (1-tau)*copy->d3_u_scores[i][j];
+                if(l->u_indices != NULL)
                 copy->u_indices[i][j] = j;
             }
         }
         
         if(exists_edge_popup_stuff_lstm(l)){
+			if(l->d_w_scores != NULL)
             sort(copy->d_w_scores[i],copy->w_indices[i],0,copy->output_size*copy->input_size-1);
+            if(l->d_u_scores != NULL)
             sort(copy->d_u_scores[i],copy->w_indices[i],0,copy->output_size*copy->output_size-1);
+            if(l->w_indices != NULL)
             get_used_outputs_lstm(copy->w_active_output_neurons[i],copy->input_size,copy->output_size,copy->w_indices[i],copy->k_percentage);
+            if(l->u_indices != NULL)
             get_used_outputs_lstm(copy->u_active_output_neurons[i],copy->output_size,copy->output_size,copy->u_indices[i],copy->k_percentage);
         }
     }
@@ -1696,6 +1794,89 @@ lstm* reset_lstm_without_learning_parameters(lstm* f){
         }
         
     }
+    
+    if(f->norm_flag == GROUP_NORMALIZATION){
+        for(i = 0; i < f->window/f->n_grouped_cell; i++){
+            reset_bn(f->bns[i]);
+        }
+    }
+    return f;
+}
+
+void make_the_lstm_only_for_ff(lstm* lstml){
+    if(exists_d_params_lstm(lstml)){
+        free_matrix((void**)lstml->d_w,4);
+        free_matrix((void**)lstml->d1_w,4);
+        free_matrix((void**)lstml->d2_w,4);
+        free_matrix((void**)lstml->d3_w,4);
+        free_matrix((void**)lstml->d_u,4);
+        free_matrix((void**)lstml->d1_u,4);
+        free_matrix((void**)lstml->d2_u,4);
+        free_matrix((void**)lstml->d3_u,4);
+        free_matrix((void**)lstml->d_biases,4);
+        free_matrix((void**)lstml->d1_biases,4);
+        free_matrix((void**)lstml->d2_biases,4);
+        free_matrix((void**)lstml->d3_biases,4);
+        lstml->d_w = NULL;
+        lstml->d1_w = NULL;
+        lstml->d2_w = NULL;
+        lstml->d3_w = NULL;
+        lstml->d_u = NULL;
+        lstml->d1_u = NULL;
+        lstml->d2_u = NULL;
+        lstml->d3_u = NULL;
+        lstml->d_biases = NULL;
+        lstml->d1_biases = NULL;
+        lstml->d2_biases = NULL;
+        lstml->d3_biases = NULL;
+    }
+    if(exists_edge_popup_stuff_lstm(lstml)){
+        free_matrix((void**)lstml->d_w_scores,4);
+        free_matrix((void**)lstml->d1_w_scores,4);
+        free_matrix((void**)lstml->d2_w_scores,4);
+        free_matrix((void**)lstml->d3_w_scores,4);
+        free_matrix((void**)lstml->d_u_scores,4);
+        free_matrix((void**)lstml->d1_u_scores,4);
+        free_matrix((void**)lstml->d2_u_scores,4);
+        free_matrix((void**)lstml->d3_u_scores,4);
+        lstml->d_w_scores = NULL;
+        lstml->d1_w_scores = NULL;
+        lstml->d2_w_scores = NULL;
+        lstml->d3_w_scores = NULL;
+        lstml->d_u_scores = NULL;
+        lstml->d1_u_scores = NULL;
+        lstml->d2_u_scores = NULL;
+        lstml->d3_u_scores = NULL;
+    }
+}
+
+lstm* reset_lstm_only_for_ff(lstm* f){
+    if(f == NULL)
+        return NULL;
+    int i,j,k;
+    for(i = 0; i < 4; i++){
+        for(j = 0; j < f->output_size*f->output_size; j++){
+            if(j < f->output_size){
+                if(!i){
+                    f->dropout_mask_up[j] = 1;
+                }
+                if(!i){
+                    f->dropout_mask_right[j] = 1;
+                }
+            }
+        }
+    }
+    for(i = 0; i < f->window; i++){
+        for(j = 0; j < 4; j++){
+            for(k = 0; k < f->output_size; k++){
+                f->lstm_z[i][j][k] = 0;                        
+                f->lstm_hidden[i][k] = 0;
+                f->lstm_cell[i][k] = 0;
+                f->out_up[i][k] = 0;
+            }
+        }
+    }
+
     
     if(f->norm_flag == GROUP_NORMALIZATION){
         for(i = 0; i < f->window/f->n_grouped_cell; i++){

@@ -62,5 +62,7 @@ void memcopy_vector_to_params_lstm(lstm* f, float* vector);
 void memcopy_vector_to_weights_lstm(lstm* f, float* vector);
 void memcopy_weights_to_vector_lstm(lstm* f, float* vector);
 void memcopy_vector_to_scores_lstm(lstm* f, float* vector);
+lstm* reset_lstm_only_for_ff(lstm* f);
+void make_the_lstm_only_for_ff(lstm* lstml);
 
 #endif

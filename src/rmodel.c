@@ -310,6 +310,24 @@ rmodel* reset_rmodel_without_learning_parameters(rmodel* m){
     }
     return m;
 }
+rmodel* reset_rmodel_only_for_ff(rmodel* m){
+    if(m == NULL)
+        return NULL;
+    int i;
+    for(i = 0; i < m->n_lstm; i++){
+        reset_lstm_only_for_ff(m->lstms[i]);
+    }
+    return m;
+}
+
+void make_the_rmodel_only_for_ff(rmodel* m){
+    if(m == NULL)
+        return;
+    int i;
+    for(i = 0; i < m->n_lstm; i++){
+        make_the_lstm_only_for_ff(m->lstms[i]);
+    }
+}
 
 /* This function saves a rmodel(recurrent network) on a .bin file with name n.bin
  * 
@@ -2387,4 +2405,22 @@ float* get_ith_output_cell(rmodel* r, int ith){
     
     return r->lstms[r->n_lstm-1]->out_up[ith];
     
+}
+
+void set_rmodel_beta(rmodel* m, float b1, float b2){
+	m->beta1_adam = b1;
+	m->beta2_adam = b2;
+}
+
+void set_rmodel_beta_adamod(rmodel* m, float beta){
+	m->beta3_adamod = beta;
+}
+
+void set_rmodel_training_edge_popup(rmodel* f, float k_percentage){
+	int i;
+    for(i = 0; i < f->n_lstm; i++){
+		f->lstms[i]->k_percentage = k_percentage;
+		f->lstms[i]->feed_forward_flag = EDGE_POPUP;
+		f->lstms[i]->training_mode = EDGE_POPUP;
+    }
 }
