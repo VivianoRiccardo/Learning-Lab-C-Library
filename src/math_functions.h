@@ -124,6 +124,17 @@ double normal_cdf(double x);
 double calc_prob(double xi, double si, double max_xi);
 int* get_sorted_probability_vector(float* means, float* std, int size, int* index);
 void derivative_inverse_q_function_array(float* current_q, float* next_q, float* output,float* action, float alpha1, float alpha2, float gamma, int size);
-
+int sample_softmax_with_temperature(float* input,float temperature, int size);
+void add_value(float* input, float value, float* output, int dimension);
+void compute_prob_average(float* input, float* output, int size);
+void mat_mul(float* mat1, float* mat2,float* mat3, int size1, int size2, int size3);
+void compute_prob_average_double(double* input, float* output, int size);
+double sum_over_input_double(double* inputs, int dimension);
+float compute_kl_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+void huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size);
+void modified_huber_loss_array(float* y_hat, float* y, float threshold1, float* output, float threshold2, int size);
+double random_gamma(double alpha);
+void dirichlet_sample(double alpha, int n, double* sample);
+float mul_array_values_by_indices(float* array, float offset, int size);
 
 #endif

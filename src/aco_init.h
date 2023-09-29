@@ -22,20 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __INITIALIZATION_H__
-#define __INITIALIZATION_H__
+#ifndef __ACO_INIT_H__
+#define __ACO_INIT_H__
 
-float r2();
-float generate_from_random_distribution(float lo, float hi);
-float drand ();
-float random_normal ();
-float random_general_gaussian(float mean, float std);
-float random_general_gaussian_xavier_init(float n);
-float random_general_gaussian_xavier_init2(float n1,float n2);
-float random_general_gaussian_kaiming_init(float n);
-float signed_r2(float n);
-float signed_kaiming_constant(float n);
-double random_beta(double alpha, double beta);
+params* init_params(int size, int input_size, int dimension1, int dimension2, int dimension3);
+activation* init_activation(int activation_flag);
+fcl_func* init_fcl_func(int input, int output);
+aco_edge* init_aco_edge(aco_node* input, aco_node* output, int operation_flag);
+aco_node* init_aco_node(params* weights, params* biases, activation* a, fcl_func* f);
+void free_params(params* p);
+void free_fcl_func(fcl_func* f);
+void free_aco_node(aco_node* n);
+void reset_fcl_func(fcl_func* f);
+void reset_aco_edge(aco_edge* e);
+void reset_aco_node(aco_node* n);
+void add_aco_edge(aco_node* n, aco_edge* e, int input_edge);
+int node_state(aco_node* n);
+aco_tracker* init_aco_tracker();
+void reset_aco_tracker(aco_tracker* a, int free_arrays, int free_model_flag);
+void copy_param(params* original, params* copy);
 
 
 #endif

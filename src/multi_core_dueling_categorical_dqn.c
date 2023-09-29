@@ -62,6 +62,20 @@ void* dueling_categorical_dqn_train_l1_thread(void* _args) {
     return _args;
 }
 
+void* dueling_categorical_dqn_train_l_infinite_thread(void* _args) {
+    // depacking args
+    thread_args_dueling_categorical_dqn_train* dqn = (thread_args_dueling_categorical_dqn_train*) _args;
+    if(!dqn->online_net->is_qr){
+        dqn->ret[0] = compute_l_infinite_dueling_categorical_dqn_opt(dqn->online_net,dqn->online_net_wlp,dqn->state_t,dqn->q_functions,dqn->weight,dqn->alpha,dqn->clip);
+        bp_dueling_categorical_network_opt(dqn->state_t,get_input_layer_size_dueling_categorical_dqn(dqn->online_net),dqn->online_net_wlp->error,dqn->online_net,dqn->online_net_wlp);
+    }
+    else{
+        dqn->ret[0] = compute_l_infinite_qr_dqn_opt(dqn->online_net,dqn->online_net_wlp,dqn->state_t,dqn->q_functions,dqn->weight,dqn->alpha,dqn->clip);
+        bp_qr_dqn_opt(dqn->state_t,get_input_layer_size_dueling_categorical_dqn(dqn->online_net),dqn->online_net_wlp->error,dqn->online_net,dqn->online_net_wlp);
+    }
+    return _args;
+}
+
 
 void* dueling_categorical_dqn_train_with_error_thread(void* _args) {
     // depacking args
@@ -161,10 +175,10 @@ float dueling_categorical_dqn_train_l1(int batch_size, int threads, dueling_cate
     pthread_t thread[threads];
     thread_args_dueling_categorical_dqn_train* args[threads];
     
-    int i,j;
+    int i,j, min=threads;
     float ret = 0;
-    for(i = 0; i < batch_size; i+=threads){
-        int min = threads;
+    for(i = 0; i < batch_size; i+=min){
+        min = threads;
         if(batch_size-i < threads)
             min = batch_size-i;
         for(j = 0; j < min; j++){
@@ -179,6 +193,44 @@ float dueling_categorical_dqn_train_l1(int batch_size, int threads, dueling_cate
             args[j]->alpha = alpha;
             args[j]->ret = &error;
             pthread_create(thread+j, NULL, dueling_categorical_dqn_train_l1_thread, args[j]);
+        }
+            
+                    
+        for(j = 0; j < min; j++) {
+            pthread_join(thread[j], NULL);
+            ret+=args[j]->ret[0];
+            free(args[j]);
+        }
+        sum_dueling_categorical_dqn_partial_derivatives_multithread(online_net_wlp,online_net,min,0);
+        dueling_categorical_reset_without_learning_parameters_reset(online_net_wlp,min);
+    }
+    return ret;
+
+}
+
+
+float dueling_categorical_dqn_train_l_infinite(int batch_size, int threads, dueling_categorical_dqn* online_net, dueling_categorical_dqn** online_net_wlp, float** states_t, float** q_functions, float weight, float alpha, float clip){
+    pthread_t thread[threads];
+    thread_args_dueling_categorical_dqn_train* args[threads];
+    
+    int i,j, min=threads;
+    float ret = 0;
+    for(i = 0; i < batch_size; i+=min){
+        min = threads;
+        if(batch_size-i < threads)
+            min = batch_size-i;
+        for(j = 0; j < min; j++){
+            float error = 0;
+            args[j] = (thread_args_dueling_categorical_dqn_train*)malloc(sizeof(thread_args_dueling_categorical_dqn_train));
+            args[j]->online_net = online_net;
+            args[j]->online_net_wlp = online_net_wlp[j];
+            args[j]->state_t = states_t[j];
+            args[j]->q_functions = q_functions[j];
+            args[j]->weight = weight;
+            args[j]->clip = clip;
+            args[j]->alpha = alpha;
+            args[j]->ret = &error;
+            pthread_create(thread+j, NULL, dueling_categorical_dqn_train_l_infinite_thread, args[j]);
         }
             
                     

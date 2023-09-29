@@ -130,6 +130,7 @@ dueling_categorical_dqn* dueling_categorical_dqn_init(int input_size, int action
     dqn->z_delta = (v_max-v_min)/((float)(n_atoms-1));
     dqn->action_size = action_size;
     dqn->is_qr = 0;
+    dqn->is_iqn= 0;
     dqn->action_mean_layer = (float*)calloc(n_atoms,sizeof(float));
     dqn->v_linear_layer_error = (float*)calloc(n_atoms,sizeof(float));
     dqn->add_layer = (float*)calloc(action_size*n_atoms,sizeof(float));
@@ -145,6 +146,16 @@ dueling_categorical_dqn* dueling_categorical_dqn_init(int input_size, int action
     }
     dqn->support[i] = v_max;
     
+    dqn->k = 0;
+    dqn->n = 0;
+    dqn->quantile_value = 0;
+    dqn->quantile_array = NULL;
+    dqn->single_ff_network = NULL;
+    dqn->single_ff_networks = NULL;
+    dqn->v_hidden_layers_q = NULL;
+    dqn->v_linear_last_layer_q = NULL;
+    dqn->a_hidden_layers_q = NULL;
+    dqn->a_linear_last_layer_q = NULL;
     return dqn;
 }
 
@@ -236,6 +247,20 @@ dueling_categorical_dqn* dueling_categorical_dqn_init_without_arrays(int input_s
     dqn->is_qr = 0;
     dqn->z_delta = (v_max-v_min)/((float)(n_atoms-1));
     dqn->action_size = action_size;
+    
+    dqn->is_iqn = 0;
+    dqn->k = 0;
+    dqn->n = 0;
+    dqn->quantile_value = 0;
+    dqn->quantile_array = NULL;
+    dqn->single_ff_network = NULL;
+    dqn->single_ff_networks = NULL;
+    dqn->v_hidden_layers_q = NULL;
+    dqn->v_linear_last_layer_q = NULL;
+    dqn->a_hidden_layers_q = NULL;
+    dqn->a_linear_last_layer_q = NULL;
+    
+    
     return dqn;
 }
 
@@ -300,7 +325,37 @@ void save_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int n){
         exit(1);
     }
     
-    
+    // new data for implicit quantile network
+    /*
+    convert_data(&dqn->is_iqn,sizeof(int),1);
+    i = fwrite(&dqn->is_iqn,sizeof(int),1,fw);
+    convert_data(&dqn->is_iqn,sizeof(int),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the dqn\n");
+        exit(1);
+    }
+    convert_data(&dqn->k,sizeof(int),1);
+    i = fwrite(&dqn->k,sizeof(int),1,fw);
+    convert_data(&dqn->k,sizeof(int),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the dqn\n");
+        exit(1);
+    }
+    convert_data(&dqn->n,sizeof(int),1);
+    i = fwrite(&dqn->n,sizeof(int),1,fw);
+    convert_data(&dqn->n,sizeof(int),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the dqn\n");
+        exit(1);
+    }
+    convert_data(&dqn->quantile_value,sizeof(int),1);
+    i = fwrite(&dqn->quantile_value,sizeof(int),1,fw);
+    convert_data(&dqn->quantile_value,sizeof(int),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred saving the dqn\n");
+        exit(1);
+    }
+    */
     i = fclose(fw);
     if(i!=0){
         fprintf(stderr,"Error: an error occurred closing the file %s\n",s);
@@ -312,6 +367,12 @@ void save_dueling_categorical_dqn(dueling_categorical_dqn* dqn, int n){
     save_model(dqn->v_linear_last_layer,n);
     save_model(dqn->a_hidden_layers,n);
     save_model(dqn->a_linear_last_layer,n);
+    
+    // new data for implicit quantile network
+    /*
+    if(dqn->is_iqn)
+        save_model(dqn->single_ff_network,n);
+    */
     free(s);
 }
 
@@ -327,7 +388,7 @@ dueling_categorical_dqn* load_dueling_categorical_dqn(char* file){
         exit(1);
     }
     
-    int input_size, action_size, n_atoms, is_qr;
+    int input_size, action_size, n_atoms, is_qr, is_iqn, n, k, quantile_value;
     float v_min,v_max;
     
     i = fread(&is_qr,sizeof(int),1,fr);
@@ -367,13 +428,47 @@ dueling_categorical_dqn* load_dueling_categorical_dqn(char* file){
         fprintf(stderr,"Error: an error occurred loading the model\n");
         exit(1);
     }
+    // new data for implicit quantile network
+    /*
+    i = fread(&is_iqn,sizeof(float),1,fr);
+    convert_data(&is_iqn,sizeof(float),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    i = fread(&k,sizeof(float),1,fr);
+    convert_data(&k,sizeof(float),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    i = fread(&n,sizeof(float),1,fr);
+    convert_data(&n,sizeof(float),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    i = fread(&quantile_value,sizeof(float),1,fr);
+    convert_data(&quantile_value,sizeof(float),1);
+    if(i != 1){
+        fprintf(stderr,"Error: an error occurred loading the model\n");
+        exit(1);
+    }
+    */
+    
     
     model* shared_hidden_layers = load_model_with_file_already_opened(fr);
     model* v_hidden_layers = load_model_with_file_already_opened(fr);
     model* v_linear_last_layer = load_model_with_file_already_opened(fr);
     model* a_hidden_layers = load_model_with_file_already_opened(fr);
     model* a_linear_last_layer = load_model_with_file_already_opened(fr);
+    model* single = NULL;
     
+    // new data for implicit quantile network
+    /*
+    if(is_iqn)
+        single = load_model_with_file_already_opened(fr);
+    */
     i = fclose(fr);
     if(i!=0){
         fprintf(stderr,"Error: an error occurred closing the file %s\n",file);
@@ -381,10 +476,50 @@ dueling_categorical_dqn* load_dueling_categorical_dqn(char* file){
     }
     dueling_categorical_dqn* dqn = dueling_categorical_dqn_init(input_size,action_size,n_atoms,v_min,v_max,shared_hidden_layers,v_hidden_layers,a_hidden_layers,v_linear_last_layer,a_linear_last_layer);
     dqn->is_qr = is_qr;
+    // new data for implicit quantile network
+    /*
+    if(is_iqn){
+        set_iqn(dqn,n,k,quantile_value,single);
+    }
+    * */
     return dqn;
     
 }
 
+// new data for implicit quantile network
+/*
+void set_iqn(dueling_categorical_dqn* dqn, int n, int k, int quantile_value, model* single){
+    dqn->is_qr = 0;
+    dqn->is_iqn = 1;
+    dqn->n = n;
+    dqn->k = k;
+    dqn->quantile_value = quantile_value;
+    dqn->quantile_array = (float*)calloc(dqn->quantile_value,sizeof(float));
+    int max = n;
+    if(k > max)
+        max = k;
+    if(single != NULL)
+        dqn->single_ff_network = single;
+    else{
+        fcl** fcls = (fcl**)malloc(sizeof(fcl*));
+        fcls[0] = fully_connected(quantile_value,dqn->shared_hidden_layers->output_dimension,0,0,5,0,0,0,GRADIENT_DESCENT,FULLY_FEED_FORWARD,0);
+        dqn->single_ff_network = network(1,0,0,1,NULL,NULL,fcls);
+    }
+    dqn->single_ff_networks = (model**)malloc(sizeof(model*)*max);
+    dqn->v_hidden_layers_q = (model**)malloc(sizeof(model*)*max);
+    dqn->v_linear_last_layer_q = (model**)malloc(sizeof(model*)*max);
+    dqn->a_hidden_layers_q = (model**)malloc(sizeof(model*)*max);
+    dqn->a_linear_last_layer_q = (model**)malloc(sizeof(model*)*max);
+    int i;
+    for(i = 0; i < max; i++){
+        dqn->single_ff_networks[i] = copy_model_without_learning_parameters(dqn->single_ff_network);
+        dqn->v_hidden_layers_q[i] = copy_model_without_learning_parameters(dqn->v_hidden_layers);
+        dqn->v_linear_last_layer_q[i] = copy_model_without_learning_parameters(dqn->v_linear_last_layer);
+        dqn->a_hidden_layers_q[i] = copy_model_without_learning_parameters(dqn->a_hidden_layers);
+        dqn->a_linear_last_layer_q[i] = copy_model_without_learning_parameters(dqn->a_linear_last_layer);
+    }    
+}
+*/
 
 void save_dueling_categorical_dqn_given_directory(dueling_categorical_dqn* dqn, int n, char* directory){
     if(dqn == NULL)
@@ -1896,6 +2031,52 @@ float compute_l1_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
     return ret;
 }
 
+float compute_l_infinite_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip){
+    // getting the input size of the network
+    int size = get_input_layer_size_dueling_categorical_dqn(online_net);
+    if(clip<0)
+        clip = -clip;
+    // feed forward
+    compute_probability_distribution_opt(state_t,size,online_net,online_net_wlp);
+    // q functions
+    compute_q_functions(online_net_wlp);
+    int i,j;
+    float ret = 0;
+    float* softmax_arr = (float*)calloc(online_net->action_size,sizeof(float));
+    float* error = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* derivative_softmax_error= (float*)calloc(online_net->action_size,sizeof(float));// new
+    // softmax of the q functions to get the policy
+    softmax(online_net_wlp->q_functions,softmax_arr,online_net->action_size);
+    // computing the error for the threshold
+    // clipping and multiplying the derivative * alpha and weight and change sign cause we are using gradient descent
+    int index = 0;
+    float maximum = float_abs(softmax_arr[0]-q_functions[0]);
+    for(i = 1; i < online_net->action_size; i++){
+        float temp = float_abs(softmax_arr[i]-q_functions[i]);
+        if(temp > maximum){
+            maximum = temp;
+            index = i;
+        }
+    }
+    
+    error[index] = -(softmax_arr[index]-q_functions[index])/maximum;
+    ret=maximum;
+    derivative_softmax(derivative_softmax_error,softmax_arr,error,online_net->action_size);
+
+    // we got the partial derivatives of the q functions, now we need to compute the partial derivatives respect to the softmax final layer
+    for(i = 0; i < online_net->action_size; i++){
+        for(j = 0; j < online_net->n_atoms; j++){
+            online_net_wlp->error[i*online_net->n_atoms+j]+=derivative_softmax_error[i]*online_net->support[j];
+        }
+    }
+    
+    free(softmax_arr);
+    free(error);
+    free(derivative_softmax_error);
+
+    return ret;
+}
+
 // returns the error
 float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip){
     // getting the input size of the network
@@ -2011,6 +2192,122 @@ float compute_kl_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net
     free(log1);
     free(log2);
     free(error);
+    return ret;
+}
+
+/*
+float compute_kl_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip){
+    
+    // getting the input size of the network
+    int size = get_input_layer_size_dueling_categorical_dqn(online_net);
+    if(clip<0)
+        clip = -clip;
+    // feed forward
+    compute_probability_distribution_opt_qr_dqn(state_t,size,online_net,online_net_wlp);
+    // q functions
+    compute_q_functions_qr_dqn(online_net_wlp);
+    int i,j;
+    float ret = 0;
+    float* softmax_arr = (float*)calloc(online_net->action_size,sizeof(float));
+    float* softmax_arr2 = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* loss = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* error = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* derivative_softmax_error= (float*)calloc(online_net->action_size,sizeof(float));// new
+    // softmax of the q functions to get the policy
+    softmax(online_net_wlp->q_functions,softmax_arr,online_net->action_size);
+    // the softmax are already computed when stored
+    //softmax(q_functions,softmax_arr2,online_net->action_size);
+    // computing the error for the threshold
+    kl_divergence(softmax_arr, q_functions, loss, online_net->action_size);
+    
+    
+    // computing the derivative
+    derivative_kl_divergence(softmax_array, q_functions, error, online_net->action_size);
+    
+    // clipping and multiplying the derivative * alpha and weight and change sign cause we are using gradient descent
+    for(i = 0; i < online_net->action_size; i++){
+        if(loss[i] > clip){
+            loss[i] = clip;
+            error[i] = 0;
+        }
+        if(loss[i] < -clip){
+            loss[i] = -clip;
+            error[i] = 0;
+        }
+        error[i]*=-alpha*weight;
+    }
+    
+    ret+= alpha*sum_over_input(loss,online_net->action_size);
+
+    
+    derivative_softmax(derivative_softmax_error,softmax_arr,error,online_net->action_size);
+    
+    // we got the partial derivatives of the q functions, now we need to compute the partial derivatives respect to the softmax final layer
+    for(i = 0; i < online_net->action_size; i++){
+        for(j = 0; j < online_net->n_atoms; j++){
+            online_net_wlp->error[i*online_net->n_atoms+j]+=derivative_softmax_error[i]/online_net->n_atoms;
+        }
+    }
+    
+    free(softmax_arr);
+    free(softmax_arr2);
+    free(error);
+    free(derivative_softmax_error);
+    free(loss);
+
+    return ret;
+}
+* */
+
+float compute_l_infinite_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip){
+    
+    // getting the input size of the network
+    int size = get_input_layer_size_dueling_categorical_dqn(online_net);
+    if(clip<0)
+        clip = -clip;
+    // feed forward
+    compute_probability_distribution_opt_qr_dqn(state_t,size,online_net,online_net_wlp);
+    // q functions
+    compute_q_functions_qr_dqn(online_net_wlp);
+    int i,j;
+    float ret = 0;
+    float* softmax_arr = (float*)calloc(online_net->action_size,sizeof(float));
+    float* error = (float*)calloc(online_net->action_size,sizeof(float));// new
+    float* derivative_softmax_error= (float*)calloc(online_net->action_size,sizeof(float));// new
+    // softmax of the q functions to get the policy
+    softmax(online_net_wlp->q_functions,softmax_arr,online_net->action_size);
+    // the softmax are already computed when stored
+    //softmax(q_functions,softmax_arr2,online_net->action_size);
+    // computing the error for the threshold
+    
+    
+    // clipping and multiplying the derivative * alpha and weight and change sign cause we are using gradient descent
+    int index = 0;
+    float maximum = float_abs(softmax_arr[0]-q_functions[0]);
+    for(i = 1; i < online_net->action_size; i++){
+        float temp = float_abs(softmax_arr[i]-q_functions[i]);
+        if(temp > maximum){
+            maximum = temp;
+            index = i;
+        }
+    }
+    
+    error[index] = -(softmax_arr[index]-q_functions[index])/maximum;
+    ret=maximum;
+    
+    derivative_softmax(derivative_softmax_error,softmax_arr,error,online_net->action_size);
+    
+    // we got the partial derivatives of the q functions, now we need to compute the partial derivatives respect to the softmax final layer
+    for(i = 0; i < online_net->action_size; i++){
+        for(j = 0; j < online_net->n_atoms; j++){
+            online_net_wlp->error[i*online_net->n_atoms+j]+=derivative_softmax_error[i]/online_net->n_atoms;
+        }
+    }
+    
+    free(softmax_arr);
+    free(error);
+    free(derivative_softmax_error);
+
     return ret;
 }
 

@@ -143,7 +143,7 @@ cl* convolutional(int channels, int input_rows, int input_cols, int kernel_rows,
         exit(1);
     } 
     
-    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
+    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT && training_mode != ONLY_FF){
         fprintf(stderr,"Error, you should set the training mode properly!\n");
         exit(1);
     }
@@ -694,7 +694,7 @@ cl* convolutional_without_learning_parameters(int channels, int input_rows, int 
         exit(1);
     } 
     
-    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
+    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT && training_mode != ONLY_FF){
         fprintf(stderr,"Error, you should set the training mode properly!\n");
         exit(1);
     }
@@ -913,7 +913,7 @@ int exists_d_kernels_cl(cl* c){
 }
 
 int exists_d_biases_cl(cl* c){
-    return c->training_mode != EDGE_POPUP && c->training_mode != ONLY_FF && c->convolutional_flag != NO_CONVOLUTION;
+    return c->training_mode != EDGE_POPUP && c->training_mode != ONLY_FF && c->convolutional_flag != NO_CONVOLUTION && c->d_biases != NULL;
 }
 
 int exists_kernels_cl(cl* c){
@@ -1778,9 +1778,13 @@ cl* copy_cl(cl* f){
             
         if(exists_d_kernels_cl(f)){
             int size = f->channels*f->kernel_rows*f->kernel_cols;
+            if(f->d_kernels != NULL)
             copy_array(f->d_kernels[i],copy->d_kernels[i],size);
+            if(f->d1_kernels != NULL)
             copy_array(f->d1_kernels[i],copy->d1_kernels[i],size);
+            if(f->d2_kernels != NULL)
             copy_array(f->d2_kernels[i],copy->d2_kernels[i],size);
+            if(f->d3_kernels != NULL)
             copy_array(f->d3_kernels[i],copy->d3_kernels[i],size);
         }
     }
@@ -1795,19 +1799,29 @@ cl* copy_cl(cl* f){
     if(exists_biases_cl(f))
     copy_array(f->biases,copy->biases,f->n_kernels);
     if(exists_d_biases_cl(f)){
+        if(f->d_biases != NULL)
         copy_array(f->d_biases,copy->d_biases,f->n_kernels);
+        if(f->d1_biases != NULL)
         copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
+        if(f->d2_biases != NULL)
         copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+        if(f->d3_biases != NULL)
         copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
     }
     
     if(exists_edge_popup_stuff_cl(f)){
         int size = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+        if(f->scores != NULL)
         copy_array(f->scores,copy->scores,size);
+        if(f->d_scores != NULL)
         copy_array(f->d_scores,copy->d_scores,size);
+        if(f->d1_scores != NULL)
         copy_array(f->d1_scores,copy->d1_scores,size);
+        if(f->d2_scores != NULL)
         copy_array(f->d2_scores,copy->d2_scores,size);
+        if(f->d3_scores != NULL)
         copy_array(f->d3_scores,copy->d3_scores,size);
+        if(f->indices != NULL)
         copy_int_array(f->indices,copy->indices,size);
         
     }
@@ -1921,6 +1935,7 @@ cl* reset_cl(cl* f){
     }
     if(exists_edge_popup_stuff_with_only_training_mode_cl(f)){
         int size = f->n_kernels*f->channels*f->kernel_rows*f->kernel_cols;
+        if(f->d_scores != NULL)
         set_vector_with_value(0,f->d_scores,size);
         for(i = 0; i < size; i++){
             f->indices[i] = i;
@@ -2362,9 +2377,13 @@ void paste_cl(cl* f, cl* copy){
                 copy_array(f->kernels[i],copy->kernels[i],n_all_except_n_kernels_f);
             }
             if(exists_d_kernels_cl(f) && exists_d_kernels_cl(copy)){
+				if(f->d_kernels != NULL)
                 copy_array(f->d_kernels[i],copy->d_kernels[i],n_all_except_n_kernels_f);
+                if(f->d1_kernels != NULL)
                 copy_array(f->d1_kernels[i],copy->d1_kernels[i],n_all_except_n_kernels_f);
+                if(f->d2_kernels != NULL)
                 copy_array(f->d2_kernels[i],copy->d2_kernels[i],n_all_except_n_kernels_f);
+                if(f->d3_kernels != NULL)
                 copy_array(f->d3_kernels[i],copy->d3_kernels[i],n_all_except_n_kernels_f);
             }
         }
@@ -2379,17 +2398,27 @@ void paste_cl(cl* f, cl* copy){
     if(exists_biases_cl(f) && exists_biases_cl(copy))
     copy_array(f->biases,copy->biases,f->n_kernels);
     if(exists_d_biases_cl(f) && exists_d_biases_cl(copy)){
+		if(f->d_biases != NULL)
         copy_array(f->d_biases,copy->d_biases,f->n_kernels);
+        if(f->d1_biases != NULL)
         copy_array(f->d1_biases,copy->d1_biases,f->n_kernels);
+        if(f->d2_biases != NULL)
         copy_array(f->d2_biases,copy->d2_biases,f->n_kernels);
+        if(f->d3_biases != NULL)
         copy_array(f->d3_biases,copy->d3_biases,f->n_kernels);
     }
     if(exists_edge_popup_stuff_cl(f) && exists_edge_popup_stuff_cl(copy)){
+		if(f->indices != NULL)
         copy_int_array(f->indices,copy->indices,n_all_f);
+        if(f->scores != NULL)
         copy_array(f->scores,copy->scores,n_all_f);
+        if(f->d_scores != NULL)
         copy_array(f->d_scores,copy->d_scores,n_all_f);
+        if(f->d1_scores != NULL)
         copy_array(f->d1_scores,copy->d1_scores,n_all_f);
+        if(f->d2_scores != NULL)
         copy_array(f->d2_scores,copy->d2_scores,n_all_f);
+        if(f->d3_scores != NULL)
         copy_array(f->d3_scores,copy->d3_scores,n_all_f);
     }
     return;
@@ -2517,9 +2546,13 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
                 for(j = 0; j < n_all_except_n_kernels_f; j++){
                     copy->kernels[i][j] = tau*f->kernels[i][j] + (1-tau)*copy->kernels[i][j];
                     if(exists_d_kernels_cl(f) && exists_d_kernels_cl(copy)){
+						if(f->d_kernels != NULL)
                         copy->d_kernels[i][j] = tau*f->d_kernels[i][j] + (1-tau)*copy->d_kernels[i][j];
+                        if(f->d1_kernels != NULL)
                         copy->d1_kernels[i][j] = tau*f->d1_kernels[i][j] + (1-tau)*copy->d1_kernels[i][j];
+                        if(f->d2_kernels != NULL)
                         copy->d2_kernels[i][j] = tau*f->d2_kernels[i][j] + (1-tau)*copy->d2_kernels[i][j];
+                        if(f->d3_kernels != NULL)
                         copy->d3_kernels[i][j] = tau*f->d3_kernels[i][j] + (1-tau)*copy->d3_kernels[i][j];
                     }
                 }
@@ -2527,9 +2560,13 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
             if(exists_biases_cl(f) && exists_biases_cl(copy)){
                 copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
                 if(exists_d_biases_cl(f) && exists_biases_cl(copy)){
+					if(f->d_biases != NULL)
                     copy->d_biases[i] = tau*f->d_biases[i] + (1-tau)*copy->d_biases[i];
+                    if(f->d1_biases != NULL)
                     copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
+                    if(f->d2_biases != NULL)
                     copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
+                    if(f->d3_biases != NULL)
                     copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
                 }
             
@@ -2546,19 +2583,27 @@ void slow_paste_cl(cl* f, cl* copy,float tau){
     
      if(exists_edge_popup_stuff_cl(f) && exists_edge_popup_stuff_cl(copy)){
          for(i = 0; i < n_all_f; i++){
+			 if(f->scores != NULL)
              copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+             if(f->d_scores != NULL)
              copy->d_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d_scores[i];
+             if(f->d1_scores != NULL)
              copy->d1_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d1_scores[i];
+             if(f->d2_scores != NULL)
              copy->d2_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d2_scores[i];
+             if(f->d3_scores != NULL)
              copy->d3_scores[i] = tau*f->d_scores[i] + (1-tau)*copy->d3_scores[i];
+             if(f->indices != NULL)
              copy->indices[i] = i;
              
          }
          set_int_vector_with_value(0,copy->used_kernels,copy->n_kernels);
+         if(copy->scores != NULL)
          sort(copy->scores,copy->indices,0,n_all_f-1);
 
         
          for(i = n_all_f-n_all_f*copy->k_percentage; i < n_all_f; i++){
+			if(copy->indices != NULL)
             copy->used_kernels[(int)(copy->indices[i]/(n_all_except_n_kernels_f))] = 1;
          }
      }
@@ -3177,6 +3222,14 @@ void make_the_cl_only_for_ff(cl* c){
     c->temp2 = NULL;
     c->temp3 = NULL;
     c->error2 = NULL;
+    free_matrix((void**)c->d_scores,c->n_kernels);
+    free_matrix((void**)c->d1_scores,c->n_kernels);
+    free_matrix((void**)c->d2_scores,c->n_kernels);
+    free_matrix((void**)c->d3_scores,c->n_kernels);
+    c->d_scores = NULL;
+    c->d1_scores = NULL;
+    c->d2_scores = NULL;
+    c->d3_scores = NULL;
 }
 
 void set_feed_forward_flag(cl* c, int feed_forward_flag){

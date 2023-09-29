@@ -122,5 +122,8 @@ void compute_probability_distribution_qr_dqn(float* input , int input_size, duel
 float* bp_qr_dqn_opt(float* input, int input_size, float* error, dueling_categorical_dqn* dqn, dueling_categorical_dqn* dqn_wlp);
 float compute_l1_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
 void reset_dueling_categorical_dqn_only_for_ff(dueling_categorical_dqn* dqn);
+void set_iqn(dueling_categorical_dqn* dqn, int n, int k, int quantile_value, model* single);
+float compute_l_infinite_qr_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
+float compute_l_infinite_dueling_categorical_dqn_opt(dueling_categorical_dqn* online_net,dueling_categorical_dqn* online_net_wlp, float* state_t, float* q_functions,  float weight, float alpha, float clip);
 
 #endif

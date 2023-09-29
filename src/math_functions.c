@@ -82,6 +82,16 @@ double sum_over_input(float* inputs, int dimension){
     return sum;
 }
 
+double sum_over_input_double(double* inputs, int dimension){
+    double sum = 0;
+    int i;
+    for(i = 0; i < dimension; i++){
+        sum+=inputs[i];
+    }
+    
+    return sum;
+}
+
 int* get_sorted_probability_vector(float* means, float* std, int size, int* index){
     int i,j, n = size;
     float* p = (float*)calloc(size*size,sizeof(float));
@@ -151,13 +161,65 @@ void softmax(float* input, float* output, int size){
     for(i = 0; i < size; i++){
         sum+=exp(input[i]);
     }
-    if(!bool_is_real(sum) || !sum){
-        fprintf(stderr,"Error: not real number appeared in a softmax function!\n");
+    //if(!bool_is_real(sum) || !sum){
+        //fprintf(stderr,"Error: not real number appeared in a softmax function!\n");
         //exit(1);
-    }
+        
+    //}
     for(i = 0; i < size; i++){
         output[i] = exp(input[i])/sum;
     }
+}
+
+void mat_mul(float* mat1, float* mat2,float* mat3, int size1, int size2, int size3){
+    int i,j,k;
+    for(i = 0; i < size1; i++){
+        for(j = 0; j < size2; j++){
+            for(k = 0; k < size3; k++){
+                mat3[i*size3+k]+=mat1[i*size2+j]*mat2[j*size3+k];
+            }
+        }
+    }
+}
+
+
+int sample_softmax_with_temperature(float* input,float temperature, int size){
+    float* output = (float*)calloc(size,sizeof(float));
+    int* indices = (int*)calloc(size,sizeof(int));
+    
+    int i;
+    for(i = 0; i < size; i++){
+        input[i]/=temperature;
+    }
+    float sum = 0;
+    for(i = 0; i < size; i++){
+        sum+=exp(input[i]);
+    }
+    //if(!bool_is_real(sum) || !sum){
+        //fprintf(stderr,"Error: not real number appeared in a softmax function!\n");
+        //exit(1);
+    //}
+    
+    for(i = 0; i < size; i++){
+        output[i] = exp(input[i])/sum;
+        indices[i] = i;
+    }
+    sort(output, indices, 0, size-1);
+    float r = r2();
+    int index = -1;
+    for(i = 0; i < size; i++){
+        if(output[indices[i]] <= r){
+            index = indices[i];
+            break;
+        }
+        r-=output[indices[i]];        
+    }
+    if(index == -1)
+        index = output[indices[size-1]];
+    free(output);
+    free(indices);
+    return index;
+    
 }
 
 void derivative_softmax_array(int* input, float* output,float* softmax_arr,float* error, int size){
@@ -197,7 +259,7 @@ float sigmoid(float x){
     float t = (1+exp(-x));
     if(bool_is_real(t) && t)
     return 1/t;
-    fprintf(stderr,"Error: not real number appeared in a sigmoid function!\n");
+    //fprintf(stderr,"Error: not real number appeared in a sigmoid function!\n");
     return 1/t;
     //exit(1);
 }
@@ -206,7 +268,7 @@ float abs_sigmoid(float x){
     float t = (1+exp(-float_abs(x)));
     if(bool_is_real(t) && t)
     return 1/t;
-    fprintf(stderr,"Error: not real number appeared in a abs_sigmoid function!\n");
+    //fprintf(stderr,"Error: not real number appeared in a abs_sigmoid function!\n");
     //exit(1);
     return 1/t;
 }
@@ -305,8 +367,8 @@ float tanhh(float x){
     float y = exp(2*x);
     if(bool_is_real(y) && (y+1))
     return (y-1)/(y+1);
-    fprintf(stderr,"Error: not real number appeared in a tanh function!\n");
-    exit(1);
+    //fprintf(stderr,"Error: not real number appeared in a tanh function!\n");
+    //exit(1);
 }
 
 void tanhh_array(float* input, float* output, int size){
@@ -370,18 +432,28 @@ void derivative_inverse_q_function_array(float* current_q, float* next_q, float*
     int i;
     double y = 0;
     double denominator = 1;
+
     if(gamma > 0){
         for(i = 0; i < size; i++){
             y+=exp(next_q[i]/alpha1);
         }
-        y = alpha1*log(y);
+        y = (alpha1*log(y))/size;
     }
+    double current_q_d = 0;
     for(i = 0; i < size; i++){
+        current_q_d+=exp(current_q[i]/alpha1);
+    }
+    // chi divergence
+    for(i = 0; i < size; i++){
+        //printf("i,action[i]: %d, %d\n",i,action[i]);
         if(action[i] > 0){
-            double temp = current_q[i] - y;
+        
+            double temp = current_q[i] - gamma*y;
             temp = temp*temp*temp;
             output[i] = -1 - 2.0/((4.0*alpha2)*temp);
         }
+        // second term
+        output[i] += exp(current_q[i]/alpha1)/(size*current_q_d);
     }    
 }
 
@@ -492,6 +564,13 @@ void derivative_huber_loss_array(float* y_hat, float* y,float* output, float thr
     }
 }
 
+void huber_loss_array(float* y_hat, float* y,float* output, float threshold, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = huber_loss(y_hat[i],y[i],threshold);
+    }
+}
+
 /*used for a tanh output*/
 float modified_huber_loss(float y_hat, float y, float threshold1, float threshold2){
     if(y*y_hat>= -1){
@@ -523,6 +602,13 @@ void derivative_modified_huber_loss_array(float* y_hat, float* y, float threshol
     int i;
     for(i = 0; i < size; i++){
         output[i] = derivative_modified_huber_loss(y_hat[i],y[i],threshold1,threshold2);
+    }
+}
+
+void modified_huber_loss_array(float* y_hat, float* y, float threshold1, float* output, float threshold2, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = modified_huber_loss(y_hat[i],y[i],threshold1,threshold2);
     }
 }
 
@@ -580,14 +666,40 @@ void derivative_focal_loss_array(float* y_hat, float* y, float* output, float ga
 void kl_divergence(float* input1, float* input2, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
-        output[i] = input1[i]*log((double)(input1[i]/input2[i]));
+        if(input2[i] == 0){
+            output[i] = 1.0/EPSILON;
+        }
+        else if (input1[i] == 0){
+            output[i] = EPSILON*log((double)(EPSILON/input2[i]));
+        }
+        else{
+            output[i] = input1[i]*log((double)(input1[i]/input2[i]));
+            if(!bool_is_real(output[i])){
+                if(input1[i]/input2[i] > 1){
+                    output[i] = 1.0/EPSILON;
+                }
+                else{
+                    output[i] = EPSILON*log((double)(EPSILON/input2[i]));
+                }
+            }
+        }
     }
 }
 
 void derivative_kl_divergence(float* y_hat, float* y, float* output, int size){
     int i;
     for(i = 0; i < size; i++){
-        output[i] = log((double)(y_hat[i]/y[i]))+1;
+        if(y_hat[i] == 0 || y[i] == 0){
+            output[i] = 0;
+        }
+        
+        else{
+            output[i] = log((double)(y_hat[i]/y[i]))+1.0;
+            if(!bool_is_real(output[i])){
+                output[i] = 0;
+            }
+        }
+        
     }
 }
 
@@ -784,6 +896,14 @@ void mul_value(float* input, float value, float* output, int dimension){
         output[i] = input[i]*value;
     }
 }
+
+
+void add_value(float* input, float value, float* output, int dimension){
+    int i;
+    for(i = 0; i < dimension; i++){
+        output[i] = input[i]+value;
+    }
+}
 /* This function computes a dot product between an array and a float value: value
  * 
  * Input
@@ -798,6 +918,23 @@ void additional_mul_value(float* input, float value, float* output, int dimensio
     int i;
     for(i = 0; i < dimension; i++){
         output[i] += input[i]*value;
+    }
+}
+
+void compute_prob_average(float* input, float* output, int size){
+    double sum = sum_over_input(input,size);
+    int i;
+    for(i = 0; i < size; i++){
+        output[i] = input[i]/sum;
+    }
+}
+
+void compute_prob_average_double(double* input, float* output, int size){
+    double sum = sum_over_input_double(input,size);
+    int i;
+    for(i = 0; i < size; i++){
+        double out = input[i]/sum;
+        output[i] = out;
     }
 }
 
@@ -1114,5 +1251,44 @@ void set_factorised_noise(int input, int output, float* noise, float* biases_noi
             noise[j*input+i] = f_x*f_y;
         }
     }
+}
+
+double random_gamma(double alpha) {
+    double u1, u2, w, y, x, v1, v2;
+    
+    do {
+        u1 = rand() / (RAND_MAX + 1.0);
+        u2 = rand() / (RAND_MAX + 1.0);
+        v1 = 2.0 * u1 - 1.0;
+        v2 = 2.0 * u2 - 1.0;
+        w = v1 * v1 + v2 * v2;
+    } while (w >= 1.0);
+
+    y = sqrt((-2.0 * log(w)) / w);
+    x = v1 * y;
+    
+    return alpha * x;
+}
+
+void dirichlet_sample(double alpha, int n, double* sample) {
+    double sum = 0.0;
+    for (int i = 0; i < n; i++) {
+        sample[i] = random_gamma(alpha);
+        sum += sample[i];
+    }
+
+    // Normalize the sample
+    for (int i = 0; i < n; i++) {
+        sample[i] /= sum;
+    }
+}
+
+float mul_array_values_by_indices(float* array, float offset, int size){
+	float sum = 0;
+	int i;
+	for(i = 0; i < size; i++){
+		sum+=((float)(i))*array[i] + offset;
+	}
+	return sum;
 }
 

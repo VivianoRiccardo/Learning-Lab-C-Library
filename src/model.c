@@ -9191,6 +9191,15 @@ void mse_model_error(model* m, float* output){
     derivative_mse_array(m->output_layer,output,m->error,m->output_dimension);     
 }
 
+void mse_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in mse model error something is null\n");
+        exit(1);
+    }
+    
+    mse_array(m->output_layer,output,m->error,m->output_dimension);     
+}
+
 /* Inverse Q-Leargnin y = [y1,y2,y3,...,yn] where y = next_q (set to gamma to 0 in case the trajectory has done)
  * Error = -(Q_Current - V_next) + V_current - y + 1/(4*threshold2(Q_current - V_next)**2)
  * alpha is updated to set to 0 where the action has not been taken and 1 where is taken
@@ -9229,9 +9238,7 @@ void policy_gradient_model_error(model* m, float* output){
         fprintf(stderr,"Error: in cross entropy model error something is null\n");
         exit(1);
     }
-    
     float* error = (float*)calloc(m->output_dimension,sizeof(float));
-    
     float* temp = (float*)calloc(m->output_dimension,sizeof(float));
     float* q = (float*)calloc(m->output_dimension,sizeof(float));
     float* temp2 = NULL;
@@ -9242,23 +9249,36 @@ void policy_gradient_model_error(model* m, float* output){
         mul_value(output,1.0/m->error_gamma,temp2,m->output_dimension);
         softmax(temp2,q2,m->output_dimension);
     }
-    
     mul_value(m->output_layer,1.0/m->error_gamma,temp,m->output_dimension);
     softmax(temp,q,m->output_dimension);
-    
+    printf("Qs: %f, %f\n",q[0],q[1]);
     
     int i;
+    printf("AAAAAAAAAAAA\n");
     for(i = 0; i < m->output_dimension; i++){// policy gradient 
-        error[i] = -1/temp[i]*m->error_alpha[i];
+        float temp = m->error_alpha[i];
+        /*
+        if(m->error_threshold1 > 0){
+            if(q[i] != 0)
+                temp-=(q[i]*log(q[i]));
+        }*/
+        
+        error[i] = (-1/q[i])*temp;
+        printf("%f ",error[i]);
     }
-    
+    printf("\n");
     if(m->error_threshold1 > 0){// entropy
-        if(q[i] == 0)
-            error[i]-=m->error_threshold1*(1.0-999);
-        else
-            error[i]-=m->error_threshold1*(1.0+log(q[i]));
+        printf("ENTROPYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n");
+        printf("error prima: %f, %f\n",error[0],error[1]);
+        printf("error prima: %f, %f\n",q[0],q[1]);
+        for(i = 0; i < m->output_dimension; i++){
+            if(q[i] == 0)
+                error[i]-=m->error_threshold1*(1.0-999.0);
+            else
+                error[i]-=m->error_threshold1*(1.0+log(q[i]));
+        }
+        printf("error dopo: %f, %f\n",error[0],error[1]);
     }
-    
     double sum = 0;
     if(m->error_threshold2 > 0){// diversity driven exploration with l2 distance
         for(i = 0; i < m->output_dimension; i++){
@@ -9272,10 +9292,8 @@ void policy_gradient_model_error(model* m, float* output){
             }
         }
     }
-    
     derivative_softmax(m->error, q, error, m->output_dimension);
     mul_value(m->error, 1.0/m->error_gamma, m->error, m->output_dimension);
-    
     free(error);
     free(temp);
     free(q);
@@ -9302,6 +9320,15 @@ void cross_entropy_model_error(model* m, float* output){
     derivative_cross_entropy_array(m->output_layer,output,m->error,m->output_dimension);     
 }
 
+void cross_entropy_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in cross entropy model error something is null\n");
+        exit(1);
+    }
+    
+    cross_entropy_array(m->output_layer,output,m->error,m->output_dimension);     
+}
+
 /* Given a model and an output, this function computes the focal loss derivative in m->error_vector
  * 
  * Inputs:
@@ -9317,6 +9344,15 @@ void focal_model_error(model* m, float* output){
     }
     
     derivative_focal_loss_array(m->output_layer,output,m->error,m->error_gamma,m->output_dimension);     
+}
+
+void focal_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in focal model error something is null\n");
+        exit(1);
+    }
+    
+    focal_loss_array(m->output_layer,output,m->error,m->error_gamma,m->output_dimension);     
 }
 
 /* Given a model and an output, this function computes the huber loss derivative in m->error_vector
@@ -9336,6 +9372,15 @@ void huber_one_model_error(model* m, float* output){
     derivative_huber_loss_array(m->output_layer,output,m->error,m->error_threshold1,m->output_dimension);     
 }
 
+void huber_one_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in huber one model error something is null\n");
+        exit(1);
+    }
+    
+    huber_loss_array(m->output_layer,output,m->error,m->error_threshold1,m->output_dimension);     
+}
+
 /* Given a model and an output, this function computes the modified huber loss derivative in m->error_vector
  * 
  * Inputs:
@@ -9351,6 +9396,15 @@ void huber_two_model_error(model* m, float* output){
     }
     
     derivative_modified_huber_loss_array(m->output_layer,output,m->error_threshold1,m->error,m->error_threshold2,m->output_dimension);     
+}
+
+void huber_two_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in huber two model error something is null\n");
+        exit(1);
+    }
+    
+    modified_huber_loss_array(m->output_layer,output,m->error_threshold1,m->error,m->error_threshold2,m->output_dimension);     
 }
 
 /* Given a model and an output, this function computes the kl divergence derivative in m->error_vector
@@ -9370,6 +9424,15 @@ void kl_model_error(model* m, float* output){
     derivative_kl_divergence(m->output_layer,output,m->error,m->output_dimension);     
 }
 
+void kl_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in kl model error something is null\n");
+        exit(1);
+    }
+    
+    kl_divergence(m->output_layer,output,m->error,m->output_dimension);     
+}
+
 /* Given a model and an output, this function computes the entropy derivative in m->error_vector
  * 
  * Inputs:
@@ -9385,6 +9448,15 @@ void entropy_model_error(model* m, float* output){
     }
     
     derivative_entropy_array(m->output_layer,m->error,m->output_dimension);     
+}
+
+void entropy_model_error_only_for_ff(model* m, float* output){
+    if(m == NULL || m->error == NULL || output == NULL){
+        fprintf(stderr,"Error: in entropy model error something is null\n");
+        exit(1);
+    }
+    
+    entropy_array(m->output_layer,m->error,m->output_dimension);     
 }
 
 
@@ -9418,6 +9490,23 @@ void compute_model_error(model* m, float* output){
         policy_gradient_model_error(m,output);            
 }
 
+void compute_model_error_only_for_ff(model* m, float* output){
+    if(m->error_flag== MSE_LOSS)
+        mse_model_error_only_for_ff(m,output);
+    else if(m->error_flag == CROSS_ENTROPY_LOSS)
+        cross_entropy_model_error_only_for_ff(m,output);
+    else if(m->error_flag == FOCAL_LOSS)
+        focal_model_error_only_for_ff(m,output);
+    else if(m->error_flag == HUBER1_LOSS)
+        huber_one_model_error_only_for_ff(m,output);
+    else if(m->error_flag == HUBER2_LOSS)
+        huber_two_model_error_only_for_ff(m,output);
+    else if(m->error_flag == KL_DIVERGENCE_LOSS)
+        kl_model_error_only_for_ff(m,output);
+    else if(m->error_flag == ENTROPY_LOSS)
+        entropy_model_error_only_for_ff(m,output);                   
+}
+
 
 /* computing the feed forward, the error and the back propagation of a model given an input and output
  * 
@@ -9434,7 +9523,7 @@ void compute_model_error(model* m, float* output){
 float* ff_error_bp_model_once(model* m, int tensor_depth, int tensor_i, int tensor_j, float* input, float* output){
     model_tensor_input_ff(m,tensor_depth,tensor_i,tensor_j,input);
     compute_model_error(m,output);
-    if(m->error_alpha != NULL){
+    if(m->error_alpha != NULL && m->error_flag != POLICY_GRADIENT && m->error_flag != INVERSE_Q_LEARNING){
         int i;
         for(i = 0; i < m->output_dimension; i++){
             if(output[i] != (float)(0))
@@ -9460,7 +9549,7 @@ float* ff_error_bp_model_once_opt(model* m,model* m2, int tensor_depth, int tens
     
     model_tensor_input_ff_without_learning_parameters(m,m2,tensor_depth,tensor_i,tensor_j,input);
     compute_model_error(m,output);
-    if(m->error_alpha != NULL){
+    if(m->error_alpha != NULL && m->error_flag != POLICY_GRADIENT && m->error_flag != INVERSE_Q_LEARNING){
         int i;
         for(i = 0; i < m->output_dimension; i++){
             if(output[i] != (float)(0))
@@ -9539,15 +9628,21 @@ void set_model_training_edge_popup(model* m, float k_percentage){
     }
     for(i = 0; i < m->n_fcl; i++){
         m->fcls[i]->k_percentage = k_percentage;
+        m->fcls[i]->feed_forward_flag = EDGE_POPUP;
+        m->fcls[i]->training_mode = EDGE_POPUP;
     }
     
     for(i = 0; i < m->n_cl; i++){
         m->cls[i]->k_percentage = k_percentage;
+        m->cls[i]->feed_forward_flag = EDGE_POPUP;
+        m->cls[i]->training_mode = EDGE_POPUP;
     }
     
     for(i = 0; i < m->n_rl; i++){
         for(j = 0; j < m->rls[i]->n_cl; j++){
             m->rls[i]->cls[j]->k_percentage = k_percentage;
+            m->rls[i]->cls[j]->feed_forward_flag = EDGE_POPUP;
+            m->rls[i]->cls[j]->training_mode = EDGE_POPUP;
         }
     }
 }

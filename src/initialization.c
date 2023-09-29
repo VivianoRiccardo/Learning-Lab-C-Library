@@ -29,6 +29,16 @@ float r2(){
     return (float)((float)rand() / (float)RAND_MAX);
 }
 
+double random_beta(double alpha, double beta) {
+    double u = r2();
+    double v = r2();
+
+    double x = pow(u, 1.0 / alpha);
+    double y = pow(v, 1.0 / beta);
+
+    return x / (x + y);
+}
+
 float signed_r2(float n){
     if (r2() >= 0.5)
             return r2()*n;

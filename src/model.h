@@ -138,5 +138,13 @@ void memcopy_vector_to_indices_model2(model* f, int* vector);
 void inverse_q_model_error(model* m, float* output);
 void policy_gradient_model_error(model* m, float* output);
 model* reset_model_only_for_ff(model* m);
+void mse_model_error_only_for_ff(model* m, float* output);
+void cross_entropy_model_error_only_for_ff(model* m, float* output);
+void focal_model_error_only_for_ff(model* m, float* output);
+void huber_one_model_error_only_for_ff(model* m, float* output);
+void huber_two_model_error_only_for_ff(model* m, float* output);
+void kl_model_error_only_for_ff(model* m, float* output);
+void entropy_model_error_only_for_ff(model* m, float* output);
+void compute_model_error_only_for_ff(model* m, float* output);
 
 #endif

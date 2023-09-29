@@ -74,6 +74,7 @@ typedef unsigned int uint;
 #define TEMPORAL_ENCODING_MODEL 16
 
 // activations
+#define ALL_ACTIVATIONS -1
 #define NO_ACTIVATION 0
 #define SIGMOID 1
 #define RELU 2
@@ -234,6 +235,22 @@ typedef unsigned int uint;
 #define NOISY 1 
 
 #define MAXIMUM_SCORE 100
+
+
+// ACO node
+#define ACO_IS_BIAS 1
+#define ACO_IS_WEIGHT 2
+#define ACO_IS_ACTIVATION 3
+#define ACO_IS_FCL 4
+
+// ACO edge
+#define ACO_OPERATION_COPY 1
+#define ACO_OPERATION_SUM 2
+#define ACO_OPERATION_MUL 3
+#define ACO_OPERATION_EXECUTE_NODE 4
+#define ACO_OPERATION_MATRIX_MUL 5
+#define ACO_OPERATION_TAKE 6
+#define ACO_OPERATION_INDEX_COPY 7
 
 typedef struct bn{//batch_normalization layer
     int batch_size, vector_dim;
@@ -543,9 +560,13 @@ typedef struct thread_args_model {
     model* m;
     model* real_m;
     int rows,cols,channels,error_dimension;
+    int dataset_size;
+    float** dataset_input;
+    float** dataset_output;
     float* input;
     float* error;
     float** returning_error;
+    double* only_for_ff_ret;
 } thread_args_model;
 
 
@@ -671,15 +692,13 @@ typedef struct mystruct{
 
 typedef struct training{
     model** m;
+
     rmodel** r;
     int epochs,instance,n_char_size,n_int_size,n_float_size,n_m, n_r, n_float, n_int, n_char;
     char** chars;
     int** ints;
     float** floats;
 }training;
-
-
-
 
 typedef struct vector_struct{
     float* v, *output, *input_error;
@@ -788,6 +807,18 @@ typedef struct dueling_categorical_dqn{
     float* support;//n_atoms
     float* error;//action_size X n_atoms
     float* q_functions;//action_size
+    
+    // for quantile
+    int is_iqn;
+    int k, n;
+    int quantile_value;
+    float* quantile_array;//quantile_value
+    model* single_ff_network;//1 fully connected layer + Relu, quantile_value X action_size
+    model** single_ff_networks;// maximum between k and n
+    model** v_hidden_layers_q;// maximum between k and n
+    model** v_linear_last_layer_q; //maximum between k and n
+    model** a_hidden_layers_q;// maximum between k and n
+    model** a_linear_last_layer_q; //maximum between k and n
     
 }dueling_categorical_dqn;
 
@@ -899,7 +930,7 @@ typedef struct iq{
 
 typedef struct policy_gradient{
     uint64_t batch_size, threads;
-    int feed_forward_flag, training_mode, adaptive_clipping_flag,  gd_flag, lr_decay_flag, lr_epoch_threshold, entropy_flag, dde_flag;
+    int feed_forward_flag, training_mode, adaptive_clipping_flag,  gd_flag, lr_decay_flag, lr_epoch_threshold, entropy_flag, dde_flag, train_iteration;
     float momentum, entropy_alpha, softmax_temperature;
     float beta1, beta2, beta3, k_percentage,  adaptive_clipping_gradient_value;
     float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, dde_alpha;
@@ -910,7 +941,244 @@ typedef struct policy_gradient{
     model** ms;// threads
 }policy_gradient;
 
+typedef struct aco_edge aco_edge;
 
+typedef struct params{
+    int size, dimension1, dimension2, dimension3, input_size;
+    float single_p;
+    float* p;
+}params;
+
+typedef struct activation{
+    int activation_flag;
+}activation;
+
+typedef struct fcl_func{
+    int input_size, output_size;
+    float* v;// output_size
+}fcl_func;
+
+typedef struct aco_node{
+    int n_inputs;
+    int n_outputs;
+    int flag;
+    aco_edge** inputs;// n_inputs
+    aco_edge** outputs;// n_outputs
+    double input_pheromone;
+    double output_pheromone;
+    double best_personal;
+    double best_global;
+    double v;
+    double pheromone;
+    // operations to do
+    params* weights;
+    params* best_weights;
+    params* best_biases;
+    params* biases;
+    params* velocity;
+    params* best_global_params;
+    activation* a;
+    fcl_func* f;
+}aco_node;
+
+struct aco_edge{
+    double pheromone;
+    aco_node* input;
+    aco_node* output;
+    int flag;
+    int operation_flag;
+};
+
+
+
+typedef struct aco_tracker{
+    int input_size, weights_size, biases_size, n_fcl, n_cl, layers;
+    float levy_threshold;
+    float levy_ratio;
+    aco_node* current_node;
+    aco_edge* edge_taken;
+    float* current_input;
+    float* weights;
+    float* biases;
+    fcl** fcls;
+    cl** cls;
+    model* m;
+}aco_tracker;
+
+
+typedef struct aco_struct{
+    int layers, number_of_nodes, number_of_edges, number_of_ants, iteration_index, number_of_iterations, time_for_update_best_trail, length_best_trail, longest_trail, pso_iteration;
+    float p, p_dec;
+    float tau_max, tau_min;
+    double pheromone_best_trail;
+    double average;
+    // pso
+    double inertia, inertia_min, inertia_max;
+    double c1, c2;
+    double v_max;
+    // pso
+    
+    // fa
+    double lambda;
+    double step_size;
+    float percentage_of_fireflies;
+    double beta_min;
+    double beta_zero;
+    double softmax_temperature;
+    // fa
+    
+    //gsa
+    double g;
+    double g_zero;
+    double alpha;
+    double omega;
+    double t_c;
+    double rp_max;
+    double rp_min;
+    double alpha_velocity;
+    double h_velocity;
+    // gsa
+    
+    //woa
+    double alpha_woa;
+    double beta_woa;
+    double weight_woa;
+    
+    int* widths;
+    int* depths;
+    int* sizes;
+    
+    int* second_dimension_for_trails;// number of ants
+    int** trails;// number of ants X second_dimension_for_trails[i]
+    int* best_trail;
+    double* pheromones;
+    aco_tracker* tracker;
+    aco_node* root;
+    aco_node** nodes;
+    aco_edge** edges;
+    aco_node*** nodes_layers;
+    model** m;// number of ants
+}aco_struct;
+
+typedef struct efficientzeromodel {
+    int batch_size, lstm_window;
+    
+    model* rapresentation_h;
+    model* dynamics_g;
+    model* prediction_f;
+    model* prediction_f_policy;
+    model* prediction_f_value;
+    model* reward_prediction_model;
+    rmodel* reward_prediction_rmodel;
+    model* reward_prediction_temporal_model;
+    model* p1;
+    model* p2;
+    
+    model** batch_rapresentation_h;// batch_size
+    model** batch_dynamics_g;// batch_size
+    model** batch_prediction_f;// batch_size
+    model** batch_prediction_f_policy;// batch_size
+    model** batch_prediction_f_value;// batch_size
+    model** batch_reward_prediction_model;// batch_size * lstm_window
+    rmodel** batch_reward_prediction_rmodel;// batch_size
+    model** batch_reward_prediction_temporal_model;// batch_size * lstm_window
+    model** batch_p1;// batch_size
+    model** batch_p2;// batch_size
+} efficientzeromodel;
+
+
+typedef struct mcts_edge mcts_edge;
+
+
+typedef struct mcts_node{
+    uint64_t visit_count, state_size, depth, n_edges, lstm_layers;
+    uint64_t* h_states_size;
+    float q_value, reward, v, v_pow, prefix_value_reward;
+    float* state;
+    float* state_with_actions;
+    float** hidden_states;
+    float** cell_states;
+    mcts_edge** edges;
+}mcts_node;
+
+struct mcts_edge{
+    mcts_node* input_node, *output_node;
+    float prior_probability;
+};
+
+typedef struct mcts{
+    uint64_t n_nodes, n_edges, maximum_depth;
+    efficientzeromodel* m;
+    mcts_node* root;
+    mcts_node** nodes;
+    mcts_edge** edges;
+    mcts_node* returned_node;
+    double q_max, q_min, q_difference, noise_epsilon, c_init, c_base, dirichlet_alpha, gamma_reward, reward_offset, value_offset;
+}mcts;
+
+
+typedef struct efficientzero{
+    float dirichlet_epsilon, alpha_priorization, beta_priorization, lambda_value, tau_copying, momentum, gamma;// lambda for n steps
+    float beta1, beta2, beta3, k_percentage, clipping_gradient_value, adaptive_clipping_gradient_value, beta_priorization_increase;
+    float lr, lr_minimum, lr_maximum, initial_lr, lr_decay, alpha;
+    
+    float** buffer_state_t;// not stored terminal states
+    float** buffer_state_t_1;
+    int* nonterminal_state_t_1;
+    int* actions;
+    float* rewards;
+    float* values;
+    float* ranked_values;
+    float* recursive_cumulative_ranked_values;
+    int* positive_ranked_values;
+    float* positive_recursive_cumulative_ranked_values;
+    int* negative_ranked_values;
+    float* negative_recursive_cumulative_ranked_values;
+    int* neutral_ranked_values;
+    float* neutral_recursive_cumulative_ranked_values;
+    float* new_errors;
+    int* uniform_sampling_indices;
+    int* positive_rewards;
+    int* negative_rewards;
+    int* neutral_rewards;
+    int* positive_reverse_indices;
+    int* negative_reverse_indices;
+    int* neutral_reverse_indices;
+    efficientzeromodel* m;
+    float* error_priorization;
+    int* error_indices;
+    int* reverse_error_indices;// for debug
+    int feed_forward_flag, training_mode, clipping_flag, adaptive_clipping_flag, batch_size, threads, gd_flag, lr_decay_flag, sampling_flag;
+    double sum_error_priorization_buffer;
+    double positive_sum_error_priorization_buffer;
+    double negative_sum_error_priorization_buffer;
+    double neutral_sum_error_priorization_buffer;
+    uint64_t action_taken_iteration, max_buffer_size, train_iteration, buffer_current_index, n_step_rewards, stop_epsilon_greedy,epochs_to_copy_target, diversity_driven_q_functions, lr_epoch_threshold;
+    uint64_t diversity_driven_q_functions_counter,past_errors_counter, past_errors, positive_rewards_counter, negative_rewards_counter, neutral_rewards_counter;
+    uint64_t positive_rewards_length, negative_rewards_length, neutral_rewards_length;// past_errors, for softadaptù
+    
+    
+    // during training
+    uint* batch;
+    uint* negative_batch, *positive_batch, *neutral_batch;
+    uint* reverse_batch;
+    float** temp_states_t;
+    float** temp_states_t_1;
+    float** temp_diversity_states_t;
+    float** qs;
+    float* lambdas;
+    int* temp_nonterminal_state_t_1;
+    int* temp_actions;
+    float* temp_rewards;
+    float* temp_values;
+    
+}efficientzero;
+
+
+#include "aco_building.h"
+#include "aco_init.h"
+#include "aco_iterate.h"
+#include "aco_process.h"
 #include "attention.h"
 #include "batch_norm_layers.h"
 #include "clipping_gradient.h"
@@ -919,6 +1187,8 @@ typedef struct policy_gradient{
 #include "dictionary.h"
 #include "drl.h"
 #include "dueling_categorical_dqn.h"
+#include "efficientzero.h"
+#include "efficientzeromodel.h"
 #include "fully_connected.h"
 #include "fully_connected_layers.h"
 #include "gd.h"
@@ -926,6 +1196,7 @@ typedef struct policy_gradient{
 #include "initialization.h"
 #include "learning_rate_decay.h"
 #include "math_functions.h"
+#include "mcts.h"
 #include "model.h"
 #include "multi_core_dueling_categorical_dqn.h"
 #include "multi_core_model.h"

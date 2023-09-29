@@ -61,7 +61,7 @@ fcl* fully_connected(int input, int output, int layer, int dropout_flag, int act
         exit(1);
     }
     
-    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
+    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT && training_mode != ONLY_FF){
         fprintf(stderr,"Error, you should set the training mode properly!\n");
         exit(1);
     }
@@ -432,7 +432,7 @@ fcl* fully_connected_without_learning_parameters(int input, int output, int laye
         exit(1);
     }
     
-    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT){
+    if(training_mode != EDGE_POPUP && training_mode != FREEZE_TRAINING && training_mode != GRADIENT_DESCENT && training_mode != ONLY_FF){
         fprintf(stderr,"Error, you should set the training mode properly!\n");
         exit(1);
     }
@@ -1234,32 +1234,54 @@ fcl* copy_fcl(fcl* f){
         copy_array(f->noisy_biases,copy->noisy_biases,f->output);// new
     }// new
     if(exists_d_params_fcl(f)){
+        if(f->d_weights != NULL)
         copy_array(f->d_weights,copy->d_weights,f->output*f->input);
+        if(f->d1_weights != NULL)
         copy_array(f->d1_weights,copy->d1_weights,f->output*f->input);
+        if(f->d2_weights != NULL)
         copy_array(f->d2_weights,copy->d2_weights,f->output*f->input);
+        if(f->d3_weights != NULL)
         copy_array(f->d3_weights,copy->d3_weights,f->output*f->input);
         if(is_noisy(f)){// new
+            if(f->d_noisy_weights != NULL)
             copy_array(f->d_noisy_weights,copy->d_noisy_weights,f->output*f->input);// new
+            if(f->d1_noisy_weights != NULL)
             copy_array(f->d1_noisy_weights,copy->d1_noisy_weights,f->output*f->input);// new
+            if(f->d2_noisy_weights != NULL)
             copy_array(f->d2_noisy_weights,copy->d2_noisy_weights,f->output*f->input);// new
+            if(f->d3_noisy_weights != NULL)
             copy_array(f->d3_noisy_weights,copy->d3_noisy_weights,f->output*f->input);// new
+            if(f->d_noisy_biases != NULL)
             copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+            if(f->d1_noisy_biases != NULL)
             copy_array(f->d1_noisy_biases,copy->d1_noisy_biases,f->output);// new
+            if(f->d2_noisy_biases != NULL)
             copy_array(f->d2_noisy_biases,copy->d2_noisy_biases,f->output);// new
+            if(f->d3_noisy_biases != NULL)
             copy_array(f->d3_noisy_biases,copy->d3_noisy_biases,f->output);// new
         }// new
+        if(f->d_biases != NULL)
         copy_array(f->d_biases,copy->d_biases,f->output);
+        if(f->d1_biases != NULL)
         copy_array(f->d1_biases,copy->d1_biases,f->output);
+        if(f->d2_biases != NULL)
         copy_array(f->d2_biases,copy->d2_biases,f->output);
+        if(f->d3_biases != NULL)
         copy_array(f->d3_biases,copy->d3_biases,f->output);
     }
     
     if(exists_edge_popup_stuff_fcl(f)){
+        if(f->scores != NULL)
         copy_array(f->scores,copy->scores,f->input*f->output);
+        if(f->d_scores != NULL)
         copy_array(f->d_scores,copy->d_scores,f->input*f->output);
+        if(f->d1_scores != NULL)
         copy_array(f->d1_scores,copy->d1_scores,f->input*f->output);
+        if(f->d2_scores != NULL)
         copy_array(f->d2_scores,copy->d2_scores,f->input*f->output);
+        if(f->d3_scores != NULL)
         copy_array(f->d3_scores,copy->d3_scores,f->input*f->output);
+        if(f->indices != NULL)
         copy_int_array(f->indices,copy->indices,f->input*f->output);
     }
     if(f->normalization_flag == LAYER_NORMALIZATION){
@@ -1824,31 +1846,53 @@ void paste_fcl(fcl* f,fcl* copy){
         }// new
     }
     if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
+        if(f->d_weights != NULL)
         copy_array(f->d_weights,copy->d_weights,in_out);
+        if(f->d1_weights != NULL)
         copy_array(f->d1_weights,copy->d1_weights,in_out);
+        if(f->d2_weights != NULL)
         copy_array(f->d2_weights,copy->d2_weights,in_out);
+        if(f->d3_weights != NULL)
         copy_array(f->d3_weights,copy->d3_weights,in_out);
         if(is_noisy(f) && is_noisy(copy)){// new
+            if(f->d_noisy_weights != NULL)
             copy_array(f->d_noisy_weights,copy->d_noisy_weights,in_out);// new
+            if(f->d1_noisy_weights != NULL)
             copy_array(f->d1_noisy_weights,copy->d1_noisy_weights,in_out);// new
+            if(f->d2_noisy_weights != NULL)
             copy_array(f->d2_noisy_weights,copy->d2_noisy_weights,in_out);// new
+            if(f->d3_noisy_weights != NULL)
             copy_array(f->d3_noisy_weights,copy->d3_noisy_weights,in_out);// new
+            if(f->d_noisy_biases != NULL)
             copy_array(f->d_noisy_biases,copy->d_noisy_biases,f->output);// new
+            if(f->d1_noisy_biases != NULL)
             copy_array(f->d1_noisy_biases,copy->d1_noisy_biases,f->output);// new
+            if(f->d2_noisy_biases != NULL)
             copy_array(f->d2_noisy_biases,copy->d2_noisy_biases,f->output);// new
+            if(f->d3_noisy_biases != NULL)
             copy_array(f->d3_noisy_biases,copy->d3_noisy_biases,f->output);// new
         }// new
+        if(f->d_biases != NULL)
         copy_array(f->d_biases,copy->d_biases,f->output);
+        if(f->d1_biases != NULL)
         copy_array(f->d1_biases,copy->d1_biases,f->output);
+        if(f->d2_biases != NULL)
         copy_array(f->d2_biases,copy->d2_biases,f->output);
+        if(f->d3_biases != NULL)
         copy_array(f->d3_biases,copy->d3_biases,f->output);
     }
     if(exists_edge_popup_stuff_fcl(f) && exists_edge_popup_stuff_fcl(copy)){
+        if(f->scores != NULL)
         copy_array(f->scores,copy->scores,in_out);
+        if(f->d_scores != NULL)
         copy_array(f->d_scores,copy->d_scores,in_out);
+        if(f->d1_scores != NULL)
         copy_array(f->d1_scores,copy->d1_scores,in_out);
+        if(f->d2_scores != NULL)
         copy_array(f->d2_scores,copy->d2_scores,in_out);
+        if(f->d3_scores != NULL)
         copy_array(f->d3_scores,copy->d3_scores,in_out);
+        if(f->indices != NULL)
         copy_int_array(f->indices,copy->indices,in_out);
     }
     
@@ -1952,8 +1996,11 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
             if(exists_params_fcl(f) && exists_params_fcl(copy))
             copy->biases[i] = tau*f->biases[i] + (1-tau)*copy->biases[i];
             if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
+                if(f->d1_biases != NULL)
                 copy->d1_biases[i] = tau*f->d1_biases[i] + (1-tau)*copy->d1_biases[i];
+                if(f->d2_biases != NULL)
                 copy->d2_biases[i] = tau*f->d2_biases[i] + (1-tau)*copy->d2_biases[i];
+                if(f->d3_biases != NULL)
                 copy->d3_biases[i] = tau*f->d3_biases[i] + (1-tau)*copy->d3_biases[i];
             }
         }
@@ -1966,24 +2013,37 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
             }// new
         }
         if(exists_d_params_fcl(f) && exists_d_params_fcl(copy)){
+            if(f->d1_weights != NULL)
             copy->d1_weights[i] = tau*f->d1_weights[i] + (1-tau)*copy->d1_weights[i];
+            if(f->d2_weights != NULL)
             copy->d2_weights[i] = tau*f->d2_weights[i] + (1-tau)*copy->d2_weights[i];
+            if(f->d3_weights != NULL)
             copy->d3_weights[i] = tau*f->d3_weights[i] + (1-tau)*copy->d3_weights[i];
             if(is_noisy(f) && is_noisy(copy)){// new
+                if(f->d1_noisy_weights != NULL)
                 copy->d1_noisy_weights[i] = tau*f->d1_noisy_weights[i] + (1-tau)*copy->d1_noisy_weights[i];// new
+                if(f->d2_noisy_weights != NULL)
                 copy->d2_noisy_weights[i] = tau*f->d2_noisy_weights[i] + (1-tau)*copy->d2_noisy_weights[i];// new
+                if(f->d3_noisy_weights != NULL)
                 copy->d3_noisy_weights[i] = tau*f->d3_noisy_weights[i] + (1-tau)*copy->d3_noisy_weights[i];// new
                 if(i < f->output){
+                    if(f->d1_noisy_biases != NULL)
                     copy->d1_noisy_biases[i] = tau*f->d1_noisy_biases[i] + (1-tau)*copy->d1_noisy_biases[i];// new
+                    if(f->d2_noisy_biases != NULL)
                     copy->d2_noisy_biases[i] = tau*f->d2_noisy_biases[i] + (1-tau)*copy->d2_noisy_biases[i];// new
+                    if(f->d3_noisy_biases != NULL)
                     copy->d3_noisy_biases[i] = tau*f->d3_noisy_biases[i] + (1-tau)*copy->d3_noisy_biases[i];// new
                 }
             }// new
         }
         if(exists_edge_popup_stuff_fcl(f) && exists_edge_popup_stuff_fcl(copy)){
+            if(f->scores != NULL)
             copy->scores[i] = tau*f->scores[i] + (1-tau)*copy->scores[i];
+            if(f->d1_scores != NULL)
             copy->d1_scores[i] = tau*f->d1_scores[i] + (1-tau)*copy->d1_scores[i];
+            if(f->d2_scores != NULL)
             copy->d2_scores[i] = tau*f->d2_scores[i] + (1-tau)*copy->d2_scores[i];
+            if(f->d3_scores != NULL)
             copy->d3_scores[i] = tau*f->d3_scores[i] + (1-tau)*copy->d3_scores[i];
         }
         
@@ -1991,9 +2051,10 @@ void slow_paste_fcl(fcl* f,fcl* copy, float tau){
     
     if(exists_edge_popup_stuff_fcl(copy) && exists_edge_popup_stuff_fcl(f)){
         for(i = 0; i < in_out; i++){
+            if(copy->indices != NULL)
             copy->indices[i] = i;
         }
-        
+        if(copy->indices != NULL && copy->scores != NULL)
         sort(copy->scores,copy->indices,0,in_out-1);
         free(copy->active_output_neurons);
         copy->active_output_neurons = get_used_outputs(copy,NULL,FCLS,copy->output);

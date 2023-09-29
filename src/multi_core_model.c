@@ -49,6 +49,25 @@ void* model_thread_ff_opt(void* _args) {
     return _args;
 }
 
+void* model_thread_ff_loss_reset_only_for_ff_opt(void* _args) {
+    
+    // depacking args
+    thread_args_model* args = (thread_args_model*) _args;
+    int i;
+    double error = 0;
+    for(i = 0; i < args->dataset_size; i++){
+        model_tensor_input_ff_without_learning_parameters(args->m,args->real_m,args->channels,args->rows,args->cols,args->dataset_input[i]);
+        compute_model_error_only_for_ff(args->m, args->dataset_output[i]);
+        error+=sum_over_input(args->m->error, args->m->output_dimension);
+        reset_model_only_for_ff(args->m);
+    }
+    
+    args->only_for_ff_ret[0] = error;
+    
+    
+    return _args;
+}
+
 void* model_thread_bp(void* _args) {
     
     // depacking args
@@ -134,6 +153,7 @@ void model_tensor_input_ff_multicore(model** m, int depth, int rows, int cols, f
     }
 
 }
+
 /* This functions computes the feed forward of a model for a batch of instances of the dataset
  * 
  * Inputs:
@@ -174,6 +194,41 @@ void model_tensor_input_ff_multicore_opt(model** m, model* m2, int depth, int ro
         }
     }
 
+}
+
+double model_tensor_input_ff_multicore_only_for_ff_loss_reset_opt(model** m, model* m2, int depth, int rows, int cols, float** inputs, float** outputs, int mini_batch_size, int threads){
+    if(mini_batch_size < threads)
+        threads = mini_batch_size;
+    pthread_t thread[threads];
+    thread_args_model* args[threads];
+    
+    int j;
+    int value = mini_batch_size/threads;
+    double ret = 0;
+    for(j = 0; j < threads; j++){
+        args[j] = (thread_args_model*)malloc(sizeof(thread_args_model));
+        args[j]->m = m[j];
+        args[j]->channels = depth;
+        args[j]->rows = rows;
+        args[j]->cols = cols;
+        args[j]->dataset_input = &inputs[j*value];
+        args[j]->dataset_output = &outputs[j*value];
+        args[j]->dataset_size = value;
+        if(mini_batch_size - j*value < value)
+            args[j]->dataset_size = mini_batch_size - j*value;
+        args[j]->real_m = m2;
+        args[j]->only_for_ff_ret = (double*)calloc(1,sizeof(double));
+        pthread_create(thread+j, NULL, model_thread_ff_loss_reset_only_for_ff_opt, args[j]);
+        
+    }
+                
+    for(j = 0; j < threads; j++) {
+        pthread_join(thread[j], NULL);
+        ret += args[j]->only_for_ff_ret[0];
+        free(args[j]->only_for_ff_ret);
+        free(args[j]);
+    }
+    return ret;
 }
 
 /* This functions computes the back propagation of a model for a batch of instances of the dataset
